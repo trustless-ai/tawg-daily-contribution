@@ -1,0 +1,14 @@
+{
+  "lib/forge-std": {
+    "rev": "bf647bd6046f2f7da30d0c2bf435e5c76a780c1b"
+  },
+  "lib/openzeppelin-contracts": {
+    "rev": "5037e348c5206f2706b0de6c49698cece43aec0c"
+  },
+  "lib/agent-ercs": {
+    "branch": {
+      "name": "main",
+      "rev": "00605871ff33e80ff21804e5d1cd1ba5fa1c2d68"
+    }
+  }
+}
