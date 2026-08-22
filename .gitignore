@@ -2,3 +2,13 @@
 /out/
 /broadcast/
 /lib/
+.worktrees/
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+__pycache__/
+.vault-meta/
+.local/
+telegram-export*.json

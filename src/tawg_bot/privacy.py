@@ -1,0 +1,156 @@
+"""Deterministic privacy gate for every public and model-facing payload."""
+
+from __future__ import annotations
+
+import json
+import re
+from collections.abc import Mapping
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import yaml
+
+
+class PrivacyViolation(ValueError):
+    """Raised when content is unsafe for a public boundary."""
+
+
+class PrivateChatRejected(PrivacyViolation):
+    """Raised when a Telegram private chat reaches the public pipeline."""
+
+
+class SensitiveContentRejected(PrivacyViolation):
+    """Raised when a payload contains secret material."""
+
+
+@dataclass(frozen=True, slots=True)
+class PrivacyResult:
+    accepted: bool
+    sanitized_text: str | None
+    reason_code: str | None
+
+    def safe_failure_json(self, *, source_id: str) -> str:
+        if self.accepted or self.reason_code is None:
+            raise ValueError("an accepted result has no failure record")
+        return json.dumps(
+            {
+                "schema": "tawg.privacy-rejection.v1",
+                "source_id": source_id,
+                "reason_code": self.reason_code,
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+
+
+class PrivacyFilter:
+    _EMAIL = re.compile(r"(?<![\w.+-])[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}(?![\w.-])", re.I)
+    _PHONE = re.compile(r"(?<!\w)(?!\d{4}-\d{2}-\d{2}\b)\+?\d[\d ()-]{7,}\d(?!\w)")
+    _IPV4 = re.compile(
+        r"(?<!\d)(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}"
+        r"(?:25[0-5]|2[0-4]\d|1?\d?\d)(?!\d)"
+    )
+    _IPV6 = re.compile(r"(?<![\w:])(?:[A-F0-9]{1,4}:){2,7}[A-F0-9]{0,4}(?![\w:])", re.I)
+    _LOCAL_PATH = re.compile(
+        r"(?:/(?:Users|home|private|var/folders)/[^\s]+|[A-Z]:\\(?:Users|Documents)\\[^\s]+)",
+        re.I,
+    )
+    _WALLET = re.compile(r"(?<![A-Fa-f0-9])0x[A-Fa-f0-9]{40}(?![A-Fa-f0-9])")
+    _TELEGRAM_TOKEN = re.compile(r"(?<!\w)\d{6,12}:[A-Za-z0-9_-]{30,}(?!\w)")
+    _PRIVATE_KEY = re.compile(r"-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----", re.I)
+    _API_TOKEN = re.compile(
+        r"(?<!\w)(?:sk[-_]|ghp_|github_pat_)[A-Za-z0-9_-]{20,}(?!\w)", re.I
+    )
+    _SEED_PHRASE = re.compile(
+        r"\b(?:seed|recovery|mnemonic) phrase\s*:\s*(?:[a-z]+\s+){11,23}[a-z]+\b",
+        re.I,
+    )
+    _IDENTITY_CONTAINERS = frozenset({"from", "sender", "user", "actor"})
+
+    def __init__(
+        self,
+        *,
+        public_wallet_allowlist: frozenset[str],
+        drop_numeric_id_keys: frozenset[str],
+        drop_path_keys: frozenset[str],
+        private_chat_types: frozenset[str],
+    ) -> None:
+        self._public_wallet_allowlist = public_wallet_allowlist
+        self._drop_numeric_id_keys = drop_numeric_id_keys
+        self._drop_path_keys = drop_path_keys
+        self._private_chat_types = private_chat_types
+
+    @classmethod
+    def from_yaml(cls, path: Path) -> PrivacyFilter:
+        raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, dict) or raw.get("schema") != "tawg.privacy.v1":
+            raise ValueError("unsupported privacy configuration")
+        return cls(
+            public_wallet_allowlist=frozenset(raw.get("public_wallet_allowlist", [])),
+            drop_numeric_id_keys=frozenset(raw.get("drop_numeric_id_keys", [])),
+            drop_path_keys=frozenset(raw.get("drop_path_keys", [])),
+            private_chat_types=frozenset(raw.get("private_chat_types", [])),
+        )
+
+    def inspect(self, text: str) -> PrivacyResult:
+        for pattern in (
+            self._TELEGRAM_TOKEN,
+            self._PRIVATE_KEY,
+            self._API_TOKEN,
+            self._SEED_PHRASE,
+        ):
+            if pattern.search(text):
+                return PrivacyResult(False, None, "secret_material")
+
+        sanitized = text
+        sanitized = self._EMAIL.sub("[REDACTED_EMAIL]", sanitized)
+        sanitized = self._PHONE.sub("[REDACTED_PHONE]", sanitized)
+        sanitized = self._IPV4.sub("[REDACTED_IP]", sanitized)
+        sanitized = self._IPV6.sub("[REDACTED_IP]", sanitized)
+        sanitized = self._LOCAL_PATH.sub("[REDACTED_PATH]", sanitized)
+
+        def replace_wallet(match: re.Match[str]) -> str:
+            wallet = match.group(0)
+            return wallet if wallet in self._public_wallet_allowlist else "[REDACTED_WALLET]"
+
+        sanitized = self._WALLET.sub(replace_wallet, sanitized)
+        return PrivacyResult(True, sanitized, None)
+
+    def sanitize_payload(self, payload: Mapping[str, object]) -> dict[str, Any]:
+        chat = payload.get("chat")
+        if isinstance(chat, Mapping) and chat.get("type") in self._private_chat_types:
+            raise PrivateChatRejected("private_chat")
+        sanitized = self._sanitize_mapping(payload, parent_key=None)
+        return sanitized
+
+    def _sanitize_mapping(
+        self, payload: Mapping[str, object], *, parent_key: str | None
+    ) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in payload.items():
+            if key in self._drop_numeric_id_keys or key in self._drop_path_keys:
+                continue
+            if key == "id" and parent_key in self._IDENTITY_CONTAINERS and isinstance(value, int):
+                continue
+            result[key] = self._sanitize_value(value, parent_key=key)
+        return result
+
+    def _sanitize_value(self, value: object, *, parent_key: str) -> Any:
+        if isinstance(value, Mapping):
+            return self._sanitize_mapping(value, parent_key=parent_key)
+        if isinstance(value, list):
+            return [self._sanitize_value(item, parent_key=parent_key) for item in value]
+        if isinstance(value, str):
+            inspected = self.inspect(value)
+            if not inspected.accepted or inspected.sanitized_text is None:
+                raise SensitiveContentRejected(inspected.reason_code or "unsafe_text")
+            return inspected.sanitized_text
+        return value
+
+    def assert_public(self, text: str) -> None:
+        inspected = self.inspect(text)
+        if not inspected.accepted:
+            raise PrivacyViolation(inspected.reason_code or "unsafe_text")
+        if inspected.sanitized_text != text:
+            raise PrivacyViolation("unredacted_personal_data")

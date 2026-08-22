@@ -1,0 +1,67 @@
+[
+  {
+    "update_id": 100,
+    "message": {
+      "message_id": 501,
+      "date": 1787440200,
+      "chat": {"id": -100424242, "type": "supergroup", "title": "TAWG"},
+      "from": {"id": 11001, "is_bot": false, "first_name": "Alice", "username": "alice_eth"},
+      "text": "Parser shipped. Reach me at alice@private.test"
+    }
+  },
+  {
+    "update_id": 101,
+    "message": {
+      "message_id": 502,
+      "date": 1787440260,
+      "chat": {"id": -100999999, "type": "supergroup", "title": "Other group"},
+      "from": {"id": 22002, "is_bot": false, "first_name": "Mallory"},
+      "text": "This must be filtered"
+    }
+  },
+  {
+    "update_id": 102,
+    "message": {
+      "message_id": 503,
+      "date": 1787440320,
+      "chat": {"id": -100424242, "type": "supergroup", "title": "TAWG"},
+      "from": {"id": 33003, "is_bot": false, "first_name": "Bob", "username": "bob"},
+      "text": "@tawg_helper what changed in ERC-8004?",
+      "entities": [{"offset": 0, "length": 12, "type": "mention"}],
+      "reply_to_message": {"message_id": 501, "date": 1787440200, "chat": {"id": -100424242}}
+    }
+  },
+  {
+    "update_id": 103,
+    "edited_message": {
+      "message_id": 501,
+      "date": 1787440200,
+      "edit_date": 1787440380,
+      "chat": {"id": -100424242, "type": "supergroup", "title": "TAWG"},
+      "from": {"id": 11001, "is_bot": false, "first_name": "Alice", "username": "alice_eth"},
+      "text": "Parser and tests shipped"
+    }
+  },
+  {
+    "update_id": 104,
+    "message": {
+      "message_id": 504,
+      "date": 1787440440,
+      "chat": {"id": -100424242, "type": "supergroup", "title": "TAWG"},
+      "from": {"id": 44004, "is_bot": false, "first_name": "Carol"},
+      "text": "/ask@tawg_helper summarize the proposal",
+      "entities": [{"offset": 0, "length": 16, "type": "bot_command"}]
+    }
+  },
+  {
+    "update_id": 105,
+    "message": {
+      "message_id": 505,
+      "date": 1787440500,
+      "chat": {"id": -100424242, "type": "supergroup", "title": "TAWG"},
+      "from": {"id": 55005, "is_bot": false, "first_name": "张三"},
+      "caption": "新的流程图说明",
+      "photo": [{"file_id": "secret-photo-file-id", "width": 320, "height": 240}]
+    }
+  }
+]

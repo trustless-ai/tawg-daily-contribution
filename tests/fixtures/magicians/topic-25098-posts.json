@@ -1,0 +1,22 @@
+{
+  "post_stream": {
+    "posts": [
+      {
+        "id": 502,
+        "post_number": 2,
+        "username": "alice",
+        "created_at": "2025-08-17T12:30:00.000Z",
+        "updated_at": "2025-08-17T12:30:00.000Z",
+        "cooked": "<p>Let’s make validation composable.</p>"
+      },
+      {
+        "id": 503,
+        "post_number": 3,
+        "username": "bob",
+        "created_at": "2025-08-18T19:57:00.000Z",
+        "updated_at": "2026-08-22T22:00:00.000Z",
+        "cooked": "<p>Edited: on-chain reads remain important.</p>"
+      }
+    ]
+  }
+}

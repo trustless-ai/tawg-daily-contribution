@@ -1,0 +1,127 @@
+{
+  "branch": {"commit": {"sha": "abc123", "commit": {"committer": {"date": "2026-08-22T20:00:00Z"}}}},
+  "tree": {
+    "truncated": false,
+    "tree": [
+      {"path": "README.md", "type": "blob", "sha": "blob-readme", "size": 90},
+      {"path": "src/agent.py", "type": "blob", "sha": "blob-source", "size": 70},
+      {"path": "package-lock.json", "type": "blob", "sha": "blob-lock", "size": 500},
+      {"path": "node_modules/pkg/index.js", "type": "blob", "sha": "blob-dependency", "size": 30},
+      {"path": "dist/generated.js", "type": "blob", "sha": "blob-generated", "size": 30},
+      {"path": "assets/logo.png", "type": "blob", "sha": "blob-binary", "size": 30}
+    ]
+  },
+  "blobs": {
+    "blob-readme": "# Agent ERCs\n\nPublic coordination for ERC-8004 and ERC-8183.",
+    "blob-source": "def verify_agent():\n    return 'trustless'\n",
+    "blob-lock": "this body must never be retained",
+    "blob-dependency": "excluded dependency",
+    "blob-generated": "excluded generated output",
+    "blob-binary": "iVBORw0KGgo="
+  },
+  "commits": [
+    {
+      "sha": "abc123",
+      "html_url": "https://github.com/trustless-ai/agent-ercs/commit/abc123",
+      "commit": {
+        "message": "Document verification flow",
+        "author": {"name": "Alice", "date": "2026-08-22T19:00:00Z"},
+        "committer": {"date": "2026-08-22T19:01:00Z"}
+      },
+      "author": {"login": "alice"}
+    }
+  ],
+  "issues": [
+    {
+      "id": 7001,
+      "number": 7,
+      "title": "Clarify trust model",
+      "body": "We should define the threat model.",
+      "html_url": "https://github.com/trustless-ai/agent-ercs/issues/7",
+      "created_at": "2026-08-22T18:00:00Z",
+      "updated_at": "2026-08-22T18:30:00Z",
+      "user": {"login": "bob"}
+    },
+    {
+      "id": 8001,
+      "number": 8,
+      "title": "Add verifier registry",
+      "body": "Implements the registry.",
+      "html_url": "https://github.com/trustless-ai/agent-ercs/pull/8",
+      "created_at": "2026-08-22T17:00:00Z",
+      "updated_at": "2026-08-22T20:00:00Z",
+      "user": {"login": "carol"},
+      "pull_request": {"url": "https://api.github.com/repos/trustless-ai/agent-ercs/pulls/8"}
+    }
+  ],
+  "issue_comments": [
+    {
+      "id": 9001,
+      "issue_url": "https://api.github.com/repos/trustless-ai/agent-ercs/issues/7",
+      "body": "I can draft this.",
+      "html_url": "https://github.com/trustless-ai/agent-ercs/issues/7#issuecomment-9001",
+      "created_at": "2026-08-22T18:10:00Z",
+      "updated_at": "2026-08-22T18:10:00Z",
+      "user": {"login": "alice"}
+    }
+  ],
+  "pulls": [{"number": 8, "updated_at": "2026-08-22T20:00:00Z"}],
+  "reviews": [
+    {
+      "id": 9101,
+      "body": "The invariants look good.",
+      "html_url": "https://github.com/trustless-ai/agent-ercs/pull/8#pullrequestreview-9101",
+      "submitted_at": "2026-08-22T20:10:00Z",
+      "user": {"login": "dave"},
+      "state": "APPROVED"
+    }
+  ],
+  "review_comments": [
+    {
+      "id": 9201,
+      "pull_request_url": "https://api.github.com/repos/trustless-ai/agent-ercs/pulls/8",
+      "body": "Please cite ERC-8183 here.",
+      "html_url": "https://github.com/trustless-ai/agent-ercs/pull/8#discussion_r9201",
+      "created_at": "2026-08-22T20:05:00Z",
+      "updated_at": "2026-08-22T20:06:00Z",
+      "user": {"login": "dave"}
+    }
+  ],
+  "releases": [
+    {
+      "id": 9301,
+      "tag_name": "v0.1.0",
+      "name": "First draft",
+      "body": "Ready for community review.",
+      "html_url": "https://github.com/trustless-ai/agent-ercs/releases/tag/v0.1.0",
+      "created_at": "2026-08-22T21:00:00Z",
+      "published_at": "2026-08-22T21:05:00Z",
+      "author": {"login": "alice"}
+    }
+  ],
+  "discussions": [
+    {
+      "id": "D_kwDO1",
+      "number": 4,
+      "title": "How should reputation travel?",
+      "body": "Keep the boundary explicit.",
+      "url": "https://github.com/trustless-ai/agent-ercs/discussions/4",
+      "createdAt": "2026-08-22T16:00:00Z",
+      "updatedAt": "2026-08-22T16:30:00Z",
+      "author": {"login": "erin"},
+      "comments": {
+        "nodes": [
+          {
+            "id": "DC_kwDO2",
+            "body": "Use source-specific attestations.",
+            "url": "https://github.com/trustless-ai/agent-ercs/discussions/4#discussioncomment-1",
+            "createdAt": "2026-08-22T16:10:00Z",
+            "updatedAt": "2026-08-22T16:10:00Z",
+            "author": {"login": "frank"}
+          }
+        ],
+        "pageInfo": {"hasNextPage": false, "endCursor": "comment-end"}
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trustless-ai.org/schemas/tawg/daily-result.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "window_id",
+    "window_start",
+    "window_end",
+    "telegram_text",
+    "citations",
+    "quiet_day"
+  ],
+  "properties": {
+    "schema_version": {"const": "tawg.daily-result.v1"},
+    "window_id": {"type": "string", "pattern": "^[A-Za-z0-9._:-]{1,128}$"},
+    "window_start": {"type": "string", "format": "date-time"},
+    "window_end": {"type": "string", "format": "date-time"},
+    "telegram_text": {"type": "string", "minLength": 1, "maxLength": 8000},
+    "citations": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+    },
+    "quiet_day": {"type": "boolean"}
+  }
+}

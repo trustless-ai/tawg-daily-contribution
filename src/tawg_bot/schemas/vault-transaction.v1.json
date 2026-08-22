@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trustless-ai.org/schemas/tawg/vault-transaction.v1.json",
+  "title": "TAWG vault transaction",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "operation_id", "writes"],
+  "properties": {
+    "schema_version": {"const": "tawg.vault-transaction.v1"},
+    "operation_id": {"type": "string", "pattern": "^[A-Za-z0-9._:-]{1,128}$"},
+    "writes": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 64,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "expected_sha256", "content", "citations"],
+        "properties": {
+          "path": {"type": "string", "minLength": 1, "maxLength": 512},
+          "expected_sha256": {
+            "anyOf": [
+              {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+              {"type": "null"}
+            ]
+          },
+          "content": {"type": "string", "maxLength": 1048576},
+          "citations": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {"type": "string", "minLength": 1, "maxLength": 256}
+          }
+        }
+      }
+    }
+  }
+}

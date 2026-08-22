@@ -1,0 +1,10 @@
+{
+  "schema_version": "tawg.daily-result.v1",
+  "window_id": "daily:2026-08-23T23:00:00Z",
+  "window_start": "2026-08-22T23:00:00Z",
+  "window_end": "2026-08-23T23:00:00Z",
+  "telegram_text": "🌍 TAWG Daily Catch-up — 2026-08-22 23:00 UTC → 2026-08-23 23:00 UTC\n\nGood momentum today—several pieces became easier for the group to build on.\n\nWhat moved\n- Alice clarified ERC-8004 validation behavior, making the next implementation pass more concrete. [tg:tawg:1]\n\nIdeas worth carrying forward\n- Keep the validation path verifiable while simplifying integration. [tg:tawg:1]\n\nOpen threads / help wanted\n- A second review of the edge cases would help turn the proposal into a shared decision. [tg:tawg:1]\n\nAppreciation\n- Thanks to Alice for writing down the validation concern clearly; that gives reviewers a precise place to engage. [tg:tawg:1]\n\nNext step\n- Pick one edge case, add evidence or a counterexample, and share it with the group. 🚀",
+  "citations": ["tg:tawg:1"],
+  "quiet_day": false
+}
+

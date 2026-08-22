@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools==80.9.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tawg-knowledge-bot"
+version = "0.1.0"
+description = "Source-cited knowledge and daily catch-up bot for the Trustless AI Working Group"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+  "httpx==0.28.1",
+  "jsonschema==4.25.1",
+  "pydantic==2.11.7",
+  "PyYAML==6.0.2",
+]
+
+[project.optional-dependencies]
+dev = [
+  "mypy==1.17.1",
+  "pip-tools==7.5.0",
+  "pytest==8.4.1",
+  "pytest-asyncio==1.1.0",
+  "pytest-cov==6.2.1",
+  "respx==0.22.0",
+  "ruff==0.12.9",
+  "types-PyYAML==6.0.12.20250809",
+]
+
+[project.scripts]
+tawg-bot = "tawg_bot.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+addopts = "--strict-config --strict-markers"
+pythonpath = ["src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["tawg_bot"]
+mypy_path = "src"
+plugins = ["pydantic.mypy"]

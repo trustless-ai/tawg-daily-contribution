@@ -1,0 +1,15 @@
+schema: tawg.bot-policy.v1
+daily:
+  due_hour_utc: 23
+  telegram_message_chars: 4096
+  max_messages: 2
+  max_emoji: 6
+  max_model_budget_usd: "2.00"
+  max_context_chars: 250000
+  required_sections:
+    - What moved
+    - Ideas worth carrying forward
+    - Open threads / help wanted
+    - Appreciation
+    - Next step
+

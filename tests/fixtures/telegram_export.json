@@ -1,0 +1,62 @@
+{
+  "name": "TAWG",
+  "type": "private_supergroup",
+  "id": 999999,
+  "messages": [
+    {
+      "id": 1,
+      "type": "message",
+      "date": "2026-08-22T23:05:00",
+      "date_unixtime": "1787439900",
+      "from": "Alice",
+      "from_id": "user123456",
+      "text": "Parser shipped. Contact alice@private.test"
+    },
+    {
+      "id": 2,
+      "type": "message",
+      "date": "2026-08-22T23:10:00",
+      "from": "Alice",
+      "from_id": "user654321",
+      "text": ["Review ", {"type": "link", "text": "ERC-8004", "href": "https://eips.ethereum.org/EIPS/eip-8004"}]
+    },
+    {
+      "id": 3,
+      "type": "message",
+      "date": "2026-08-22T23:15:00",
+      "edited": "2026-08-22T23:20:00",
+      "from": "Bob",
+      "from_id": "user777777",
+      "reply_to_message_id": 2,
+      "photo": "photos/photo_1.jpg",
+      "text": "Nice review"
+    },
+    {
+      "id": 4,
+      "type": "message",
+      "date": "2026-08-22T23:25:00",
+      "from": "Bob",
+      "from_id": "user777777",
+      "file": "video_files/demo.mp4",
+      "media_type": "video_file",
+      "text": ""
+    },
+    {
+      "id": 5,
+      "type": "service",
+      "date": "2026-08-22T23:30:00",
+      "actor": "Bob",
+      "actor_id": "user777777",
+      "action": "invite_members",
+      "text": ""
+    },
+    {
+      "id": 6,
+      "type": "message",
+      "date": "2026-08-22T23:35:00",
+      "from": "张三",
+      "from_id": "user888888",
+      "text": "我整理了新的讨论要点"
+    }
+  ]
+}

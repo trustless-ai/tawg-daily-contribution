@@ -1,0 +1,13 @@
+schema: tawg.privacy.v1
+public_wallet_allowlist:
+  - "0x2222222222222222222222222222222222222222"
+drop_numeric_id_keys:
+  - from_id
+  - user_id
+  - sender_id
+  - actor_id
+drop_path_keys:
+  - file_path
+  - local_path
+private_chat_types:
+  - private

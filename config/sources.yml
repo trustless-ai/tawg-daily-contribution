@@ -1,0 +1,15 @@
+schema: tawg.sources.v1
+telegram:
+  group_slug: tawg
+  poll_interval_seconds: 300
+  history_export_media: false
+github:
+  organization: trustless-ai
+  include_public_archived_repositories: true
+magicians:
+  base_url: https://ethereum-magicians.org
+  required_topic_urls:
+    - https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098
+    - https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902
+  highlighted_topic_urls: []
+  include_agent_ercs: true

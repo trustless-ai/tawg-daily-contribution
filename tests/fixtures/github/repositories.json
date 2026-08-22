@@ -1,0 +1,6 @@
+[
+  {"name": "agent-ercs", "full_name": "trustless-ai/agent-ercs", "private": false, "archived": false, "default_branch": "main"},
+  {"name": "archived-notes", "full_name": "trustless-ai/archived-notes", "private": false, "archived": true, "default_branch": "master"},
+  {"name": "future-repo", "full_name": "trustless-ai/future-repo", "private": false, "archived": false, "default_branch": "main"},
+  {"name": "private-lab", "full_name": "trustless-ai/private-lab", "private": true, "archived": false, "default_branch": "main"}
+]

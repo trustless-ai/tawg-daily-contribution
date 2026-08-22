@@ -1,0 +1,9 @@
+{
+  "posts": [],
+  "topics": [
+    {"id": 25098, "slug": "erc-8004-trustless-agents", "title": "ERC-8004: Trustless Agents"},
+    {"id": 27902, "slug": "erc-8183-agentic-commerce", "title": "ERC-8183: Agentic Commerce"},
+    {"id": 26010, "slug": "erc-8126-ai-agent-verification", "title": "ERC-8126: AI Agent Verification"},
+    {"id": 26011, "slug": "erc-8126-extension", "title": "ERC-8126 Extension: Verification Profiles"}
+  ]
+}

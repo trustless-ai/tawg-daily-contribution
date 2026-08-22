@@ -1,0 +1,18 @@
+{
+  "schema_version": "tawg.knowledge-result.v1",
+  "transaction": {
+    "schema_version": "tawg.vault-transaction.v1",
+    "operation_id": "knowledge-refresh-20260823t010000z",
+    "writes": [
+      {
+        "path": "knowledge/index.md",
+        "expected_sha256": null,
+        "content": "---\ntitle: TAWG Knowledge Index\ntype: index\ncreated: 2026-08-23\nupdated: 2026-08-23\nsource_ids:\n  - tg:tawg:1\n---\n\n# TAWG Knowledge Index\n",
+        "citations": ["tg:tawg:1"]
+      }
+    ]
+  },
+  "english_summaries": {
+    "tg:tawg:1": "Alice proposed a validation improvement for ERC-8004."
+  }
+}

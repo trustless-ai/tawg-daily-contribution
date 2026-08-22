@@ -1,0 +1,45 @@
+cases:
+  - name: public handles survive
+    input: "@alice reviewed ERC-8004 in commit a1b2c3d"
+    accepted: true
+    output: "@alice reviewed ERC-8004 in commit a1b2c3d"
+  - name: email is redacted
+    input: "contact alice at alice@private.test"
+    accepted: true
+    output: "contact alice at [REDACTED_EMAIL]"
+  - name: phone is redacted
+    input: "call +852 9123 4567"
+    accepted: true
+    output: "call [REDACTED_PHONE]"
+  - name: ip is redacted
+    input: "node 192.168.10.20 failed"
+    accepted: true
+    output: "node [REDACTED_IP] failed"
+  - name: local path is redacted
+    input: "opened /Users/alice/private/export.json"
+    accepted: true
+    output: "opened [REDACTED_PATH]"
+  - name: telegram token rejects record
+    input: "bot token 123456789:ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghi"
+    accepted: false
+    reason: secret_material
+  - name: api token with dash rejects record
+    input: "provider token sk-abcdefghijklmnopqrstuvwxyz123456"
+    accepted: false
+    reason: secret_material
+  - name: private key rejects record
+    input: "-----BEGIN PRIVATE KEY-----"
+    accepted: false
+    reason: secret_material
+  - name: seed phrase rejects record
+    input: "seed phrase: alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima"
+    accepted: false
+    reason: secret_material
+  - name: wallet defaults to redacted
+    input: "send to 0x1111111111111111111111111111111111111111"
+    accepted: true
+    output: "send to [REDACTED_WALLET]"
+  - name: allowlisted project wallet survives
+    input: "treasury 0x2222222222222222222222222222222222222222"
+    accepted: true
+    output: "treasury 0x2222222222222222222222222222222222222222"
