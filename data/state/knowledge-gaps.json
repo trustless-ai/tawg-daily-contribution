@@ -1,0 +1,211 @@
+[
+  {
+    "bucket": "test_or_example",
+    "erc_number": 8004,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8004:implementation:test_or_example:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "implementation",
+    "erc_number": 8183,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8183:implementation:implementation:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "test_or_example",
+    "erc_number": 8183,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8183:implementation:test_or_example:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "normative_spec",
+    "erc_number": 8263,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8263:implementation:normative_spec:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "normative_spec",
+    "erc_number": 8274,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8274:implementation:normative_spec:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "test_or_example",
+    "erc_number": 8274,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8274:implementation:test_or_example:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "normative_spec",
+    "erc_number": 8275,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8275:implementation:normative_spec:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "test_or_example",
+    "erc_number": 8275,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8275:implementation:test_or_example:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "normative_spec",
+    "erc_number": 8281,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8281:implementation:normative_spec:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "test_or_example",
+    "erc_number": 8281,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8281:implementation:test_or_example:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "normative_spec",
+    "erc_number": 8299,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8299:implementation:normative_spec:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "test_or_example",
+    "erc_number": 8299,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8299:implementation:test_or_example:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "normative_spec",
+    "erc_number": 8301,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8301:implementation:normative_spec:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "test_or_example",
+    "erc_number": 8301,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8301:implementation:test_or_example:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "normative_spec",
+    "erc_number": 8312,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8312:implementation:normative_spec:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "normative_spec",
+    "erc_number": 8323,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8323:implementation:normative_spec:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "test_or_example",
+    "erc_number": 8323,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8323:implementation:test_or_example:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "normative_spec",
+    "erc_number": 8354,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8354:implementation:normative_spec:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  },
+  {
+    "bucket": "test_or_example",
+    "erc_number": 8354,
+    "first_observed_at": "2026-08-23T06:55:28.909924Z",
+    "gap_key": "gap:erc-8354:implementation:test_or_example:unregistered",
+    "intent": "implementation",
+    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
+  }
+]

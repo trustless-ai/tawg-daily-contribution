@@ -1,0 +1,493 @@
+schema: tawg.sources.v2
+sources:
+- source_key: erc-8004-canonical
+  topics:
+  - erc-8004
+  kind: normative_spec
+  authority: canonical
+  canonical_url: https://eips.ethereum.org/EIPS/eip-8004
+  immutable_url: https://github.com/ethereum/ERCs/blob/503591a6e80e6e1affdd6403341e25269141f046/ERCS/erc-8004.md
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - eips.ethereum.org
+    - github.com
+    allowed_path_prefixes:
+    - /EIPS/eip-8004
+    - /ethereum/ERCs/blob/503591a6e80e6e1affdd6403341e25269141f046/ERCS/erc-8004.md
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: 6a8a97dc-1211d
+    content_sha256: 0e785851da48ad080dd188642770eeeb42a6b63d99d6a893cb162a2bdc508650
+    byte_count: 74013
+  status: active
+- source_key: erc-8183-canonical
+  topics:
+  - erc-8183
+  kind: normative_spec
+  authority: canonical
+  canonical_url: https://eips.ethereum.org/EIPS/eip-8183
+  immutable_url: https://github.com/ethereum/ERCs/blob/a078cab5cc8e9581c15f76c091ed96eed28f02f7/ERCS/erc-8183.md
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - eips.ethereum.org
+    - github.com
+    allowed_path_prefixes:
+    - /EIPS/eip-8183
+    - /ethereum/ERCs/blob/a078cab5cc8e9581c15f76c091ed96eed28f02f7/ERCS/erc-8183.md
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: 6a8a97db-1df40
+    content_sha256: 1ebe6f0a16933d3498011744cad9c88f07e12f52e31d397e4677ab6457a1590a
+    byte_count: 122688
+  status: active
+- source_key: agent-ercs-8004-readme
+  topics:
+  - erc-8004
+  kind: implementation
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/identity/ERC8004/README.md
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/contracts/identity/ERC8004/README.md
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"aa779f7a48b2ff777e79d591bc7268ff
+    content_sha256: 043567d198e04a66c177f710cf63d675204477ff98618cf378f952821c896657
+    byte_count: 251252
+  status: active
+- source_key: agent-ercs-8004-identity-interface
+  topics:
+  - erc-8004
+  kind: implementation
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/identity/ERC8004/IIdentityRegistry.sol
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/contracts/identity/ERC8004/IIdentityRegistry.sol
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"47f9e91e650d98fc287ef65e46dc853c
+    content_sha256: ab2ec9ef38e06a0e9afeef18b45905c51568f971abfa626b6c3f313746db3d8d
+    byte_count: 280483
+  status: active
+- source_key: agent-ercs-8004-reputation-interface
+  topics:
+  - erc-8004
+  kind: implementation
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/identity/ERC8004/IReputationRegistry.sol
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/contracts/identity/ERC8004/IReputationRegistry.sol
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"4d554ef2dd916a039c33419ab3dfa97d
+    content_sha256: eb7ca7e5d0641ae8b3f2ef05b0a816c675477d8d9d9573bb412a88acae7381ca
+    byte_count: 321838
+  status: active
+- source_key: agent-ercs-8004-validation-interface
+  topics:
+  - erc-8004
+  kind: implementation
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/identity/ERC8004/IValidationRegistry.sol
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/contracts/identity/ERC8004/IValidationRegistry.sol
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"a369cad89a7a9c6cffbb268c9e489fd8
+    content_sha256: f7c3324fe309e6b863c891a71b5cb0a93f0a8a22194e1058b3681a51b43f20b8
+    byte_count: 289097
+  status: active
+- source_key: magicians-8004
+  topics:
+  - erc-8004
+  kind: discussion
+  authority: community
+  canonical_url: https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098
+  immutable_url: null
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - ethereum-magicians.org
+    allowed_path_prefixes:
+    - /t/erc-8004-trustless-agents/25098
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+    - application/json
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: Thu, 28 Aug 2025 18:15:01 GMT
+    content_sha256: d82faa2c700b69751f5e16813e8721bcedc7e7d925776a64a1e1cbd6f5bcbea3
+    byte_count: 63981
+  status: active
+- source_key: magicians-8183
+  topics:
+  - erc-8183
+  kind: discussion
+  authority: community
+  canonical_url: https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902
+  immutable_url: null
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - ethereum-magicians.org
+    allowed_path_prefixes:
+    - /t/erc-8183-agentic-commerce/27902
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+    - application/json
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: Wed, 11 Mar 2026 07:48:34 GMT
+    content_sha256: 59412419f40f167fc26aa23d3f213fb46c1cb8cc46d4d1f39a109bdf56470f37
+    byte_count: 66271
+  status: active
+- source_key: agent-ercs-8263-implementation
+  topics:
+  - erc-8263
+  kind: implementation
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/anchor/ERC8263/README.md
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/contracts/anchor/ERC8263/README.md
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"789e82dcb879e793102d860981abe5b7
+    content_sha256: 115c2730cff98ebfb478f46cb5ceb8789a4c514ed5093fdce5987c701391be49
+    byte_count: 269884
+  status: active
+- source_key: agent-ercs-8263-tests
+  topics:
+  - erc-8263
+  kind: test
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/test/anchor/ERC8263/IOnChainProof.t.sol
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/test/anchor/ERC8263/IOnChainProof.t.sol
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"d02c0c07801942c31d9bb60205162eaf
+    content_sha256: 90896958e18a5c4e882893ad27e309d1997edbc8ae37ddfcef295d9e0bd8279f
+    byte_count: 283133
+  status: active
+- source_key: agent-ercs-8274-implementation
+  topics:
+  - erc-8274
+  kind: implementation
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/verify/ERC8274/README.md
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/contracts/verify/ERC8274/README.md
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"ce82ec576418f08f6c2d788008928d35
+    content_sha256: 8e1feeb632a41b948d1e1180ee89bcb7d11dc0f554b5103afe7a10ab737f6a10
+    byte_count: 250402
+  status: active
+- source_key: agent-ercs-8275-implementation
+  topics:
+  - erc-8275
+  kind: implementation
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/reputation/ERC8275/README.md
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/contracts/reputation/ERC8275/README.md
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"987ef882f919389f576d17a9935e96bd
+    content_sha256: e4366373bcb0130e1a31bd4f7c2ebad6b50500f4ec8d52ba846b68758d28c95c
+    byte_count: 270001
+  status: active
+- source_key: agent-ercs-8281-implementation
+  topics:
+  - erc-8281
+  kind: implementation
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/verify/ERC8281/README.md
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/contracts/verify/ERC8281/README.md
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"f5b52032db5473ed3ea434b0ae454978
+    content_sha256: 92eccc6c8797e38e02d2e6de8e4a404fe1a6abceab64b25dc5419a767e5398c5
+    byte_count: 255899
+  status: active
+- source_key: agent-ercs-8299-implementation
+  topics:
+  - erc-8299
+  kind: implementation
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/verify/ERC8299/README.md
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/contracts/verify/ERC8299/README.md
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"a3decb0bc374a096d62a58e230a57cca
+    content_sha256: 2b152a4b26571cde9f0a643cd9515ac4facbdb8f5bfee30c6350e3dc1a59c880
+    byte_count: 255957
+  status: active
+- source_key: agent-ercs-8301-implementation
+  topics:
+  - erc-8301
+  kind: implementation
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/execution/ERC8301/README.md
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/contracts/execution/ERC8301/README.md
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"c8f9cbc77137176dab8fb65369af9978
+    content_sha256: b188286d3f548d640e1c3a409e2a4d3d77d031e2cb03822eb7e5006766c26f99
+    byte_count: 252563
+  status: active
+- source_key: agent-ercs-8312-implementation
+  topics:
+  - erc-8312
+  kind: implementation
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/metering/ERC8312/README.md
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/contracts/metering/ERC8312/README.md
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"b03844326d4ce5651095ba41958e4d1c
+    content_sha256: f729ccb497cb42850ca42d96a0ec4ee6aa663dacd6f3d543d3234ca90cfbaa8d
+    byte_count: 273038
+  status: active
+- source_key: agent-ercs-8312-tests
+  topics:
+  - erc-8312
+  kind: test
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/test/metering/ERC8312/InterfaceIds.t.sol
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/test/metering/ERC8312/InterfaceIds.t.sol
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"cf2b5cc0db7d338f17a263479540af04
+    content_sha256: 282c61e5cc48f94799f9800da5fb8831f4dc54ec00c5f44c54cff16a0177d6dd
+    byte_count: 245537
+  status: active
+- source_key: magicians-8312
+  topics:
+  - erc-8312
+  kind: discussion
+  authority: community
+  canonical_url: https://ethereum-magicians.org/t/erc-8312-bounded-agent-actions/28851
+  immutable_url: null
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - ethereum-magicians.org
+    allowed_path_prefixes:
+    - /t/erc-8312-bounded-agent-actions/28851
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+    - application/json
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: Wed, 24 Jun 2026 13:20:59 GMT
+    content_sha256: 47dab403db3bbf89a446438e7bcc7b49de14ada493c8f52268312c3f8548412f
+    byte_count: 99627
+  status: active
+- source_key: agent-ercs-8323-implementation
+  topics:
+  - erc-8323
+  kind: implementation
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/identity/ERC8323/README.md
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/contracts/identity/ERC8323/README.md
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"15b7e44667a6cad4489a969e08dfeb6e
+    content_sha256: ebfd074fc6165c0e13d30e7079b9ffd0974dd47fe53b536a700cb82c73ac0539
+    byte_count: 259004
+  status: active
+- source_key: magicians-8323
+  topics:
+  - erc-8323
+  kind: discussion
+  authority: community
+  canonical_url: https://ethereum-magicians.org/t/erc-8323-source-token-agent-binding-for-erc-8004/28920
+  immutable_url: null
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - ethereum-magicians.org
+    allowed_path_prefixes:
+    - /t/erc-8323-source-token-agent-binding-for-erc-8004/28920
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+    - application/json
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: Thu, 06 Aug 2026 00:28:58 GMT
+    content_sha256: c7dec61768e7be532d5d51f90ffae187520aa065064663e2a3ce273201574236
+    byte_count: 24635
+  status: active
+- source_key: agent-ercs-8354-implementation
+  topics:
+  - erc-8354
+  kind: implementation
+  authority: official_org
+  canonical_url: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/verify/ERC8354/README.md
+  immutable_url: https://github.com/trustless-ai/agent-ercs/blob/00605871ff33e80ff21804e5d1cd1ba5fa1c2d68/contracts/verify/ERC8354/README.md
+  fetch_policy:
+    policy: public-text
+    allowed_hosts:
+    - github.com
+    allowed_path_prefixes:
+    - /trustless-ai/agent-ercs/blob
+    max_bytes: 1000000
+    mime_types:
+    - text/html
+    - text/plain
+  last_observed:
+    checked_at: '2026-08-23T06:55:28.909924Z'
+    version: W/"c22a2e22f40a2dfbc8b380a4ece1468c
+    content_sha256: f015359606eb820793112a9ddbb45a062d4e932b29e256dcf6e81c938dc6ae43
+    byte_count: 260032
+  status: active

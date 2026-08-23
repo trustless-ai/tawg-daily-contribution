@@ -1,4 +1,17 @@
 {
-  "schema": "tawg.claim-ledger.v1",
-  "entries": {}
+  "schema": "tawg.claim-ledger.v2",
+  "entries": {
+    "erc-8004-three-registry-contract": {"claim_kind": "normative", "state": "accepted", "risk": "ordinary", "source_keys": ["erc-8004-canonical"], "assessed_at": "2026-08-23T06:55:28.909924Z"},
+    "erc-8004-org-interfaces": {"claim_kind": "implementation", "state": "accepted", "risk": "ordinary", "source_keys": ["agent-ercs-8004-readme", "agent-ercs-8004-identity-interface", "agent-ercs-8004-reputation-interface", "agent-ercs-8004-validation-interface"], "assessed_at": "2026-08-23T06:55:28.909924Z"},
+    "erc-8183-job-lifecycle": {"claim_kind": "normative", "state": "accepted", "risk": "ordinary", "source_keys": ["erc-8183-canonical"], "assessed_at": "2026-08-23T06:55:28.909924Z"},
+    "erc-8263-org-implementation": {"claim_kind": "implementation", "state": "accepted", "risk": "ordinary", "source_keys": ["agent-ercs-8263-implementation", "agent-ercs-8263-tests"], "assessed_at": "2026-08-23T06:55:28.909924Z"},
+    "erc-8274-org-implementation": {"claim_kind": "implementation", "state": "accepted", "risk": "ordinary", "source_keys": ["agent-ercs-8274-implementation"], "assessed_at": "2026-08-23T06:55:28.909924Z"},
+    "erc-8275-org-implementation": {"claim_kind": "implementation", "state": "accepted", "risk": "ordinary", "source_keys": ["agent-ercs-8275-implementation"], "assessed_at": "2026-08-23T06:55:28.909924Z"},
+    "erc-8281-org-implementation": {"claim_kind": "implementation", "state": "accepted", "risk": "ordinary", "source_keys": ["agent-ercs-8281-implementation"], "assessed_at": "2026-08-23T06:55:28.909924Z"},
+    "erc-8299-org-implementation": {"claim_kind": "implementation", "state": "accepted", "risk": "ordinary", "source_keys": ["agent-ercs-8299-implementation"], "assessed_at": "2026-08-23T06:55:28.909924Z"},
+    "erc-8301-org-implementation": {"claim_kind": "implementation", "state": "accepted", "risk": "ordinary", "source_keys": ["agent-ercs-8301-implementation"], "assessed_at": "2026-08-23T06:55:28.909924Z"},
+    "erc-8312-org-implementation": {"claim_kind": "implementation", "state": "accepted", "risk": "ordinary", "source_keys": ["agent-ercs-8312-implementation", "agent-ercs-8312-tests"], "assessed_at": "2026-08-23T06:55:28.909924Z"},
+    "erc-8323-org-implementation": {"claim_kind": "implementation", "state": "accepted", "risk": "ordinary", "source_keys": ["agent-ercs-8323-implementation"], "assessed_at": "2026-08-23T06:55:28.909924Z"},
+    "erc-8354-org-implementation": {"claim_kind": "implementation", "state": "accepted", "risk": "ordinary", "source_keys": ["agent-ercs-8354-implementation"], "assessed_at": "2026-08-23T06:55:28.909924Z"}
+  }
 }

@@ -1,3 +1,114 @@
+people:
+  baby-blue-viper:
+    display_names:
+    - Baby Blue Viper
+    handles:
+      github:
+      - babyblueviper1
+      magicians:
+      - babyblueviper1
+  damon-zwicker:
+    display_names:
+    - Damon Zwicker
+    handles:
+      magicians:
+      - damonzwicker
+  j:
+    display_names:
+    - J
+    handles: {}
+  jimmy-shi:
+    display_names:
+    - Jimmy Shi
+    handles:
+      github:
+      - jimmyshi22
+      magicians:
+      - jimmyshi22
+  jinx-thepoktopus:
+    display_names:
+    - Jinx | @thepoktopus
+    handles: {}
+  m-blockbird:
+    display_names:
+    - M @Blockbird
+    handles:
+      magicians:
+      - blockbird
+  merlini:
+    display_names:
+    - Merlini
+    handles:
+      github:
+      - tmerlini
+      magicians:
+      - tmerlini
+  pavlo:
+    display_names:
+    - Pavlo
+    handles:
+      github:
+      - pipavlo82
+      magicians:
+      - pipavlo82
+  petchevere:
+    display_names:
+    - Petchevere
+    handles: {}
+  ramiro:
+    display_names:
+    - Ramiro
+    handles: {}
+  raul-thoughtproof:
+    display_names:
+    - Raul ThoughtProof
+    handles:
+      github:
+      - thoughtproof
+      magicians:
+      - thoughtproof
+  tracie:
+    display_names:
+    - Tracie
+    handles:
+      magicians:
+      - traciecmyers
+  trusty:
+    display_names:
+    - Trusty
+    handles: {}
+  vw:
+    display_names:
+    - VW
+    handles:
+      github:
+      - truthanchor-ai
+      magicians:
+      - truthanchor-ai
+      - vincentwu
+  wiggle-giggle:
+    display_names:
+    - Wiggle Giggle
+    handles: {}
+  zexo:
+    display_names:
+    - Zexo
+    handles:
+      github:
+      - zexoverz
+      magicians:
+      - zexoverz
+  zidan:
+    display_names:
+    - Zidan
+    handles:
+      github:
+      - mzf11125
+      magicians:
+      - mzf11125
+  繁星之上:
+    display_names:
+    - 繁星之上
+    handles: {}
 schema: tawg.aliases.v1
 scope: tawg-only
-people: {}
