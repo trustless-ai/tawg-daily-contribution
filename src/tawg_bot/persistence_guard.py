@@ -102,6 +102,7 @@ class PersistenceGuard:
                 raise PersistenceRejected from None
             for value, allow_short_quote in _semantic_strings(relative_path, text, expected):
                 if self._contains_external_excerpt(value, allow_short_quote):
+                    _debug_rejection(relative_path, allow_short_quote, self._external_texts, value)
                     raise PersistenceRejected
 
     def _contains_external_excerpt(self, payload: str, allow_short_quote: bool) -> bool:
@@ -118,6 +119,38 @@ class PersistenceGuard:
             if _shares_window(source, payload, minimum):
                 return True
         return False
+
+
+def _longest_shared(source: str, payload: str, minimum: int) -> int:
+    source_bytes = source.encode("utf-8")
+    payload_bytes = payload.encode("utf-8")
+    if len(source_bytes) < minimum or len(payload_bytes) < minimum:
+        return 0
+    lo, hi, best = minimum, min(len(source_bytes), len(payload_bytes)), 0
+    while lo <= hi:
+        mid = (lo + hi) // 2
+        if _shares_window_bytes(source_bytes, payload_bytes, mid):
+            best = mid
+            lo = mid + 1
+        else:
+            hi = mid - 1
+    return best
+
+
+def _shares_window_bytes(source_bytes: bytes, payload_bytes: bytes, width: int) -> bool:
+    payload_hashes = _rolling_hashes(payload_bytes, width)
+    return any(value in payload_hashes for value in _rolling_hashes(source_bytes, width))
+
+
+def _debug_rejection(path: str, allow_short_quote: bool, sources: tuple[str, ...], payload: str) -> None:
+    try:
+        minimum = 96 if allow_short_quote else 16
+        best = max((_longest_shared(s, payload, minimum) for s in sources), default=0)
+        import sys
+        print(f"PERSISTENCE-DEBUG path={path} allow_short={allow_short_quote} longest_shared={best}", file=sys.stderr)
+    except Exception:
+        import sys
+        print(f"PERSISTENCE-DEBUG path={path} allow_short={allow_short_quote} longest_shared=ERR", file=sys.stderr)
 
 
 def _normalize(value: str) -> str:
