@@ -5,7 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from tawg_bot.cli import _parser
+from tawg_bot.cli import _parser, main
+from tawg_bot.daily import PreparedDaily
 from tawg_bot.models import LayerSuccess
 from tawg_bot.scheduler import Layer, Scheduler
 
@@ -26,16 +27,9 @@ class Pipeline:
         del now
         await self._event("telegram")
 
-    async def github_sync(self, now: datetime) -> None:
+    async def source_check(self, now: datetime) -> None:
         del now
-        await self._event("github")
-
-    async def magicians_sync(self, now: datetime) -> None:
-        del now
-        await self._event("magicians")
-
-    async def publish_sources(self) -> None:
-        await self._event("source_publish")
+        await self._event("source_check")
 
     async def knowledge_refresh(self, cutoff: datetime) -> None:
         del cutoff
@@ -109,9 +103,7 @@ async def test_every_tick_runs_l1_first_and_heavier_layer_includes_earlier_work(
     assert result.layer is Layer.L4
     assert pipeline.events == [
         "telegram",
-        "github",
-        "magicians",
-        "source_publish",
+        "source_check",
         "knowledge",
         "validate",
         "daily",
@@ -124,23 +116,21 @@ async def test_every_tick_runs_l1_first_and_heavier_layer_includes_earlier_work(
 async def test_failed_layer_keeps_old_success_state(tmp_path: Path) -> None:
     old = NOW - timedelta(days=2)
     initial = LayerSuccess(l1=old, l2=old, l3=old, l4=old)
-    pipeline = Pipeline(fail_at="github")
+    pipeline = Pipeline(fail_at="source_check")
     service = scheduler(tmp_path, pipeline, initial)
 
-    with pytest.raises(RuntimeError, match="github"):
+    with pytest.raises(RuntimeError, match="source_check"):
         await service.tick(NOW)
 
     assert service.load_success() == initial
-    assert pipeline.events == ["telegram", "github"]
+    assert pipeline.events == ["telegram", "source_check"]
 
 
 @pytest.mark.asyncio
 async def test_observe_only_keeps_daily_window_retryable(tmp_path: Path) -> None:
     old = NOW - timedelta(days=2)
     pipeline = Pipeline()
-    service = scheduler(
-        tmp_path, pipeline, LayerSuccess(l1=old, l2=old, l3=old, l4=old)
-    )
+    service = scheduler(tmp_path, pipeline, LayerSuccess(l1=old, l2=old, l3=old, l4=old))
 
     await service.tick(NOW, observe_only=True)
 
@@ -151,12 +141,40 @@ async def test_observe_only_keeps_daily_window_retryable(tmp_path: Path) -> None
 def test_cli_exposes_scheduled_and_manual_operator_commands() -> None:
     parser = _parser()
 
-    assert parser.parse_args(
-        ["tick", "--now", "2026-08-23T23:00:00Z", "--observe-only"]
-    ).command == "tick"
-    assert parser.parse_args(["backfill", "github"]).source == "github"
-    assert parser.parse_args(["backfill", "magicians"]).source == "magicians"
-    assert parser.parse_args(
-        ["daily-dry-run", "--window-end", "2026-08-23T23:00:00Z"]
-    ).command == "daily-dry-run"
+    assert (
+        parser.parse_args(["tick", "--now", "2026-08-23T23:00:00Z", "--observe-only"]).command
+        == "tick"
+    )
+    checked = parser.parse_args(["check-sources", "--erc", "8004", "--observe-only"])
+    assert checked.erc == 8004
+    assert checked.observe_only
+    refreshed = parser.parse_args(["refresh-knowledge", "--erc", "8183", "--dry-run"])
+    assert refreshed.erc == 8183
+    assert refreshed.dry_run
+    assert (
+        parser.parse_args(["daily-dry-run", "--window-end", "2026-08-23T23:00:00Z"]).command
+        == "daily-dry-run"
+    )
     assert parser.parse_args(["vault-lint"]).command == "vault-lint"
+
+
+def test_daily_dry_run_prints_the_prepared_message(capsys: pytest.CaptureFixture[str]) -> None:
+    class Runtime:
+        async def daily_dry_run(self, window_end: datetime) -> PreparedDaily:
+            assert window_end == datetime(2026, 8, 23, 23, tzinfo=UTC)
+            return PreparedDaily(
+                window_id="daily:2026-08-23T23:00:00Z",
+                telegram_text="Friendly current Daily",
+                messages=("Friendly current Daily",),
+                citations=(),
+                quiet_day=False,
+            )
+
+    assert (
+        main(
+            ["daily-dry-run", "--window-end", "2026-08-23T23:00:00Z"],
+            runtime=Runtime(),  # type: ignore[arg-type]
+        )
+        == 0
+    )
+    assert capsys.readouterr().out == "Friendly current Daily\n"

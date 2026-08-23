@@ -2,6 +2,8 @@ import json
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+import pytest
+
 from tawg_bot.vault import VaultLinter
 
 
@@ -84,3 +86,68 @@ def test_lint_reports_invalid_ledgers_and_stale_support(tmp_path: Path) -> None:
     (knowledge / "meta/claim-ledger.json").write_text("[]", encoding="utf-8")
     invalid = VaultLinter(tmp_path).lint(now=now)
     assert any(finding.category == "invalid_ledger" for finding in invalid.findings)
+
+
+def test_lint_accepts_v2_metadata_ledgers(tmp_path: Path) -> None:
+    seed_meta(tmp_path)
+    knowledge = tmp_path / "knowledge"
+    (knowledge / "index.md").write_text(note("Index", "Generated knowledge."), encoding="utf-8")
+    now = datetime(2026, 8, 23, 3, 0, tzinfo=UTC)
+    source = {
+        "source_kind": "normative_spec",
+        "authority": "canonical",
+        "canonical_url": "https://eips.ethereum.org/EIPS/eip-8004",
+        "observed_version": "v1",
+        "observed_sha256": "0" * 64,
+        "observed_at": now.isoformat(),
+        "independence_key": "eips.ethereum.org",
+        "active": True,
+    }
+    (knowledge / "meta/source-ledger.json").write_text(
+        json.dumps(
+            {
+                "schema": "tawg.source-ledger.v2",
+                "entries": {"erc-8004-canonical": source},
+            }
+        ),
+        encoding="utf-8",
+    )
+    claim = {
+        "claim_kind": "normative",
+        "state": "accepted",
+        "risk": "ordinary",
+        "source_keys": ["erc-8004-canonical"],
+        "assessed_at": now.isoformat(),
+    }
+    (knowledge / "meta/claim-ledger.json").write_text(
+        json.dumps(
+            {
+                "schema": "tawg.claim-ledger.v2",
+                "entries": {"erc-8004-interface": claim},
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    report = VaultLinter(tmp_path).lint(now=now)
+
+    assert not [finding for finding in report.findings if finding.severity == "error"]
+
+
+@pytest.mark.parametrize("legacy_directory", ["people", "People", "PEOPLE"])
+def test_lint_rejects_legacy_people_directory(tmp_path: Path, legacy_directory: str) -> None:
+    seed_meta(tmp_path)
+    knowledge = tmp_path / "knowledge"
+    (knowledge / "index.md").write_text(note("Index", "[[people/alice]]"), encoding="utf-8")
+    legacy = knowledge / legacy_directory
+    legacy.mkdir()
+    (legacy / "alice.md").write_text(note("Alice", "Public contribution."), encoding="utf-8")
+
+    report = VaultLinter(tmp_path).lint()
+
+    assert any(
+        finding.category == "legacy_acknowledgement_path"
+        and finding.path == f"knowledge/{legacy_directory}/alice.md"
+        and finding.severity == "error"
+        for finding in report.findings
+    )

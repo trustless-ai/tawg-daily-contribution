@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal, Protocol
@@ -14,27 +14,23 @@ import yaml
 from pydantic import field_validator
 
 from tawg_bot.context import ContextInputs, ContextPackBuilder, ContextRejected
-from tawg_bot.models import DeliveryAttempt, DeliveryStatus, SourceRecord, StrictModel
+from tawg_bot.daily_evidence import DailyEvidence
+from tawg_bot.models import DeliveryAttempt, DeliveryStatus, StrictModel
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
-from tawg_bot.query import SourceQuery
 from tawg_bot.retrieval import VaultRetriever
+from tawg_bot.telegram_text import TelegramTextSplitError, split_telegram_text
 
 _NON_ENGLISH_SCRIPT = re.compile(
     r"[\u3040-\u30ff\u3400-\u9fff\u0400-\u052f\u0600-\u06ff\u0900-\u097f]"
 )
-_EMOJI = re.compile(
-    "["
-    "\U0001F1E6-\U0001F1FF"
-    "\U0001F300-\U0001FAFF"
-    "\u2600-\u27BF"
-    "]"
-)
+_EMOJI = re.compile("[\U0001f1e6-\U0001f1ff\U0001f300-\U0001faff\u2600-\u27bf]")
 _DISALLOWED_TONE = re.compile(
     r"\b(rank(?:ed|ing|s)?|score[sd]?|leaderboard|mvp|hero|I did|my work|"
     r"earned reward|reward eligibility|payout|on-chain credit)\b",
     re.IGNORECASE,
 )
 _CITATION = re.compile(r"\[([^\[\]\n]+)\]")
+_TRAILING_CITATIONS = re.compile(r"(?:\s+\[[^\[\]\n]+\])+$")
 
 
 class DailyRejected(ValueError):
@@ -67,15 +63,13 @@ class DailyWindow:
 @dataclass(frozen=True, slots=True)
 class DailyReadiness:
     telegram_synced_at: datetime
-    github_synced_at: datetime
-    magicians_synced_at: datetime
+    live_evidence_collected_at: datetime
     knowledge_refreshed_at: datetime
 
     def assert_fresh_for(self, window: DailyWindow) -> None:
         for name, value in (
             ("Telegram", self.telegram_synced_at),
-            ("GitHub", self.github_synced_at),
-            ("Magicians", self.magicians_synced_at),
+            ("live evidence", self.live_evidence_collected_at),
             ("knowledge", self.knowledge_refreshed_at),
         ):
             _require_utc(value, f"{name} readiness")
@@ -126,7 +120,7 @@ class DailyService:
         root: Path,
         *,
         ai: DailyAi,
-        timeout_seconds: float = 300,
+        timeout_seconds: float = 600,
     ) -> None:
         self.root = root.resolve()
         self.ai = ai
@@ -135,13 +129,18 @@ class DailyService:
         self.policy = self._load_policy()
 
     async def prepare(
-        self, window: DailyWindow, *, readiness: DailyReadiness
+        self,
+        window: DailyWindow,
+        *,
+        readiness: DailyReadiness,
+        evidence: tuple[DailyEvidence, ...],
     ) -> PreparedDaily | None:
         if self._already_delivered(window.window_id):
             return None
         readiness.assert_fresh_for(window)
-        window_records = self._window_records(window)
-        context = self._context(window, window_records)
+        if any(not window.contains(item.updated_at) for item in evidence):
+            raise DailyRejected("Daily evidence falls outside the fixed UTC window")
+        context = self._context(window, evidence)
         operation_id = window.window_id.replace(":", "-")
         raw = await self.ai.run(
             job_type="daily",
@@ -150,7 +149,7 @@ class DailyService:
             max_budget_usd=str(self.policy["max_model_budget_usd"]),
             timeout_seconds=self.timeout_seconds,
         )
-        result = self._validate_result(raw, window, window_records)
+        result = self._validate_result(raw, window, evidence)
         messages = self._split(result.telegram_text)
         return PreparedDaily(
             window_id=result.window_id,
@@ -160,18 +159,14 @@ class DailyService:
             quiet_day=result.quiet_day,
         )
 
-    def _window_records(self, window: DailyWindow) -> list[SourceRecord]:
-        records = [
-            record
-            for record in SourceQuery(self.root).records()
-            if window.contains(record.updated_at)
-        ]
-        records.sort(key=lambda record: (record.updated_at, record.record_id))
-        return records
-
-    def _context(self, window: DailyWindow, records: list[SourceRecord]) -> str:
-        evidence = [record.model_dump(mode="json") for record in records]
-        query = " ".join(record.text_original for record in records)[:8000]
+    def _context(self, window: DailyWindow, evidence: tuple[DailyEvidence, ...]) -> str:
+        evidence_payload = []
+        for item in evidence:
+            payload = asdict(item)
+            payload["created_at"] = item.created_at.isoformat()
+            payload["updated_at"] = item.updated_at.isoformat()
+            evidence_payload.append(payload)
+        query = " ".join(item.text for item in evidence)[:8000]
         if not query:
             query = "open threads help wanted Trustless AI"
         current_context = [
@@ -192,20 +187,48 @@ class DailyService:
                 "window_id": window.window_id,
                 "window_start": window.start.isoformat(),
                 "window_end": window.end.isoformat(),
-                "window_evidence": evidence,
-                "quiet_day_required": not records,
+                "required_title": (
+                    "TAWG Daily Catch-up — "
+                    f"{window.start.strftime('%Y-%m-%d %H:%M')} UTC → "
+                    f"{window.end.strftime('%Y-%m-%d %H:%M')} UTC"
+                ),
+                "output_contract": {
+                    "required_sections": list(self.policy["required_sections"]),
+                    "forbidden_terms": [
+                        "rank",
+                        "ranking",
+                        "score",
+                        "leaderboard",
+                        "MVP",
+                        "hero",
+                        "I did",
+                        "my work",
+                        "earned reward",
+                        "reward eligibility",
+                        "payout",
+                        "on-chain credit",
+                    ],
+                    "max_emoji": self.policy["max_emoji"],
+                    "citation_rule": (
+                        "Every factual bullet except Next step ends with [citation]."
+                    ),
+                },
+                "window_evidence": evidence_payload,
+                "quiet_day_required": not evidence,
             },
             reply_chain=[],
             recent_telegram=[
-                item for item in evidence if item["source_type"] == "telegram_message"
+                item for item in evidence_payload if item["source_kind"] == "telegram"
             ],
             retrieved=current_context,
             citations=[
                 {
-                    "record_id": record.record_id,
-                    "source_locator": record.source_locator,
+                    "evidence_id": item.evidence_id,
+                    "source_kind": item.source_kind,
+                    "source_url": item.source_url,
+                    "citation": item.citation,
                 }
-                for record in records
+                for item in evidence
             ],
             aliases=self._yaml_mapping(self.root / "knowledge/meta/aliases.yml"),
             job_state={"window_id": window.window_id, "status": "preparing"},
@@ -216,13 +239,18 @@ class DailyService:
                 "max_messages": self.policy["max_messages"],
                 "max_emoji": self.policy["max_emoji"],
             },
+            citation_allowlist=[item.citation for item in evidence],
         )
         try:
-            return ContextPackBuilder(self.privacy).build(
-                inputs,
-                max_chars=int(self.policy["max_context_chars"]),
-                max_recent_telegram=len(records),
-            ).text
+            return (
+                ContextPackBuilder(self.privacy)
+                .build(
+                    inputs,
+                    max_chars=int(self.policy["max_context_chars"]),
+                    max_recent_telegram=len(evidence),
+                )
+                .text
+            )
         except ContextRejected as error:
             raise DailyRejected(str(error)) from None
 
@@ -230,7 +258,7 @@ class DailyService:
         self,
         raw: Mapping[str, Any],
         window: DailyWindow,
-        records: list[SourceRecord],
+        evidence: tuple[DailyEvidence, ...],
     ) -> _DailyResult:
         try:
             result = _DailyResult.model_validate(raw)
@@ -255,32 +283,45 @@ class DailyService:
         tone_violation = _DISALLOWED_TONE.search(result.telegram_text)
         if tone_violation:
             raise DailyRejected("Daily output contains ranking or persona language")
-        title_window = (
+        required_title = (
+            "TAWG Daily Catch-up — "
             f"{window.start.strftime('%Y-%m-%d %H:%M')} UTC → "
             f"{window.end.strftime('%Y-%m-%d %H:%M')} UTC"
         )
-        first_line = result.telegram_text.splitlines()[0]
-        if "TAWG Daily Catch-up" not in first_line or title_window not in first_line:
-            raise DailyRejected("Daily title must contain the exact UTC window")
+        lines = result.telegram_text.splitlines()
+        first_line = lines[0]
+        if first_line != required_title:
+            emoji = _EMOJI.match(first_line)
+            if emoji is None or first_line[emoji.end() :].lstrip() != required_title:
+                raise DailyRejected("Daily title must match the exact UTC window")
+        section_indices: list[int] = []
         for section in self.policy["required_sections"]:
-            if section not in result.telegram_text:
-                raise DailyRejected(f"Daily output omits required section: {section}")
+            indices = [index for index, line in enumerate(lines) if line == section]
+            if len(indices) != 1:
+                raise DailyRejected(f"Daily output has an invalid required section: {section}")
+            section_indices.append(indices[0])
+        if section_indices != sorted(section_indices):
+            raise DailyRejected("Daily output has required sections out of order")
 
-        known_ids = {record.record_id for record in SourceQuery(self.root).records()}
-        window_ids = {record.record_id for record in records}
+        allowed_citations = {item.citation for item in evidence}
         if len(result.citations) != len(set(result.citations)):
             raise DailyRejected("Daily citation list contains duplicates")
-        if not set(result.citations).issubset(known_ids):
+        if not set(result.citations).issubset(allowed_citations):
             raise DailyRejected("Daily citation references unknown evidence")
-        if records and (result.quiet_day or not set(result.citations).intersection(window_ids)):
+        text_citations = set(_CITATION.findall(result.telegram_text))
+        if not text_citations.issubset(set(result.citations)):
+            raise DailyRejected("Daily text contains an unknown citation")
+        if evidence and (
+            result.quiet_day or not set(result.citations).intersection(allowed_citations)
+        ):
             raise DailyRejected("active Daily lacks a citation from its fixed window")
-        if not records and not result.quiet_day:
+        if not evidence and not result.quiet_day:
             raise DailyRejected("quiet Daily invents source-backed progress")
         if result.quiet_day and "No source-backed progress landed" not in result.telegram_text:
             raise DailyRejected("quiet Daily must state that no source-backed progress landed")
         if not result.quiet_day:
             current_section = ""
-            for line in result.telegram_text.splitlines():
+            for line in lines:
                 if line in self.policy["required_sections"]:
                     current_section = line
                     continue
@@ -288,27 +329,28 @@ class DailyService:
                     continue
                 if current_section == "Next step":
                     continue
-                line_citations = set(_CITATION.findall(line))
-                if not line_citations or not line_citations.issubset(result.citations):
+                trailing = _TRAILING_CITATIONS.search(line)
+                line_citations = set(_CITATION.findall(trailing.group())) if trailing else set()
+                all_line_citations = set(_CITATION.findall(line))
+                if (
+                    not line_citations
+                    or not line_citations.issubset(result.citations)
+                    or not all_line_citations.issubset(result.citations)
+                ):
                     raise DailyRejected("Daily factual bullet lacks a valid citation")
         return result
 
     def _split(self, text: str) -> tuple[str, ...]:
-        limit = int(self.policy["telegram_message_chars"])
-        if len(text) <= limit:
-            return (text,)
-        split_at = text.rfind("\n\n", 0, limit + 1)
-        if split_at < limit // 2:
-            split_at = text.rfind("\n", 0, limit + 1)
-        if split_at < limit // 2:
-            split_at = limit
-        messages = (text[:split_at].rstrip(), text[split_at:].lstrip())
-        if (
-            len(messages) > int(self.policy["max_messages"])
-            or any(not message or len(message) > limit for message in messages)
-        ):
-            raise DailyRejected("Daily cannot fit in at most two Telegram messages")
-        return messages
+        try:
+            return split_telegram_text(
+                text,
+                limit=int(self.policy["telegram_message_chars"]),
+                max_messages=int(self.policy["max_messages"]),
+            )
+        except TelegramTextSplitError:
+            raise DailyRejected("Daily cannot fit in at most two Telegram messages") from None
+        except ValueError as error:
+            raise DailyRejected("invalid Daily Telegram split policy") from error
 
     def _already_delivered(self, window_id: str) -> bool:
         path = self.root / "data/state/delivery-state.json"

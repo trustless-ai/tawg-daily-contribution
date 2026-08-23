@@ -10,6 +10,7 @@ from tawg_bot.models import SourceRecord, SourceType
 from tawg_bot.storage import JsonlCollection
 from tawg_bot.vault_transaction import (
     ApprovalMismatch,
+    CitationScope,
     TransactionRejected,
     VaultTransaction,
     VaultTransactionEngine,
@@ -114,6 +115,9 @@ def test_inspect_hash_binds_root_transaction_and_expected_hash_then_apply(tmp_pa
         "bot-skill/SKILL.md",
         "data/telegram/messages.jsonl",
         "knowledge/.vault-meta/index.json",
+        "knowledge/people/alice.md",
+        "knowledge/People/alice.md",
+        "knowledge/PEOPLE/alice.md",
     ],
 )
 def test_rejects_paths_outside_canonical_knowledge(tmp_path: Path, unsafe_path: str) -> None:
@@ -168,7 +172,7 @@ def test_rejects_broken_wikilinks_case_collisions_and_symlink_escape(tmp_path: P
 
     changes = [
         transaction("knowledge/new.md", None, page("New", "See [[missing]].")),
-        transaction("knowledge/people/alice.md", None, page("Alice", "Collision.")),
+        transaction("knowledge/PEOPLE/alice.md", None, page("Alice", "Collision.")),
         transaction("knowledge/link/escape.md", None, page("Escape", "No.")),
     ]
     for change in changes:
@@ -219,3 +223,50 @@ def test_transaction_json_schema_matches_model_contract() -> None:
 
     assert schema["properties"]["writes"]["maxItems"] == 64
     assert "expected_sha256" in schema["properties"]["writes"]["items"]["required"]
+
+
+def test_scoped_transaction_separates_source_keys_telegram_ids_and_urls(
+    tmp_path: Path,
+) -> None:
+    current = seed_project(tmp_path)
+    url = "https://eips.ethereum.org/EIPS/eip-8004"
+    updated = (
+        "---\n"
+        "title: ERC-8004\n"
+        "type: concept\n"
+        "created: 2026-08-23\n"
+        "updated: 2026-08-23\n"
+        "verified_at: 2026-08-23T02:00:00Z\n"
+        "source_keys:\n"
+        "  - erc-8004-canonical\n"
+        "telegram_record_ids:\n"
+        "  - tg:tawg:1\n"
+        "---\n\n"
+        f"# ERC-8004\n\n[Canonical specification]({url}).\n"
+    )
+    change = transaction(
+        "knowledge/erc-8004.md",
+        sha(current),
+        updated,
+        ["erc-8004-canonical", "tg:tawg:1", url],
+    )
+    engine = VaultTransactionEngine(
+        tmp_path,
+        citation_scope=CitationScope(
+            source_keys=frozenset({"erc-8004-canonical"}),
+            urls=frozenset({url}),
+        ),
+    )
+
+    assert engine.inspect(change).changed_paths == ("knowledge/erc-8004.md",)
+    bad = change.model_copy(
+        update={
+            "writes": [
+                change.writes[0].model_copy(
+                    update={"content": updated.replace(url, "https://example.com/fake")}
+                )
+            ]
+        }
+    )
+    with pytest.raises(TransactionRejected, match="unapproved source link"):
+        engine.inspect(bad)

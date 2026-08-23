@@ -90,14 +90,31 @@ async def test_splits_at_most_two_messages_and_replies_only_on_first(tmp_path: P
 
 
 @pytest.mark.asyncio
+async def test_split_keeps_both_messages_within_limit_when_early_paragraph_is_too_short(
+    tmp_path: Path,
+) -> None:
+    seed(tmp_path)
+    api = Api()
+    text = "a" * 3_000 + "\n\n" + "b" * 900 + "\n" + "c" * 3_800
+
+    await DeliveryService(tmp_path, api=api, chat_id=-10077, checkpoint=Checkpoint()).deliver(
+        job_id="daily:long-natural-boundary",
+        text=text,
+        reply_to_message_id=None,
+        now=NOW,
+    )
+
+    assert len(api.calls) == 2
+    assert all(len(call[1]) <= 4096 for call in api.calls)
+
+
+@pytest.mark.asyncio
 async def test_privacy_is_rescanned_before_any_send(tmp_path: Path) -> None:
     seed(tmp_path)
     api = Api()
 
     with pytest.raises(DeliveryRejected, match="privacy"):
-        await DeliveryService(
-            tmp_path, api=api, chat_id=-10077, checkpoint=Checkpoint()
-        ).deliver(
+        await DeliveryService(tmp_path, api=api, chat_id=-10077, checkpoint=Checkpoint()).deliver(
             job_id="reply:tg:tawg:12",
             text="Contact private@example.com",
             reply_to_message_id=12,
@@ -112,12 +129,9 @@ async def test_rejects_text_that_cannot_fit_two_messages(tmp_path: Path) -> None
     seed(tmp_path)
 
     with pytest.raises(DeliveryRejected, match="two"):
-        await DeliveryService(
-            tmp_path, api=Api(), chat_id=-10077, checkpoint=Checkpoint()
-        ).deliver(
+        await DeliveryService(tmp_path, api=Api(), chat_id=-10077, checkpoint=Checkpoint()).deliver(
             job_id="oversized",
             text="x" * 8193,
             reply_to_message_id=None,
             now=NOW,
         )
-

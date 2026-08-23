@@ -11,6 +11,26 @@ cases:
     input: "call +852 9123 4567"
     accepted: true
     output: "call [REDACTED_PHONE]"
+  - name: standalone numeric phone is redacted
+    input: "85212345678"
+    accepted: true
+    output: "[REDACTED_PHONE]"
+  - name: unix timestamp survives
+    input: "block timestamp 1787441172"
+    accepted: true
+    output: "block timestamp 1787441172"
+  - name: public URL numeric identifier survives
+    input: "https://x.com/example/status/1234567890123456789"
+    accepted: true
+    output: "https://x.com/example/status/1234567890123456789"
+  - name: uint256 decimal word survives
+    input: "uint256 1234567890123456789012345678901234567890123456789012345678901234"
+    accepted: true
+    output: "uint256 1234567890123456789012345678901234567890123456789012345678901234"
+  - name: clock timestamp survives IPv6 detection
+    input: "updated at 04:12:20 UTC"
+    accepted: true
+    output: "updated at 04:12:20 UTC"
   - name: ip is redacted
     input: "node 192.168.10.20 failed"
     accepted: true

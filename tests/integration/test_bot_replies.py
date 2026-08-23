@@ -33,9 +33,7 @@ def _record(
     *,
     reply_to: str | None = None,
 ) -> SourceRecord:
-    relations = (
-        [Relation(relation_type="reply_to", target_record_id=reply_to)] if reply_to else []
-    )
+    relations = [Relation(relation_type="reply_to", target_record_id=reply_to)] if reply_to else []
     return SourceRecord.from_text(
         record_id=record_id,
         source_type=SourceType.TELEGRAM_MESSAGE,
@@ -53,7 +51,7 @@ def _record(
 def seed(root: Path, trigger_text: str) -> PendingBotJob:
     for relative in (
         "config/privacy.yml",
-        "src/tawg_bot/schemas/reply-result.v1.json",
+        "src/tawg_bot/schemas/reply-result.v2.json",
     ):
         target = root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -107,7 +105,7 @@ def seed(root: Path, trigger_text: str) -> PendingBotJob:
 
 def reply_result(*, chinese: bool) -> dict[str, Any]:
     return {
-        "schema_version": "tawg.reply-result.v1",
+        "schema_version": "tawg.reply-result.v2",
         "reply_text": (
             "目前重点是让验证路径可核验。 [tg:tawg:10]"
             if chinese
@@ -118,6 +116,8 @@ def reply_result(*, chinese: bool) -> dict[str, Any]:
             "The discussion is focused on a verifiable validation path." if chinese else None
         ),
         "citations": ["tg:tawg:10"],
+        "evidence_status": "verified",
+        "verification_gaps": [],
         "correction_transaction": None,
         "refusal": False,
     }
@@ -127,7 +127,7 @@ def reply_result(*, chinese: bool) -> dict[str, Any]:
 async def test_non_english_reply_uses_full_chain_nearby_context_and_english_recap(
     tmp_path: Path,
 ) -> None:
-    job = seed(tmp_path, "@bot 现在 ERC-8004 的重点是什么?")
+    job = seed(tmp_path, "@bot 现在 TAWG validation 的重点是什么?")
     ai = FakeAi(reply_result(chinese=True))
 
     prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
@@ -142,16 +142,14 @@ async def test_non_english_reply_uses_full_chain_nearby_context_and_english_reca
     assert prepared.reply_text.endswith(
         "English recap: The discussion is focused on a verifiable validation path."
     )
-    persisted = json.loads(
-        (tmp_path / "data/state/pending-bot-jobs.json").read_text()
-    )[0]
+    persisted = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())[0]
     assert persisted["status"] == "ready"
     assert persisted["prepared_reply_text"] == prepared.reply_text
 
 
 @pytest.mark.asyncio
 async def test_english_reply_has_no_duplicate_recap(tmp_path: Path) -> None:
-    job = seed(tmp_path, "@bot What is the ERC-8004 validation focus?")
+    job = seed(tmp_path, "@bot What is the TAWG validation focus?")
 
     prepared = await BotReplyService(
         tmp_path, ai=FakeAi(reply_result(chinese=False)), bot_username="bot"
@@ -178,7 +176,7 @@ async def test_out_of_scope_mention_is_refused_without_ai_call(tmp_path: Path) -
 async def test_failed_model_attempt_returns_job_to_retryable_pending_state(
     tmp_path: Path,
 ) -> None:
-    job = seed(tmp_path, "@bot What is the ERC-8004 validation focus?")
+    job = seed(tmp_path, "@bot What is the TAWG validation focus?")
 
     class FailingAi:
         async def run(self, **kwargs: Any) -> dict[str, Any]:
@@ -189,9 +187,7 @@ async def test_failed_model_attempt_returns_job_to_retryable_pending_state(
             job.job_id, now=NOW + timedelta(minutes=2)
         )
 
-    persisted = json.loads(
-        (tmp_path / "data/state/pending-bot-jobs.json").read_text()
-    )[0]
+    persisted = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())[0]
     assert persisted["status"] == "pending"
     assert persisted["attempts"] == 1
     assert persisted["safe_error_code"] == "reply_prepare_failed"

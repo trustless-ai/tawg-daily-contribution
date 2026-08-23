@@ -14,7 +14,12 @@ import yaml
 from pydantic import ValidationError
 
 from tawg_bot.aliases import AliasError, AliasRegistry, InvalidAliasScope
-from tawg_bot.ledger import ClaimAssessment, EvidenceLedger, InsufficientEvidence
+from tawg_bot.ledger import (
+    ClaimAssessment,
+    ClaimAssessmentV2,
+    EvidenceLedger,
+    InsufficientEvidence,
+)
 
 _WIKILINK = re.compile(r"!?\[\[([^\]]+)\]\]")
 _FENCED_CODE = re.compile(r"```.*?```|~~~.*?~~~", re.DOTALL)
@@ -91,6 +96,19 @@ class VaultLinter:
         page_types: dict[str, str | None] = {}
 
         for path, text in sorted(pages.items()):
+            relative = PurePosixPath(path)
+            if len(relative.parts) >= 2 and tuple(
+                part.casefold() for part in relative.parts[:2]
+            ) == ("knowledge", "people"):
+                findings.append(
+                    LintFinding(
+                        "legacy_acknowledgement_path",
+                        "error",
+                        path,
+                        None,
+                        "public member pages belong under knowledge/acknowledgements",
+                    )
+                )
             frontmatter, _ = parse_frontmatter(text)
             if frontmatter is None:
                 findings.append(
@@ -230,9 +248,7 @@ class VaultLinter:
         matches = page_names.get(key, [])
         return sorted(set(matches))
 
-    def _lint_ledgers(
-        self, files: Mapping[str, bytes], now: datetime
-    ) -> list[LintFinding]:
+    def _lint_ledgers(self, files: Mapping[str, bytes], now: datetime) -> list[LintFinding]:
         findings: list[LintFinding] = []
         if now.tzinfo is None or now.utcoffset() != UTC.utcoffset(now):
             return [
@@ -248,24 +264,25 @@ class VaultLinter:
         claim_path = "knowledge/meta/claim-ledger.json"
         try:
             source_raw = json.loads(files[source_path])
-            if (
-                not isinstance(source_raw, dict)
-                or source_raw.get("schema") != "tawg.source-ledger.v1"
-            ):
+            if not isinstance(source_raw, dict) or source_raw.get("schema") not in {
+                "tawg.source-ledger.v1",
+                "tawg.source-ledger.v2",
+            }:
                 raise ValueError("source ledger schema")
             entries = source_raw.get("entries")
             if not isinstance(entries, dict):
                 raise ValueError("source ledger entries")
-            evidence = EvidenceLedger.from_entries(entries)
+            evidence = EvidenceLedger.from_entries(entries, schema=source_raw["schema"])
         except (KeyError, ValueError, ValidationError, json.JSONDecodeError) as error:
-            findings.append(
-                LintFinding("invalid_ledger", "error", source_path, None, str(error))
-            )
+            findings.append(LintFinding("invalid_ledger", "error", source_path, None, str(error)))
             return findings
 
         try:
             claim_raw = json.loads(files[claim_path])
-            if not isinstance(claim_raw, dict) or claim_raw.get("schema") != "tawg.claim-ledger.v1":
+            if not isinstance(claim_raw, dict) or claim_raw.get("schema") not in {
+                "tawg.claim-ledger.v1",
+                "tawg.claim-ledger.v2",
+            }:
                 raise ValueError("claim ledger schema")
             claims = claim_raw.get("entries")
             if not isinstance(claims, dict):
@@ -277,7 +294,12 @@ class VaultLinter:
                 if embedded_id is not None and embedded_id != claim_id:
                     raise ValueError("claim ledger key does not match claim_id")
                 payload = {"claim_id": claim_id, **raw_claim}
-                claim = ClaimAssessment.model_validate(payload)
+                claim_model = (
+                    ClaimAssessment
+                    if claim_raw["schema"] == "tawg.claim-ledger.v1"
+                    else ClaimAssessmentV2
+                )
+                claim = claim_model.model_validate(payload)
                 current_claim = claim.model_copy(
                     update={"assessed_at": max(claim.assessed_at, now)}
                 )
@@ -292,7 +314,5 @@ class VaultLinter:
                         LintFinding("invalid_ledger", "error", claim_path, None, str(error))
                     )
         except (KeyError, ValueError, ValidationError, json.JSONDecodeError) as error:
-            findings.append(
-                LintFinding("invalid_ledger", "error", claim_path, None, str(error))
-            )
+            findings.append(LintFinding("invalid_ledger", "error", claim_path, None, str(error)))
         return findings

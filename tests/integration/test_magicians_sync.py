@@ -1,11 +1,17 @@
 import json
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
-from tawg_bot.magicians_source import MagiciansSource, TopicCandidate, TopicSeed
+from tawg_bot.magicians_source import (
+    MagiciansSource,
+    MagiciansSourceError,
+    TopicCandidate,
+    TopicSeed,
+)
 from tawg_bot.models import SourceCursors
+from tawg_bot.persistence_guard import PersistenceRejected
 from tawg_bot.privacy import PrivacyFilter
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
@@ -15,9 +21,7 @@ NOW = datetime(2026, 8, 23, 1, 0, tzinfo=UTC)
 
 class TopicClient:
     def __init__(self) -> None:
-        self.topic = json.loads(
-            (ROOT / "tests/fixtures/magicians/topic-25098.json").read_text()
-        )
+        self.topic = json.loads((ROOT / "tests/fixtures/magicians/topic-25098.json").read_text())
         self.posts = json.loads(
             (ROOT / "tests/fixtures/magicians/topic-25098-posts.json").read_text()
         )
@@ -30,9 +34,7 @@ class TopicClient:
             return self.topic
         if path == "/t/25098/posts.json":
             requested = set(query["post_ids[]"])
-            posts = [
-                post for post in self.posts["post_stream"]["posts"] if post["id"] in requested
-            ]
+            posts = [post for post in self.posts["post_stream"]["posts"] if post["id"] in requested]
             return {"post_stream": {"posts": posts}}
         raise AssertionError(f"candidate topic was recursively fetched: {path}")
 
@@ -90,7 +92,26 @@ async def test_edited_post_keeps_stable_id_and_changes_content() -> None:
 
 
 @pytest.mark.asyncio
-async def test_sync_batch_persists_candidates_and_replays_without_churn(tmp_path: Path) -> None:
+async def test_topic_sync_fails_safely_before_exceeding_its_post_budget() -> None:
+    client = TopicClient()
+    source = MagiciansSource(
+        client=client,
+        base_url="https://ethereum-magicians.org",
+        privacy=PrivacyFilter.from_yaml(ROOT / "config/privacy.yml"),
+        now=lambda: NOW,
+        max_topic_posts=2,
+    )
+
+    with pytest.raises(MagiciansSourceError, match="post budget"):
+        await source.sync_topic(
+            TopicSeed(25098, "erc-8004-trustless-agents", "configured"), cursor=None
+        )
+
+    assert not any(path.endswith("/posts.json") for path, _ in client.calls)
+
+
+@pytest.mark.asyncio
+async def test_sync_batch_cannot_persist_external_posts_or_candidates(tmp_path: Path) -> None:
     seed = TopicSeed(25098, "erc-8004-trustless-agents", "configured")
     source = MagiciansSource(
         client=TopicClient(),
@@ -106,26 +127,18 @@ async def test_sync_batch_persists_candidates_and_replays_without_churn(tmp_path
         "https://ethereum-magicians.org/t/community-agent-coordination/27000",
         "member_created",
     )
-    batch = await source.sync_all([seed], cursors, [candidate])
+    promoted = TopicCandidate(
+        25098,
+        "erc-8004-trustless-agents",
+        "ERC-8004 Trustless Agents",
+        "https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098",
+        "member_created",
+    )
+    batch = await source.sync_all([seed], cursors, [candidate, promoted])
     first_uow = RepositoryUnitOfWork(tmp_path, operation_id="magicians-first")
-    source.stage_batch(batch, cursors, first_uow)
 
-    first_changed = first_uow.publish().changed_paths
+    with pytest.raises(PersistenceRejected, match="persistence policy rejection"):
+        source.stage_batch(batch, cursors, first_uow)
 
-    assert "data/magicians/2025/08/posts.jsonl" in first_changed
-    candidates = json.loads(
-        (tmp_path / "data/state/magicians-candidates.json").read_text()
-    )
-    assert {item["topic_id"] for item in candidates} == {26000, 27000}
-
-    replay_source = MagiciansSource(
-        client=TopicClient(),
-        base_url="https://ethereum-magicians.org",
-        privacy=PrivacyFilter.from_yaml(ROOT / "config/privacy.yml"),
-        now=lambda: NOW + timedelta(minutes=30),
-    )
-    replay_batch = await replay_source.sync_all([seed], cursors, [candidate])
-    replay_uow = RepositoryUnitOfWork(tmp_path, operation_id="magicians-replay")
-    replay_source.stage_batch(replay_batch, cursors, replay_uow)
-
-    assert replay_uow.publish().changed_paths == ()
+    assert not (tmp_path / "data/magicians").exists()
+    assert not (tmp_path / "data/state/magicians-candidates.json").exists()

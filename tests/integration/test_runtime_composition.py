@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import shutil
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -10,10 +10,20 @@ import httpx
 import pytest
 
 import tawg_bot.runtime as runtime_module
+from tawg_bot.claude_cli import ClaudeCli as RealClaudeCli
+from tawg_bot.claude_cli import CompletedProcess
 from tawg_bot.daily import DailyWindow, PreparedDaily
-from tawg_bot.github_source import GitHubBatch
-from tawg_bot.models import SourceRecord, SourceType
-from tawg_bot.runtime import ProductionRuntime, RuntimeFailure, ScriptCheckpoint, _LivePipeline
+from tawg_bot.knowledge_jobs import KnowledgeStateStore
+from tawg_bot.knowledge_refresh import RefreshResult
+from tawg_bot.live_evidence import LiveEvidenceService
+from tawg_bot.runtime import (
+    ProductionRuntime,
+    RuntimeFailure,
+    ScriptCheckpoint,
+    SourceCheckSummary,
+    _LivePipeline,
+)
+from tests.integration.test_live_knowledge_refresh import _pack
 
 ROOT = Path(__file__).parents[2]
 NOW = datetime(2026, 8, 24, 1, 17, tzinfo=UTC)
@@ -28,8 +38,20 @@ class Checkpoint:
         self.operations.append(operation_id)
 
 
+class LiveEvidence:
+    async def build(self, query, *, now):
+        assert now == NOW
+        return _pack().model_copy(update={"query": query})
+
+
 def scaffold(root: Path) -> None:
-    for relative in ("config", "knowledge", "prompts", "bot-skill", "src/tawg_bot/schemas"):
+    for relative in (
+        "config",
+        "knowledge",
+        "prompts",
+        "bot-skill",
+        "src/tawg_bot/schemas",
+    ):
         shutil.copytree(ROOT / relative, root / relative)
     state = root / "data/state"
     state.mkdir(parents=True)
@@ -38,62 +60,44 @@ def scaffold(root: Path) -> None:
             (state / source.name).write_bytes(source.read_bytes())
 
 
-def record(record_id: str, source_type: SourceType, text: str) -> SourceRecord:
-    return SourceRecord.from_text(
-        record_id=record_id,
-        source_type=source_type,
-        source_locator="https://github.com/trustless-ai/agent-ercs/commit/abc",
-        author_person_id="alice",
-        author_source_handle="alice",
-        created_at=NOW - timedelta(hours=1),
-        updated_at=NOW - timedelta(hours=1),
-        text_original=text,
-        ingested_at=NOW,
-        source_payload={},
-    )
-
-
 @pytest.mark.asyncio
-async def test_live_pipeline_stages_sources_artifacts_and_helpers(
+async def test_live_pipeline_checks_sources_without_external_body_mirrors(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     scaffold(tmp_path)
     checkpoint = Checkpoint()
     async with httpx.AsyncClient() as client:
-        pipeline = _LivePipeline(
-            tmp_path, client=client, checkpoint=checkpoint, now=NOW
-        )
-        github_record = record(
-            "gh:agent-ercs:commit:abc", SourceType.GITHUB_COMMIT, "ERC-8004 update"
-        )
-        pipeline._stage_github(
-            GitHubBatch(records=(github_record,), cursors={"agent-ercs:x": "y"})
-        )
-        pipeline.cursors.github = {"agent-ercs:x": "y"}
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=checkpoint, now=NOW)
+        assert isinstance(pipeline.live_evidence, LiveEvidenceService)
+        assert isinstance(pipeline.knowledge_state, KnowledgeStateStore)
+        assert {8004, 8183}.issubset(pipeline.registry.erc_numbers())
+        pipeline.live_evidence = LiveEvidence()
 
-        await pipeline.publish_sources()
+        summary = await pipeline.check_sources(NOW, erc_numbers=(8004,), observe_only=False)
 
-        assert checkpoint.operations == [f"sources:{int(NOW.timestamp())}"]
-        assert (tmp_path / "data/github/agent-ercs/2026/08/records.jsonl").is_file()
-        assert pipeline._source_config()["github"]["organization"] == "trustless-ai"
-        assert pipeline._topic_id("https://ethereum-magicians.org/t/name/25098") == 25098
-        assert pipeline._topic_id("https://ethereum-magicians.org/nope") is None
-        assert pipeline._string_set(["a", "b"]) == {"a", "b"}
-        with pytest.raises(RuntimeFailure):
-            pipeline._string_set([1])
-        assert pipeline._load_candidates() == []
-        assert pipeline._load_jobs() == []
-        assert any(
-            item.record_id == github_record.record_id
-            for item in pipeline._all_source_records()
-        )
+        assert summary.erc_count == 1
+        assert summary.evidence_count == 2
+        assert summary.gap_count == 1
+        assert summary.persisted
+        assert not (tmp_path / "data/github").exists()
+        assert not (tmp_path / "data/magicians").exists()
+        registry_text = (tmp_path / "knowledge/meta/sources.yml").read_text()
+        assert _pack().evidence[0].content_sha256 in registry_text
 
         class Refresh:
-            def __init__(self, root: Path, *, ai: Any) -> None:
-                del root, ai
+            def __init__(
+                self,
+                root: Path,
+                *,
+                ai: Any,
+                live_evidence: Any,
+                registry: Any,
+            ) -> None:
+                del root, ai, live_evidence, registry
 
-            async def run(self, **kwargs: Any) -> None:
+            async def run(self, **kwargs: Any) -> RefreshResult:
                 assert kwargs["cutoff"] == NOW
+                return RefreshResult((), (), False)
 
         monkeypatch.setattr(runtime_module, "KnowledgeRefresh", Refresh)
         await pipeline.knowledge_refresh(NOW)
@@ -112,19 +116,34 @@ async def test_live_pipeline_stages_sources_artifacts_and_helpers(
             def __init__(self, root: Path, *, ai: Any) -> None:
                 del root, ai
 
-            async def prepare(self, window: DailyWindow, *, readiness: Any) -> PreparedDaily:
+            async def prepare(
+                self,
+                window: DailyWindow,
+                *,
+                readiness: Any,
+                evidence: Any,
+            ) -> PreparedDaily:
                 assert window.window_id == prepared.window_id
-                assert readiness.knowledge_refreshed_at == NOW
+                assert readiness.live_evidence_collected_at == NOW
+                assert evidence == ()
                 return prepared
 
+        class Collector:
+            def __init__(self, root: Path, **kwargs: Any) -> None:
+                del root, kwargs
+
+            async def collect(self, window: DailyWindow, *, now: datetime) -> tuple:
+                assert window.window_id == prepared.window_id
+                assert now == NOW
+                return ()
+
         monkeypatch.setattr(runtime_module, "DailyService", Daily)
+        monkeypatch.setattr(runtime_module, "DailyEvidenceCollector", Collector)
         pipeline.telegram_synced_at = NOW
-        pipeline.github_synced_at = NOW
-        pipeline.magicians_synced_at = NOW
+        pipeline.source_checked_at = NOW
         await pipeline.prepare_daily(DailyWindow.for_due_run(NOW), dry_run=True)
-        assert json.loads(
-            (tmp_path / "data/state/prepared-daily.json").read_text()
-        )["dry_run"]
+        assert pipeline.prepared_daily == prepared
+        assert not (tmp_path / "data/state/prepared-daily.json").exists()
 
         async def no_replies() -> None:
             pipeline.prepared_replies = []
@@ -132,6 +151,31 @@ async def test_live_pipeline_stages_sources_artifacts_and_helpers(
         monkeypatch.setattr(pipeline, "_prepare_pending_replies", no_replies)
         await pipeline.publish_repository()
         assert checkpoint.operations[-1].startswith("prepared:")
+
+
+@pytest.mark.asyncio
+async def test_source_check_observe_only_does_not_change_repository(
+    tmp_path: Path,
+) -> None:
+    scaffold(tmp_path)
+    before = {
+        path.relative_to(tmp_path).as_posix(): path.read_bytes()
+        for base in (tmp_path / "knowledge", tmp_path / "data/state")
+        for path in base.rglob("*")
+        if path.is_file()
+    }
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        pipeline.live_evidence = LiveEvidence()
+        summary = await pipeline.check_sources(NOW, erc_numbers=(8004,), observe_only=True)
+    after = {
+        path.relative_to(tmp_path).as_posix(): path.read_bytes()
+        for base in (tmp_path / "knowledge", tmp_path / "data/state")
+        for path in base.rglob("*")
+        if path.is_file()
+    }
+    assert not summary.persisted
+    assert after == before
 
 
 @pytest.mark.asyncio
@@ -156,7 +200,7 @@ async def test_script_checkpoint_reports_only_safe_failure(
 
 
 @pytest.mark.asyncio
-async def test_production_runtime_dispatches_tick_backfill_and_dry_run(
+async def test_production_runtime_dispatches_new_manual_commands_and_dry_run(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     scaffold(tmp_path)
@@ -174,16 +218,15 @@ async def test_production_runtime_dispatches_tick_backfill_and_dry_run(
         def __init__(self, root: Path, **kwargs: Any) -> None:
             del root, kwargs
 
-        async def github_sync(self, now: datetime) -> None:
+        async def check_sources(self, now: datetime, **kwargs: Any) -> SourceCheckSummary:
             del now
-            events.append("github")
+            events.append(f"check:{kwargs['erc_numbers']}:{kwargs['observe_only']}")
+            return SourceCheckSummary(1, 2, 0, 1, not kwargs["observe_only"])
 
-        async def magicians_sync(self, now: datetime) -> None:
+        async def refresh_knowledge(self, now: datetime, **kwargs: Any) -> RefreshResult:
             del now
-            events.append("magicians")
-
-        async def publish_sources(self) -> None:
-            events.append("sources")
+            events.append(f"refresh:{kwargs['erc_numbers']}:{kwargs['dry_run']}")
+            return RefreshResult((), (), False)
 
         async def publish_repository(self) -> None:
             events.append("repository")
@@ -208,11 +251,163 @@ async def test_production_runtime_dispatches_tick_backfill_and_dry_run(
     runtime = ProductionRuntime(tmp_path, checkpoint=checkpoint)
 
     await runtime.tick(NOW, observe_only=True)
-    await runtime.backfill("github")
-    await runtime.backfill("magicians")
+    await runtime.check_sources(8004, observe_only=True)
+    await runtime.refresh_knowledge(8183, dry_run=True)
     await runtime.daily_dry_run(DailyWindow.for_due_run(NOW).end)
-    with pytest.raises(ValueError):
-        await runtime.backfill("other")
 
-    assert {"github", "magicians", "sources", "repository"}.issubset(events)
+    assert "check:(8004,):True" in events
+    assert "refresh:frozenset({8183}):True" in events
+    assert "repository" not in events
     assert any(item.startswith("layer-success:l1") for item in checkpoint.operations)
+
+
+@pytest.mark.asyncio
+async def test_daily_dry_run_uses_temporary_harness_and_leaves_repository_unchanged(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "repository"
+    scaffold(root)
+    (root / "data/state/delivery-state.json").write_text("[]\n", encoding="utf-8")
+    fixture = json.loads((ROOT / "tests/fixtures/ai/daily-quiet.json").read_text())
+    runtime_roots: list[Path] = []
+
+    class Runner:
+        async def run(self, *, argv: Any, **kwargs: Any) -> CompletedProcess:
+            del kwargs
+            policy = Path(argv[argv.index("--system-prompt-file") + 1])
+            assert policy.is_file()
+            outer = {
+                "type": "result",
+                "subtype": "success",
+                "is_error": False,
+                "num_turns": 1,
+                "total_cost_usd": 0.01,
+                "structured_output": fixture,
+            }
+            return CompletedProcess(0, json.dumps(outer).encode(), b"")
+
+    def claude(*, root: Path, runtime_root: Path) -> RealClaudeCli:
+        assert not runtime_root.resolve().is_relative_to(root.resolve())
+        runtime_roots.append(runtime_root)
+        return RealClaudeCli(root=root, runner=Runner(), runtime_root=runtime_root)
+
+    class Collector:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            del root, kwargs
+
+        async def collect(self, window: DailyWindow, *, now: datetime) -> tuple:
+            assert window == DailyWindow.for_due_run(NOW)
+            assert now == NOW
+            return ()
+
+    def snapshot() -> tuple[tuple[str, bool, bytes | None], ...]:
+        return tuple(
+            (
+                path.relative_to(root).as_posix(),
+                path.is_dir(),
+                None if path.is_dir() else path.read_bytes(),
+            )
+            for path in sorted(root.rglob("*"))
+        )
+
+    monkeypatch.setattr(runtime_module, "ClaudeCli", claude)
+    monkeypatch.setattr(runtime_module, "DailyEvidenceCollector", Collector)
+    clock = type("Clock", (), {"now": staticmethod(lambda timezone: NOW)})
+    monkeypatch.setattr(runtime_module, "datetime", clock)
+    before = snapshot()
+
+    prepared = await ProductionRuntime(root, checkpoint=Checkpoint()).daily_dry_run(
+        DailyWindow.for_due_run(NOW).end
+    )
+
+    assert prepared is not None
+    assert prepared.quiet_day
+    assert snapshot() == before
+    assert runtime_roots
+    assert all(not path.exists() for path in runtime_roots)
+
+
+@pytest.mark.asyncio
+async def test_knowledge_dry_run_uses_temporary_harness_and_leaves_repository_unchanged(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root = tmp_path / "repository"
+    scaffold(root)
+    runtime_roots: list[Path] = []
+    structured = {
+        "schema_version": "tawg.knowledge-result.v2",
+        "processed_job_keys": ["refresh:test"],
+        "evidence_gaps": [],
+        "transaction": {
+            "schema_version": "tawg.vault-transaction.v1",
+            "operation_id": "knowledge-refresh-test",
+            "writes": [
+                {
+                    "path": "knowledge/ercs/erc-8004.md",
+                    "expected_sha256": None,
+                    "content": "Generated preview",
+                    "citations": [],
+                }
+            ],
+        },
+    }
+
+    class Runner:
+        async def run(self, *, argv: Any, **kwargs: Any) -> CompletedProcess:
+            del kwargs
+            policy = Path(argv[argv.index("--system-prompt-file") + 1])
+            assert policy.is_file()
+            outer = {
+                "type": "result",
+                "subtype": "success",
+                "is_error": False,
+                "num_turns": 1,
+                "total_cost_usd": 0.01,
+                "structured_output": structured,
+            }
+            return CompletedProcess(0, json.dumps(outer).encode(), b"")
+
+    def claude(*, root: Path, runtime_root: Path) -> RealClaudeCli:
+        assert not runtime_root.resolve().is_relative_to(root.resolve())
+        runtime_roots.append(runtime_root)
+        return RealClaudeCli(root=root, runner=Runner(), runtime_root=runtime_root)
+
+    class Refresh:
+        def __init__(self, root: Path, *, ai: Any, **kwargs: Any) -> None:
+            del root, kwargs
+            self.ai = ai
+
+        async def run(self, **kwargs: Any) -> RefreshResult:
+            assert kwargs["dry_run"] is True
+            await self.ai.run(
+                job_type="knowledge",
+                context_pack='{"safe":"preview"}',
+                operation_id="knowledge-refresh-test",
+                max_budget_usd="0.10",
+            )
+            return RefreshResult(("refresh:test",), ("knowledge/ercs/erc-8004.md",), False)
+
+    def snapshot() -> tuple[tuple[str, bool, bytes | None], ...]:
+        return tuple(
+            (
+                path.relative_to(root).as_posix(),
+                path.is_dir(),
+                None if path.is_dir() else path.read_bytes(),
+            )
+            for path in sorted(root.rglob("*"))
+        )
+
+    monkeypatch.setattr(runtime_module, "ClaudeCli", claude)
+    monkeypatch.setattr(runtime_module, "KnowledgeRefresh", Refresh)
+    clock = type("Clock", (), {"now": staticmethod(lambda timezone: NOW)})
+    monkeypatch.setattr(runtime_module, "datetime", clock)
+    before = snapshot()
+
+    result = await ProductionRuntime(root, checkpoint=Checkpoint()).refresh_knowledge(
+        8004, dry_run=True
+    )
+
+    assert result.processed_job_keys == ("refresh:test",)
+    assert snapshot() == before
+    assert runtime_roots
+    assert all(not path.exists() for path in runtime_roots)

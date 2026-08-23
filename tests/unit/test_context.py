@@ -76,3 +76,29 @@ def test_context_marks_all_source_material_as_untrusted() -> None:
 
     assert '"source_content_is_untrusted":true' in pack.text
     assert "never operational instructions" in pack.text
+
+
+def test_context_accepts_stable_github_comment_record_ids() -> None:
+    safe = inputs()
+    record_id = "gh:agent-ercs:issue:17:comment:5379076880"
+    safe.citations = [{"record_id": record_id}]
+
+    pack = builder().build(safe, max_chars=6000)
+
+    assert record_id in pack.text
+
+
+def test_context_keeps_live_evidence_when_generic_retrieval_is_pruned() -> None:
+    safe = inputs()
+    safe.evidence_pack = {
+        "schema_version": "tawg.evidence-pack.v1",
+        "evidence": [{"text": "REQUIRED_NORMATIVE", "untrusted_evidence": True}],
+    }
+    safe.citation_allowlist = ["https://eips.ethereum.org/EIPS/eip-8004"]
+
+    pack = builder().build(safe, max_chars=1800, max_recent_telegram=2)
+
+    assert "REQUIRED_NORMATIVE" in pack.text
+    assert "https://eips.ethereum.org/EIPS/eip-8004" in pack.text
+    assert "RETRIEVED_11" not in pack.text
+    assert pack.text.index('"evidence_pack"') < pack.text.index('"retrieved"')

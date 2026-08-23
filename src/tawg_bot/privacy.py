@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import ipaddress
 import json
 import re
 from collections.abc import Mapping
@@ -51,7 +52,7 @@ class PrivacyFilter:
         r"(?<!\d)(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}"
         r"(?:25[0-5]|2[0-4]\d|1?\d?\d)(?!\d)"
     )
-    _IPV6 = re.compile(r"(?<![\w:])(?:[A-F0-9]{1,4}:){2,7}[A-F0-9]{0,4}(?![\w:])", re.I)
+    _IPV6 = re.compile(r"(?<![\w:])(?:[A-F0-9]{0,4}:){2,7}[A-F0-9]{0,4}(?![\w:])", re.I)
     _LOCAL_PATH = re.compile(
         r"(?:/(?:Users|home|private|var/folders)/[^\s]+|[A-Z]:\\(?:Users|Documents)\\[^\s]+)",
         re.I,
@@ -105,9 +106,57 @@ class PrivacyFilter:
 
         sanitized = text
         sanitized = self._EMAIL.sub("[REDACTED_EMAIL]", sanitized)
-        sanitized = self._PHONE.sub("[REDACTED_PHONE]", sanitized)
+        public_urls = tuple(match.span() for match in re.finditer(r"https?://\S+", sanitized, re.I))
+
+        def replace_phone(match: re.Match[str]) -> str:
+            value = match.group(0)
+            if any(start <= match.start() and match.end() <= end for start, end in public_urls):
+                return value
+            github_prefix = sanitized[max(0, match.start() - 256) : match.start()]
+            github_suffix = sanitized[match.end() : match.end() + 1]
+            if re.search(
+                r'(?:^|["\'\s\[])gh:[A-Z0-9._-]+:'
+                r'(?:issue:\d+:comment|pr:\d+:review|release):$',
+                github_prefix,
+                re.I,
+            ) and (not github_suffix or github_suffix in {'"', "'", ",", "]", "}", "\n"}):
+                return value
+            digit_count = sum(character.isdigit() for character in value)
+            if digit_count > 15:
+                return value
+            if value.isdigit():
+                context = sanitized[max(0, match.start() - 40) : match.start()]
+                surrounding = sanitized[
+                    max(0, match.start() - 2) : min(len(sanitized), match.end() + 2)
+                ]
+                is_unix_timestamp = (
+                    len(value) == 10
+                    and 946_684_800 <= int(value) <= 4_102_444_800
+                    and (
+                        re.search(
+                            r"(?:block\s+time|epoch|timestamp|unix)\s*[:=]?\s*$",
+                            context,
+                            re.I,
+                        )
+                        is not None
+                        or any(character in surrounding for character in '{}[],=:"')
+                    )
+                )
+                if is_unix_timestamp:
+                    return value
+            return "[REDACTED_PHONE]"
+
+        sanitized = self._PHONE.sub(replace_phone, sanitized)
         sanitized = self._IPV4.sub("[REDACTED_IP]", sanitized)
-        sanitized = self._IPV6.sub("[REDACTED_IP]", sanitized)
+
+        def replace_ipv6(match: re.Match[str]) -> str:
+            try:
+                parsed = ipaddress.ip_address(match.group(0))
+            except ValueError:
+                return match.group(0)
+            return "[REDACTED_IP]" if parsed.version == 6 else match.group(0)
+
+        sanitized = self._IPV6.sub(replace_ipv6, sanitized)
         sanitized = self._LOCAL_PATH.sub("[REDACTED_PATH]", sanitized)
 
         def replace_wallet(match: re.Match[str]) -> str:

@@ -11,20 +11,32 @@ from typing import Any
 import pytest
 
 from tawg_bot.daily import DailyReadiness, DailyService, DailyWindow
+from tawg_bot.daily_evidence import DailyEvidence
 from tawg_bot.delivery import DeliveryService
 from tawg_bot.github_source import GitHubSource
+from tawg_bot.knowledge_jobs import KnowledgeRefreshJob
 from tawg_bot.knowledge_refresh import KnowledgeRefresh
 from tawg_bot.magicians_source import MagiciansSource, TopicSeed
 from tawg_bot.models import SourceCursors, SourceRecord
 from tawg_bot.privacy import PrivacyFilter
 from tawg_bot.query import SourceQuery
 from tawg_bot.retrieval import VaultRetriever
+from tawg_bot.source_registry import SourceRegistry
 from tawg_bot.storage import JsonlCollection
 from tawg_bot.telegram_export import TelegramDesktopImporter
 from tawg_bot.telegram_intake import TelegramIntake
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 from tests.integration.test_delivery_retries import Api as DeliveryApi
 from tests.integration.test_github_sync import FakeGitHubClient
+from tests.integration.test_live_knowledge_refresh import (
+    JOB_KEY,
+)
+from tests.integration.test_live_knowledge_refresh import (
+    _pack as live_pack,
+)
+from tests.integration.test_live_knowledge_refresh import (
+    _result as live_knowledge_output,
+)
 from tests.integration.test_magicians_sync import TopicClient
 from tests.integration.test_telegram_cursor import FakeTelegramApi, fixture_updates
 from tests.unit.test_delivery import Checkpoint
@@ -40,36 +52,65 @@ class FakeAi:
         self.calls: list[dict[str, Any]] = []
 
     async def run(self, **kwargs: Any) -> dict[str, Any]:
+        context = json.loads(kwargs["context_pack"])
+        assert context["context_schema"] == "tawg.context-pack.v1"
+        assert context["source_content_is_untrusted"] is True
+        expected_schema = {
+            "knowledge": "tawg.knowledge-result.v2",
+            "daily": "tawg.daily-result.v1",
+        }[kwargs["job_type"]]
+        assert context["output_schema"]["properties"]["schema_version"]["const"] == (
+            expected_schema
+        )
+        if kwargs["job_type"] == "knowledge":
+            assert context["evidence_pack"]["schema_version"] == "tawg.evidence-batch.v1"
+        else:
+            assert context["trigger"]["operation"] == "prepare_daily_catch_up"
         self.calls.append(kwargs)
         return deepcopy(self.outputs.pop(0))
 
 
+class E2eLiveEvidence:
+    async def build(self, query, *, now):
+        assert now == RUN_AT
+        return live_pack().model_copy(update={"query": query})
+
+
 def scaffold(root: Path) -> None:
-    for relative in ("config", "knowledge", "prompts", "bot-skill", "src/tawg_bot/schemas"):
+    for relative in ("config", "prompts", "bot-skill", "src/tawg_bot/schemas"):
         source = ROOT / relative
         target = root / relative
         if source.is_dir():
             shutil.copytree(source, target)
+    meta = root / "knowledge/meta"
+    meta.mkdir(parents=True)
+    (root / "knowledge/index.md").write_text(
+        page("TAWG Knowledge Index", "index", "Bootstrap pending.", []),
+        encoding="utf-8",
+    )
+    (root / "knowledge/hot.md").write_text(
+        page("TAWG Hot Context", "meta", "Bootstrap pending.", []),
+        encoding="utf-8",
+    )
+    (meta / "aliases.yml").write_text(
+        "schema: tawg.aliases.v1\nscope: tawg-only\npeople: {}\n",
+        encoding="utf-8",
+    )
+    (meta / "sources.yml").write_bytes((ROOT / "knowledge/meta/sources.yml").read_bytes())
+    (meta / "source-ledger.json").write_text(
+        '{"schema":"tawg.source-ledger.v1","entries":{}}\n', encoding="utf-8"
+    )
+    (meta / "claim-ledger.json").write_text(
+        '{"schema":"tawg.claim-ledger.v1","entries":{}}\n', encoding="utf-8"
+    )
     state = root / "data/state"
     state.mkdir(parents=True)
     for source in (ROOT / "data/state").iterdir():
         if source.is_file():
             (state / source.name).write_bytes(source.read_bytes())
-
-
-def stage_records(root: Path, prefix: str, records: tuple[SourceRecord, ...]) -> None:
-    grouped: dict[str, list[SourceRecord]] = {}
-    for record in records:
-        if prefix == "github":
-            repository = record.record_id.split(":", 2)[1]
-            relative = f"data/github/{repository}/{record.created_at:%Y/%m}/records.jsonl"
-        else:
-            relative = f"data/magicians/{record.created_at:%Y/%m}/posts.jsonl"
-        grouped.setdefault(relative, []).append(record)
-    uow = RepositoryUnitOfWork(root, operation_id=f"acceptance-{prefix}")
-    for relative, values in sorted(grouped.items()):
-        uow.stage_records(relative, values)
-    uow.publish()
+    (state / "source-cursors.json").write_text(
+        SourceCursors().model_dump_json(indent=2) + "\n", encoding="utf-8"
+    )
 
 
 def page(title: str, page_type: str, body: str, citations: list[str]) -> str:
@@ -83,9 +124,7 @@ def page(title: str, page_type: str, body: str, citations: list[str]) -> str:
 
 def knowledge_output(root: Path, operation_id: str) -> dict[str, Any]:
     records = SourceQuery(root).records()
-    citation = next(
-        record.record_id for record in records if "ERC-8004" in record.text_original
-    )
+    citation = next(record.record_id for record in records if "ERC-8004" in record.text_original)
     pages = {
         "knowledge/index.md": page(
             "TAWG Knowledge Index",
@@ -171,7 +210,7 @@ async def test_bootstrap_backfill_delayed_refresh_and_daily_delivery(tmp_path: P
     repository = (await github.list_public_repositories())[0]
     github_batch = await github.sync_repository(repository, {})
     assert github_batch.successful
-    stage_records(tmp_path, "github", github_batch.records)
+    assert github_batch.records
 
     magicians = MagiciansSource(
         client=TopicClient(),
@@ -183,7 +222,9 @@ async def test_bootstrap_backfill_delayed_refresh_and_daily_delivery(tmp_path: P
         [TopicSeed(25098, "erc-8004-trustless-agents", "configured")],
         SourceCursors(),
     )
-    stage_records(tmp_path, "magicians", magicians_batch.records)
+    assert magicians_batch.records
+    assert not (tmp_path / "data/github").exists()
+    assert not (tmp_path / "data/magicians").exists()
 
     intake = TelegramIntake(
         root=tmp_path,
@@ -199,9 +240,7 @@ async def test_bootstrap_backfill_delayed_refresh_and_daily_delivery(tmp_path: P
     post_cutoff = SourceRecord.from_text(
         record_id="tg:tawg:post-cutoff",
         source_type="telegram_message",
-        source_locator=(
-            "repo:data/telegram/2026/08/messages.jsonl#tg:tawg:post-cutoff"
-        ),
+        source_locator=("repo:data/telegram/2026/08/messages.jsonl#tg:tawg:post-cutoff"),
         author_person_id="alice",
         author_source_handle="alice",
         created_at=datetime(2026, 8, 23, 23, 1, tzinfo=UTC),
@@ -214,17 +253,39 @@ async def test_bootstrap_backfill_delayed_refresh_and_daily_delivery(tmp_path: P
     )
 
     operation_id = "acceptance-knowledge-refresh"
+    refresh_job = KnowledgeRefreshJob(
+        job_key=JOB_KEY,
+        erc_number=8004,
+        source_key="erc-8004-canonical",
+        observed_version="fixture-v1",
+        observed_sha256="0" * 64,
+        created_at=RUN_AT,
+        updated_at=RUN_AT,
+    )
+    (tmp_path / "data/state/pending-knowledge-refresh.json").write_text(
+        json.dumps([refresh_job.model_dump(mode="json")]) + "\n", encoding="utf-8"
+    )
     ai = FakeAi(
         [
-            knowledge_output(tmp_path, operation_id),
+            live_knowledge_output(tmp_path, operation_id),
             json.loads((ROOT / "tests/fixtures/ai/daily-active.json").read_text()),
         ]
     )
-    refreshed = await KnowledgeRefresh(tmp_path, ai=ai).run(
-        cutoff=RUN_AT, operation_id=operation_id
-    )
-    assert "tg:tawg:post-cutoff" in refreshed.processed_record_ids
-    assert refreshed.processed_record_ids
+    registry = SourceRegistry.from_yaml(tmp_path / "knowledge/meta/sources.yml")
+    refreshed = await KnowledgeRefresh(
+        tmp_path,
+        ai=ai,
+        live_evidence=E2eLiveEvidence(),
+        registry=registry,
+    ).run(cutoff=RUN_AT, operation_id=operation_id)
+    assert refreshed.processed_job_keys == (JOB_KEY,)
+    assert {
+        path.relative_to(tmp_path).as_posix() for path in (tmp_path / "knowledge").rglob("*.md")
+    } == {
+        "knowledge/index.md",
+        "knowledge/hot.md",
+        "knowledge/ercs/erc-8004.md",
+    }
 
     records = SourceQuery(tmp_path).records()
     assert SourceQuery(tmp_path).search(topic="ERC-8004")
@@ -238,13 +299,51 @@ async def test_bootstrap_backfill_delayed_refresh_and_daily_delivery(tmp_path: P
 
     ready = DailyReadiness(
         telegram_synced_at=RUN_AT,
-        github_synced_at=RUN_AT,
-        magicians_synced_at=RUN_AT,
+        live_evidence_collected_at=RUN_AT,
         knowledge_refreshed_at=RUN_AT,
     )
-    prepared = await DailyService(tmp_path, ai=ai).prepare(WINDOW, readiness=ready)
+    telegram_evidence = tuple(
+        DailyEvidence(
+            evidence_id=record.record_id,
+            source_kind="telegram",
+            source_url=record.source_locator,
+            created_at=record.created_at,
+            updated_at=record.updated_at,
+            author_person_id=record.author_person_id,
+            text=record.text_original,
+        )
+        for record in records
+        if WINDOW.contains(record.updated_at) and record.text_original.strip()
+    )
+    github_marker = github_batch.records[0].text_original
+    magicians_marker = magicians_batch.records[-1].text_original
+    live_external_evidence = tuple(
+        DailyEvidence(
+            evidence_id=record.record_id,
+            source_kind=source_kind,
+            source_url=record.source_locator,
+            created_at=datetime(2026, 8, 23, 12 + index, tzinfo=UTC),
+            updated_at=datetime(2026, 8, 23, 12 + index, tzinfo=UTC),
+            author_person_id=record.author_person_id,
+            text=record.text_original,
+        )
+        for index, (source_kind, record) in enumerate(
+            (
+                ("github", github_batch.records[0]),
+                ("magicians", magicians_batch.records[-1]),
+            )
+        )
+    )
+    daily_evidence = (*telegram_evidence, *live_external_evidence)
+    prepared = await DailyService(tmp_path, ai=ai).prepare(
+        WINDOW, readiness=ready, evidence=daily_evidence
+    )
     assert prepared is not None
     assert "post-cutoff" not in ai.calls[-1]["context_pack"]
+    assert github_marker in ai.calls[-1]["context_pack"]
+    assert magicians_marker in ai.calls[-1]["context_pack"]
+    assert not (tmp_path / "data/github").exists()
+    assert not (tmp_path / "data/magicians").exists()
 
     api = DeliveryApi()
     delivered = await DeliveryService(

@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trustless-ai.org/schemas/tawg/reply-result.v2.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "reply_text",
+    "language",
+    "english_recap",
+    "citations",
+    "evidence_status",
+    "verification_gaps",
+    "correction_transaction",
+    "refusal"
+  ],
+  "properties": {
+    "schema_version": {"const": "tawg.reply-result.v2"},
+    "reply_text": {"type": "string", "minLength": 1, "maxLength": 8000},
+    "language": {"type": "string", "minLength": 2, "maxLength": 32},
+    "english_recap": {
+      "anyOf": [
+        {"type": "string", "minLength": 1, "maxLength": 2000},
+        {"type": "null"}
+      ]
+    },
+    "citations": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 32,
+      "items": {"type": "string", "minLength": 1, "maxLength": 2048}
+    },
+    "evidence_status": {
+      "enum": ["verified", "partial", "not_verified"]
+    },
+    "verification_gaps": {
+      "type": "array",
+      "uniqueItems": true,
+      "maxItems": 32,
+      "items": {"type": "string", "minLength": 1, "maxLength": 512}
+    },
+    "correction_transaction": {
+      "anyOf": [
+        {"$ref": "#/$defs/vault_transaction"},
+        {"type": "null"}
+      ]
+    },
+    "refusal": {"type": "boolean"}
+  },
+  "$defs": {
+    "vault_transaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schema_version", "operation_id", "writes"],
+      "properties": {
+        "schema_version": {"const": "tawg.vault-transaction.v1"},
+        "operation_id": {"type": "string", "pattern": "^[A-Za-z0-9._:-]{1,128}$"},
+        "writes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 64,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["path", "expected_sha256", "content", "citations"],
+            "properties": {
+              "path": {"type": "string", "minLength": 1, "maxLength": 512},
+              "expected_sha256": {
+                "anyOf": [
+                  {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+                  {"type": "null"}
+                ]
+              },
+              "content": {"type": "string", "maxLength": 1048576},
+              "citations": {
+                "type": "array",
+                "uniqueItems": true,
+                "items": {"type": "string", "minLength": 1, "maxLength": 2048}
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

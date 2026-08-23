@@ -1,4 +1,4 @@
-"""Bounded semantic refresh from immutable evidence into the canonical vault."""
+"""Compile transient live evidence into bounded, generated canonical knowledge."""
 
 from __future__ import annotations
 
@@ -14,31 +14,46 @@ import yaml
 from pydantic import Field, ValidationError
 
 from tawg_bot.context import ContextInputs, ContextPackBuilder, ContextRejected
-from tawg_bot.models import SourceCursors, SourceRecord, StrictModel
-from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
-from tawg_bot.query import SourceQuery
+from tawg_bot.erc_query import ErcIntent, ErcQuery
+from tawg_bot.knowledge_jobs import KnowledgeRefreshJob, KnowledgeStateStore
+from tawg_bot.ledger import (
+    ClaimAssessmentV2,
+    EvidenceLedger,
+    InsufficientEvidence,
+    SourceEvidenceV2,
+)
+from tawg_bot.live_evidence import EvidenceItem, EvidencePack
+from tawg_bot.models import StrictModel
+from tawg_bot.privacy import PrivacyFilter
 from tawg_bot.retrieval import VaultRetriever
+from tawg_bot.source_registry import SourceRegistry
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
+from tawg_bot.vault import parse_frontmatter
 from tawg_bot.vault_transaction import (
+    CitationScope,
     TransactionRejected,
     VaultTransaction,
     VaultTransactionEngine,
 )
 
-_NON_ENGLISH = re.compile(r"[\u0080-\U0010ffff]")
-_CURSOR_PATH = "data/state/source-cursors.json"
-_CORE_PATHS = frozenset(
-    {
-        "knowledge/index.md",
-        "knowledge/hot.md",
-        "knowledge/meta/source-ledger.json",
-        "knowledge/meta/claim-ledger.json",
-    }
+_SOURCE_LEDGER = "knowledge/meta/source-ledger.json"
+_CLAIM_LEDGER = "knowledge/meta/claim-ledger.json"
+_REQUIRED_SECTIONS = (
+    "Summary",
+    "Status",
+    "Motivation",
+    "Architecture",
+    "Interfaces",
+    "State machine",
+    "Implementation",
+    "Security considerations",
+    "Testing and examples",
+    "Open questions",
 )
 
 
 class KnowledgeRefreshRejected(ValueError):
-    """Raised when a semantic refresh cannot safely be committed."""
+    """Raised when a live-evidence compilation cannot safely be committed."""
 
 
 class KnowledgeAi(Protocol):
@@ -53,15 +68,27 @@ class KnowledgeAi(Protocol):
     ) -> dict[str, Any]: ...
 
 
+class LiveEvidenceProvider(Protocol):
+    async def build(self, query: ErcQuery, *, now: datetime) -> EvidencePack: ...
+
+
+class ResultGap(StrictModel):
+    erc_number: int = Field(ge=1, le=99_999)
+    bucket: str = Field(min_length=1, max_length=64)
+    source_key: str | None = Field(default=None, max_length=128)
+    safe_error_code: str = Field(min_length=1, max_length=64)
+
+
 class KnowledgeResult(StrictModel):
-    schema_version: Literal["tawg.knowledge-result.v1"]
+    schema_version: Literal["tawg.knowledge-result.v2"]
+    processed_job_keys: list[str]
+    evidence_gaps: list[ResultGap]
     transaction: VaultTransaction
-    english_summaries: dict[str, str] = Field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
 class RefreshResult:
-    processed_record_ids: tuple[str, ...]
+    processed_job_keys: tuple[str, ...]
     changed_paths: tuple[str, ...]
     index_rebuilt: bool
 
@@ -72,29 +99,49 @@ class KnowledgeRefresh:
         root: Path,
         *,
         ai: KnowledgeAi,
-        max_records: int = 100,
+        live_evidence: LiveEvidenceProvider,
+        registry: SourceRegistry,
+        max_jobs: int = 32,
         max_context_chars: int = 250_000,
         max_budget_usd: str = "2.00",
         timeout_seconds: float = 300,
     ) -> None:
-        if max_records <= 0:
-            raise ValueError("max_records must be positive")
+        if max_jobs <= 0:
+            raise ValueError("max_jobs must be positive")
         self.root = root.resolve()
         self.ai = ai
-        self.max_records = max_records
+        self.live_evidence = live_evidence
+        self.registry = registry
+        self.state = KnowledgeStateStore(self.root, registry=registry)
+        self.max_jobs = max_jobs
         self.max_context_chars = max_context_chars
         self.max_budget_usd = max_budget_usd
         self.timeout_seconds = timeout_seconds
         self.privacy = PrivacyFilter.from_yaml(self.root / "config/privacy.yml")
 
-    async def run(self, *, cutoff: datetime, operation_id: str) -> RefreshResult:
+    async def run(
+        self,
+        *,
+        cutoff: datetime,
+        operation_id: str,
+        erc_numbers: frozenset[int] | None = None,
+        dry_run: bool = False,
+    ) -> RefreshResult:
         self._require_utc(cutoff)
-        cursor = self._load_cursor()
-        pending = self._pending_records(cursor, cutoff)[: self.max_records]
+        pending = self._pending_jobs(cutoff, erc_numbers)
         if not pending:
             return RefreshResult((), (), False)
-
-        context = self._context(pending, cutoff, operation_id)
+        selected_erc_numbers = tuple(dict.fromkeys(job.erc_number for job in pending))
+        packs = tuple(
+            [
+                await self.live_evidence.build(
+                    ErcQuery(erc_numbers=(erc_number,), intent=ErcIntent.IMPLEMENTATION),
+                    now=cutoff,
+                )
+                for erc_number in selected_erc_numbers
+            ]
+        )
+        context = self._context(pending, packs, cutoff, operation_id)
         raw_result = await self.ai.run(
             job_type="knowledge",
             context_pack=context,
@@ -102,22 +149,28 @@ class KnowledgeRefresh:
             max_budget_usd=self.max_budget_usd,
             timeout_seconds=self.timeout_seconds,
         )
-        result = self._validate_result(raw_result, pending, operation_id)
-        engine = VaultTransactionEngine(self.root)
+        result = self._validate_result(raw_result, pending, packs, operation_id)
+        source_keys = frozenset(item.source_key for pack in packs for item in pack.evidence)
+        citation_urls = frozenset(url for pack in packs for url in pack.citation_allowlist)
+        engine = VaultTransactionEngine(
+            self.root,
+            citation_scope=CitationScope(source_keys=source_keys, urls=citation_urls),
+        )
         try:
             inspection = engine.inspect(result.transaction)
+            if dry_run:
+                return RefreshResult(
+                    tuple(result.processed_job_keys), inspection.changed_paths, False
+                )
             uow = RepositoryUnitOfWork(self.root, operation_id=operation_id)
+            uow.register_external_evidence(item.text for pack in packs for item in pack.evidence)
             engine.stage(result.transaction, inspection.approval_sha256, uow)
-            last = pending[-1]
-            updated_cursor = cursor.model_copy(
-                update={
-                    "knowledge_record_id": last.record_id,
-                    "knowledge_updated_at": self._semantic_time(last),
-                }
-            )
-            uow.stage_bytes(
-                _CURSOR_PATH,
-                (updated_cursor.model_dump_json(indent=2) + "\n").encode("utf-8"),
+            processed = frozenset(result.processed_job_keys)
+            self.state.stage_compilation_outcome(
+                uow,
+                tuple(pack.for_persistence() for pack in packs),
+                processed,
+                now=cutoff,
             )
             published = uow.publish()
         except (TransactionRejected, ValueError) as error:
@@ -128,151 +181,250 @@ class KnowledgeRefresh:
             VaultRetriever(self.root).build()
         except (OSError, UnicodeError, ValueError):
             rebuilt = False
-        return RefreshResult(
-            tuple(record.record_id for record in pending), published.changed_paths, rebuilt
-        )
+        return RefreshResult(tuple(result.processed_job_keys), published.changed_paths, rebuilt)
 
-    def _load_cursor(self) -> SourceCursors:
-        path = self.root / _CURSOR_PATH
-        if not path.exists():
-            return SourceCursors()
-        try:
-            return SourceCursors.model_validate_json(path.read_text(encoding="utf-8"))
-        except (OSError, UnicodeError, ValidationError) as error:
-            raise KnowledgeRefreshRejected("invalid source cursor state") from error
-
-    def _pending_records(
-        self, cursor: SourceCursors, cutoff: datetime
-    ) -> list[SourceRecord]:
-        lower = (
-            (cursor.knowledge_updated_at, cursor.knowledge_record_id or "")
-            if cursor.knowledge_updated_at is not None
-            else None
-        )
-        candidates = []
-        for record in SourceQuery(self.root).records():
-            key = (self._semantic_time(record), record.record_id)
-            if key[0] <= cutoff and (lower is None or key > lower):
-                candidates.append(record)
-        candidates.sort(key=lambda item: (self._semantic_time(item), item.record_id))
-        return candidates
+    def _pending_jobs(
+        self, cutoff: datetime, erc_numbers: frozenset[int] | None
+    ) -> list[KnowledgeRefreshJob]:
+        jobs = [
+            job
+            for job in self.state.load().refresh_jobs
+            if job.updated_at <= cutoff and (erc_numbers is None or job.erc_number in erc_numbers)
+        ]
+        jobs.sort(key=lambda job: (job.updated_at, job.job_key))
+        return jobs[: self.max_jobs]
 
     def _context(
-        self, records: list[SourceRecord], cutoff: datetime, operation_id: str
+        self,
+        jobs: list[KnowledgeRefreshJob],
+        packs: tuple[EvidencePack, ...],
+        cutoff: datetime,
+        operation_id: str,
     ) -> str:
-        record_payloads = [record.model_dump(mode="json") for record in records]
-        query_text = " ".join(record.text_original for record in records)[:8000]
-        retrieved = [
-            {
-                "chunk_id": item.chunk_id,
-                "path": item.path,
-                "text": item.text,
-                "record_id": item.record_id,
-                "source_locator": item.source_locator,
-                "score": item.score,
-            }
-            for item in VaultRetriever(self.root).query(query_text, top_k=12)
-        ]
-        aliases = self._yaml_mapping(self.root / "knowledge/meta/aliases.yml")
-        schema = self._json_mapping(
-            self.root / "src/tawg_bot/schemas/knowledge-result.v1.json"
+        source_keys = sorted({item.source_key for pack in packs for item in pack.evidence})
+        citation_urls = list(
+            dict.fromkeys(url for pack in packs for url in pack.citation_allowlist)
         )
         inputs = ContextInputs(
             trigger={
-                "operation": "refresh_canonical_knowledge",
+                "operation": "compile_live_evidence",
                 "cutoff_utc": cutoff.isoformat(),
-                "records": record_payloads,
+                "required_erc_sections": list(_REQUIRED_SECTIONS),
+                "acknowledgement_page_contract": {
+                    "path": "knowledge/acknowledgements/<public-name>.md",
+                    "heading": "Related topics",
+                    "purpose": "acknowledge public contributions",
+                },
             },
             reply_chain=[],
-            recent_telegram=[
-                item for item in record_payloads if item["source_type"] == "telegram_message"
+            recent_telegram=[],
+            retrieved=[
+                orientation.model_dump(mode="json")
+                for pack in packs
+                for orientation in pack.generated_orientation
             ],
-            retrieved=retrieved,
             citations=[
-                {
-                    "record_id": record.record_id,
-                    "source_locator": record.source_locator,
-                }
-                for record in records
+                {"source_key": item.source_key, "url": item.citation_url}
+                for pack in packs
+                for item in pack.evidence
             ],
-            aliases=aliases,
-            job_state={"operation_id": operation_id, "cutoff_utc": cutoff.isoformat()},
+            aliases=self._yaml_mapping(self.root / "knowledge/meta/aliases.yml"),
+            job_state={
+                "operation_id": operation_id,
+                "jobs": [job.model_dump(mode="json") for job in jobs],
+            },
             allowed_paths=["knowledge/"],
-            output_schema=schema,
+            output_schema=self._json_mapping(
+                self.root / "src/tawg_bot/schemas/knowledge-result.v2.json"
+            ),
             budgets={
                 "max_transaction_bytes": 1_048_576,
                 "max_writes": 64,
-                "max_records": len(records),
+                "max_jobs": len(jobs),
             },
+            evidence_pack={
+                "schema_version": "tawg.evidence-batch.v1",
+                "packs": [pack.model_dump(mode="json") for pack in packs],
+                "allowed_source_keys": source_keys,
+            },
+            citation_allowlist=citation_urls,
         )
         try:
-            return ContextPackBuilder(self.privacy).build(
-                inputs, max_chars=self.max_context_chars, max_recent_telegram=len(records)
-            ).text
+            return (
+                ContextPackBuilder(self.privacy)
+                .build(inputs, max_chars=self.max_context_chars, max_recent_telegram=0)
+                .text
+            )
         except ContextRejected as error:
             raise KnowledgeRefreshRejected(str(error)) from None
 
     def _validate_result(
         self,
         raw: Mapping[str, Any],
-        records: list[SourceRecord],
+        jobs: list[KnowledgeRefreshJob],
+        packs: tuple[EvidencePack, ...],
         operation_id: str,
     ) -> KnowledgeResult:
         try:
             result = KnowledgeResult.model_validate(raw)
         except ValidationError as error:
             raise KnowledgeRefreshRejected("invalid knowledge result") from error
+        expected_jobs = [job.job_key for job in jobs]
+        if result.processed_job_keys != expected_jobs:
+            raise KnowledgeRefreshRejected("knowledge result job set mismatch")
         if result.transaction.operation_id != operation_id:
             raise KnowledgeRefreshRejected("knowledge operation_id mismatch")
-        paths = {write.path for write in result.transaction.writes}
-        missing_paths = sorted(_CORE_PATHS - paths)
+        expected_gaps = sorted(
+            (
+                missing.erc_number,
+                missing.bucket,
+                missing.source_key,
+                missing.safe_error_code,
+            )
+            for pack in packs
+            for missing in pack.missing_required
+        )
+        actual_gaps = sorted(
+            (gap.erc_number, gap.bucket, gap.source_key, gap.safe_error_code)
+            for gap in result.evidence_gaps
+        )
+        if actual_gaps != expected_gaps:
+            raise KnowledgeRefreshRejected("knowledge result evidence gaps mismatch")
+        writes = {write.path: write for write in result.transaction.writes}
+        if len(writes) != len(result.transaction.writes):
+            raise KnowledgeRefreshRejected("knowledge result contains duplicate paths")
+        required_paths = {_SOURCE_LEDGER, _CLAIM_LEDGER} | {
+            f"knowledge/ercs/erc-{erc}.md" for pack in packs for erc in pack.query.erc_numbers
+        }
+        missing_paths = sorted(required_paths - set(writes))
         if missing_paths:
             raise KnowledgeRefreshRejected(
-                f"knowledge result omits core path: {missing_paths[0]}"
+                f"knowledge result omits required path: {missing_paths[0]}"
             )
-        selected_ids = {record.record_id for record in records}
-        unknown_summaries = set(result.english_summaries) - selected_ids
-        if unknown_summaries:
-            raise KnowledgeRefreshRejected("English summary references an unknown record")
-        for record in records:
-            if _NON_ENGLISH.search(record.text_original):
-                summary = result.english_summaries.get(record.record_id, "").strip()
-                if not summary:
-                    raise KnowledgeRefreshRejected(
-                        f"English summary is required for {record.record_id}"
-                    )
-                try:
-                    self.privacy.assert_public(summary)
-                except PrivacyViolation:
-                    raise KnowledgeRefreshRejected(
-                        "English summary failed privacy policy"
-                    ) from None
-
-        source_write = next(
-            write
-            for write in result.transaction.writes
-            if write.path == "knowledge/meta/source-ledger.json"
+        evidence = {item.source_key: item for pack in packs for item in pack.evidence}
+        allowed_urls = {url for pack in packs for url in pack.citation_allowlist}
+        self._validate_pages(writes, packs, evidence, allowed_urls)
+        source_ledger = self._validate_source_ledger(writes[_SOURCE_LEDGER].content, evidence)
+        self._validate_claim_ledger(writes[_CLAIM_LEDGER].content, source_ledger)
+        self._reject_copied_bodies(
+            (writes[_SOURCE_LEDGER].content, writes[_CLAIM_LEDGER].content), evidence
         )
-        try:
-            source_ledger = json.loads(source_write.content)
-            entries = source_ledger["entries"]
-            if (
-                source_ledger.get("schema") != "tawg.source-ledger.v1"
-                or not isinstance(entries, dict)
-            ):
-                raise ValueError
-        except (KeyError, TypeError, ValueError, json.JSONDecodeError):
-            raise KnowledgeRefreshRejected("invalid source ledger output") from None
-        known_ids = {record.record_id for record in SourceQuery(self.root).records()}
-        if not selected_ids.issubset(entries):
-            raise KnowledgeRefreshRejected("source ledger omits selected evidence")
-        if not set(entries).issubset(known_ids):
-            raise KnowledgeRefreshRejected("source ledger contains fabricated evidence")
         return result
 
+    def _validate_pages(
+        self,
+        writes: Mapping[str, Any],
+        packs: tuple[EvidencePack, ...],
+        evidence: Mapping[str, EvidenceItem],
+        allowed_urls: set[str],
+    ) -> None:
+        for pack in packs:
+            for erc_number in pack.query.erc_numbers:
+                path = f"knowledge/ercs/erc-{erc_number}.md"
+                write = writes[path]
+                frontmatter, body = parse_frontmatter(write.content)
+                source_keys = frontmatter.get("source_keys") if frontmatter else None
+                telegram_ids = frontmatter.get("telegram_record_ids") if frontmatter else None
+                verified_at = frontmatter.get("verified_at") if frontmatter else None
+                if (
+                    not isinstance(source_keys, list)
+                    or not source_keys
+                    or not all(isinstance(value, str) for value in source_keys)
+                    or not isinstance(telegram_ids, list)
+                    or not isinstance(verified_at, str | datetime)
+                ):
+                    raise KnowledgeRefreshRejected("generated ERC page omits v2 evidence")
+                if not set(source_keys).issubset(evidence):
+                    raise KnowledgeRefreshRejected("generated ERC page uses an unknown source key")
+                for heading in _REQUIRED_SECTIONS:
+                    if not re.search(rf"(?m)^## {re.escape(heading)}\s*$", body):
+                        raise KnowledgeRefreshRejected(
+                            f"generated ERC page omits section: {heading}"
+                        )
+                urls = {
+                    value.rstrip('.,;:!?)"]}')
+                    for value in re.findall(r"https://[^\s<>()\]]+", write.content)
+                }
+                if not urls.issubset(allowed_urls):
+                    raise KnowledgeRefreshRejected("generated ERC page uses an unapproved URL")
+
+    def _validate_source_ledger(
+        self, content: str, evidence: Mapping[str, EvidenceItem]
+    ) -> EvidenceLedger:
+        try:
+            raw = json.loads(content)
+            if (
+                not isinstance(raw, dict)
+                or raw.get("schema") != "tawg.source-ledger.v2"
+                or not isinstance(raw.get("entries"), dict)
+            ):
+                raise ValueError
+            entries = raw["entries"]
+            ledger = EvidenceLedger.from_entries(entries, schema="tawg.source-ledger.v2")
+        except (TypeError, ValueError, ValidationError, json.JSONDecodeError):
+            raise KnowledgeRefreshRejected("invalid v2 source ledger output") from None
+        existing = self._existing_entries(_SOURCE_LEDGER, "tawg.source-ledger.v2")
+        for source_key, entry in entries.items():
+            item = evidence.get(source_key)
+            if item is None:
+                if existing.get(source_key) != entry:
+                    raise KnowledgeRefreshRejected(
+                        "source ledger contains evidence outside the operation pack"
+                    )
+                continue
+            parsed = ledger.sources[source_key]
+            if not isinstance(parsed, SourceEvidenceV2) or (
+                parsed.source_kind is not item.kind
+                or parsed.authority is not item.authority
+                or parsed.canonical_url != item.canonical_url
+                or parsed.observed_version != item.version
+                or parsed.observed_sha256 != item.content_sha256
+                or parsed.observed_at != item.observed_at
+            ):
+                raise KnowledgeRefreshRejected("source ledger metadata mismatches live evidence")
+        if not set(evidence).issubset(entries):
+            raise KnowledgeRefreshRejected("source ledger omits operation evidence")
+        return ledger
+
     @staticmethod
-    def _semantic_time(record: SourceRecord) -> datetime:
-        return max(record.updated_at, record.ingested_at)
+    def _validate_claim_ledger(content: str, evidence: EvidenceLedger) -> None:
+        try:
+            raw = json.loads(content)
+            if (
+                not isinstance(raw, dict)
+                or raw.get("schema") != "tawg.claim-ledger.v2"
+                or not isinstance(raw.get("entries"), dict)
+            ):
+                raise ValueError
+            for claim_id, value in raw["entries"].items():
+                if not isinstance(value, dict):
+                    raise ValueError
+                claim = ClaimAssessmentV2.model_validate({"claim_id": claim_id, **value})
+                evidence.validate_claim(claim)
+        except InsufficientEvidence as error:
+            raise KnowledgeRefreshRejected(str(error)) from None
+        except (KeyError, TypeError, ValueError, ValidationError, json.JSONDecodeError):
+            raise KnowledgeRefreshRejected("invalid v2 claim ledger output") from None
+
+    @staticmethod
+    def _reject_copied_bodies(
+        ledger_contents: tuple[str, str], evidence: Mapping[str, EvidenceItem]
+    ) -> None:
+        combined = "\n".join(ledger_contents)
+        for item in evidence.values():
+            chunks = [line.strip() for line in item.text.splitlines() if len(line.strip()) >= 64]
+            if any(chunk in combined for chunk in chunks):
+                raise KnowledgeRefreshRejected("external evidence body cannot be stored in ledgers")
+
+    def _existing_entries(self, relative: str, schema: str) -> dict[str, Any]:
+        try:
+            raw = json.loads((self.root / relative).read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            return {}
+        if not isinstance(raw, dict) or raw.get("schema") != schema:
+            return {}
+        entries = raw.get("entries")
+        return entries if isinstance(entries, dict) else {}
 
     @staticmethod
     def _require_utc(value: datetime) -> None:

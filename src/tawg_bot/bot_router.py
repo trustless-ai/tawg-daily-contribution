@@ -16,6 +16,9 @@ from pydantic import ValidationError
 
 from tawg_bot.context import ContextInputs, ContextPackBuilder, ContextRejected
 from tawg_bot.corrections import CorrectionService
+from tawg_bot.erc_query import ErcQuery, ErcQueryPlanner
+from tawg_bot.knowledge_jobs import KnowledgeStateStore
+from tawg_bot.live_evidence import EvidencePack
 from tawg_bot.models import JobStatus, PendingBotJob, SourceRecord, StrictModel
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 from tawg_bot.query import SourceQuery
@@ -23,9 +26,7 @@ from tawg_bot.retrieval import VaultRetriever
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 from tawg_bot.vault_transaction import VaultTransaction, VaultTransactionEngine
 
-_NON_ENGLISH = re.compile(
-    r"[\u3040-\u30ff\u3400-\u9fff\u0400-\u052f\u0600-\u06ff\u0900-\u097f]"
-)
+_NON_ENGLISH = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\u0400-\u052f\u0600-\u06ff\u0900-\u097f]")
 
 
 class BotRoute(StrEnum):
@@ -77,6 +78,7 @@ class BotRouter:
 
     def __init__(self, bot_username: str) -> None:
         self.bot_username = bot_username.casefold().lstrip("@")
+        self._erc_planner = ErcQueryPlanner()
 
     def classify(self, text: str) -> BotRoute:
         cleaned = re.sub(
@@ -94,6 +96,11 @@ class BotRouter:
             return BotRoute.KNOWLEDGE_QUESTION
         return BotRoute.REFUSE
 
+    def erc_query(self, text: str) -> ErcQuery | None:
+        if self.classify(text) is not BotRoute.KNOWLEDGE_QUESTION:
+            return None
+        return self._erc_planner.plan(text)
+
 
 class ReplyAi(Protocol):
     async def run(
@@ -107,12 +114,18 @@ class ReplyAi(Protocol):
     ) -> dict[str, Any]: ...
 
 
+class LiveEvidenceProvider(Protocol):
+    async def build(self, query: ErcQuery, *, now: datetime) -> EvidencePack: ...
+
+
 class _ReplyResult(StrictModel):
-    schema_version: Literal["tawg.reply-result.v1"]
+    schema_version: Literal["tawg.reply-result.v2"]
     reply_text: str
     language: str
     english_recap: str | None
     citations: list[str]
+    evidence_status: Literal["verified", "partial", "not_verified"]
+    verification_gaps: list[str]
     correction_transaction: VaultTransaction | None
     refusal: bool
 
@@ -127,6 +140,13 @@ class PreparedReply:
     refusal: bool
 
 
+@dataclass(frozen=True, slots=True)
+class _ReplyContext:
+    text: str
+    allowed_citations: frozenset[str]
+    evidence_pack: EvidencePack | None
+
+
 class BotReplyService:
     def __init__(
         self,
@@ -134,12 +154,16 @@ class BotReplyService:
         *,
         ai: ReplyAi,
         bot_username: str,
+        live_evidence: LiveEvidenceProvider | None = None,
+        knowledge_state: KnowledgeStateStore | None = None,
         max_budget_usd: str = "1.00",
         timeout_seconds: float = 300,
     ) -> None:
         self.root = root.resolve()
         self.ai = ai
         self.router = BotRouter(bot_username)
+        self.live_evidence = live_evidence
+        self.knowledge_state = knowledge_state
         self.max_budget_usd = max_budget_usd
         self.timeout_seconds = timeout_seconds
         self.privacy = PrivacyFilter.from_yaml(self.root / "config/privacy.yml")
@@ -187,16 +211,35 @@ class BotReplyService:
         )
         jobs[job_id] = processing
         self._publish_jobs(jobs, f"{job_id}:processing")
+        evidence_pack: EvidencePack | None = None
         try:
-            context = self._context(trigger, records, processing, route)
+            erc_query = self.router.erc_query(trigger.text_original)
+            if erc_query is not None:
+                if self.live_evidence is None or self.knowledge_state is None:
+                    raise ReplyRejected("live ERC evidence is not configured")
+                evidence_pack = await self.live_evidence.build(erc_query, now=now)
+            context = self._context(
+                trigger,
+                records,
+                processing,
+                route,
+                evidence_pack=evidence_pack,
+            )
             raw = await self.ai.run(
                 job_type="reply",
-                context_pack=context,
+                context_pack=context.text,
                 operation_id=job_id,
                 max_budget_usd=self.max_budget_usd,
                 timeout_seconds=self.timeout_seconds,
             )
-            result = self._validate_result(raw, trigger, route, records, job_id)
+            result = self._validate_result(
+                raw,
+                trigger,
+                route,
+                context.allowed_citations,
+                context.evidence_pack,
+                job_id,
+            )
             reply_text = result.reply_text.strip()
             if result.english_recap is not None:
                 reply_text = f"{reply_text}\n\nEnglish recap: {result.english_recap.strip()}"
@@ -215,6 +258,24 @@ class BotReplyService:
             )
             jobs[job_id] = ready
             uow = RepositoryUnitOfWork(self.root, operation_id=job_id)
+            external_texts = (
+                tuple(item.text for item in evidence_pack.evidence)
+                if evidence_pack is not None
+                else ()
+            )
+            uow.register_external_evidence(external_texts)
+            if evidence_pack is not None:
+                assert self.knowledge_state is not None
+                self.knowledge_state.stage_evidence_outcome(
+                    uow, evidence_pack.for_persistence(), now=now
+                )
+            elif route is BotRoute.SOURCE_SUGGESTION:
+                if self.knowledge_state is None:
+                    raise ReplyRejected("source candidate state is not configured")
+                urls = self._suggested_urls(trigger.text_original)
+                if not urls:
+                    raise ReplyRejected("source suggestion has no safe URL")
+                self.knowledge_state.add_candidates(uow, urls, trigger.record_id, now)
             if result.correction_transaction is not None:
                 CorrectionService(VaultTransactionEngine(self.root)).stage(
                     result.correction_transaction,
@@ -234,7 +295,17 @@ class BotReplyService:
                     "safe_error_code": "reply_prepare_failed",
                 }
             )
-            self._publish_jobs(failed_jobs, f"{job_id}:failed")
+            failure_uow = RepositoryUnitOfWork(self.root, operation_id=f"{job_id}:failed")
+            if evidence_pack is not None:
+                failure_uow.register_external_evidence(item.text for item in evidence_pack.evidence)
+            else:
+                failure_uow.register_external_evidence(())
+            if evidence_pack is not None and self.knowledge_state is not None:
+                self.knowledge_state.stage_evidence_outcome(
+                    failure_uow, evidence_pack.for_persistence(), now=now
+                )
+            self._stage_jobs(failure_uow, failed_jobs)
+            failure_uow.publish()
             raise ReplyRejected("reply preparation failed safely") from None
 
     def _context(
@@ -243,7 +314,9 @@ class BotReplyService:
         records: Mapping[str, SourceRecord],
         job: PendingBotJob,
         route: BotRoute,
-    ) -> str:
+        *,
+        evidence_pack: EvidencePack | None,
+    ) -> _ReplyContext:
         chain: list[SourceRecord] = []
         current = trigger
         seen = {trigger.record_id}
@@ -269,6 +342,7 @@ class BotReplyService:
             and record.record_id not in seen
         ]
         nearby.sort(key=lambda record: (record.created_at, record.record_id))
+        retrieved_items = VaultRetriever(self.root).query(trigger.text_original, top_k=16)
         retrieved = [
             {
                 "chunk_id": item.chunk_id,
@@ -277,19 +351,34 @@ class BotReplyService:
                 "record_id": item.record_id,
                 "source_locator": item.source_locator,
             }
-            for item in VaultRetriever(self.root).query(trigger.text_original, top_k=16)
+            for item in retrieved_items
         ]
+        local_ids: set[str] = (
+            seen
+            | {record.record_id for record in nearby[:50]}
+            | {item.record_id for item in retrieved_items if item.record_id is not None}
+        )
+        if evidence_pack is not None:
+            allowed_citations = frozenset(evidence_pack.citation_allowlist)
+            citation_entries = [{"url": url} for url in evidence_pack.citation_allowlist]
+        else:
+            allowed_citations = frozenset(local_ids)
+            citation_entries = [
+                {
+                    "record_id": record.record_id,
+                    "source_locator": record.source_locator,
+                }
+                for record in sorted(
+                    (records[record_id] for record_id in local_ids),
+                    key=lambda item: (item.created_at, item.record_id),
+                )
+            ]
         inputs = ContextInputs(
             trigger={"route": route.value, "record": trigger.model_dump(mode="json")},
             reply_chain=[record.model_dump(mode="json") for record in chain],
             recent_telegram=[record.model_dump(mode="json") for record in nearby[:50]],
             retrieved=retrieved,
-            citations=[
-                {"record_id": record.record_id, "source_locator": record.source_locator}
-                for record in sorted(
-                    records.values(), key=lambda item: (item.created_at, item.record_id)
-                )
-            ],
+            citations=citation_entries,
             aliases=self._yaml_mapping(self.root / "knowledge/meta/aliases.yml"),
             job_state=job.model_dump(mode="json"),
             allowed_paths=(
@@ -298,14 +387,23 @@ class BotReplyService:
                 else []
             ),
             output_schema=self._json_mapping(
-                self.root / "src/tawg_bot/schemas/reply-result.v1.json"
+                self.root / "src/tawg_bot/schemas/reply-result.v2.json"
             ),
             budgets={"max_output_chars": 8000, "max_citations": 16},
+            evidence_pack=(
+                evidence_pack.model_dump(mode="json") if evidence_pack is not None else None
+            ),
+            citation_allowlist=list(allowed_citations),
         )
         try:
-            return ContextPackBuilder(self.privacy).build(
+            packed = ContextPackBuilder(self.privacy).build(
                 inputs, max_chars=250_000, max_recent_telegram=50
-            ).text
+            )
+            return _ReplyContext(
+                text=packed.text,
+                allowed_citations=allowed_citations,
+                evidence_pack=evidence_pack,
+            )
         except ContextRejected as error:
             raise ReplyRejected(str(error)) from None
 
@@ -314,7 +412,8 @@ class BotReplyService:
         raw: Mapping[str, Any],
         trigger: SourceRecord,
         route: BotRoute,
-        records: Mapping[str, SourceRecord],
+        allowed_citations: frozenset[str],
+        evidence_pack: EvidencePack | None,
         job_id: str,
     ) -> _ReplyResult:
         try:
@@ -323,8 +422,18 @@ class BotReplyService:
             raise ReplyRejected("invalid reply model output") from error
         if len(result.citations) != len(set(result.citations)):
             raise ReplyRejected("reply citations contain duplicates")
-        if not set(result.citations).issubset(records):
+        if not set(result.citations).issubset(allowed_citations):
             raise ReplyRejected("reply cites fabricated evidence")
+        if evidence_pack is not None and evidence_pack.missing_required:
+            normative_missing = any(
+                missing.bucket == "normative_spec" for missing in evidence_pack.missing_required
+            )
+            if normative_missing and result.evidence_status != "not_verified":
+                raise ReplyRejected("reply overstates missing normative evidence")
+            if not normative_missing and result.evidence_status == "verified":
+                raise ReplyRejected("reply overstates incomplete evidence")
+            if not result.verification_gaps:
+                raise ReplyRejected("reply hides required evidence gaps")
         requester_non_english = bool(_NON_ENGLISH.search(trigger.text_original))
         if requester_non_english:
             if result.language.casefold().startswith("en") or not result.english_recap:
@@ -351,6 +460,12 @@ class BotReplyService:
             raise ReplyRejected("reply output failed privacy validation") from None
         return result
 
+    @staticmethod
+    def _suggested_urls(text: str) -> tuple[str, ...]:
+        matches = re.findall(r"https?://[^\s<>()]+", text, flags=re.IGNORECASE)
+        cleaned = [value.rstrip('.,;:!?)"]}') for value in matches]
+        return tuple(dict.fromkeys(cleaned[:4]))
+
     def _load_jobs(self) -> dict[str, PendingBotJob]:
         path = self.root / "data/state/pending-bot-jobs.json"
         try:
@@ -367,13 +482,12 @@ class BotReplyService:
 
     def _publish_jobs(self, jobs: Mapping[str, PendingBotJob], operation_id: str) -> None:
         uow = RepositoryUnitOfWork(self.root, operation_id=operation_id)
+        uow.register_external_evidence(())
         self._stage_jobs(uow, jobs)
         uow.publish()
 
     @staticmethod
-    def _stage_jobs(
-        uow: RepositoryUnitOfWork, jobs: Mapping[str, PendingBotJob]
-    ) -> None:
+    def _stage_jobs(uow: RepositoryUnitOfWork, jobs: Mapping[str, PendingBotJob]) -> None:
         uow.stage_json(
             "data/state/pending-bot-jobs.json",
             [jobs[job_id].model_dump(mode="json") for job_id in sorted(jobs)],

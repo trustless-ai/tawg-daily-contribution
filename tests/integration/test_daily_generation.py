@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 from tawg_bot.daily import DailyReadiness, DailyRejected, DailyService, DailyWindow
+from tawg_bot.daily_evidence import DailyEvidence
 from tawg_bot.models import SourceRecord, SourceType
 from tawg_bot.storage import JsonlCollection
 
@@ -64,13 +65,17 @@ def _seed(root: Path, *, active: bool = True, delivered: bool = False) -> None:
     )
     source_path = root / "data/telegram/2026/08/messages.jsonl"
     source_path.parent.mkdir(parents=True)
-    records = [
-        _record(
-            "tg:tawg:1",
-            "Alice clarified ERC-8004 validation behavior.",
-            datetime(2026, 8, 23, 12, tzinfo=UTC),
-        )
-    ] if active else []
+    records = (
+        [
+            _record(
+                "tg:tawg:1",
+                "Alice clarified ERC-8004 validation behavior.",
+                datetime(2026, 8, 23, 12, tzinfo=UTC),
+            )
+        ]
+        if active
+        else []
+    )
     records.append(
         _record(
             "tg:tawg:post-cutoff",
@@ -108,9 +113,26 @@ def _ready() -> DailyReadiness:
     completed = datetime(2026, 8, 24, 1, tzinfo=UTC)
     return DailyReadiness(
         telegram_synced_at=completed,
-        github_synced_at=completed,
-        magicians_synced_at=completed,
+        live_evidence_collected_at=completed,
         knowledge_refreshed_at=completed,
+    )
+
+
+def _evidence(root: Path) -> tuple[DailyEvidence, ...]:
+    path = root / "data/telegram/2026/08/messages.jsonl"
+    records = JsonlCollection(path, SourceRecord).decode(path.read_bytes())
+    return tuple(
+        DailyEvidence(
+            evidence_id=record.record_id,
+            source_kind="telegram",
+            source_url=record.source_locator,
+            created_at=record.created_at,
+            updated_at=record.updated_at,
+            author_person_id=record.author_person_id,
+            text=record.text_original,
+        )
+        for record in records
+        if WINDOW.contains(record.updated_at)
     )
 
 
@@ -121,7 +143,9 @@ async def test_active_daily_is_grounded_warm_english_and_excludes_post_cutoff(
     _seed(tmp_path)
     ai = FakeAi(_fixture("daily-active"))
 
-    prepared = await DailyService(tmp_path, ai=ai).prepare(WINDOW, readiness=_ready())
+    prepared = await DailyService(tmp_path, ai=ai).prepare(
+        WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+    )
 
     assert prepared is not None
     assert prepared.citations == ("tg:tawg:1",)
@@ -137,7 +161,7 @@ async def test_quiet_daily_is_still_warm_without_inventing_progress(tmp_path: Pa
     _seed(tmp_path, active=False)
 
     prepared = await DailyService(tmp_path, ai=FakeAi(_fixture("daily-quiet"))).prepare(
-        WINDOW, readiness=_ready()
+        WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
     )
 
     assert prepared is not None
@@ -151,7 +175,12 @@ async def test_delivered_window_is_not_regenerated(tmp_path: Path) -> None:
     _seed(tmp_path, delivered=True)
     ai = FakeAi(_fixture("daily-active"))
 
-    assert await DailyService(tmp_path, ai=ai).prepare(WINDOW, readiness=_ready()) is None
+    assert (
+        await DailyService(tmp_path, ai=ai).prepare(
+            WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )
+        is None
+    )
     assert not ai.calls
 
 
@@ -162,14 +191,15 @@ async def test_daily_requires_fresh_success_from_every_required_layer(tmp_path: 
     readiness = _ready()
     readiness = DailyReadiness(
         telegram_synced_at=readiness.telegram_synced_at,
-        github_synced_at=stale,
-        magicians_synced_at=readiness.magicians_synced_at,
+        live_evidence_collected_at=stale,
         knowledge_refreshed_at=readiness.knowledge_refreshed_at,
     )
     ai = FakeAi(_fixture("daily-active"))
 
     with pytest.raises(DailyRejected, match="fresh"):
-        await DailyService(tmp_path, ai=ai).prepare(WINDOW, readiness=readiness)
+        await DailyService(tmp_path, ai=ai).prepare(
+            WINDOW, readiness=readiness, evidence=_evidence(tmp_path)
+        )
 
     assert not ai.calls
 
@@ -180,9 +210,7 @@ async def test_daily_requires_fresh_success_from_every_required_layer(tmp_path: 
     [
         (lambda value: value.update(telegram_text=value["telegram_text"] + " 我完成了"), "English"),
         (
-            lambda value: value.update(
-                telegram_text=value["telegram_text"] + " 🥇🏆🎉🔥✨🎯"
-            ),
+            lambda value: value.update(telegram_text=value["telegram_text"] + " 🥇🏆🎉🔥✨🎯"),
             "emoji",
         ),
         (
@@ -202,4 +230,76 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
     mutation(output)
 
     with pytest.raises(DailyRejected, match=message):
-        await DailyService(tmp_path, ai=FakeAi(output)).prepare(WINDOW, readiness=_ready())
+        await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+            WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("mutation", "message"),
+    [
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace("UTC\n", "UTC — extra commentary\n", 1)
+            ),
+            "title",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "\nWhat moved\n", "\nToday, What moved matters.\n"
+                )
+            ),
+            "section",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "\nNext step\n", "\nWhat moved\n\nNext step\n"
+                )
+            ),
+            "section",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "more concrete. [tg:tawg:1]",
+                    "more concrete. [tg:tawg:1] trailing text",
+                    1,
+                )
+            ),
+            "citation",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "Pick one edge case,",
+                    "Pick one edge case [made-up:next],",
+                )
+            ),
+            "citation",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "more concrete. [tg:tawg:1]",
+                    "more concrete [made-up:999]. [tg:tawg:1]",
+                    1,
+                )
+            ),
+            "citation",
+        ),
+    ],
+)
+async def test_daily_rejects_approximate_output_contracts(
+    tmp_path: Path, mutation: Any, message: str
+) -> None:
+    _seed(tmp_path)
+    output = _fixture("daily-active")
+    mutation(output)
+
+    with pytest.raises(DailyRejected, match=message):
+        await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+            WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )

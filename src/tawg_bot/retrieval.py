@@ -53,11 +53,7 @@ class _Chunk:
 
 class VaultRetriever:
     _SCHEMA = "tawg.bm25-index.v1"
-    _SOURCE_PATTERNS = (
-        "data/telegram/**/*.jsonl",
-        "data/github/**/*.jsonl",
-        "data/magicians/**/*.jsonl",
-    )
+    _SOURCE_PATTERNS = ("data/telegram/**/*.jsonl",)
 
     def __init__(self, root: Path, *, max_chunk_chars: int = 1200) -> None:
         if max_chunk_chars < 64:
@@ -71,9 +67,7 @@ class VaultRetriever:
         document_frequencies: Counter[str] = Counter()
         for chunk in chunks:
             document_frequencies.update(set(chunk.tokens))
-        average_length = (
-            sum(len(chunk.tokens) for chunk in chunks) / len(chunks) if chunks else 0.0
-        )
+        average_length = sum(len(chunk.tokens) for chunk in chunks) / len(chunks) if chunks else 0.0
         payload = {
             "schema": self._SCHEMA,
             "source_state_sha256": state,
@@ -143,9 +137,7 @@ class VaultRetriever:
             if score:
                 scored.append((score, chunk))
         scored.sort(key=lambda item: (-item[0], item[1].path, item[1].chunk_id))
-        return [
-            self._result(chunk, score, "text-fallback") for score, chunk in scored[:top_k]
-        ]
+        return [self._result(chunk, score, "text-fallback") for score, chunk in scored[:top_k]]
 
     def _load_index(
         self,
@@ -213,9 +205,7 @@ class VaultRetriever:
 
     def _source_paths(self) -> list[Path]:
         paths = {
-            path
-            for path in (self.root / "knowledge").rglob("*.md")
-            if self._safe_source_path(path)
+            path for path in (self.root / "knowledge").rglob("*.md") if self._safe_source_path(path)
         }
         for pattern in self._SOURCE_PATTERNS:
             paths.update(path for path in self.root.glob(pattern) if self._safe_source_path(path))
@@ -385,8 +375,7 @@ def _tokens(text: str) -> list[str]:
             characters = list(value)
             tokens.extend(characters)
             tokens.extend(
-                characters[index] + characters[index + 1]
-                for index in range(len(characters) - 1)
+                characters[index] + characters[index + 1] for index in range(len(characters) - 1)
             )
         else:
             tokens.append(value)

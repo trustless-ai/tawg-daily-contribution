@@ -679,7 +679,7 @@ git commit -m "feat: add bounded provider-neutral AI harness"
 
 - [ ] **Step 1: Write failing L3 knowledge-refresh tests**
 
-Seed unprocessed Telegram, GitHub, and Magicians records. Assert one model transaction updates/creates the correct people, ERC, topic, repository, timeline, index, hot page, source ledger, and claim ledger entries. Replaying without new content must be a no-op. A correction must replace current fact text without creating a correction page or modifying source JSONL.
+Seed unprocessed Telegram, GitHub, and Magicians records. Assert one model transaction updates/creates the correct acknowledgement, ERC, topic, repository, timeline, index, hot page, source ledger, and claim ledger entries. Replaying without new content must be a no-op. A correction must replace current fact text without creating a correction page or modifying source JSONL.
 
 - [ ] **Step 2: Add adversarial outputs**
 

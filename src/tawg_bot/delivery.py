@@ -19,6 +19,7 @@ from tawg_bot.models import (
 )
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 from tawg_bot.telegram_api import SentMessage, TelegramApiError
+from tawg_bot.telegram_text import TelegramTextSplitError, split_telegram_text
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
 
@@ -119,9 +120,7 @@ class DeliveryService:
         self._publish_attempts(attempts, f"delivery:{job_id}:prepared")
         await self.checkpoint.publish(f"delivery:{job_id}:prepared", self.root)
 
-        sending = prepared.model_copy(
-            update={"status": DeliveryStatus.SENDING, "updated_at": now}
-        )
+        sending = prepared.model_copy(update={"status": DeliveryStatus.SENDING, "updated_at": now})
         attempts[job_id] = sending
         self._publish_attempts(attempts, f"delivery:{job_id}:sending")
         await self.checkpoint.publish(f"delivery:{job_id}:sending", self.root)
@@ -152,9 +151,7 @@ class DeliveryService:
                 )
                 attempts[job_id] = failed
                 self._publish_attempts(attempts, f"delivery:{job_id}:{status.value}")
-                await self.checkpoint.publish(
-                    f"delivery:{job_id}:{status.value}", self.root
-                )
+                await self.checkpoint.publish(f"delivery:{job_id}:{status.value}", self.root)
                 if sent:
                     raise DeliveryAmbiguous("Telegram accepted only part of the delivery") from None
                 raise DeliveryFailed("Telegram explicitly rejected the delivery") from None
@@ -194,21 +191,14 @@ class DeliveryService:
         return delivered
 
     def _split(self, text: str) -> tuple[str, ...]:
-        if not text.strip():
-            raise DeliveryRejected("delivery text cannot be empty")
-        if len(text) <= self._TELEGRAM_LIMIT:
-            return (text,)
-        if len(text) > self._TELEGRAM_LIMIT * self._MAX_MESSAGES:
-            raise DeliveryRejected("delivery cannot fit in at most two Telegram messages")
-        split_at = text.rfind("\n\n", 0, self._TELEGRAM_LIMIT + 1)
-        if split_at < self._TELEGRAM_LIMIT // 2:
-            split_at = text.rfind("\n", 0, self._TELEGRAM_LIMIT + 1)
-        if split_at < self._TELEGRAM_LIMIT // 2:
-            split_at = self._TELEGRAM_LIMIT
-        messages = (text[:split_at].rstrip(), text[split_at:].lstrip())
-        if any(not item or len(item) > self._TELEGRAM_LIMIT for item in messages):
-            raise DeliveryRejected("delivery cannot fit in at most two Telegram messages")
-        return messages
+        try:
+            return split_telegram_text(
+                text,
+                limit=self._TELEGRAM_LIMIT,
+                max_messages=self._MAX_MESSAGES,
+            )
+        except (TelegramTextSplitError, ValueError):
+            raise DeliveryRejected("delivery cannot fit in at most two Telegram messages") from None
 
     def _load_attempts(self) -> dict[str, DeliveryAttempt]:
         path = self.root / self._STATE_PATH
@@ -224,19 +214,17 @@ class DeliveryService:
             raise DeliveryRejected("duplicate delivery intent")
         return by_id
 
-    def _publish_attempts(
-        self, attempts: Mapping[str, DeliveryAttempt], operation_id: str
-    ) -> None:
+    def _publish_attempts(self, attempts: Mapping[str, DeliveryAttempt], operation_id: str) -> None:
         uow = RepositoryUnitOfWork(self.root, operation_id=operation_id)
+        uow.register_external_evidence(())
         self._stage_attempts(uow, attempts)
         uow.publish()
 
     def _publish_final(
         self, attempts: Mapping[str, DeliveryAttempt], delivered: DeliveryAttempt
     ) -> None:
-        uow = RepositoryUnitOfWork(
-            self.root, operation_id=f"delivery:{delivered.job_id}:delivered"
-        )
+        uow = RepositoryUnitOfWork(self.root, operation_id=f"delivery:{delivered.job_id}:delivered")
+        uow.register_external_evidence(())
         self._stage_attempts(uow, attempts)
         jobs = self._load_jobs_if_present()
         job = jobs.get(delivered.job_id)
@@ -268,9 +256,7 @@ class DeliveryService:
         return {job.job_id: job for job in jobs}
 
     @staticmethod
-    def _stage_attempts(
-        uow: RepositoryUnitOfWork, attempts: Mapping[str, DeliveryAttempt]
-    ) -> None:
+    def _stage_attempts(uow: RepositoryUnitOfWork, attempts: Mapping[str, DeliveryAttempt]) -> None:
         uow.stage_json(
             DeliveryService._STATE_PATH,
             [attempts[key].model_dump(mode="json") for key in sorted(attempts)],

@@ -2,12 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import base64
 import hashlib
 import os
 from collections.abc import Callable, Sequence
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Protocol, cast
 from urllib.parse import quote
@@ -128,6 +129,45 @@ query TawgDiscussions($owner: String!, $name: String!, $after: String) {
 }
 """
 
+_RECENT_DISCUSSIONS_QUERY = (
+    _DISCUSSIONS_QUERY.replace("direction: ASC", "direction: DESC")
+    .replace("comments(first: 100)", "comments(last: 100)")
+    .replace(
+        "pageInfo { hasNextPage endCursor }",
+        "pageInfo { hasPreviousPage startCursor }",
+        1,
+    )
+)
+
+_RECENT_DISCUSSION_COMMENTS_QUERY = """
+query TawgRecentDiscussionComments(
+  $owner: String!, $name: String!, $number: Int!, $before: String
+) {
+  repository(owner: $owner, name: $name) {
+    discussion(number: $number) {
+      comments(last: 100, before: $before) {
+        nodes { id body url createdAt updatedAt author { login } }
+        pageInfo { hasPreviousPage startCursor }
+      }
+    }
+  }
+}
+"""
+
+_MAX_ACTIVITY_PAGES = 10
+_MAX_ACTIVITY_REQUESTS = 600
+
+
+@dataclass(slots=True)
+class _ActivityRequestBudget:
+    remaining: int
+
+    def consume(self) -> None:
+        if self.remaining <= 0:
+            raise GitHubSourceError("GitHub activity exceeded its request budget")
+        self.remaining -= 1
+
+
 _DISCUSSION_COMMENTS_QUERY = """
 query TawgDiscussionComments(
   $owner: String!, $name: String!, $number: Int!, $after: String
@@ -176,10 +216,13 @@ class GitHubSource:
             privacy=PrivacyFilter.from_yaml(root / "config/privacy.yml"),
         )
 
-    async def list_public_repositories(self) -> list[RepositoryRef]:
+    async def list_public_repositories(
+        self, *, request_budget: _ActivityRequestBudget | None = None
+    ) -> list[RepositoryRef]:
         items = await self._paginate(
             f"/orgs/{self.organization}/repos",
             {"type": "public", "sort": "full_name", "direction": "asc"},
+            request_budget=request_budget,
         )
         repositories: list[RepositoryRef] = []
         for item in items:
@@ -201,25 +244,40 @@ class GitHubSource:
         return sorted(repositories, key=lambda repository: repository.name.casefold())
 
     async def sync_repository(
-        self, repository: RepositoryRef, cursors: dict[str, str | int | None]
+        self,
+        repository: RepositoryRef,
+        cursors: dict[str, str | int | None],
+        *,
+        include_files: bool = True,
+        activity_since: datetime | None = None,
+        request_budget: _ActivityRequestBudget | None = None,
     ) -> GitHubBatch:
+        if activity_since is not None and (
+            activity_since.tzinfo is None
+            or activity_since.utcoffset() != UTC.utcoffset(activity_since)
+        ):
+            raise ValueError("GitHub activity cutoff must use UTC")
+        page_budget = _MAX_ACTIVITY_PAGES if activity_since is not None else None
         records: list[SourceRecord] = []
         updated_cursors = dict(cursors)
-        branch = self._require_mapping(
-            await self.client.get_json(
-                f"/repos/{repository.full_name}/branches/{quote(repository.default_branch)}"
+        if include_files:
+            branch = self._require_mapping(
+                await self.client.get_json(
+                    f"/repos/{repository.full_name}/branches/{quote(repository.default_branch)}"
+                )
             )
-        )
-        commit = self._require_mapping(branch.get("commit"))
-        branch_sha = self._require_string(commit.get("sha"), "default branch SHA")
-        branch_time = self._branch_timestamp(commit)
-        if cursors.get("default_branch_sha") != branch_sha:
-            records.extend(await self._collect_files(repository, branch_sha, branch_time))
-            updated_cursors["default_branch_sha"] = branch_sha
+            commit = self._require_mapping(branch.get("commit"))
+            branch_sha = self._require_string(commit.get("sha"), "default branch SHA")
+            branch_time = self._branch_timestamp(commit)
+            if cursors.get("default_branch_sha") != branch_sha:
+                records.extend(await self._collect_files(repository, branch_sha, branch_time))
+                updated_cursors["default_branch_sha"] = branch_sha
 
         commits = await self._paginate(
             f"/repos/{repository.full_name}/commits",
             self._since(cursors, "commits_since", {"sha": repository.default_branch}),
+            max_pages=page_budget,
+            request_budget=request_budget,
         )
         commit_records = self._map_commits(repository, commits)
         records.extend(commit_records)
@@ -230,6 +288,8 @@ class GitHubSource:
         issues = await self._paginate(
             f"/repos/{repository.full_name}/issues",
             self._since(cursors, "issues_since", {"state": "all", "sort": "updated"}),
+            max_pages=page_budget,
+            request_budget=request_budget,
         )
         issue_records = self._map_issues(repository, issues)
         records.extend(issue_records)
@@ -244,6 +304,8 @@ class GitHubSource:
         issue_comments = await self._paginate(
             f"/repos/{repository.full_name}/issues/comments",
             self._since(cursors, "issue_comments_since", {"sort": "updated"}),
+            max_pages=page_budget,
+            request_budget=request_budget,
         )
         issue_comment_records = self._map_issue_comments(repository, issue_comments)
         records.extend(issue_comment_records)
@@ -254,12 +316,30 @@ class GitHubSource:
             SourceType.GITHUB_COMMENT,
         )
 
-        pulls = await self._paginate(
-            f"/repos/{repository.full_name}/pulls",
-            {"state": "all", "sort": "updated", "direction": "asc"},
-        )
+        if activity_since is None:
+            pulls = await self._paginate(
+                f"/repos/{repository.full_name}/pulls",
+                {"state": "all", "sort": "updated", "direction": "asc"},
+                max_pages=page_budget,
+                request_budget=request_budget,
+            )
+        else:
+            pulls = await self._paginate_recent(
+                f"/repos/{repository.full_name}/pulls",
+                {"state": "all", "sort": "updated", "direction": "desc"},
+                timestamp_key="updated_at",
+                since=activity_since,
+                max_pages=_MAX_ACTIVITY_PAGES,
+                request_budget=request_budget,
+            )
         review_pulls = self._items_after(pulls, cursors.get("pulls_since"), "updated_at")
-        review_records = await self._collect_reviews(repository, review_pulls)
+        review_records = await self._collect_reviews(
+            repository,
+            review_pulls,
+            activity_since=activity_since,
+            max_pages=page_budget,
+            request_budget=request_budget,
+        )
         records.extend(review_records)
         self._advance_timestamp(
             updated_cursors, "reviews_since", review_records, SourceType.GITHUB_REVIEW
@@ -270,6 +350,8 @@ class GitHubSource:
         review_comments = await self._paginate(
             f"/repos/{repository.full_name}/pulls/comments",
             self._since(cursors, "review_comments_since", {"sort": "updated"}),
+            max_pages=page_budget,
+            request_budget=request_budget,
         )
         review_comment_records = self._map_review_comments(repository, review_comments)
         records.extend(review_comment_records)
@@ -280,7 +362,20 @@ class GitHubSource:
             SourceType.GITHUB_REVIEW,
         )
 
-        release_items = await self._paginate(f"/repos/{repository.full_name}/releases", {})
+        if activity_since is None:
+            release_items = await self._paginate(
+                f"/repos/{repository.full_name}/releases",
+                {},
+                max_pages=page_budget,
+                request_budget=request_budget,
+            )
+        else:
+            release_items = await self._paginate(
+                f"/repos/{repository.full_name}/releases",
+                {},
+                max_pages=page_budget,
+                request_budget=request_budget,
+            )
         release_items = self._items_after(
             release_items, cursors.get("releases_since"), "published_at"
         )
@@ -291,7 +386,11 @@ class GitHubSource:
         )
 
         discussion_records, discussion_cursor = await self._collect_discussions(
-            repository, cursors.get("discussions_cursor")
+            repository,
+            cursors.get("discussions_cursor"),
+            activity_since=activity_since,
+            max_pages=page_budget,
+            request_budget=request_budget,
         )
         records.extend(discussion_records)
         if discussion_cursor is not None:
@@ -301,6 +400,61 @@ class GitHubSource:
         return GitHubBatch(
             records=tuple(by_id[record_id] for record_id in sorted(by_id)),
             cursors=updated_cursors,
+        )
+
+    async def sync_activity_since(
+        self, since: datetime, *, max_concurrency: int = 4
+    ) -> GitHubBatch:
+        if since.tzinfo is None or since.utcoffset() != UTC.utcoffset(since):
+            raise ValueError("GitHub activity cutoff must use UTC")
+        if max_concurrency <= 0:
+            raise ValueError("GitHub activity concurrency must be positive")
+        request_budget = _ActivityRequestBudget(_MAX_ACTIVITY_REQUESTS)
+        repositories = await self.list_public_repositories(request_budget=request_budget)
+        semaphore = asyncio.Semaphore(max_concurrency)
+        baseline = (since - timedelta(seconds=1)).isoformat().replace("+00:00", "Z")
+        cursor_keys = (
+            "commits_since",
+            "issues_since",
+            "issue_comments_since",
+            "pulls_since",
+            "reviews_since",
+            "review_comments_since",
+            "releases_since",
+        )
+
+        async def collect(repository: RepositoryRef) -> tuple[RepositoryRef, GitHubBatch | None]:
+            cursors: dict[str, str | int | None] = {key: baseline for key in cursor_keys}
+            try:
+                async with semaphore:
+                    batch = await self.sync_repository(
+                        repository,
+                        cursors,
+                        include_files=False,
+                        activity_since=since,
+                        request_budget=request_budget,
+                    )
+            except GitHubSourceError:
+                return repository, None
+            return repository, batch
+
+        results = await asyncio.gather(*(collect(repository) for repository in repositories))
+        records: list[SourceRecord] = []
+        cursors: dict[str, str | int | None] = {}
+        failures: list[str] = []
+        for repository, batch in results:
+            if batch is None:
+                failures.append(repository.name)
+                continue
+            records.extend(record for record in batch.records if record.updated_at >= since)
+            cursors.update(
+                {f"{repository.name}:{key}": value for key, value in batch.cursors.items()}
+            )
+        by_id = {record.record_id: record for record in records}
+        return GitHubBatch(
+            records=tuple(by_id[key] for key in sorted(by_id)),
+            cursors=cursors,
+            failed_streams=tuple(failures),
         )
 
     async def sync_all(self, cursors: SourceCursors) -> GitHubBatch:
@@ -467,9 +621,7 @@ class GitHubSource:
             number = self._require_int(item.get("number"), "issue number")
             is_pull = "pull_request" in item
             kind = "pr" if is_pull else "issue"
-            source_type = (
-                SourceType.GITHUB_PULL_REQUEST if is_pull else SourceType.GITHUB_ISSUE
-            )
+            source_type = SourceType.GITHUB_PULL_REQUEST if is_pull else SourceType.GITHUB_ISSUE
             record = self._make_record(
                 record_id=github_id(repository.name, kind, number),
                 source_type=source_type,
@@ -512,13 +664,22 @@ class GitHubSource:
         return records
 
     async def _collect_reviews(
-        self, repository: RepositoryRef, pulls: list[dict[str, Any]]
+        self,
+        repository: RepositoryRef,
+        pulls: list[dict[str, Any]],
+        *,
+        activity_since: datetime | None = None,
+        max_pages: int | None = None,
+        request_budget: _ActivityRequestBudget | None = None,
     ) -> list[SourceRecord]:
         records: list[SourceRecord] = []
         for pull in pulls:
             number = self._require_int(pull.get("number"), "pull request number")
             reviews = await self._paginate(
-                f"/repos/{repository.full_name}/pulls/{number}/reviews", {}
+                f"/repos/{repository.full_name}/pulls/{number}/reviews",
+                {},
+                max_pages=max_pages,
+                request_budget=request_budget,
             )
             for review in reviews:
                 review_id = self._require_int(review.get("id"), "review ID")
@@ -540,6 +701,8 @@ class GitHubSource:
                     ],
                 )
                 if record is not None:
+                    if activity_since is not None and record.updated_at < activity_since:
+                        continue
                     records.append(record)
         return records
 
@@ -595,16 +758,27 @@ class GitHubSource:
         return records
 
     async def _collect_discussions(
-        self, repository: RepositoryRef, cursor: str | int | None
+        self,
+        repository: RepositoryRef,
+        cursor: str | int | None,
+        *,
+        activity_since: datetime | None = None,
+        max_pages: int | None = None,
+        request_budget: _ActivityRequestBudget | None = None,
     ) -> tuple[list[SourceRecord], str | None]:
         records: list[SourceRecord] = []
         # Relay cursors are traversal positions, not durable update cursors. Revisit the
         # connection so edits and new comments on older discussions cannot be missed.
         after = None
         final_cursor = cursor if isinstance(cursor, str) else None
+        page_count = 0
         while True:
+            page_count += 1
+            if max_pages is not None and page_count > max_pages:
+                raise GitHubSourceError("GitHub discussion pagination exceeded its budget")
+            self._consume_request(request_budget)
             data = await self.client.graphql(
-                _DISCUSSIONS_QUERY,
+                _RECENT_DISCUSSIONS_QUERY if activity_since is not None else _DISCUSSIONS_QUERY,
                 {"owner": self.organization, "name": repository.name, "after": after},
             )
             repository_data = self._require_mapping(data.get("repository"))
@@ -632,38 +806,56 @@ class GitHubSource:
                 comments = comments_data.get("nodes", [])
                 if not isinstance(comments, list):
                     raise GitHubSourceError("GitHub discussion comments are invalid")
-                records.extend(self._map_discussion_comments(repository, number, comments))
+                comment_records = self._map_discussion_comments(repository, number, comments)
+                records.extend(
+                    record
+                    for record in comment_records
+                    if activity_since is None or record.updated_at >= activity_since
+                )
                 comments_page = self._require_mapping(comments_data.get("pageInfo"))
-                comment_cursor = comments_page.get("endCursor")
-                while comments_page.get("hasNextPage") is True:
+                page_direction = "before" if activity_since is not None else "after"
+                page_flag = "hasPreviousPage" if activity_since is not None else "hasNextPage"
+                cursor_key = "startCursor" if activity_since is not None else "endCursor"
+                comment_cursor = comments_page.get(cursor_key)
+                comment_page_count = 1
+                while comments_page.get(page_flag) is True:
+                    comment_page_count += 1
+                    if max_pages is not None and comment_page_count > max_pages:
+                        raise GitHubSourceError(
+                            "GitHub discussion comment pagination exceeded its budget"
+                        )
                     if not isinstance(comment_cursor, str):
                         raise GitHubSourceError(
                             "GitHub discussion comment pagination did not advance"
                         )
+                    self._consume_request(request_budget)
                     comment_data = await self.client.graphql(
-                        _DISCUSSION_COMMENTS_QUERY,
+                        _RECENT_DISCUSSION_COMMENTS_QUERY
+                        if activity_since is not None
+                        else _DISCUSSION_COMMENTS_QUERY,
                         {
                             "owner": self.organization,
                             "name": repository.name,
                             "number": number,
-                            "after": comment_cursor,
+                            page_direction: comment_cursor,
                         },
                     )
                     comment_repository = self._require_mapping(comment_data.get("repository"))
-                    discussion_page = self._require_mapping(
-                        comment_repository.get("discussion")
-                    )
+                    discussion_page = self._require_mapping(comment_repository.get("discussion"))
                     comments_data = self._require_mapping(discussion_page.get("comments"))
                     page_nodes = comments_data.get("nodes")
                     if not isinstance(page_nodes, list):
                         raise GitHubSourceError("GitHub discussion comments are invalid")
+                    page_records = self._map_discussion_comments(repository, number, page_nodes)
                     records.extend(
-                        self._map_discussion_comments(repository, number, page_nodes)
+                        record
+                        for record in page_records
+                        if activity_since is None or record.updated_at >= activity_since
                     )
                     comments_page = self._require_mapping(comments_data.get("pageInfo"))
-                    next_comment_cursor = comments_page.get("endCursor")
+                    next_comment_cursor = comments_page.get(cursor_key)
                     if (
-                        comments_page.get("hasNextPage") is True
+                        comments_page.get(page_flag) is True
                         and next_comment_cursor == comment_cursor
                     ):
                         raise GitHubSourceError(
@@ -720,12 +912,22 @@ class GitHubSource:
         return records
 
     async def _paginate(
-        self, path: str, params: dict[str, object]
+        self,
+        path: str,
+        params: dict[str, object],
+        *,
+        max_pages: int | None = None,
+        request_budget: _ActivityRequestBudget | None = None,
     ) -> list[dict[str, Any]]:
+        if max_pages is not None and max_pages <= 0:
+            raise ValueError("GitHub pagination budget must be positive")
         records: list[dict[str, Any]] = []
         page = 1
         while True:
+            if max_pages is not None and page > max_pages:
+                raise GitHubSourceError("GitHub pagination exceeded its budget")
             query = {**params, "per_page": 100, "page": page}
+            self._consume_request(request_budget)
             payload = await self.client.get_json(path, query)
             if not isinstance(payload, list):
                 raise GitHubSourceError("GitHub paginated response was not a list")
@@ -733,7 +935,47 @@ class GitHubSource:
                 return records
             for item in payload:
                 records.append(self._require_mapping(item))
+            if len(payload) < 100:
+                return records
             page += 1
+
+    async def _paginate_recent(
+        self,
+        path: str,
+        params: dict[str, object],
+        *,
+        timestamp_key: str,
+        since: datetime,
+        max_pages: int,
+        request_budget: _ActivityRequestBudget | None = None,
+    ) -> list[dict[str, Any]]:
+        records: list[dict[str, Any]] = []
+        for page in range(1, max_pages + 1):
+            query = {**params, "per_page": 100, "page": page}
+            self._consume_request(request_budget)
+            payload = await self.client.get_json(path, query)
+            if not isinstance(payload, list):
+                raise GitHubSourceError("GitHub paginated response was not a list")
+            if not payload:
+                return records
+            crossed_boundary = False
+            for raw_item in payload:
+                item = self._require_mapping(raw_item)
+                timestamp = self._timestamp(item.get(timestamp_key))
+                if timestamp < since:
+                    crossed_boundary = True
+                    continue
+                records.append(item)
+            if crossed_boundary:
+                return records
+            if len(payload) < 100:
+                return records
+        raise GitHubSourceError("GitHub activity pagination exceeded its budget")
+
+    @staticmethod
+    def _consume_request(budget: _ActivityRequestBudget | None) -> None:
+        if budget is not None:
+            budget.consume()
 
     def _make_record(
         self,

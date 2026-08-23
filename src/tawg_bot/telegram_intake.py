@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import os
 from collections import defaultdict
-from collections.abc import Callable, Iterable
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -23,7 +23,7 @@ from tawg_bot.models import (
     SourceType,
 )
 from tawg_bot.privacy import PrivacyFilter
-from tawg_bot.storage import JsonlCollection
+from tawg_bot.storage import partition_stable_records
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
 
@@ -136,15 +136,22 @@ class TelegramIntake:
                     updated_at=now,
                 )
 
-        records = self._preserve_ingestion(records_by_id.values())
         monthly: dict[str, list[SourceRecord]] = defaultdict(list)
-        for record in records:
+        for record in records_by_id.values():
             monthly[f"data/telegram/{record.created_at:%Y/%m}/messages.jsonl"].append(record)
 
         cursors.telegram_offset = next_offset
         uow = self.uow_factory(self.root, f"telegram-{uuid4()}")
+        uow.register_external_evidence(())
         for path, month_records in sorted(monthly.items()):
-            uow.stage_records(path, month_records)
+            partitions = partition_stable_records(
+                self.root,
+                path,
+                month_records,
+                search_relative_root="data/telegram",
+            )
+            for target, stable_records in sorted(partitions.items()):
+                uow.stage_records(target, stable_records)
         uow.stage_json(
             "data/state/pending-bot-jobs.json",
             [jobs_by_id[job_id].model_dump(mode="json") for job_id in sorted(jobs_by_id)],
@@ -216,27 +223,6 @@ class TelegramIntake:
             ingested_at=ingested_at,
             source_payload={"message_kind": "group_message", "edited": edited},
         )
-
-    def _preserve_ingestion(self, incoming: Iterable[SourceRecord]) -> list[SourceRecord]:
-        grouped: dict[str, list[SourceRecord]] = defaultdict(list)
-        for record in incoming:
-            grouped[f"data/telegram/{record.created_at:%Y/%m}/messages.jsonl"].append(record)
-        result: list[SourceRecord] = []
-        for relative_path, records in grouped.items():
-            collection = JsonlCollection(self.root / relative_path, SourceRecord)
-            persisted = (
-                collection.decode(collection.path.read_bytes())
-                if collection.path.exists()
-                else []
-            )
-            existing = {record.record_id: record for record in persisted}
-            result.extend(
-                record.model_copy(update={"ingested_at": existing[record.record_id].ingested_at})
-                if record.record_id in existing
-                else record
-                for record in records
-            )
-        return result
 
     def _load_jobs(self) -> dict[str, PendingBotJob]:
         raw = json.loads(

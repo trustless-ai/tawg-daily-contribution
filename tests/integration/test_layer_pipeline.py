@@ -21,7 +21,7 @@ def service(root: Path, pipeline: Pipeline) -> Scheduler:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("failure", ["github", "magicians", "validate"])
+@pytest.mark.parametrize("failure", ["source_check", "validate"])
 async def test_required_source_or_validator_failure_skips_daily_and_delivery(
     tmp_path: Path, failure: str
 ) -> None:

@@ -30,7 +30,7 @@ The knowledge Bot is a separate off-chain collaboration layer:
 3. Import and incrementally update all repositories in the `trustless-ai` GitHub organization, including future repositories.
 4. Import selected Ethereum Magicians discussions.
 5. Maintain a TAWG-local, human-readable identity alias map across Telegram, GitHub, and Ethereum Magicians.
-6. Maintain current Obsidian pages for people, ERCs, topics, repositories, and timelines.
+6. Maintain current Obsidian acknowledgement pages for public member contributions, plus ERC, topic, repository, and timeline pages.
 7. Run Claude Code CLI as the single AI harness, with its backend selected through environment variables.
 8. Publish one daily English catch-up after a fresh synchronization of every source.
 9. Answer explicit `@bot` messages using the language of the question and add an English recap when the answer is not in English.
@@ -96,7 +96,7 @@ tawg-daily-contribution/
 ├── knowledge/
 │   ├── index.md
 │   ├── hot.md
-│   ├── people/<person-id>.md
+│   ├── acknowledgements/<public-name>.md
 │   ├── ercs/<erc-id>.md
 │   ├── topics/<topic>.md
 │   ├── repos/<repository>.md
@@ -234,7 +234,7 @@ One GitHub Actions scheduler ticks every five minutes. It evaluates durable `las
 |---|---:|---|
 | L1 Fast response | 5 minutes | Fetch and persist every Telegram update; build reply relations and live context; answer explicit `@bot` messages. |
 | L2 Source sync | 30 minutes | L1 plus incremental GitHub organization and Ethereum Magicians synchronization. No AI call is required. |
-| L3 Knowledge refresh | 2 hours | L2 plus Claude Code updates to current Obsidian people, ERC, topic, repository, and timeline pages when unprocessed records exist. |
+| L3 Knowledge refresh | 2 hours | L2 plus Claude Code updates to current Obsidian acknowledgement, ERC, topic, repository, and timeline pages when unprocessed records exist. |
 | L4 Daily | 23:00 UTC daily | Fresh L1-L3 synchronization, knowledge refresh, catch-up generation, validation, source commit, and Telegram delivery. |
 
 There is no scheduled L5 maintenance layer in v1. Historical backfills use a manual `workflow_dispatch`.

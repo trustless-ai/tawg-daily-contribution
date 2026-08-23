@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import re
-from collections.abc import Callable, Iterable
+from collections.abc import Awaitable, Callable, Iterable
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
+from email.utils import parsedate_to_datetime
 from html.parser import HTMLParser
 from typing import Any, Protocol, cast
 from urllib.parse import quote, urljoin, urlparse
@@ -16,7 +18,7 @@ import httpx
 from tawg_bot.ids import magicians_id
 from tawg_bot.models import SourceCursors, SourceRecord, SourceType
 from tawg_bot.privacy import PrivacyFilter
-from tawg_bot.storage import JsonlCollection
+from tawg_bot.storage import partition_stable_records
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
 
@@ -31,24 +33,38 @@ class MagiciansClient(Protocol):
 
 
 class MagiciansHttpClient:
-    def __init__(self, *, base_url: str, client: httpx.AsyncClient) -> None:
+    _MAX_RETRY_DELAY_SECONDS = 300.0
+
+    def __init__(
+        self,
+        *,
+        base_url: str,
+        client: httpx.AsyncClient,
+        now: Callable[[], datetime] | None = None,
+        sleep: Callable[[float], Awaitable[None]] | None = None,
+    ) -> None:
         parsed = urlparse(base_url)
         if parsed.scheme != "https" or not parsed.netloc:
             raise ValueError("Ethereum Magicians base URL must be HTTPS")
         self.base_url = base_url.rstrip("/")
         self.client = client
+        self.now = now or (lambda: datetime.now(UTC))
+        self.sleep = sleep or asyncio.sleep
 
-    async def get_json(
-        self, path: str, params: dict[str, object] | None = None
-    ) -> dict[str, Any]:
-        try:
-            response = await self.client.get(
-                f"{self.base_url}{path}",
-                params=cast(Any, params),
-                headers={"User-Agent": "TAWGKnowledgeBot/0.1"},
-            )
-        except httpx.HTTPError:
-            raise MagiciansSourceError("Ethereum Magicians HTTP request failed") from None
+    async def get_json(self, path: str, params: dict[str, object] | None = None) -> dict[str, Any]:
+        for attempt in range(3):
+            try:
+                response = await self.client.get(
+                    f"{self.base_url}{path}",
+                    params=cast(Any, params),
+                    headers={"User-Agent": "TAWGKnowledgeBot/0.1"},
+                )
+            except httpx.HTTPError:
+                raise MagiciansSourceError("Ethereum Magicians HTTP request failed") from None
+            if response.status_code != 429 or attempt == 2:
+                break
+            delay = self._retry_delay(response.headers.get("Retry-After", ""), attempt)
+            await self.sleep(delay)
         if not response.is_success:
             raise MagiciansSourceError(
                 f"Ethereum Magicians HTTP request returned status {response.status_code}"
@@ -60,6 +76,28 @@ class MagiciansHttpClient:
         if not isinstance(payload, dict):
             raise MagiciansSourceError("Ethereum Magicians response was not an object")
         return payload
+
+    def _retry_delay(self, value: str, attempt: int) -> float:
+        if re.fullmatch(r"\d+", value):
+            try:
+                return self._bounded_retry_delay(float(int(value)))
+            except (OverflowError, ValueError):
+                raise MagiciansSourceError(
+                    "Ethereum Magicians retry delay exceeded the safe limit"
+                ) from None
+        try:
+            retry_at = parsedate_to_datetime(value)
+            if retry_at.tzinfo is None:
+                retry_at = retry_at.replace(tzinfo=UTC)
+            delay = max((retry_at.astimezone(UTC) - self.now()).total_seconds(), 0.0)
+            return self._bounded_retry_delay(delay)
+        except (TypeError, ValueError, OverflowError):
+            return float(2**attempt)
+
+    def _bounded_retry_delay(self, delay: float) -> float:
+        if delay > self._MAX_RETRY_DELAY_SECONDS:
+            raise MagiciansSourceError("Ethereum Magicians retry delay exceeded the safe limit")
+        return delay
 
 
 @dataclass(frozen=True, slots=True)
@@ -172,18 +210,22 @@ class MagiciansSource:
         privacy: PrivacyFilter,
         now: Callable[[], datetime] | None = None,
         post_chunk_size: int = 20,
+        max_topic_posts: int | None = None,
     ) -> None:
         parsed = urlparse(base_url)
         if parsed.scheme != "https" or not parsed.netloc:
             raise ValueError("Ethereum Magicians base URL must be HTTPS")
         if not 1 <= post_chunk_size <= 20:
             raise ValueError("Discourse post chunk size must be between 1 and 20")
+        if max_topic_posts is not None and max_topic_posts <= 0:
+            raise ValueError("Discourse topic post budget must be positive")
         self.client = client
         self.base_url = base_url.rstrip("/")
         self.base_host = parsed.netloc.casefold()
         self.privacy = privacy
         self.now = now or (lambda: datetime.now(UTC))
         self.post_chunk_size = post_chunk_size
+        self.max_topic_posts = max_topic_posts
 
     async def resolve_seeds(
         self,
@@ -210,8 +252,7 @@ class MagiciansSource:
 
         for erc_number in sorted(erc_numbers):
             already_seeded = any(
-                seed.slug.casefold().startswith(f"erc-{erc_number}-")
-                for seed in seeds.values()
+                seed.slug.casefold().startswith(f"erc-{erc_number}-") for seed in seeds.values()
             )
             if already_seeded:
                 continue
@@ -267,6 +308,8 @@ class MagiciansSource:
         if not isinstance(post_ids_raw, list) or not isinstance(initial_posts_raw, list):
             raise MagiciansSourceError("Ethereum Magicians post stream is invalid")
         post_ids = [self._require_int(value, "post ID") for value in post_ids_raw]
+        if self.max_topic_posts is not None and len(post_ids) > self.max_topic_posts:
+            raise MagiciansSourceError("Ethereum Magicians topic exceeded its post budget")
         posts = {
             self._require_int(post.get("id"), "post ID"): post
             for post in (self._require_mapping(value) for value in initial_posts_raw)
@@ -315,6 +358,49 @@ class MagiciansSource:
             candidates=tuple(candidates[key] for key in sorted(candidates)),
         )
 
+    async def sync_activity_since(
+        self,
+        seeds: Iterable[TopicSeed],
+        since: datetime,
+        *,
+        max_concurrency: int = 4,
+    ) -> MagiciansBatch:
+        if since.tzinfo is None or since.utcoffset() != UTC.utcoffset(since):
+            raise ValueError("Ethereum Magicians activity cutoff must use UTC")
+        if max_concurrency <= 0:
+            raise ValueError("Ethereum Magicians activity concurrency must be positive")
+        ordered_seeds = sorted(seeds, key=lambda item: item.topic_id)
+        semaphore = asyncio.Semaphore(max_concurrency)
+
+        async def collect(seed: TopicSeed) -> tuple[TopicSeed, TopicBatch | None]:
+            try:
+                async with semaphore:
+                    return seed, await self.sync_topic(seed, cursor=None)
+            except MagiciansSourceError:
+                return seed, None
+
+        results = await asyncio.gather(*(collect(seed) for seed in ordered_seeds))
+        records: list[SourceRecord] = []
+        cursors: dict[str, str | int | None] = {}
+        candidates: dict[int, TopicCandidate] = {}
+        failures: list[int] = []
+        for seed, batch in results:
+            if batch is None:
+                failures.append(seed.topic_id)
+                continue
+            records.extend(record for record in batch.records if record.updated_at >= since)
+            if batch.cursor is not None:
+                cursors[f"topic:{seed.topic_id}:updated_at"] = batch.cursor
+            for candidate in batch.candidates:
+                candidates[candidate.topic_id] = candidate
+        by_id = {record.record_id: record for record in records}
+        return MagiciansBatch(
+            records=tuple(by_id[key] for key in sorted(by_id)),
+            cursors=cursors,
+            candidates=tuple(candidates[key] for key in sorted(candidates)),
+            failed_topics=tuple(failures),
+        )
+
     async def sync_all(
         self,
         seeds: Iterable[TopicSeed],
@@ -323,9 +409,13 @@ class MagiciansSource:
     ) -> MagiciansBatch:
         records: list[SourceRecord] = []
         next_cursors = dict(cursors.magicians)
-        candidates = {candidate.topic_id: candidate for candidate in initial_candidates}
         failures: list[int] = []
         seed_ids = {seed.topic_id for seed in seeds}
+        candidates = {
+            candidate.topic_id: candidate
+            for candidate in initial_candidates
+            if candidate.topic_id not in seed_ids
+        }
         for seed in sorted(seeds, key=lambda item: item.topic_id):
             key = f"topic:{seed.topic_id}:updated_at"
             try:
@@ -358,20 +448,14 @@ class MagiciansSource:
             path = f"data/magicians/{record.created_at:%Y/%m}/posts.jsonl"
             monthly.setdefault(path, []).append(record)
         for path, records in sorted(monthly.items()):
-            collection = JsonlCollection(uow.root / path, SourceRecord)
-            persisted = (
-                collection.decode(collection.path.read_bytes())
-                if collection.path.exists()
-                else []
+            partitions = partition_stable_records(
+                uow.root,
+                path,
+                records,
+                search_relative_root="data/magicians",
             )
-            existing = {record.record_id: record for record in persisted}
-            stable_records = [
-                record.model_copy(update={"ingested_at": existing[record.record_id].ingested_at})
-                if record.record_id in existing
-                else record
-                for record in records
-            ]
-            uow.stage_records(path, stable_records)
+            for target, stable_records in sorted(partitions.items()):
+                uow.stage_records(target, stable_records)
         cursors.magicians = batch.cursors
         uow.stage_json("data/state/source-cursors.json", cursors.model_dump(mode="json"))
         uow.stage_json(

@@ -12,7 +12,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from tawg_bot.models import SourceRecord
+from tawg_bot.models import SourceRecord, SourceType
+from tawg_bot.persistence_guard import (
+    PersistenceGuard,
+    PersistenceProvenance,
+    PersistenceRejected,
+)
 from tawg_bot.storage import JsonlCollection
 
 _OPERATION_ID = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
@@ -35,6 +40,7 @@ class _StagedWrite:
     prepared: Path
     expected_sha256: str | None
     content_sha256: str
+    provenance: PersistenceProvenance
 
 
 def _sha256(payload: bytes) -> str:
@@ -53,19 +59,55 @@ class RepositoryUnitOfWork:
         self.operation_id = operation_id
         self.transaction_dir = self.root / ".local" / "transactions" / operation_id
         self._writes: dict[str, _StagedWrite] = {}
+        self._external_evidence: list[str] | None = None
 
     def stage_records(self, relative_path: str, records: Iterable[SourceRecord]) -> None:
+        stable_records = tuple(records)
+        if (
+            not stable_records
+            or any(
+                record.source_type is not SourceType.TELEGRAM_MESSAGE for record in stable_records
+            )
+            or not relative_path.startswith("data/telegram/")
+        ):
+            raise PersistenceRejected
         target = self._target(relative_path)
-        payload = JsonlCollection(target, SourceRecord).merged_bytes(records)
-        self.stage_bytes(relative_path, payload)
+        payload = JsonlCollection(target, SourceRecord).merged_bytes(stable_records)
+        self.stage_bytes(
+            relative_path,
+            payload,
+            provenance=PersistenceProvenance.TELEGRAM_HISTORY,
+        )
 
-    def stage_json(self, relative_path: str, value: Mapping[str, Any] | list[Any]) -> None:
+    def stage_json(
+        self,
+        relative_path: str,
+        value: Mapping[str, Any] | list[Any],
+        *,
+        provenance: PersistenceProvenance | None = None,
+    ) -> None:
         payload = (json.dumps(value, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
-        self.stage_bytes(relative_path, payload)
+        self.stage_bytes(relative_path, payload, provenance=provenance)
 
-    def stage_bytes(self, relative_path: str, payload: bytes) -> None:
+    def stage_bytes(
+        self,
+        relative_path: str,
+        payload: bytes,
+        *,
+        provenance: PersistenceProvenance | None = None,
+    ) -> None:
         if relative_path in self._writes:
             raise ValueError(f"path already staged: {relative_path}")
+        resolved_provenance = provenance or PersistenceGuard.provenance_for_path(relative_path)
+        if (
+            resolved_provenance is not PersistenceProvenance.TELEGRAM_HISTORY
+            and self._external_evidence is None
+        ):
+            raise PersistenceRejected
+        self._guard().inspect_staged(
+            {relative_path: payload},
+            {relative_path: resolved_provenance},
+        )
         target = self._target(relative_path)
         prepared = self.transaction_dir / "prepared" / relative_path
         prepared.parent.mkdir(parents=True, exist_ok=True)
@@ -76,9 +118,25 @@ class RepositoryUnitOfWork:
             prepared=prepared,
             expected_sha256=_path_hash(target),
             content_sha256=_sha256(payload),
+            provenance=resolved_provenance,
         )
 
+    def register_external_evidence(self, texts: Iterable[str]) -> None:
+        if self._external_evidence is None:
+            self._external_evidence = []
+        self._external_evidence.extend(texts)
+        try:
+            self._inspect_staged()
+        except PersistenceRejected:
+            self._cleanup()
+            raise
+
     def publish(self) -> PublishResult:
+        try:
+            self._inspect_staged()
+        except PersistenceRejected:
+            self._cleanup()
+            raise
         ordered = list(self._writes.values())
         for write in ordered:
             if _path_hash(write.target) != write.expected_sha256:
@@ -129,3 +187,13 @@ class RepositoryUnitOfWork:
     def _cleanup(self) -> None:
         if self.transaction_dir.exists():
             shutil.rmtree(self.transaction_dir)
+        self._writes.clear()
+
+    def _guard(self) -> PersistenceGuard:
+        return PersistenceGuard.from_external_texts(self._external_evidence or ())
+
+    def _inspect_staged(self) -> None:
+        self._guard().inspect_staged(
+            {path: write.prepared.read_bytes() for path, write in self._writes.items()},
+            {path: write.provenance for path, write in self._writes.items()},
+        )

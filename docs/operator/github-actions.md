@@ -23,6 +23,8 @@ Add these Actions variables (the chat ID may instead be a secret):
 - `CLAUDE_CODE_EFFORT_LEVEL`
 - `CLAUDE_CODE_AUTO_COMPACT_WINDOW`
 
+The workflow supplies `GITHUB_TOKEN` from `${{ github.token }}`; do not create a second token unless organization policy requires one. Give the workflow only the repository-content permission needed for its reviewed checkpoint writes and only public organization read access for collection. Never pass GitHub or Telegram credentials into the Claude Code child process.
+
 DeepSeek-compatible example:
 
 ```yaml
@@ -37,10 +39,12 @@ CLAUDE_CODE_EFFORT_LEVEL: max
 CLAUDE_CODE_AUTO_COMPACT_WINDOW: "786432"
 ```
 
-The workflow passes only this allowlisted model configuration to the tool-less, one-turn Claude Code process. Claude Code is pinned to `2.1.240`; auto-update, nonessential traffic, prompt history, sessions, tools, and MCP are disabled by the controller.
+The workflow passes only this allowlisted model configuration to a tool-less, single-invocation Claude Code process with `--max-turns 1`. Claude Code is pinned to `2.1.240`; auto-update, nonessential traffic, prompt history, sessions, tools, and MCP are disabled by the controller. A provider may report the internal JSON-schema handoff as `num_turns=2`; the harness accepts only a successful `stop_reason=tool_use` result that already contains structured output. Each invocation receives a bounded context pack and ends without a resumable session. Durable context consists of sanitized Telegram history, generated knowledge, and body-free source metadata in the repository.
+
+Local compilation may instead use the developer's authenticated Codex setup. Those local credentials are not copied to Actions; Actions uses the DeepSeek-compatible variables above through Claude Code CLI.
 
 ## Telegram prerequisites
 
 The Bot must be an administrator in the one configured group. In BotFather, disable privacy mode so it receives ordinary group messages as well as mentions. Do not configure a webhook, and do not run any second `getUpdates` consumer: Telegram updates are consumed and cursor-committed by this single non-overlapping Actions writer.
 
-Before live delivery, manually dispatch the feature branch with `observe_only=true`. Review the committed sanitized records, current knowledge pages, citations, and the prepared Daily artifact. Live Actions validation and secret entry are deliberately left to the operator.
+Before live delivery, manually dispatch the feature branch with `observe_only=true`. Review the committed sanitized records, current knowledge pages, metadata, citations, and absence of external-body mirrors. The scheduled Daily cutoff is `23:00 UTC`, with live activity collected for `[previous 23:00 UTC, current 23:00 UTC)` immediately before generation. Live Actions validation, secret entry, and workflow push are deliberately left to the operator.

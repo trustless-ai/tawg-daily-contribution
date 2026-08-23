@@ -1,16 +1,19 @@
 import base64
 import json
+from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
 import pytest
 
+import tawg_bot.github_source as github_source_module
 from tawg_bot.github_source import GitHubSource, GitHubSourceError
 from tawg_bot.models import SourceCursors, SourceType
 
 ROOT = Path(__file__).parents[2]
 NOW = datetime(2026, 8, 23, 0, 30, tzinfo=UTC)
+ACTIVITY_SINCE = datetime(2026, 8, 22, 17, 30, tzinfo=UTC)
 
 
 class FakeGitHubClient:
@@ -118,6 +121,118 @@ async def test_repository_sync_covers_source_and_collaboration_evidence() -> Non
 
 
 @pytest.mark.asyncio
+async def test_activity_sync_is_window_bounded_and_skips_repository_file_trees() -> None:
+    client = FakeGitHubClient()
+    source = GitHubSource.for_repository(root=ROOT, client=client, now=lambda: NOW)
+
+    batch = await source.sync_activity_since(ACTIVITY_SINCE)
+
+    assert batch.successful
+    assert batch.records
+    assert all(record.source_type is not SourceType.GITHUB_FILE for record in batch.records)
+    assert all(record.updated_at >= ACTIVITY_SINCE for record in batch.records)
+    assert not any(
+        "/branches/" in path or "/git/trees/" in path or "/git/blobs/" in path
+        for path, _ in client.calls
+    )
+    expected_since = "2026-08-22T17:29:59Z"
+    bounded_paths = ("/commits", "/issues", "/issues/comments", "/pulls/comments")
+    assert all(
+        params.get("since") == expected_since
+        for path, params in client.calls
+        if path.endswith(bounded_paths)
+    )
+
+
+@pytest.mark.asyncio
+async def test_activity_sync_stops_newest_first_streams_at_the_window_boundary() -> None:
+    class OldHistoryClient(FakeGitHubClient):
+        async def get_json(
+            self, path: str, params: dict[str, object] | None = None
+        ) -> list[Any] | dict[str, Any]:
+            query = params or {}
+            if path == "/orgs/trustless-ai/repos":
+                self.calls.append((path, query))
+                return self.repositories[:1] if int(query.get("page", 1)) == 1 else []
+            is_pull_list = path.endswith("/pulls")
+            is_release_list = path.endswith("/releases")
+            if is_pull_list or is_release_list:
+                self.calls.append((path, query))
+                if int(query.get("page", 1)) != 1:
+                    raise AssertionError("activity history crossed its time boundary")
+                key = "pulls" if is_pull_list else "releases"
+                item = deepcopy(self.snapshot[key][0])
+                timestamp_key = "updated_at" if is_pull_list else "published_at"
+                item[timestamp_key] = "2026-08-01T00:00:00Z"
+                return [item]
+            return await super().get_json(path, params)
+
+    client = OldHistoryClient()
+    source = GitHubSource.for_repository(root=ROOT, client=client, now=lambda: NOW)
+
+    batch = await source.sync_activity_since(ACTIVITY_SINCE)
+
+    assert batch.successful
+    for path, params in client.calls:
+        if path.endswith("/pulls"):
+            assert params["direction"] == "desc"
+        if path.endswith("/releases"):
+            assert "direction" not in params
+
+
+@pytest.mark.asyncio
+async def test_activity_sync_scans_unsorted_releases_within_the_shared_budget() -> None:
+    class UnsortedReleaseClient(FakeGitHubClient):
+        async def get_json(
+            self, path: str, params: dict[str, object] | None = None
+        ) -> list[Any] | dict[str, Any]:
+            query = params or {}
+            if path == "/orgs/trustless-ai/repos":
+                self.calls.append((path, query))
+                return self.repositories[:1]
+            if path.endswith("/releases"):
+                self.calls.append((path, query))
+                page = int(query.get("page", 1))
+                template = self.snapshot["releases"][0]
+                if page == 1:
+                    items = []
+                    for release_id in range(1, 101):
+                        item = deepcopy(template)
+                        item["id"] = release_id
+                        item["published_at"] = "2026-08-01T00:00:00Z"
+                        items.append(item)
+                    return items
+                if page == 2:
+                    item = deepcopy(template)
+                    item["id"] = 101
+                    item["published_at"] = "2026-08-22T21:05:00Z"
+                    return [item]
+                return []
+            return await super().get_json(path, params)
+
+    source = GitHubSource.for_repository(root=ROOT, client=UnsortedReleaseClient(), now=lambda: NOW)
+
+    batch = await source.sync_activity_since(ACTIVITY_SINCE)
+
+    assert any(record.record_id == "gh:agent-ercs:release:101" for record in batch.records)
+
+
+@pytest.mark.asyncio
+async def test_activity_sync_fails_safely_when_shared_request_budget_is_exhausted(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(github_source_module, "_MAX_ACTIVITY_REQUESTS", 1)
+    client = FakeGitHubClient()
+    client.repositories = client.repositories[:1]
+    source = GitHubSource.for_repository(root=ROOT, client=client, now=lambda: NOW)
+
+    batch = await source.sync_activity_since(ACTIVITY_SINCE)
+
+    assert not batch.successful
+    assert batch.failed_streams == ("agent-ercs",)
+
+
+@pytest.mark.asyncio
 async def test_truncated_tree_falls_back_to_bounded_contents_walk() -> None:
     class TruncatedTreeClient(FakeGitHubClient):
         async def get_json(
@@ -131,9 +246,7 @@ async def test_truncated_tree_falls_back_to_bounded_contents_walk() -> None:
                     {"type": "file", "path": "README.md", "sha": "blob-readme", "size": 90},
                 ]
             if path.endswith("/contents/docs"):
-                return [
-                    {"type": "file", "path": "docs/spec.md", "sha": "blob-source", "size": 70}
-                ]
+                return [{"type": "file", "path": "docs/spec.md", "sha": "blob-source", "size": 70}]
             return await super().get_json(path, params)
 
     client = TruncatedTreeClient()
@@ -213,3 +326,69 @@ async def test_discussion_comments_follow_graphql_cursors_until_complete() -> No
     batch = await source.sync_repository(repository, {})
 
     assert any(record.text_original == "Second page evidence." for record in batch.records)
+
+
+@pytest.mark.asyncio
+async def test_activity_scans_older_comment_pages_for_recent_edits() -> None:
+    class RecentlyEditedCommentClient(FakeGitHubClient):
+        async def get_json(
+            self, path: str, params: dict[str, object] | None = None
+        ) -> list[Any] | dict[str, Any]:
+            if path == "/orgs/trustless-ai/repos":
+                query = params or {}
+                self.calls.append((path, query))
+                return self.repositories[:1]
+            return await super().get_json(path, params)
+
+        async def graphql(self, query: str, variables: dict[str, object]) -> dict[str, Any]:
+            self.calls.append(("graphql", variables))
+            if variables.get("number") == 4:
+                assert variables["before"] == "recent-page-start"
+                return {
+                    "repository": {
+                        "discussion": {
+                            "comments": {
+                                "nodes": [
+                                    {
+                                        "id": "DC_recent_edit",
+                                        "body": "An older comment edited inside the window.",
+                                        "url": "https://github.com/trustless-ai/agent-ercs/discussions/4#discussioncomment-edit",
+                                        "createdAt": "2026-08-01T12:00:00Z",
+                                        "updatedAt": "2026-08-22T20:30:00Z",
+                                        "author": {"login": "grace"},
+                                    }
+                                ],
+                                "pageInfo": {
+                                    "hasPreviousPage": False,
+                                    "startCursor": "older-page-start",
+                                },
+                            }
+                        }
+                    }
+                }
+            discussion = deepcopy(self.snapshot["discussions"][0])
+            discussion["updatedAt"] = "2026-08-22T17:00:00Z"
+            discussion["comments"]["nodes"][0]["updatedAt"] = "2026-08-22T17:00:00Z"
+            discussion["comments"]["pageInfo"] = {
+                "hasPreviousPage": True,
+                "startCursor": "recent-page-start",
+            }
+            return {
+                "repository": {
+                    "discussions": {
+                        "nodes": [discussion],
+                        "pageInfo": {"hasNextPage": False, "endCursor": "discussion-end"},
+                    }
+                }
+            }
+
+    source = GitHubSource.for_repository(
+        root=ROOT, client=RecentlyEditedCommentClient(), now=lambda: NOW
+    )
+
+    batch = await source.sync_activity_since(ACTIVITY_SINCE)
+
+    assert any(
+        record.text_original == "An older comment edited inside the window."
+        for record in batch.records
+    )

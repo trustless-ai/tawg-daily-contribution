@@ -1,15 +1,27 @@
 schema: tawg.sources.v1
 telegram:
   group_slug: tawg
+  expected_export_name: trustless-ai
+  expected_export_id: 4384669042
   poll_interval_seconds: 300
   history_export_media: false
 github:
   organization: trustless-ai
   include_public_archived_repositories: true
+  persistence: metadata_only
 magicians:
   base_url: https://ethereum-magicians.org
+  persistence: metadata_only
   required_topic_urls:
     - https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098
     - https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902
-  highlighted_topic_urls: []
+  highlighted_topic_urls:
+    - https://ethereum-magicians.org/t/erc-8203-agent-off-chain-conditional-settlement-extension-interface/28041
+    - https://ethereum-magicians.org/t/erc-8309-gateway-mesh-sync-protocol-for-ccip-read/28680
+    - https://ethereum-magicians.org/t/composition-note-agent-service-consultation-flow-composing-the-agent-ercs-8004-8263-8274-8275-8281-8299-8301-informational/28833
+    - https://ethereum-magicians.org/t/erc-8312-bounded-agent-actions/28851
+    - https://ethereum-magicians.org/t/erc-xxxx-scope-contestation-registry-permissionless-observation-scope-completeness-contestability/28856
+    - https://ethereum-magicians.org/t/erc-8323-source-token-agent-binding-for-erc-8004/28920
+    - https://ethereum-magicians.org/t/erc-8350-agent-memory-state-registry/29098
+    - https://ethereum-magicians.org/t/erc-8370-inheritable-agent-mandates/29275
   include_agent_ercs: true

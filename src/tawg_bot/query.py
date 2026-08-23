@@ -1,4 +1,4 @@
-"""Direct, deterministic queries over committed cross-source JSONL evidence."""
+"""Direct, deterministic queries over committed Telegram history."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from tawg_bot.aliases import AliasRegistry
+from tawg_bot.aliases import AliasError, AliasRegistry
 from tawg_bot.models import SourceRecord, SourceType
 from tawg_bot.storage import JsonlCollection
 
@@ -21,12 +21,8 @@ class EvidenceHit:
     author_person_id: str | None
 
 
-class SourceQuery:
-    _PATTERNS = (
-        "data/telegram/**/*.jsonl",
-        "data/github/**/*.jsonl",
-        "data/magicians/**/*.jsonl",
-    )
+class TelegramQuery:
+    _PATTERNS = ("data/telegram/**/*.jsonl",)
 
     def __init__(self, root: Path) -> None:
         self.root = root
@@ -110,17 +106,32 @@ class SourceQuery:
         source = self._identity_source(record.source_type)
         if source is None:
             return False
-        return (
-            self.aliases.lookup_public_handle(source, record.author_source_handle)
-            == person_id
-        )
+        if source == "telegram":
+            if record.author_source_handle.startswith("@"):
+                try:
+                    return (
+                        self.aliases.lookup_public_handle(source, record.author_source_handle)
+                        == person_id
+                    )
+                except AliasError:
+                    return False
+            try:
+                display_owner = self.aliases.lookup_display_name(record.author_source_handle)
+            except AliasError:
+                return False
+            return display_owner == person_id
+        try:
+            return (
+                self.aliases.lookup_public_handle(source, record.author_source_handle) == person_id
+            )
+        except AliasError:
+            return False
 
     @staticmethod
     def _identity_source(source_type: SourceType) -> str | None:
         if source_type is SourceType.TELEGRAM_MESSAGE:
             return "telegram"
-        if source_type is SourceType.MAGICIANS_POST:
-            return "magicians"
-        if source_type.value.startswith("github_"):
-            return "github"
         return None
+
+
+SourceQuery = TelegramQuery

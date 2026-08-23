@@ -11,6 +11,7 @@ def test_history_import_publishes_monthly_records_and_aliases(tmp_path: Path) ->
     (tmp_path / "config").mkdir()
     (tmp_path / "knowledge/meta").mkdir(parents=True)
     (tmp_path / "config/privacy.yml").write_bytes((ROOT / "config/privacy.yml").read_bytes())
+    (tmp_path / "config/sources.yml").write_bytes((ROOT / "config/sources.yml").read_bytes())
     (tmp_path / "knowledge/meta/aliases.yml").write_text(
         "schema: tawg.aliases.v1\nscope: tawg-only\npeople: {}\n"
     )

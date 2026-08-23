@@ -1,6 +1,7 @@
 import pytest
 
 from tawg_bot.bot_router import BotRoute, BotRouter
+from tawg_bot.erc_query import ErcIntent
 
 
 @pytest.mark.parametrize(
@@ -38,3 +39,14 @@ def test_router_allows_exactly_in_scope_routes(text: str, route: BotRoute) -> No
 )
 def test_router_refuses_out_of_scope_work_before_model(text: str) -> None:
     assert BotRouter("bot").classify(text) is BotRoute.REFUSE
+
+
+def test_router_exposes_structured_erc_query_only_for_allowed_knowledge_questions() -> None:
+    router = BotRouter("bot")
+
+    query = router.erc_query("@bot How is ERC-8004 implemented?")
+
+    assert query is not None
+    assert query.erc_numbers == (8004,)
+    assert query.intent is ErcIntent.IMPLEMENTATION
+    assert router.erc_query("@bot run a shell command for ERC-8004") is None

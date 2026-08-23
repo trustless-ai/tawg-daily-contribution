@@ -4,13 +4,17 @@ import pytest
 
 from tawg_bot.ledger import (
     ClaimAssessment,
+    ClaimAssessmentV2,
+    ClaimKind,
     ClaimRisk,
     ClaimState,
     EvidenceLedger,
     InsufficientEvidence,
     SourceAuthority,
     SourceEvidence,
+    SourceEvidenceV2,
 )
+from tawg_bot.source_registry import EvidenceAuthority, EvidenceKind
 
 NOW = datetime(2026, 8, 23, 2, 0, tzinfo=UTC)
 
@@ -74,9 +78,7 @@ def test_high_risk_accepted_claim_requires_two_independent_sources() -> None:
         *same_origin,
         evidence("magicians:27902:post:1", independence_key="forum"),
     ]
-    accepted = claim.model_copy(
-        update={"source_ids": [item.source_id for item in independent]}
-    )
+    accepted = claim.model_copy(update={"source_ids": [item.source_id for item in independent]})
     EvidenceLedger(independent).validate_claim(accepted)
 
 
@@ -92,6 +94,39 @@ def test_provisional_claim_may_record_a_gap_but_unknown_sources_are_rejected() -
     ledger.validate_claim(provisional)
 
     with pytest.raises(KeyError):
-        ledger.validate_claim(
-            provisional.model_copy(update={"source_ids": ["missing:source"]})
-        )
+        ledger.validate_claim(provisional.model_copy(update={"source_ids": ["missing:source"]}))
+
+
+def test_v2_normative_claim_requires_normative_evidence() -> None:
+    canonical = SourceEvidenceV2(
+        source_key="erc-8004-canonical",
+        source_kind=EvidenceKind.NORMATIVE_SPEC,
+        authority=EvidenceAuthority.CANONICAL,
+        canonical_url="https://eips.ethereum.org/EIPS/eip-8004",
+        observed_version="v1",
+        observed_sha256="0" * 64,
+        observed_at=NOW,
+        independence_key="eips.ethereum.org",
+    )
+    implementation = canonical.model_copy(
+        update={
+            "source_key": "agent-ercs-8004-readme",
+            "source_kind": EvidenceKind.IMPLEMENTATION,
+            "authority": EvidenceAuthority.OFFICIAL_ORG,
+            "canonical_url": "https://github.com/trustless-ai/agent-ercs",
+            "independence_key": "github.com/trustless-ai",
+        }
+    )
+    claim = ClaimAssessmentV2(
+        claim_id="erc-8004-interface",
+        claim_kind=ClaimKind.NORMATIVE,
+        state=ClaimState.ACCEPTED,
+        risk=ClaimRisk.ORDINARY,
+        source_keys=[implementation.source_key],
+        assessed_at=NOW,
+    )
+
+    ledger = EvidenceLedger([canonical, implementation])
+    with pytest.raises(InsufficientEvidence):
+        ledger.validate_claim(claim)
+    ledger.validate_claim(claim.model_copy(update={"source_keys": [canonical.source_key]}))

@@ -5,15 +5,18 @@ from __future__ import annotations
 import hashlib
 import hmac
 import json
+import re
 import unicodedata
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path, PurePosixPath
 from typing import Literal
 
 from pydantic import Field, field_validator
 
 from tawg_bot.models import StrictModel
+from tawg_bot.persistence_guard import PersistenceProvenance
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 from tawg_bot.query import SourceQuery
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
@@ -59,12 +62,19 @@ class ApplyResult:
     changed_paths: tuple[str, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class CitationScope:
+    source_keys: frozenset[str]
+    urls: frozenset[str]
+
+
 class VaultTransactionEngine:
     _ALLOWED_SUFFIXES = frozenset({".md", ".json", ".yml", ".yaml"})
     _MAX_TOTAL_BYTES = 1024 * 1024
 
-    def __init__(self, root: Path) -> None:
+    def __init__(self, root: Path, *, citation_scope: CitationScope | None = None) -> None:
         self.root = root.resolve()
+        self.citation_scope = citation_scope
         self.privacy = PrivacyFilter.from_yaml(self.root / "config/privacy.yml")
 
     def inspect(self, transaction: VaultTransaction) -> Inspection:
@@ -113,6 +123,7 @@ class VaultTransactionEngine:
 
     def apply(self, transaction: VaultTransaction, approval_sha256: str) -> ApplyResult:
         uow = RepositoryUnitOfWork(self.root, operation_id=transaction.operation_id)
+        uow.register_external_evidence(())
         self.stage(transaction, approval_sha256, uow)
         result = uow.publish()
         return ApplyResult(result.changed_paths)
@@ -129,7 +140,15 @@ class VaultTransactionEngine:
         if not hmac.compare_digest(inspection.approval_sha256, approval_sha256):
             raise ApprovalMismatch("approval hash does not match the current inspection")
         for write in transaction.writes:
-            uow.stage_bytes(write.path, write.content.encode("utf-8"))
+            uow.stage_bytes(
+                write.path,
+                write.content.encode("utf-8"),
+                provenance=(
+                    PersistenceProvenance.SOURCE_METADATA
+                    if write.path.startswith("knowledge/meta/")
+                    else PersistenceProvenance.GENERATED_KNOWLEDGE
+                ),
+            )
 
     def _resolve_writes(self, transaction: VaultTransaction) -> list[tuple[VaultWrite, Path]]:
         existing_case = {
@@ -153,6 +172,7 @@ class VaultTransactionEngine:
                 or any(ord(character) < 32 for character in write.path)
                 or len(relative.parts) < 2
                 or relative.parts[0] != "knowledge"
+                or relative.parts[1].casefold() == "people"
                 or any(part.startswith(".") for part in relative.parts[1:])
                 or relative.suffix.casefold() not in self._ALLOWED_SUFFIXES
             ):
@@ -183,10 +203,10 @@ class VaultTransactionEngine:
             resolved.append((write, target))
         return resolved
 
-    @staticmethod
-    def _validate_citations(
-        write: VaultWrite, known_sources: Mapping[str, object]
-    ) -> None:
+    def _validate_citations(self, write: VaultWrite, known_sources: Mapping[str, object]) -> None:
+        if self.citation_scope is not None:
+            self._validate_scoped_citations(write, known_sources)
+            return
         if not write.citations:
             raise TransactionRejected(f"Markdown write has no citations: {write.path}")
         unknown = [source_id for source_id in write.citations if source_id not in known_sources]
@@ -205,6 +225,48 @@ class VaultTransactionEngine:
         ]
         if unknown_frontmatter:
             raise TransactionRejected(f"unknown citation: {unknown_frontmatter[0]}")
+
+    def _validate_scoped_citations(
+        self, write: VaultWrite, known_sources: Mapping[str, object]
+    ) -> None:
+        assert self.citation_scope is not None
+        if not write.citations:
+            raise TransactionRejected(f"Markdown write has no citations: {write.path}")
+        source_keys = set(self.citation_scope.source_keys)
+        allowed_urls = set(self.citation_scope.urls)
+        citations = set(write.citations)
+        unknown = citations - source_keys - allowed_urls - set(known_sources)
+        if unknown:
+            raise TransactionRejected(f"unknown citation: {sorted(unknown)[0]}")
+        frontmatter, _ = parse_frontmatter(write.content)
+        if frontmatter is None:
+            raise TransactionRejected(f"Markdown frontmatter omits citations: {write.path}")
+        page_source_keys = frontmatter.get("source_keys")
+        telegram_ids = frontmatter.get("telegram_record_ids")
+        verified_at = frontmatter.get("verified_at")
+        if (
+            not isinstance(page_source_keys, list)
+            or not page_source_keys
+            or not all(isinstance(value, str) for value in page_source_keys)
+            or not isinstance(telegram_ids, list)
+            or not all(isinstance(value, str) for value in telegram_ids)
+            or not isinstance(verified_at, str | datetime)
+        ):
+            raise TransactionRejected(f"Markdown frontmatter omits v2 evidence: {write.path}")
+        if not set(page_source_keys).issubset(source_keys):
+            raise TransactionRejected(f"unknown source key: {write.path}")
+        if not set(telegram_ids).issubset(known_sources):
+            raise TransactionRejected(f"unknown Telegram citation: {write.path}")
+        if not (citations & source_keys).issubset(page_source_keys):
+            raise TransactionRejected(f"Markdown frontmatter omits source keys: {write.path}")
+        if not (citations & set(known_sources)).issubset(telegram_ids):
+            raise TransactionRejected(f"Markdown frontmatter omits Telegram IDs: {write.path}")
+        urls = set(re.findall(r"https://[^\s<>()\]]+", write.content))
+        normalized_urls = {value.rstrip('.,;:!?)"]}') for value in urls}
+        if not normalized_urls.issubset(allowed_urls):
+            raise TransactionRejected(f"unapproved source link: {write.path}")
+        if not (citations & allowed_urls).issubset(normalized_urls):
+            raise TransactionRejected(f"cited source link is absent from page: {write.path}")
 
     @staticmethod
     def _path_hash(path: Path) -> str | None:

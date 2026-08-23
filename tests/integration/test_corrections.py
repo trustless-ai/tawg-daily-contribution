@@ -32,11 +32,13 @@ async def test_supported_correction_replaces_current_fact_without_touching_sourc
     source_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
     source_before = source_path.read_bytes()
     result = {
-        "schema_version": "tawg.reply-result.v1",
+        "schema_version": "tawg.reply-result.v2",
         "reply_text": "Thanks—the cited discussion supports updating the current page.",
         "language": "en",
         "english_recap": None,
         "citations": ["tg:tawg:10"],
+        "evidence_status": "verified",
+        "verification_gaps": [],
         "correction_transaction": {
             "schema_version": "tawg.vault-transaction.v1",
             "operation_id": job.job_id,
@@ -52,9 +54,9 @@ async def test_supported_correction_replaces_current_fact_without_touching_sourc
         "refusal": False,
     }
 
-    prepared = await BotReplyService(
-        tmp_path, ai=FakeAi(result), bot_username="bot"
-    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+    prepared = await BotReplyService(tmp_path, ai=FakeAi(result), bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
 
     assert "supports updating" in prepared.reply_text
     assert page_path.read_text() == corrected
@@ -67,11 +69,13 @@ async def test_supported_correction_replaces_current_fact_without_touching_sourc
 async def test_ambiguous_correction_asks_for_evidence_without_writing(tmp_path: Path) -> None:
     job = seed(tmp_path, "@bot correction: the page is wrong")
     result = {
-        "schema_version": "tawg.reply-result.v1",
+        "schema_version": "tawg.reply-result.v2",
         "reply_text": "Could you share the source and the exact sentence that should change?",
         "language": "en",
         "english_recap": None,
         "citations": [],
+        "evidence_status": "not_verified",
+        "verification_gaps": ["The correction needs an exact claim and supporting source."],
         "correction_transaction": None,
         "refusal": False,
     }

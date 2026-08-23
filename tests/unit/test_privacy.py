@@ -64,3 +64,15 @@ def test_iso_dates_are_not_mistaken_for_phone_numbers(redactor: PrivacyFilter) -
 
     assert result.accepted
     assert result.sanitized_text == "created: 2026-08-23"
+
+
+def test_github_comment_record_id_is_not_treated_as_a_phone(
+    redactor: PrivacyFilter,
+) -> None:
+    record_id = "gh:agent-ercs:issue:17:comment:5379076880"
+
+    assert redactor.inspect(record_id).sanitized_text == record_id
+    assert redactor.inspect("call 5379076880").sanitized_text == "call [REDACTED_PHONE]"
+    assert redactor.inspect("reach me at gh:phone:5379076880").sanitized_text == (
+        "reach me at gh:phone:[REDACTED_PHONE]"
+    )

@@ -21,7 +21,7 @@
     "citations": {
       "type": "array",
       "uniqueItems": true,
-      "items": {"type": "string", "minLength": 1, "maxLength": 256}
+      "items": {"type": "string", "minLength": 1, "maxLength": 2048}
     },
     "quiet_day": {"type": "boolean"}
   }

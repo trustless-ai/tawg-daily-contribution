@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import json
+import shutil
+import tempfile
 from collections import defaultdict
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -10,11 +12,13 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, TextIO
 
+import yaml
+
 from tawg_bot.aliases import AliasRegistry
 from tawg_bot.ids import telegram_id
 from tawg_bot.models import AttachmentMetadata, Relation, SourceRecord, SourceType
 from tawg_bot.privacy import PrivacyFilter
-from tawg_bot.storage import JsonlCollection
+from tawg_bot.storage import partition_stable_records
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
 
@@ -62,8 +66,38 @@ class _JsonStream:
                     raise ValueError("invalid or truncated Telegram JSON") from error
                 self._fill()
                 continue
+            if end == len(self.buffer) and not self.eof:
+                self._fill()
+                continue
             self.position = end
             return value
+
+    def skip_value(self) -> None:
+        marker = self.peek()
+        if marker == "{":
+            self.consume("{")
+            first_field = True
+            while self.peek() != "}":
+                if not first_field:
+                    self.consume(",")
+                first_field = False
+                if not isinstance(self.decode(), str):
+                    raise ValueError("invalid JSON object field name")
+                self.consume(":")
+                self.skip_value()
+            self.consume("}")
+            return
+        if marker == "[":
+            self.consume("[")
+            first_item = True
+            while self.peek() != "]":
+                if not first_item:
+                    self.consume(",")
+                first_item = False
+                self.skip_value()
+            self.consume("]")
+            return
+        self.decode()
 
     def _skip_whitespace(self) -> None:
         while self.position < len(self.buffer) and self.buffer[self.position].isspace():
@@ -81,17 +115,41 @@ class _JsonStream:
 
 
 class TelegramDesktopImporter:
-    def __init__(self, root: Path, privacy: PrivacyFilter, aliases: AliasRegistry) -> None:
+    def __init__(
+        self,
+        root: Path,
+        privacy: PrivacyFilter,
+        aliases: AliasRegistry,
+        *,
+        expected_group_name: str,
+        expected_group_id: int,
+    ) -> None:
         self.root = root
         self.privacy = privacy
         self.aliases = aliases
+        self.expected_group_name = self._normalize_group_name(expected_group_name)
+        self.expected_group_id = expected_group_id
 
     @classmethod
     def for_repository(cls, root: Path) -> TelegramDesktopImporter:
+        sources = yaml.safe_load((root / "config/sources.yml").read_text(encoding="utf-8"))
+        telegram = sources.get("telegram") if isinstance(sources, dict) else None
+        expected_group_name = (
+            telegram.get("expected_export_name") if isinstance(telegram, dict) else None
+        )
+        expected_group_id = (
+            telegram.get("expected_export_id") if isinstance(telegram, dict) else None
+        )
+        if not isinstance(expected_group_name, str) or not expected_group_name.strip():
+            raise ValueError("expected Telegram export group name is not configured")
+        if not isinstance(expected_group_id, int):
+            raise ValueError("expected Telegram export group ID is not configured")
         return cls(
             root,
             PrivacyFilter.from_yaml(root / "config/privacy.yml"),
             AliasRegistry.from_yaml(root / "knowledge/meta/aliases.yml"),
+            expected_group_name=expected_group_name,
+            expected_group_id=expected_group_id,
         )
 
     def parse(self, input_path: Path, *, group_slug: str) -> TelegramImportResult:
@@ -143,75 +201,230 @@ class TelegramDesktopImporter:
             )
         return TelegramImportResult(tuple(records), rejected)
 
-    @staticmethod
-    def _iter_group_messages(input_path: Path) -> Iterator[dict[str, Any]]:
-        with input_path.open(encoding="utf-8") as source:
-            stream = _JsonStream(source)
-            stream.consume("{")
-            export_type: object = None
-            first_field = True
-            saw_messages = False
-            while stream.peek() != "}":
-                if not first_field:
+    def _iter_group_messages(self, input_path: Path) -> Iterator[dict[str, Any]]:
+        with (
+            input_path.open(encoding="utf-8") as source,
+            tempfile.TemporaryFile(mode="w+t", encoding="utf-8") as snapshot,
+        ):
+            shutil.copyfileobj(source, snapshot, length=64 * 1024)
+            snapshot.seek(0)
+            self._validate_group_export(_JsonStream(snapshot))
+            snapshot.seek(0)
+            yield from self._stream_group_messages(_JsonStream(snapshot))
+
+    def _validate_group_export(self, stream: _JsonStream) -> None:
+        stream.consume("{")
+        export_type: object = None
+        export_name: object = None
+        export_id: object = None
+        first_field = True
+        message_source: str | None = None
+        while stream.peek() != "}":
+            if not first_field:
+                stream.consume(",")
+            first_field = False
+            key = stream.decode()
+            if not isinstance(key, str):
+                raise ValueError("invalid Telegram JSON field name")
+            stream.consume(":")
+            if key not in {"chats", "messages"}:
+                value = stream.decode()
+                if key == "type":
+                    export_type = value
+                elif key == "name":
+                    export_name = value
+                elif key == "id":
+                    export_id = value
+                continue
+            if message_source is not None:
+                raise ValueError("Telegram export contains duplicate message sources")
+            message_source = key
+            if key == "chats":
+                self._validate_chats_container(stream)
+            else:
+                stream.skip_value()
+        stream.consume("}")
+        if message_source is None:
+            raise ValueError("Telegram export has no messages field")
+        if message_source == "messages":
+            self._require_group_identity(export_type, export_name, export_id)
+        if stream.peek():
+            raise ValueError("unexpected content after Telegram export")
+
+    def _validate_chats_container(self, stream: _JsonStream) -> None:
+        stream.consume("{")
+        first_field = True
+        saw_list = False
+        chat_count = 0
+        while stream.peek() != "}":
+            if not first_field:
+                stream.consume(",")
+            first_field = False
+            key = stream.decode()
+            if not isinstance(key, str):
+                raise ValueError("invalid Telegram chats field name")
+            stream.consume(":")
+            if key != "list":
+                stream.decode()
+                continue
+            if saw_list:
+                raise ValueError("Telegram export contains duplicate chat lists")
+            saw_list = True
+            stream.consume("[")
+            first_chat = True
+            while stream.peek() != "]":
+                if not first_chat:
                     stream.consume(",")
-                first_field = False
-                key = stream.decode()
-                if not isinstance(key, str):
-                    raise ValueError("invalid Telegram JSON field name")
-                stream.consume(":")
-                if key != "messages":
-                    value = stream.decode()
-                    if key == "type":
-                        export_type = value
-                    continue
-                if saw_messages:
-                    raise ValueError("Telegram export contains duplicate messages fields")
-                saw_messages = True
-                if export_type not in {"group", "supergroup", "private_supergroup"}:
-                    raise ValueError("Telegram export is not a recognized group")
-                stream.consume("[")
-                first_message = True
-                while stream.peek() != "]":
-                    if not first_message:
-                        stream.consume(",")
-                    first_message = False
-                    message = stream.decode()
-                    if not isinstance(message, dict):
-                        raise ValueError("invalid Telegram message entry")
-                    yield message
-                stream.consume("]")
-            stream.consume("}")
-            if not saw_messages:
-                raise ValueError("Telegram export has no messages field")
-            if stream.peek():
-                raise ValueError("unexpected content after Telegram export")
+                first_chat = False
+                chat_count += 1
+                if chat_count > 1:
+                    raise ValueError("Telegram export must contain exactly one group")
+                self._validate_chat(stream)
+            stream.consume("]")
+        stream.consume("}")
+        if not saw_list or chat_count != 1:
+            raise ValueError("Telegram export must contain exactly one group")
+
+    def _validate_chat(self, stream: _JsonStream) -> None:
+        stream.consume("{")
+        export_type: object = None
+        export_name: object = None
+        export_id: object = None
+        first_field = True
+        saw_messages = False
+        while stream.peek() != "}":
+            if not first_field:
+                stream.consume(",")
+            first_field = False
+            key = stream.decode()
+            if not isinstance(key, str):
+                raise ValueError("invalid Telegram chat field name")
+            stream.consume(":")
+            if key != "messages":
+                value = stream.decode()
+                if key == "type":
+                    export_type = value
+                elif key == "name":
+                    export_name = value
+                elif key == "id":
+                    export_id = value
+                continue
+            if saw_messages:
+                raise ValueError("Telegram export contains duplicate messages fields")
+            saw_messages = True
+            stream.skip_value()
+        stream.consume("}")
+        if not saw_messages:
+            raise ValueError("Telegram group export has no messages field")
+        self._require_group_identity(export_type, export_name, export_id)
+
+    def _stream_group_messages(self, stream: _JsonStream) -> Iterator[dict[str, Any]]:
+        stream.consume("{")
+        first_field = True
+        while stream.peek() != "}":
+            if not first_field:
+                stream.consume(",")
+            first_field = False
+            key = stream.decode()
+            if not isinstance(key, str):
+                raise ValueError("invalid Telegram JSON field name")
+            stream.consume(":")
+            if key == "messages":
+                yield from self._iter_messages_array(stream)
+            elif key == "chats":
+                yield from self._stream_chats_container(stream)
+            else:
+                stream.skip_value()
+        stream.consume("}")
+
+    def _stream_chats_container(self, stream: _JsonStream) -> Iterator[dict[str, Any]]:
+        stream.consume("{")
+        first_field = True
+        while stream.peek() != "}":
+            if not first_field:
+                stream.consume(",")
+            first_field = False
+            key = stream.decode()
+            if not isinstance(key, str):
+                raise ValueError("invalid Telegram chats field name")
+            stream.consume(":")
+            if key != "list":
+                stream.skip_value()
+                continue
+            stream.consume("[")
+            yield from self._stream_chat(stream)
+            stream.consume("]")
+        stream.consume("}")
+
+    def _stream_chat(self, stream: _JsonStream) -> Iterator[dict[str, Any]]:
+        stream.consume("{")
+        first_field = True
+        while stream.peek() != "}":
+            if not first_field:
+                stream.consume(",")
+            first_field = False
+            key = stream.decode()
+            if not isinstance(key, str):
+                raise ValueError("invalid Telegram chat field name")
+            stream.consume(":")
+            if key == "messages":
+                yield from self._iter_messages_array(stream)
+            else:
+                stream.skip_value()
+        stream.consume("}")
+
+    @staticmethod
+    def _iter_messages_array(stream: _JsonStream) -> Iterator[dict[str, Any]]:
+        stream.consume("[")
+        first_message = True
+        while stream.peek() != "]":
+            if not first_message:
+                stream.consume(",")
+            first_message = False
+            message = stream.decode()
+            if not isinstance(message, dict):
+                raise ValueError("invalid Telegram message entry")
+            yield message
+        stream.consume("]")
+
+    def _require_group_identity(
+        self, export_type: object, export_name: object, export_id: object
+    ) -> None:
+        if export_type not in {"group", "supergroup", "private_supergroup"}:
+            raise ValueError("Telegram export is not a recognized group")
+        if (
+            not isinstance(export_name, str)
+            or self._normalize_group_name(export_name) != self.expected_group_name
+            or export_id != self.expected_group_id
+        ):
+            raise ValueError("Telegram export group identity does not match configuration")
+
+    @staticmethod
+    def _normalize_group_name(value: str) -> str:
+        normalized = " ".join(value.casefold().split())
+        if not normalized:
+            raise ValueError("Telegram export group name cannot be empty")
+        return normalized
 
     def import_file(
         self, input_path: Path, *, group_slug: str, uow: RepositoryUnitOfWork
     ) -> TelegramImportResult:
+        uow.register_external_evidence(())
         result = self.parse(input_path, group_slug=group_slug)
         monthly: dict[str, list[SourceRecord]] = defaultdict(list)
         for record in result.records:
             monthly[f"data/telegram/{record.created_at:%Y/%m}/messages.jsonl"].append(record)
         for path, records in sorted(monthly.items()):
-            uow.stage_records(path, self._preserve_first_ingestion(path, records))
+            partitions = partition_stable_records(
+                self.root,
+                path,
+                records,
+                search_relative_root="data/telegram",
+            )
+            for target, stable_records in sorted(partitions.items()):
+                uow.stage_records(target, stable_records)
         uow.stage_bytes("knowledge/meta/aliases.yml", self.aliases.to_yaml_bytes())
         return result
-
-    def _preserve_first_ingestion(
-        self, relative_path: str, records: list[SourceRecord]
-    ) -> list[SourceRecord]:
-        collection = JsonlCollection(self.root / relative_path, SourceRecord)
-        if not collection.path.exists():
-            return records
-        persisted = collection.decode(collection.path.read_bytes())
-        existing = {record.record_id: record for record in persisted}
-        return [
-            record.model_copy(update={"ingested_at": existing[record.record_id].ingested_at})
-            if record.record_id in existing
-            else record
-            for record in records
-        ]
 
     def _safe_display_name(self, raw_value: object) -> str:
         display_name = str(raw_value) if raw_value else "Unknown member"
@@ -240,6 +453,8 @@ class TelegramDesktopImporter:
 
     @staticmethod
     def _edited_timestamp(message: dict[str, Any]) -> datetime | None:
+        if message.get("edited_unixtime") is not None:
+            return datetime.fromtimestamp(int(message["edited_unixtime"]), tz=UTC)
         if not message.get("edited"):
             return None
         return datetime.fromisoformat(str(message["edited"])).replace(tzinfo=UTC)

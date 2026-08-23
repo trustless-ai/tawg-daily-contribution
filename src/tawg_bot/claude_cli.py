@@ -10,7 +10,7 @@ from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
-from typing import Any, Literal, Protocol
+from typing import Any, ClassVar, Literal, Protocol
 from uuid import uuid4
 
 from jsonschema import Draft202012Validator  # type: ignore[import-untyped]
@@ -80,6 +80,11 @@ JobType = Literal["knowledge", "reply", "daily"]
 class ClaudeCli:
     _OPERATION_ID = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
     _MAX_OUTPUT_BYTES = 2 * 1024 * 1024
+    _SCHEMA_VERSION: ClassVar[dict[JobType, str]] = {
+        "knowledge": "v2",
+        "reply": "v2",
+        "daily": "v1",
+    }
     _BACKEND_ENV = frozenset(
         {
             "ANTHROPIC_API_KEY",
@@ -135,8 +140,12 @@ class ClaudeCli:
         except PrivacyViolation:
             raise ClaudeCliError("context pack failed privacy validation") from None
         budget = self._budget(max_budget_usd)
-        schema = self._load_json(self.root / f"src/tawg_bot/schemas/{job_type}-result.v1.json")
-        compact_schema = json.dumps(schema, separators=(",", ":"), sort_keys=True)
+        schema_version = self._SCHEMA_VERSION[job_type]
+        schema = self._load_json(
+            self.root / f"src/tawg_bot/schemas/{job_type}-result.{schema_version}.json"
+        )
+        cli_schema = {key: value for key, value in schema.items() if key not in {"$schema", "$id"}}
+        compact_schema = json.dumps(cli_schema, separators=(",", ":"), sort_keys=True)
         policy_path = self._write_policy(job_type, schema, operation_id)
         argv = [
             self.executable,
@@ -177,14 +186,20 @@ class ClaudeCli:
             outer = json.loads(completed.stdout)
         except (UnicodeError, json.JSONDecodeError):
             raise ClaudeCliError("Claude Code returned invalid JSON") from None
+        structured_handoff = (
+            isinstance(outer, dict)
+            and outer.get("num_turns") == 2
+            and outer.get("stop_reason") == "tool_use"
+            and isinstance(outer.get("structured_output"), dict)
+        )
         if (
             not isinstance(outer, dict)
             or outer.get("type") != "result"
             or outer.get("subtype") != "success"
             or outer.get("is_error") is not False
-            or outer.get("num_turns") != 1
+            or (outer.get("num_turns") != 1 and not structured_handoff)
         ):
-            raise ClaudeCliError("Claude Code did not return one successful turn")
+            raise ClaudeCliError("Claude Code did not return one bounded successful result")
         total_cost = outer.get("total_cost_usd")
         if isinstance(total_cost, int | float) and Decimal(str(total_cost)) > budget:
             raise ClaudeCliError("Claude Code exceeded its configured cost budget")
@@ -205,9 +220,7 @@ class ClaudeCli:
             ) from None
         return structured
 
-    def _write_policy(
-        self, job_type: JobType, schema: dict[str, Any], operation_id: str
-    ) -> Path:
+    def _write_policy(self, job_type: JobType, schema: dict[str, Any], operation_id: str) -> Path:
         runtime = self.runtime_root
         if runtime.is_symlink():
             raise ClaudeCliError("Claude runtime directory cannot be a symlink")
@@ -239,9 +252,7 @@ class ClaudeCli:
     def _child_environment(self) -> dict[str, str]:
         allowed = self._BACKEND_ENV | self._PROCESS_ENV
         child = {
-            key: value
-            for key, value in self.source_environment.items()
-            if key in allowed and value
+            key: value for key, value in self.source_environment.items() if key in allowed and value
         }
         child.setdefault("PATH", "/usr/local/bin:/usr/bin:/bin")
         child.update(

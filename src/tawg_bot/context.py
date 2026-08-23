@@ -5,7 +5,7 @@ from __future__ import annotations
 import copy
 import hashlib
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
@@ -27,6 +27,8 @@ class ContextInputs:
     allowed_paths: list[str]
     output_schema: dict[str, Any]
     budgets: dict[str, Any]
+    evidence_pack: dict[str, Any] | None = None
+    citation_allowlist: list[str] = field(default_factory=list)
 
 
 @dataclass(frozen=True, slots=True)
@@ -63,6 +65,8 @@ class ContextPackBuilder:
             "trigger": self._canonical(safe.trigger),
             "reply_chain": self._canonical(safe.reply_chain),
             "recent_telegram": self._canonical(recent),
+            "evidence_pack": self._canonical(safe.evidence_pack),
+            "citation_allowlist": self._canonical(safe.citation_allowlist),
             "retrieved": self._canonical(safe.retrieved),
             "citations": self._canonical(safe.citations),
             "aliases": self._canonical(safe.aliases),

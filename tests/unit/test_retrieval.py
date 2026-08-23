@@ -23,6 +23,15 @@ def note(title: str, body: str) -> str:
 def seed_retrieval(root: Path) -> None:
     knowledge = root / "knowledge"
     knowledge.mkdir()
+    acknowledgements = knowledge / "acknowledgements"
+    acknowledgements.mkdir()
+    (acknowledgements / "baby-blue-viper.md").write_text(
+        note(
+            "Baby Blue Viper",
+            "Baby Blue Viper maintains public contribution acknowledgements.",
+        ),
+        encoding="utf-8",
+    )
     (knowledge / "erc-8004.md").write_text(
         note(
             "ERC-8004",
@@ -53,6 +62,20 @@ def seed_retrieval(root: Path) -> None:
     source_path = root / "data/telegram/2026/08/messages.jsonl"
     source_path.parent.mkdir(parents=True)
     source_path.write_bytes(JsonlCollection(source_path, SourceRecord).merged_bytes([source]))
+    external = SourceRecord.from_text(
+        record_id="gh:agent-ercs:commit:legacy",
+        source_type=SourceType.GITHUB_COMMIT,
+        source_locator="https://github.com/trustless-ai/agent-ercs/commit/legacy",
+        author_person_id="alice",
+        author_source_handle="alice",
+        created_at=timestamp,
+        updated_at=timestamp,
+        text_original="LEGACY_EXTERNAL_BODY_CANARY must never enter local retrieval.",
+        ingested_at=timestamp,
+    )
+    external_path = root / "data/github/agent-ercs/2026/08/records.jsonl"
+    external_path.parent.mkdir(parents=True)
+    external_path.write_bytes(JsonlCollection(external_path, SourceRecord).merged_bytes([external]))
 
 
 def test_build_is_deterministic_and_bm25_ranks_pages_and_sources(tmp_path: Path) -> None:
@@ -69,6 +92,7 @@ def test_build_is_deterministic_and_bm25_ranks_pages_and_sources(tmp_path: Path)
     assert results[0].path == "knowledge/erc-8004.md"
     assert any(result.record_id == "tg:tawg:7" for result in results)
     assert all(result.mode == "bm25" for result in results)
+    assert all("LEGACY_EXTERNAL_BODY_CANARY" not in text for _, text in retriever.preview_chunks())
 
 
 def test_multilingual_tokenization_and_deterministic_chunking(tmp_path: Path) -> None:
@@ -81,6 +105,16 @@ def test_multilingual_tokenization_and_deterministic_chunking(tmp_path: Path) ->
     assert stats.chunk_count >= 4
     assert chinese[0].path == "knowledge/zh.md"
     assert retriever.preview_chunks() == retriever.preview_chunks()
+
+
+def test_retrieval_indexes_acknowledgement_pages(tmp_path: Path) -> None:
+    seed_retrieval(tmp_path)
+    retriever = VaultRetriever(tmp_path)
+
+    results = retriever.query("Baby Blue Viper", top_k=10)
+
+    assert any(result.path == "knowledge/acknowledgements/baby-blue-viper.md" for result in results)
+    assert all(not result.path.startswith("knowledge/people/") for result in results)
 
 
 def test_missing_corrupt_or_stale_index_falls_back_to_text_search(tmp_path: Path) -> None:

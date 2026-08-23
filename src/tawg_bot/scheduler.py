@@ -25,11 +25,7 @@ class Layer(IntEnum):
 class LayerPipeline(Protocol):
     async def telegram_intake(self, now: datetime) -> None: ...
 
-    async def github_sync(self, now: datetime) -> None: ...
-
-    async def magicians_sync(self, now: datetime) -> None: ...
-
-    async def publish_sources(self) -> None: ...
+    async def source_check(self, now: datetime) -> None: ...
 
     async def knowledge_refresh(self, cutoff: datetime) -> None: ...
 
@@ -75,10 +71,7 @@ class Scheduler:
 
         await self.pipeline.telegram_intake(now)
         if layer >= Layer.L2:
-            await self.pipeline.github_sync(now)
-        if layer >= Layer.L3:
-            await self.pipeline.magicians_sync(now)
-        await self.pipeline.publish_sources()
+            await self.pipeline.source_check(now)
         if layer >= Layer.L3:
             await self.pipeline.knowledge_refresh(now)
             await self.pipeline.validate()
@@ -124,6 +117,7 @@ class Scheduler:
         uow = RepositoryUnitOfWork(
             self.root, operation_id=f"layer-success:{layer.name.lower()}:{int(now.timestamp())}"
         )
+        uow.register_external_evidence(())
         uow.stage_json(self._STATE_PATH, updated.model_dump(mode="json"))
         uow.publish()
 

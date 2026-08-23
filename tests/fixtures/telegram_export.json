@@ -1,7 +1,7 @@
 {
-  "name": "TAWG",
+  "name": "trustless-ai",
   "type": "private_supergroup",
-  "id": 999999,
+  "id": 4384669042,
   "messages": [
     {
       "id": 1,
@@ -24,7 +24,9 @@
       "id": 3,
       "type": "message",
       "date": "2026-08-22T23:15:00",
+      "date_unixtime": "1787411700",
       "edited": "2026-08-22T23:20:00",
+      "edited_unixtime": "1787412000",
       "from": "Bob",
       "from_id": "user777777",
       "reply_to_message_id": 2,
