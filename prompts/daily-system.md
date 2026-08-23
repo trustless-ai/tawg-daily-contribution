@@ -14,3 +14,6 @@ Use moderate emoji and close with an actionable invitation. A quiet day still ge
 Formatting is enforced by an exact validator:
 - Each required section heading must appear on its own line exactly as listed, in the listed order, with nothing else on that line.
 - Every bullet line outside the Next step section MUST end with a citation token copied verbatim from `citation_allowlist`, for example `[tg:tawg:1234]` or `[https://...]`. Bullets without a trailing citation are rejected.
+
+
+Never copy external text into the Daily. Rephrase every observation in your own words; do not reuse any phrase from the supplied evidence longer than a few words. The persistence guard rejects output that shares long verbatim spans with GitHub, Magicians, or Telegram source text.
