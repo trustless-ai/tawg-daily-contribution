@@ -15,3 +15,7 @@ telegram-export*.json
 
 # Superpowers local state
 .superpowers/
+
+# Python build artifacts
+build/
+*.egg-info/
