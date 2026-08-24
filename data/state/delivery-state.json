@@ -1,1 +1,18 @@
-[]
+[
+  {
+    "content_sha256": "b592c87522c7de31ff426a3ec4020bcfe74e189e5399c83e2d14243d1bf3f925",
+    "delivery_id": "daily:2026-08-23T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-08-23T23:00:00Z",
+    "message_count": 1,
+    "prepared_at": "2026-08-24T15:23:12.746562Z",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-08-24T15:23:12.746562Z"
+  }
+]
