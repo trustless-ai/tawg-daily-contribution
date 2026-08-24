@@ -234,7 +234,7 @@ async def test_bootstrap_backfill_delayed_refresh_and_daily_delivery(tmp_path: P
         bot_username="tawg_helper",
     )
     live = await intake.collect(datetime(2026, 8, 24, 1, tzinfo=UTC))
-    assert live.next_offset == 106
+    assert live.next_offset == 107
     assert live.jobs_created == 2
     telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
     post_cutoff = SourceRecord.from_text(

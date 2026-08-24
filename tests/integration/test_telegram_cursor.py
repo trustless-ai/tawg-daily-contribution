@@ -70,11 +70,11 @@ async def test_intake_persists_all_target_messages_jobs_and_cursor_atomically(
 
     result = await intake.collect(NOW)
 
-    assert result.received == 6
-    assert result.persisted == 4
+    assert result.received == 7
+    assert result.persisted == 5
     assert result.filtered == 1
     assert result.jobs_created == 2
-    assert result.next_offset == 106
+    assert result.next_offset == 107
     records_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
     records = [json.loads(line) for line in records_path.read_text().splitlines()]
     assert [record["record_id"] for record in records] == [
@@ -82,6 +82,7 @@ async def test_intake_persists_all_target_messages_jobs_and_cursor_atomically(
         "tg:tawg:503",
         "tg:tawg:504",
         "tg:tawg:505",
+        "tg:tawg:506",
     ]
     assert records[0]["text_original"] == "Parser and tests shipped"
     assert records[1]["relations"][0]["target_record_id"] == "tg:tawg:501"
@@ -92,7 +93,7 @@ async def test_intake_persists_all_target_messages_jobs_and_cursor_atomically(
     jobs = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())
     assert [job["trigger_record_id"] for job in jobs] == ["tg:tawg:503", "tg:tawg:504"]
     cursors = json.loads((tmp_path / "data/state/source-cursors.json").read_text())
-    assert cursors["telegram_offset"] == 106
+    assert cursors["telegram_offset"] == 107
 
 
 @pytest.mark.asyncio
@@ -123,7 +124,7 @@ async def test_replayed_batch_after_source_only_checkpoint_is_idempotent(tmp_pat
 
     records = (tmp_path / "data/telegram/2026/08/messages.jsonl").read_text().splitlines()
     jobs = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())
-    assert len(records) == 4
+    assert len(records) == 5
     assert len(jobs) == 2
 
 
