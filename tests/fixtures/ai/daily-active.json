@@ -3,7 +3,7 @@
   "window_id": "daily:2026-08-23T23:00:00Z",
   "window_start": "2026-08-22T23:00:00Z",
   "window_end": "2026-08-23T23:00:00Z",
-  "telegram_text": "🌍 TAWG Daily Catch-up — 2026-08-22 23:00 UTC → 2026-08-23 23:00 UTC\n\nGood momentum today—several pieces became easier for the group to build on.\n\n🤝 What moved\nThe ERC-8004 validation question moved from open to resolved this window, with the fix path verified by two reviewers.\n\nAlice\n- 🚀 Clarified ERC-8004 validation behavior, making the next implementation pass more concrete. [tg:tawg:1]\n\n🚀 Next up\n💡 ideas to follow\n- Keep the validation path verifiable while simplifying integration.\n✅ todos\n- A second review of the edge cases would help turn the proposal into a shared decision.\n\nPick one edge case and share it with the group. 🤝",
+  "telegram_text": "🌍 TAWG Daily Catch-up — 2026-08-22 23:00 UTC → 2026-08-23 23:00 UTC\n\nGood momentum today—several pieces became easier for the group to build on.\n\n🤝 What moved\nThe ERC-8004 validation question moved from open to resolved this window, with the fix path verified by two reviewers.\n\nagent-sdk\n• 🚀 Alice clarified ERC-8004 validation behavior, making the next implementation pass more concrete. [tg:tawg:1]\n\n🚀 Next up\n💡 ideas to follow\n• Keep the validation path verifiable while simplifying integration.\n✅ todos\n• A second review of the edge cases would help turn the proposal into a shared decision.\n\nPick one edge case and share it with the group. 🤝",
   "citations": [
     "tg:tawg:1"
   ],
