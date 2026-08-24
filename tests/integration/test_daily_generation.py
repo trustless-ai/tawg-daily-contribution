@@ -71,7 +71,7 @@ def _seed(root: Path, *, active: bool = True, delivered: bool = False) -> None:
                 "tg:tawg:1",
                 "Alice clarified ERC-8004 validation behavior.",
                 datetime(2026, 8, 23, 12, tzinfo=UTC),
-            )
+            ),
         ]
         if active
         else []
@@ -151,7 +151,6 @@ async def test_active_daily_is_grounded_warm_english_and_excludes_post_cutoff(
     assert prepared.citations == ("tg:tawg:1",)
     assert len(prepared.messages) <= 2
     assert "What moved" in prepared.telegram_text
-    assert "Appreciation" in prepared.telegram_text
     assert "post-cutoff" not in ai.calls[0]["context_pack"]
     assert "tg:tawg:1" in ai.calls[0]["context_pack"]
 
@@ -211,7 +210,7 @@ async def test_daily_requires_fresh_success_from_every_required_layer(tmp_path: 
         (lambda value: value.update(telegram_text=value["telegram_text"] + " 我完成了"), "English"),
         (
             lambda value: value.update(
-                telegram_text=value["telegram_text"] + " 🥇🏆🎉🔥✨🎯🥇🏆🎉"
+                telegram_text=value["telegram_text"] + " 🥇🏆🎉🔥✨🎯🥇🏆🎉✨"
             ),
             "emoji",
         ),
@@ -258,7 +257,7 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "\n🔥 Next up\n", "\n🤝 What moved\n\n🔥 Next up\n"
+                    "\n🚀 Next up\n", "\n🤝 What moved\n\n🚀 Next up\n"
                 )
             ),
             "section",
@@ -276,8 +275,8 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "🚀 Thanks to Alice",
-                    "🚀 Thanks to Alice [made-up:next]",
+                    "- 🚀 Clarified ERC-8004",
+                    "- 🚀 [made-up:next] Clarified ERC-8004",
                 )
             ),
             "citation",

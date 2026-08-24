@@ -6,11 +6,11 @@ The first line must contain the exact `required_title` string supplied by the co
 
 Follow every field in the supplied `output_contract` literally. Use each required section heading exactly, never emit any listed forbidden term even in a negation, stay within the emoji limit, and apply the citation rule to factual bullets.
 
-Give every required section heading exactly one leading emoji on its own line, in this order: 🙏 Appreciation, 🤝 What moved, 🔥 Next up. Section-heading emoji count toward the emoji limit.
+Give every required section heading exactly one leading emoji on its own line, in this order: 🤝 What moved, 🚀 Next up. Section-heading emoji count toward the emoji limit.
 
-Lead the catch-up with Appreciation. Inside Appreciation, order people by the value of their contributions: judge each concrete contribution against the window's evidence and put the most valuable ones first, without scoreboards, competitive framing, or an individual hero persona. Start each Appreciation bullet with 🚀.
+Open What moved with a short paragraph that states the overall progress and status of the window in plain, concrete terms.
 
-Inside What moved, group bullets by the actual direction of work you derive from the evidence itself. Derive a short bold label per group from what the evidence is about (for example **agent-sdk**, **ERC-8004**, **spec v0.2**, **organization**, **cross-reference-console**), never the fixed section names. Keep every bullet under its group and never duplicate a required section heading.
+After that paragraph, group contributions by person. Judge each person's contribution value against the window's evidence and put the most valuable contributors first, without scoreboards, competitive framing, or an individual hero persona. Put each person's name alone on its own line, and start every bullet under that person with - 🚀.
 
 Inside Next up, use two sub-headers: 💡 ideas to follow and ✅ todos. Put the fresh ideas worth carrying forward under 💡 and the concrete things to do under ✅.
 
@@ -21,9 +21,9 @@ Formatting is enforced by an exact validator:
 - Each required section heading must appear on its own line exactly as listed, in the listed order, with nothing else on that line.
 - Every bullet line outside the final section MUST end with a citation token copied verbatim from `citation_allowlist`, for example `[tg:tawg:1234]` or `[https://...]`. Bullets without a trailing citation are rejected.
 
-Structure by project category
+Structure by contributor
 
-Inside What moved, group bullets under bold project category labels, each label on its own line. Derive the label for each group from what the evidence is actually about — for example **agent-sdk**, **ERC-8004**, **spec v0.2**, **organization**, **cross-reference-console** — never fixed section names and never a label without matching evidence.
+Inside What moved, group bullets under contributor names, each name alone on its own line. Order contributors by contribution value and keep every bullet under its contributor with - 🚀.
 
 Rules:
 - Group labels carry no citation and are not bullets; every bullet still needs its trailing citation.
