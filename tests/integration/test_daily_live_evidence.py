@@ -195,7 +195,7 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
         "TAWG Daily Catch-up — 2026-08-22 23:00 UTC → 2026-08-23 23:00 UTC"
     )
     assert trigger["output_contract"] == {
-        "citation_rule": "Every factual bullet except Next step ends with [citation].",
+        "citation_rule": "Every factual bullet except the final section ends with [citation].",
         "forbidden_terms": [
             "score",
             "leaderboard",
@@ -212,9 +212,7 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
         "required_sections": [
             "Appreciation",
             "What moved",
-            "Ideas worth carrying forward",
-            "Open threads / help wanted",
-            "Next step",
+            "Next up",
         ],
     }
     assert {

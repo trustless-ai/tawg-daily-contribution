@@ -256,7 +256,7 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "\n🏁 Next step\n", "\n🚀 What moved\n\n🏁 Next step\n"
+                    "\n🏁 Next up\n", "\n🚀 What moved\n\n🏁 Next up\n"
                 )
             ),
             "section",
