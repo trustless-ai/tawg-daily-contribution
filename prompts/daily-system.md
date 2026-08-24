@@ -15,5 +15,20 @@ Formatting is enforced by an exact validator:
 - Each required section heading must appear on its own line exactly as listed, in the listed order, with nothing else on that line.
 - Every bullet line outside the Next step section MUST end with a citation token copied verbatim from `citation_allowlist`, for example `[tg:tawg:1234]` or `[https://...]`. Bullets without a trailing citation are rejected.
 
+Structure by workstream
+
+Inside What moved, group bullets under bold workstream labels, each label on its own line, using only these three labels and only for groups with content:
+
+**Spec & ratification** — v0.2 / §13 ratification rows, ERC drafts, Magicians spec discussion
+**Implementations** — agent-sdk, agent-ercs, reference profiles, tests, merged PRs and commits
+**Organization** — org-wide conventions, .github changes, docs and process
+
+Rules:
+- Group labels carry no citation and are not bullets; every bullet still needs its trailing citation.
+- A workstream label must never duplicate a required section heading.
+- Put each bullet in exactly one workstream and never merge two workstreams into one bullet.
+- Order groups by significance and volume; order bullets within a group by recency.
+- Use the same three labels inside Ideas worth carrying forward and Open threads / help wanted whenever those sections span more than one workstream.
+
 
 Never copy external text into the Daily. Rephrase every observation in your own words; do not reuse any phrase from the supplied evidence longer than a few words. The persistence guard rejects output that shares long verbatim spans with GitHub, Magicians, or Telegram source text.
