@@ -1,0 +1,106 @@
+name: TAWG knowledge bot
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+    inputs:
+      observe_only:
+        description: Prepare and checkpoint output without Telegram delivery
+        type: boolean
+        default: true
+      daily_dry_run:
+        description: Prepare the latest due Daily as a review artifact
+        type: boolean
+        default: false
+      backfill:
+        description: Run one historical source backfill instead of a normal tick
+        type: choice
+        options:
+          - none
+          - github
+          - magicians
+        default: none
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tawg-knowledge-writer
+  cancel-in-progress: false
+
+jobs:
+  knowledge-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    env:
+      PYTHONUNBUFFERED: "1"
+      DISABLE_AUTOUPDATER: "1"
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+      CLAUDE_CODE_SKIP_PROMPT_HISTORY: "1"
+      GITHUB_TOKEN: ${{ github.token }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      ANTHROPIC_AUTH_TOKEN: ${{ secrets.ANTHROPIC_AUTH_TOKEN }}
+      TAWG_TELEGRAM_CHAT_ID: ${{ vars.TAWG_TELEGRAM_CHAT_ID }}
+      TAWG_TELEGRAM_BOT_USERNAME: ${{ vars.TAWG_TELEGRAM_BOT_USERNAME }}
+      ANTHROPIC_BASE_URL: ${{ vars.ANTHROPIC_BASE_URL }}
+      ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+      ANTHROPIC_DEFAULT_OPUS_MODEL: ${{ vars.ANTHROPIC_DEFAULT_OPUS_MODEL }}
+      ANTHROPIC_DEFAULT_SONNET_MODEL: ${{ vars.ANTHROPIC_DEFAULT_SONNET_MODEL }}
+      ANTHROPIC_DEFAULT_HAIKU_MODEL: ${{ vars.ANTHROPIC_DEFAULT_HAIKU_MODEL }}
+      CLAUDE_CODE_SUBAGENT_MODEL: ${{ vars.CLAUDE_CODE_SUBAGENT_MODEL }}
+      CLAUDE_CODE_EFFORT_LEVEL: ${{ vars.CLAUDE_CODE_EFFORT_LEVEL }}
+      CLAUDE_CODE_AUTO_COMPACT_WINDOW: ${{ vars.CLAUDE_CODE_AUTO_COMPACT_WINDOW }}
+      TAWG_DELIVERY_ENABLED: ${{ vars.TAWG_DELIVERY_ENABLED }}
+    steps:
+      - name: Check out the single writer branch
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install pinned runtimes
+        run: |
+          python -m pip install --require-hashes -r requirements-dev.lock
+          python -m pip install --no-deps .
+          npm install --global @anthropic-ai/claude-code@2.1.240
+
+      - name: Verify code and canonical knowledge before operation
+        run: |
+          python -m ruff check src tests
+          python -m mypy src/tawg_bot
+          python -m pytest -q
+          python -m tawg_bot.cli vault-lint
+
+      - name: Run bot with ordered repository checkpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+          backfill="${{ inputs.backfill || 'none' }}"
+          if [[ "$backfill" != "none" ]]; then
+            python -m tawg_bot.cli backfill "$backfill"
+          elif [[ "${{ inputs.daily_dry_run || false }}" == "true" ]]; then
+            current_hour="$(date -u +%H)"
+            if (( 10#$current_hour < 23 )); then
+              window_end="$(date -u -d 'yesterday 23:00' +%Y-%m-%dT%H:%M:%SZ)"
+            else
+              window_end="$(date -u -d 'today 23:00' +%Y-%m-%dT%H:%M:%SZ)"
+            fi
+            python -m tawg_bot.cli daily-dry-run --window-end "$window_end"
+          elif [[ "${{ inputs.observe_only || false }}" == "true" ]] || \
+               [[ "$TAWG_DELIVERY_ENABLED" != "true" ]]; then
+            python -m tawg_bot.cli tick --observe-only
+          else
+            python -m tawg_bot.cli tick
+          fi
