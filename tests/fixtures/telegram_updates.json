@@ -63,5 +63,16 @@
       "caption": "新的流程图说明",
       "photo": [{"file_id": "secret-photo-file-id", "width": 320, "height": 240}]
     }
+  },
+  {
+    "update_id": 106,
+    "message": {
+      "message_id": 506,
+      "date": 1787440560,
+      "chat": {"id": -100424242, "type": "supergroup", "title": "TAWG"},
+      "from": {"id": 66006, "is_bot": false, "first_name": "Eve", "username": "eve"},
+      "text": "let's run /review on the draft",
+      "entities": [{"offset": 10, "length": 7, "type": "bot_command"}]
+    }
   }
 ]

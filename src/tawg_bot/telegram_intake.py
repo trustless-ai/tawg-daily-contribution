@@ -247,9 +247,7 @@ class TelegramIntake:
             value = self._utf16_slice(text, offset, length).casefold()
             if entity_type == "mention" and value == f"@{self.bot_username}":
                 return True
-            if entity_type == "bot_command" and (
-                "@" not in value or value.endswith(f"@{self.bot_username}")
-            ):
+            if entity_type == "bot_command" and value.endswith(f"@{self.bot_username}"):
                 return True
         return False
 
