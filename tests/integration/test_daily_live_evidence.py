@@ -197,8 +197,6 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
     assert trigger["output_contract"] == {
         "citation_rule": "Every factual bullet except Next step ends with [citation].",
         "forbidden_terms": [
-            "rank",
-            "ranking",
             "score",
             "leaderboard",
             "MVP",
@@ -210,12 +208,12 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
             "payout",
             "on-chain credit",
         ],
-        "max_emoji": 6,
+        "max_emoji": 8,
         "required_sections": [
+            "Appreciation",
             "What moved",
             "Ideas worth carrying forward",
             "Open threads / help wanted",
-            "Appreciation",
             "Next step",
         ],
     }
