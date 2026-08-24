@@ -7,11 +7,23 @@ people:
       - babyblueviper1
       magicians:
       - babyblueviper1
+  baby-blue-viper-2:
+    display_names:
+    - Baby Blue Viper
+    handles:
+      telegram:
+      - babyblueviper1
   damon-zwicker:
     display_names:
     - Damon Zwicker
     handles:
       magicians:
+      - damonzwicker
+  damon-zwicker-2:
+    display_names:
+    - Damon Zwicker
+    handles:
+      telegram:
       - damonzwicker
   j:
     display_names:
@@ -25,6 +37,12 @@ people:
       - jimmyshi22
       magicians:
       - jimmyshi22
+  jimmy-shi-2:
+    display_names:
+    - Jimmy Shi
+    handles:
+      telegram:
+      - jimmyshi
   jinx-thepoktopus:
     display_names:
     - Jinx | @thepoktopus
@@ -35,6 +53,12 @@ people:
     handles:
       magicians:
       - blockbird
+  m-blockbird-2:
+    display_names:
+    - M @Blockbird
+    handles:
+      telegram:
+      - mhouzzes
   merlini:
     display_names:
     - Merlini
@@ -43,6 +67,12 @@ people:
       - tmerlini
       magicians:
       - tmerlini
+  merlini-2:
+    display_names:
+    - Merlini
+    handles:
+      telegram:
+      - gobross
   pavlo:
     display_names:
     - Pavlo
@@ -51,6 +81,12 @@ people:
       - pipavlo82
       magicians:
       - pipavlo82
+  pavlo-2:
+    display_names:
+    - Pavlo
+    handles:
+      telegram:
+      - pavlentyy82
   petchevere:
     display_names:
     - Petchevere
