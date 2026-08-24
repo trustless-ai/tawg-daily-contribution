@@ -210,7 +210,7 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
             "payout",
             "on-chain credit",
         ],
-        "max_emoji": 6,
+        "max_emoji": 8,
         "required_sections": [
             "What moved",
             "Ideas worth carrying forward",

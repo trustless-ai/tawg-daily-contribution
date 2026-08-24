@@ -248,7 +248,7 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "\nWhat moved\n", "\nToday, What moved matters.\n"
+                    "\n🚀 What moved\n", "\nToday, What moved matters.\n"
                 )
             ),
             "section",
@@ -256,7 +256,7 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "\nNext step\n", "\nWhat moved\n\nNext step\n"
+                    "\n🏁 Next step\n", "\n🚀 What moved\n\n🏁 Next step\n"
                 )
             ),
             "section",

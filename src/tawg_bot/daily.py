@@ -296,7 +296,11 @@ class DailyService:
                 raise DailyRejected("Daily title must match the exact UTC window")
         section_indices: list[int] = []
         for section in self.policy["required_sections"]:
-            indices = [index for index, line in enumerate(lines) if line == section]
+            indices = [
+                index
+                for index, line in enumerate(lines)
+                if self._section_name(line) == section
+            ]
             if len(indices) != 1:
                 raise DailyRejected(f"Daily output has an invalid required section: {section}")
             section_indices.append(indices[0])
@@ -322,8 +326,9 @@ class DailyService:
         if not result.quiet_day:
             current_section = ""
             for line in lines:
-                if line in self.policy["required_sections"]:
-                    current_section = line
+                section = self._section_name(line)
+                if section is not None:
+                    current_section = section
                     continue
                 if not line.lstrip().startswith("- "):
                     continue
@@ -339,6 +344,12 @@ class DailyService:
                 ):
                     raise DailyRejected("Daily factual bullet lacks a valid citation")
         return result
+
+    def _section_name(self, line: str) -> str | None:
+        stripped = line.strip()
+        emoji = _EMOJI.match(stripped)
+        name = stripped[emoji.end() :].strip() if emoji is not None else stripped
+        return name if name in self.policy["required_sections"] else None
 
     def _split(self, text: str) -> tuple[str, ...]:
         try:
