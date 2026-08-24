@@ -7,6 +7,5 @@ daily:
   max_model_budget_usd: "2.00"
   max_context_chars: 250000
   required_sections:
-    - Appreciation
     - What moved
     - Next up

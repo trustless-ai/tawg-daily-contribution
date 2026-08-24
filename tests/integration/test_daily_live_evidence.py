@@ -210,7 +210,6 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
         ],
         "max_emoji": 16,
         "required_sections": [
-            "Appreciation",
             "What moved",
             "Next up",
         ],
