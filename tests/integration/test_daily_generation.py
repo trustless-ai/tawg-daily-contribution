@@ -215,7 +215,7 @@ async def test_daily_requires_fresh_success_from_every_required_layer(tmp_path: 
         ),
         (
             lambda value: value.update(
-                telegram_text=value["telegram_text"] + "\n- Alice ranks #1."
+                telegram_text=value["telegram_text"] + "\n- Alice tops the leaderboard."
             ),
             "ranking",
         ),

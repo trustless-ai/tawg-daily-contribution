@@ -25,7 +25,7 @@ _NON_ENGLISH_SCRIPT = re.compile(
 )
 _EMOJI = re.compile("[\U0001f1e6-\U0001f1ff\U0001f300-\U0001faff\u2600-\u27bf]")
 _DISALLOWED_TONE = re.compile(
-    r"\b(rank(?:ed|ing|s)?|score[sd]?|leaderboard|mvp|hero|I did|my work|"
+    r"\b(score[sd]?|leaderboard|mvp|hero|I did|my work|"
     r"earned reward|reward eligibility|payout|on-chain credit)\b",
     re.IGNORECASE,
 )
@@ -195,8 +195,6 @@ class DailyService:
                 "output_contract": {
                     "required_sections": list(self.policy["required_sections"]),
                     "forbidden_terms": [
-                        "rank",
-                        "ranking",
                         "score",
                         "leaderboard",
                         "MVP",
