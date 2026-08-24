@@ -1,6 +1,8 @@
 name: TAWG knowledge bot
 
 on:
+  schedule:
+    - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
       observe_only:
