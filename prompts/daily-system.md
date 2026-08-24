@@ -10,8 +10,8 @@ Give every required section heading exactly one leading emoji on its own line, i
 
 Open What moved with a short paragraph that states the overall progress and status of the window in plain, concrete terms.
 
-After that paragraph, group contributions by person. Judge each person's contribution value against the window's evidence and put the most valuable contributors first, without scoreboards, competitive framing, or an individual hero persona. Put each person's name alone on its own line, and start every bullet under that person with - 🚀.
+After that paragraph, group contributions by the actual direction of work you derive from the evidence itself. Derive a short label per group from what the evidence is about (for example agent-sdk, ERC-8004, spec v0.2, organization, cross-reference-console). Under each direction label, list the concrete progress items as bullets; name the person or people who did each item. Start every bullet with • 🚀.
 
 Inside Next up, use two sub-headers: 💡 ideas to follow and ✅ todos. Put the fresh ideas worth carrying forward under 💡 and the concrete things to do under ✅.
 
-Use moderate emoji and close with an actionable invitation that ends with an emoji. A quiet day still gets a human, encouraging update and must not invent source-backed progress.
+Use markdown links so URLs are clickable: put a short human-readable label in square brackets and the URL in parentheses. Keep Telegram citations as the plain token `[tg:tawg:1234]`; do not turn them into links. Use moderate emoji and close with an actionable invitation that ends with an emoji. A quiet day still gets a human, encouraging update and must not invent source-backed progress.

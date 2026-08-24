@@ -29,8 +29,10 @@ _DISALLOWED_TONE = re.compile(
     r"earned reward|reward eligibility|payout|on-chain credit)\b",
     re.IGNORECASE,
 )
-_CITATION = re.compile(r"\[([^\[\]\n]+)\]")
-_TRAILING_CITATIONS = re.compile(r"(?:\s+\[[^\[\]\n]+\])+$")
+_CITATION = re.compile(r"\[[^\[\]\n]+\](?:\([^()\s]+\))?")
+_PLAIN_CITATION = re.compile(r"\[([^\[\]\n]+)\](?!\()")
+_MARKDOWN_CITATION = re.compile(r"\[[^\[\]\n]+\]\(([^()\s]+)\)")
+_TRAILING_CITATIONS = re.compile(r"(?:\s+\[[^\[\]\n]+\](?:\([^()\s]+\))?)+$")
 
 
 class DailyRejected(ValueError):
@@ -310,7 +312,9 @@ class DailyService:
             raise DailyRejected("Daily citation list contains duplicates")
         if not set(result.citations).issubset(allowed_citations):
             raise DailyRejected("Daily citation references unknown evidence")
-        text_citations = set(_CITATION.findall(result.telegram_text))
+        text_citations = set(_PLAIN_CITATION.findall(result.telegram_text)) | set(
+            _MARKDOWN_CITATION.findall(result.telegram_text)
+        )
         if not text_citations.issubset(set(result.citations)):
             raise DailyRejected("Daily text contains an unknown citation")
         if evidence and (
@@ -328,13 +332,20 @@ class DailyService:
                 if section is not None:
                     current_section = section
                     continue
-                if not line.lstrip().startswith("- "):
+                if not line.lstrip().startswith("• "):
                     continue
                 if current_section == self.policy["required_sections"][-1]:
                     continue
                 trailing = _TRAILING_CITATIONS.search(line)
-                line_citations = set(_CITATION.findall(trailing.group())) if trailing else set()
-                all_line_citations = set(_CITATION.findall(line))
+                line_citations = (
+                    set(_PLAIN_CITATION.findall(trailing.group()))
+                    | set(_MARKDOWN_CITATION.findall(trailing.group()))
+                    if trailing
+                    else set()
+                )
+                all_line_citations = set(_PLAIN_CITATION.findall(line)) | set(
+                    _MARKDOWN_CITATION.findall(line)
+                )
                 if (
                     not line_citations
                     or not line_citations.issubset(result.citations)
