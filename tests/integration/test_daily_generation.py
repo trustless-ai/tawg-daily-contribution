@@ -210,7 +210,9 @@ async def test_daily_requires_fresh_success_from_every_required_layer(tmp_path: 
     [
         (lambda value: value.update(telegram_text=value["telegram_text"] + " 我完成了"), "English"),
         (
-            lambda value: value.update(telegram_text=value["telegram_text"] + " 🥇🏆🎉🔥✨🎯"),
+            lambda value: value.update(
+                telegram_text=value["telegram_text"] + " 🥇🏆🎉🔥✨🎯🥇🏆🎉"
+            ),
             "emoji",
         ),
         (
@@ -248,7 +250,7 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "\n🚀 What moved\n", "\nToday, What moved matters.\n"
+                    "\n🤝 What moved\n", "\nToday, What moved matters.\n"
                 )
             ),
             "section",
@@ -256,7 +258,7 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "\n🏁 Next up\n", "\n🚀 What moved\n\n🏁 Next up\n"
+                    "\n🔥 Next up\n", "\n🤝 What moved\n\n🔥 Next up\n"
                 )
             ),
             "section",
@@ -274,8 +276,8 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "Pick one edge case,",
-                    "Pick one edge case [made-up:next],",
+                    "🚀 Thanks to Alice",
+                    "🚀 Thanks to Alice [made-up:next]",
                 )
             ),
             "citation",
