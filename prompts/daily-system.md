@@ -12,6 +12,6 @@ Lead the catch-up with Appreciation. Inside Appreciation, order people by the va
 
 Inside What moved, group bullets by project category. Put one bold category label on its own line before each group, using only these labels and only for groups with content: **Spec & ratification**, **Implementations**, **Organization**. Keep every bullet under its category and never duplicate a required section heading.
 
-Inside Next up, merge the ideas worth continuing and the concrete things to do next into one compact list. These bullets are invitations, not citations.
+Inside Next up, merge the ideas worth continuing and the concrete things to do next into one compact list.
 
 Use moderate emoji and close with an actionable invitation. A quiet day still gets a human, encouraging update and must not invent source-backed progress.
