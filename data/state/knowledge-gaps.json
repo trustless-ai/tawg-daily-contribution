@@ -5,7 +5,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8004:implementation:implementation:agent-ercs-8004-identity-interface",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "agent-ercs-8004-identity-interface"
@@ -16,7 +16,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8004:implementation:normative_spec:erc-8004-canonical",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "erc-8004-canonical"
@@ -27,7 +27,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8004:implementation:test_or_example:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -38,7 +38,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8183:implementation:implementation:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -49,7 +49,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8183:implementation:normative_spec:erc-8183-canonical",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "erc-8183-canonical"
@@ -60,7 +60,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8183:implementation:test_or_example:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -71,7 +71,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8263:implementation:implementation:agent-ercs-8263-implementation",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "agent-ercs-8263-implementation"
@@ -82,7 +82,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8263:implementation:normative_spec:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -93,7 +93,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8263:implementation:test_or_example:agent-ercs-8263-tests",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "agent-ercs-8263-tests"
@@ -104,7 +104,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8274:implementation:implementation:agent-ercs-8274-implementation",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "agent-ercs-8274-implementation"
@@ -115,7 +115,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8274:implementation:normative_spec:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -126,7 +126,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8274:implementation:test_or_example:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -137,7 +137,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8275:implementation:implementation:agent-ercs-8275-implementation",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "agent-ercs-8275-implementation"
@@ -148,7 +148,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8275:implementation:normative_spec:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -159,7 +159,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8275:implementation:test_or_example:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -170,7 +170,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8281:implementation:implementation:agent-ercs-8281-implementation",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "agent-ercs-8281-implementation"
@@ -181,7 +181,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8281:implementation:normative_spec:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -192,7 +192,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8281:implementation:test_or_example:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -203,7 +203,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8299:implementation:implementation:agent-ercs-8299-implementation",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "agent-ercs-8299-implementation"
@@ -214,7 +214,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8299:implementation:normative_spec:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -225,7 +225,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8299:implementation:test_or_example:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -236,7 +236,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8301:implementation:implementation:agent-ercs-8301-implementation",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "agent-ercs-8301-implementation"
@@ -247,7 +247,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8301:implementation:normative_spec:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -258,7 +258,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8301:implementation:test_or_example:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -291,7 +291,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8312:implementation:implementation:agent-ercs-8312-implementation",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "agent-ercs-8312-implementation"
@@ -302,7 +302,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8312:implementation:normative_spec:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -313,7 +313,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8312:implementation:test_or_example:agent-ercs-8312-tests",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "agent-ercs-8312-tests"
@@ -324,7 +324,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8323:implementation:implementation:agent-ercs-8323-implementation",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "agent-ercs-8323-implementation"
@@ -335,7 +335,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8323:implementation:normative_spec:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -346,7 +346,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8323:implementation:test_or_example:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -357,7 +357,7 @@
     "first_observed_at": "2026-08-23T15:20:28.024299Z",
     "gap_key": "gap:erc-8354:implementation:implementation:agent-ercs-8354-implementation",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "dns_policy",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": "agent-ercs-8354-implementation"
@@ -368,7 +368,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8354:implementation:normative_spec:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -379,7 +379,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8354:implementation:test_or_example:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-24T14:49:31.166944Z",
+    "last_observed_at": "2026-08-24T15:23:12.746562Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
