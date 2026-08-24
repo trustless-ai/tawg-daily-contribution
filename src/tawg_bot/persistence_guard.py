@@ -142,12 +142,40 @@ def _shares_window_bytes(source_bytes: bytes, payload_bytes: bytes, width: int) 
     return any(value in payload_hashes for value in _rolling_hashes(source_bytes, width))
 
 
+def _first_shared_window(source: str, payload: str, width: int) -> str | None:
+    source_bytes = source.encode("utf-8")
+    payload_bytes = payload.encode("utf-8")
+    payload_hashes = _rolling_hashes(payload_bytes, width)
+    for value, source_offsets in _rolling_hashes(source_bytes, width).items():
+        candidates = payload_hashes.get(value)
+        if candidates is None:
+            continue
+        for offset in source_offsets:
+            chunk = source_bytes[offset : offset + width]
+            if any(payload_bytes[start : start + width] == chunk for start in candidates):
+                return chunk.decode("utf-8", errors="replace")
+    return None
+
+
 def _debug_rejection(path: str, allow_short_quote: bool, sources: tuple[str, ...], payload: str) -> None:
     try:
-        minimum = 96 if allow_short_quote else 16
-        best = max((_longest_shared(s, payload, minimum) for s in sources), default=0)
         import sys
-        print(f"PERSISTENCE-DEBUG path={path} allow_short={allow_short_quote} longest_shared={best}", file=sys.stderr)
+        minimum = 96 if allow_short_quote else 16
+        matches = []
+        for index, source in enumerate(sources):
+            shared = _longest_shared(source, payload, minimum)
+            if shared >= minimum:
+                matches.append((index, shared, _first_shared_window(source, payload, shared)))
+        print(
+            f"PERSISTENCE-DEBUG path={path} allow_short={allow_short_quote} "
+            f"sources={len(sources)} matches={len(matches)}",
+            file=sys.stderr,
+        )
+        for index, shared, chunk in matches[:3]:
+            print(
+                f"PERSISTENCE-DEBUG source[{index}] longest_shared={shared} chunk={chunk!r}",
+                file=sys.stderr,
+            )
     except Exception:
         import sys
         print(f"PERSISTENCE-DEBUG path={path} allow_short={allow_short_quote} longest_shared=ERR", file=sys.stderr)
