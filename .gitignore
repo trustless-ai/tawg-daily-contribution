@@ -12,3 +12,6 @@ __pycache__/
 .vault-meta/
 .local/
 telegram-export*.json
+
+# OMC local orchestration state
+.omc/
