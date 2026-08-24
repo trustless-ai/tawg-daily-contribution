@@ -208,7 +208,7 @@ class DailyService:
                     ],
                     "max_emoji": self.policy["max_emoji"],
                     "citation_rule": (
-                        "Every factual bullet except Next step ends with [citation]."
+                        "Every factual bullet except the final section ends with [citation]."
                     ),
                 },
                 "window_evidence": evidence_payload,
@@ -330,7 +330,7 @@ class DailyService:
                     continue
                 if not line.lstrip().startswith("- "):
                     continue
-                if current_section == "Next step":
+                if current_section == self.policy["required_sections"][-1]:
                     continue
                 trailing = _TRAILING_CITATIONS.search(line)
                 line_citations = set(_CITATION.findall(trailing.group())) if trailing else set()
