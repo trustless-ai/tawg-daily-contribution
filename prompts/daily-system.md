@@ -27,7 +27,7 @@ Rules:
 - Group labels carry no citation and are not bullets; every bullet still needs its trailing citation.
 - A workstream label must never duplicate a required section heading.
 - Put each bullet in exactly one workstream and never merge two workstreams into one bullet.
-- Order groups by significance and volume; order bullets within a group by recency.
+- Order groups by significance and volume; order bullets within a group newest first, never mirroring the order the evidence appears in the context.
 - Use the same three labels inside Ideas worth carrying forward and Open threads / help wanted whenever those sections span more than one workstream.
 
 
