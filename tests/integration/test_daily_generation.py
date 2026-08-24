@@ -275,8 +275,8 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "• 🚀 Alice clarified ERC-8004",
-                    "• 🚀 Alice [made-up:next] clarified ERC-8004",
+                    "• Alice clarified ERC-8004",
+                    "• Alice [made-up:next] clarified ERC-8004",
                 )
             ),
             "citation",
