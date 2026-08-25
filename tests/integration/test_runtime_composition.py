@@ -14,7 +14,7 @@ import tawg_bot.runtime as runtime_module
 from tawg_bot.bot_router import PreparedReply
 from tawg_bot.claude_cli import ClaudeCli as RealClaudeCli
 from tawg_bot.claude_cli import CompletedProcess
-from tawg_bot.daily import DailyWindow, PreparedDaily
+from tawg_bot.daily import DailyRejected, DailyWindow, PreparedDaily
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import RefreshResult
 from tawg_bot.live_evidence import LiveEvidenceService
@@ -399,6 +399,31 @@ async def test_scheduled_daily_checkpoints_before_reply_preparation(
         await pipeline.daily_prepare(window.window_id)
 
     assert checkpoint.operations == [f"daily-prepared:{int(window.end.timestamp())}"]
+
+
+@pytest.mark.asyncio
+async def test_scheduled_daily_logs_bounded_validation_code_without_raw_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    scaffold(tmp_path)
+    window = DailyWindow.for_due_run(NOW)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+
+        async def prepare_daily(selected: DailyWindow, *, dry_run: bool) -> PreparedDaily:
+            assert selected == window
+            assert not dry_run
+            raise DailyRejected("Daily factual bullet lacks a valid citation")
+
+        monkeypatch.setattr(pipeline, "prepare_daily", prepare_daily)
+        with pytest.raises(RuntimeFailure, match="Daily validation failed"):
+            await pipeline.daily_prepare(window.window_id)
+
+    captured = capsys.readouterr().out
+    assert "code=daily_citation_invalid" in captured
+    assert "factual bullet" not in captured
 
 
 @pytest.mark.asyncio

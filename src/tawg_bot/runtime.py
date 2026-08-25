@@ -14,7 +14,13 @@ import httpx
 
 from tawg_bot.bot_router import BotReplyService, PreparedReply, ReplyRejected
 from tawg_bot.claude_cli import ClaudeCli
-from tawg_bot.daily import DailyReadiness, DailyService, DailyWindow, PreparedDaily
+from tawg_bot.daily import (
+    DailyReadiness,
+    DailyRejected,
+    DailyService,
+    DailyWindow,
+    PreparedDaily,
+)
 from tawg_bot.daily_evidence import (
     DailyEvidenceCollector,
     GitHubActivityRecords,
@@ -51,6 +57,19 @@ _KNOWLEDGE_TIMEOUT_SECONDS = 180
 _DAILY_EVIDENCE_TIMEOUT_SECONDS = 60
 _DAILY_TIMEOUT_SECONDS = 330
 _REPLY_TIMEOUT_SECONDS = 120
+_DAILY_REJECTION_CODES = {
+    "Daily factual bullet lacks a valid citation": "daily_citation_invalid",
+    "Daily synthesis contains source-dependent detail": "daily_synthesis_invalid",
+    "Daily What moved has an invalid direction structure": "daily_structure_invalid",
+    "Daily concrete progress uses an invalid bullet marker": "daily_structure_invalid",
+    "active Daily lacks a complete What moved direction": "daily_structure_invalid",
+    "Daily output has an unexpected top-level section": "daily_sections_invalid",
+    "Daily text contains an unknown citation": "daily_citation_unknown",
+    "Daily citation references unknown evidence": "daily_citation_unknown",
+    "Daily output contains ranking or persona language": "daily_tone_invalid",
+    "Daily output exceeds the emoji limit": "daily_tone_invalid",
+    "Daily must integrate Appreciation into What moved": "daily_tone_invalid",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -359,7 +378,12 @@ class _LivePipeline:
         window = DailyWindow.for_due_run(self.now)
         if window.window_id != window_id:
             raise RuntimeFailure("scheduler supplied an inconsistent Daily window")
-        prepared = await self.prepare_daily(window, dry_run=False)
+        try:
+            prepared = await self.prepare_daily(window, dry_run=False)
+        except DailyRejected as error:
+            code = _DAILY_REJECTION_CODES.get(str(error), "daily_validation_failed")
+            _safe_log("daily_validation", code)
+            raise RuntimeFailure("Daily validation failed") from None
         if prepared is None:
             return
         try:
