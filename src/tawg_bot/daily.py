@@ -34,6 +34,7 @@ _DISALLOWED_TONE = re.compile(
 _OTHER_LIST_ITEM = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
 _DIRECTION_LABEL = re.compile(r"^\*\*[^*\n]+\*\*$")
 _SYNTHESIS_IDENTIFIER = re.compile(r"(?:\d|https?://|www\.)", re.IGNORECASE)
+_SYNTHESIS_URL = re.compile(r"(?:https?://|www\.)", re.IGNORECASE)
 _PLAIN_CITATION = re.compile(r"\[([^\[\]\n]+)\](?!\()")
 _MARKDOWN_CITATION = re.compile(r"\[[^\[\]\n]+\]\(([^()\s]+)\)")
 _TRAILING_CITATIONS = re.compile(r"(?:\s+\[[^\[\]\n]+\](?:\([^()\s]+\))?)+$")
@@ -243,9 +244,9 @@ class DailyService:
                         "without saying that anyone is ranked or scored."
                     ),
                     "synthesis_rule": (
-                        "An uncited synthesis sentence may use generic progress, status, review, "
-                        "test, or implementation language, but must not contain contributor "
-                        "names, numbers, URLs, citations, or source-specific artifact identifiers."
+                        "Each direction's first synthesis sentence may be uncited because its "
+                        "concrete supporting bullets immediately below are cited. It must not "
+                        "contain a URL or citation."
                     ),
                     "what_moved_rule": (
                         "Integrate appreciation into each concrete item: name who did what, what "
@@ -422,12 +423,11 @@ class DailyService:
             self._validate_what_moved(
                 lines[section_indices[0] + 1 : section_indices[1]],
                 set(result.citations),
-                {item.author_person_id.casefold() for item in evidence if item.author_person_id},
             )
         return result
 
     @staticmethod
-    def _validate_what_moved(lines: list[str], citations: set[str], contributors: set[str]) -> None:
+    def _validate_what_moved(lines: list[str], citations: set[str]) -> None:
         content = [line.strip() for line in lines if line.strip()]
         state = "label"
         bullet_seen = False
@@ -440,24 +440,13 @@ class DailyService:
                 state = "synthesis"
                 continue
             if state == "synthesis":
-                normalized_words = re.sub(r"[^\w]+", " ", line.casefold()).strip()
-                normalized = f" {normalized_words} "
-                contributor_words = {
-                    re.sub(r"[^\w]+", " ", contributor).strip() for contributor in contributors
-                }
-                names_contributor = any(
-                    f" {contributor} " in normalized
-                    for contributor in contributor_words
-                    if contributor
-                )
                 if (
                     _DIRECTION_LABEL.fullmatch(line)
                     or line.startswith("• ")
                     or _OTHER_LIST_ITEM.match(line)
                     or _PLAIN_CITATION.search(line)
                     or _MARKDOWN_CITATION.search(line)
-                    or _SYNTHESIS_IDENTIFIER.search(line)
-                    or names_contributor
+                    or _SYNTHESIS_URL.search(line)
                 ):
                     raise DailyRejected("Daily synthesis contains source-dependent detail")
                 state = "bullets"

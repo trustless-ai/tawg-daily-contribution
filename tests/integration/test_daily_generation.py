@@ -355,7 +355,7 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
                     "The validation direction became clearer and easier to build on this window.",
-                    "Alice merged PR 42 and resolved the ERC-8004 blocker.",
+                    "The implementation details are at https://example.com/change.",
                 )
             ),
             "synthesis",
@@ -430,3 +430,22 @@ async def test_daily_allows_generic_progress_verbs_without_source_identifiers(
 
     assert prepared is not None
     assert "implemented and tested" in prepared.telegram_text
+
+
+@pytest.mark.asyncio
+async def test_daily_allows_uncited_direction_summary_when_following_progress_is_cited(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    output = _fixture("daily-active")
+    output["telegram_text"] = output["telegram_text"].replace(
+        "The validation direction became clearer and easier to build on this window.",
+        "Alice moved the ERC-8004 validation direction into a clearer review phase.",
+    )
+
+    prepared = await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+        WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+    )
+
+    assert prepared is not None
+    assert "Alice moved the ERC-8004 validation direction" in prepared.telegram_text

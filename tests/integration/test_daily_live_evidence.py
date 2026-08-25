@@ -233,9 +233,9 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
             "Next up",
         ],
         "synthesis_rule": (
-            "An uncited synthesis sentence may use generic progress, status, review, test, or "
-            "implementation language, but must not contain contributor names, numbers, URLs, "
-            "citations, or source-specific artifact identifiers."
+            "Each direction's first synthesis sentence may be uncited because its concrete "
+            "supporting bullets immediately below are cited. It must not contain a URL or "
+            "citation."
         ),
         "what_moved_rule": (
             "Integrate appreciation into each concrete item: name who did what, what it "
