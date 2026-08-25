@@ -124,7 +124,7 @@ async def test_live_pipeline_checks_sources_without_external_body_mirrors(
 
         class Daily:
             def __init__(self, root: Path, *, ai: Any, timeout_seconds: float) -> None:
-                assert timeout_seconds == 330
+                assert timeout_seconds == 360
                 del root, ai
 
             async def prepare(

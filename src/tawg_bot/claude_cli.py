@@ -147,7 +147,7 @@ class ClaudeCli:
         )
         effort: str | None = None
         if job_type == "daily":
-            effort = self.source_environment.get("TAWG_DAILY_EFFORT_LEVEL", "high")
+            effort = self.source_environment.get("TAWG_DAILY_EFFORT_LEVEL", "medium")
             if effort not in self._EFFORT_LEVELS:
                 raise ClaudeCliError("invalid Daily effort level")
         cli_schema = {key: value for key, value in schema.items() if key not in {"$schema", "$id"}}

@@ -11,7 +11,7 @@ Keep every scheduled bot run below ten minutes while preserving completed work a
 - Scheduled source checks process at most two ERCs, with a one-minute per-ERC timeout and one independently persisted checkpoint per ERC.
 - Scheduled knowledge refresh processes at most one ERC. Model time is bounded below the Action timeout.
 - Reply preparation processes at most one pending mention per run. Ready replies go first; otherwise the oldest pending job goes first, so a recent failure rotates behind other waiting mentions.
-- Daily preparation has priority on L4 runs, uses a 330-second model timeout, and defaults to `high` effort even when the provider-wide effort is higher.
+- Daily preparation has priority on L4 runs, uses a 360-second model timeout, and defaults to `medium` effort even when the provider-wide effort is higher.
 - Daily evidence is selected into bounded per-source quotas and a fourteen-item total while retaining one high-signal item per contributor where space permits. One unavailable external source does not discard evidence from Telegram or another source.
 - A recoverable phase failure is logged using only a fixed phase name, bounded identifier, and safe error code. Raw exception messages, provider output, source bodies, and credentials are never logged.
 - Recoverable failures do not abort later phases. Failed knowledge work is deferred with bounded exponential backoff, so another ERC can advance on the next run.

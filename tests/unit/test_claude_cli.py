@@ -92,6 +92,27 @@ async def test_daily_uses_bounded_configurable_effort(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_daily_defaults_to_medium_effort(tmp_path: Path) -> None:
+    runner = CapturingRunner(outer_daily())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+
+    await cli.run(
+        job_type="daily",
+        context_pack="{}",
+        operation_id="daily-2026-08-24T23-00-00Z",
+        max_budget_usd="1.00",
+    )
+
+    assert runner.argv[runner.argv.index("--effort") + 1] == "medium"
+
+
+@pytest.mark.asyncio
 async def test_cli_is_toolless_sessionless_and_does_not_expose_secrets(
     tmp_path: Path,
 ) -> None:
