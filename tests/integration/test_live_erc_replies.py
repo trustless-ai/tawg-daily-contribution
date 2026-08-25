@@ -211,7 +211,34 @@ def _service(
 
 
 @pytest.mark.asyncio
-async def test_explicit_erc_reply_uses_live_pack_and_exact_fetched_urls(tmp_path: Path) -> None:
+async def test_ordinary_erc_reply_reuses_local_knowledge_without_live_fetch(
+    tmp_path: Path,
+) -> None:
+    job = _seed(tmp_path, "@bot How is ERC-8004 implemented?")
+    page = tmp_path / "knowledge/ercs/erc-8004.md"
+    page.parent.mkdir(parents=True, exist_ok=True)
+    page.write_bytes((PROJECT / "knowledge/ercs/erc-8004.md").read_bytes())
+    ai = FakeAi(_result(citations=[CANONICAL, IMPLEMENTATION]))
+    live = FakeLiveEvidence(_pack())
+
+    prepared = await _service(tmp_path, ai=ai, live=live).prepare(
+        job.job_id, now=NOW + timedelta(minutes=1)
+    )
+
+    context = ai.calls[0]["context_pack"]
+    decoded = json.loads(context)
+    assert '"schema_version":"tawg.evidence-pack.v1"' not in context
+    assert decoded["trigger"]["erc_evidence_mode"] == "local_synthesis"
+    assert decoded["trigger"]["local_verified_at"] == ["2026-08-23T06:55:28.909924Z"]
+    assert decoded["retrieved"][0]["path"] == "knowledge/ercs/erc-8004.md"
+    assert "knowledge/ercs/erc-8004.md" in context
+    assert CANONICAL in context
+    assert prepared.citations == (CANONICAL, IMPLEMENTATION)
+    assert live.calls == []
+
+
+@pytest.mark.asyncio
+async def test_erc_reply_fetches_live_when_local_knowledge_is_missing(tmp_path: Path) -> None:
     job = _seed(tmp_path, "@bot How is ERC-8004 implemented?")
     ai = FakeAi(_result(citations=[CANONICAL, IMPLEMENTATION]))
     live = FakeLiveEvidence(_pack())
@@ -230,6 +257,24 @@ async def test_explicit_erc_reply_uses_live_pack_and_exact_fetched_urls(tmp_path
         registry=SourceRegistry.from_yaml(tmp_path / "knowledge/meta/sources.yml"),
     ).load()
     assert len(state.refresh_jobs) == 2
+
+
+@pytest.mark.asyncio
+async def test_explicitly_current_erc_reply_fetches_live_even_with_local_knowledge(
+    tmp_path: Path,
+) -> None:
+    job = _seed(tmp_path, "@bot What is the current status of ERC-8004?")
+    page = tmp_path / "knowledge/ercs/erc-8004.md"
+    page.parent.mkdir(parents=True, exist_ok=True)
+    page.write_bytes((PROJECT / "knowledge/ercs/erc-8004.md").read_bytes())
+    ai = FakeAi(_result(citations=[CANONICAL, IMPLEMENTATION]))
+    live = FakeLiveEvidence(_pack())
+
+    await _service(tmp_path, ai=ai, live=live).prepare(
+        job.job_id, now=NOW + timedelta(minutes=1)
+    )
+
+    assert live.calls[0].intent is ErcIntent.STATUS
 
 
 @pytest.mark.asyncio

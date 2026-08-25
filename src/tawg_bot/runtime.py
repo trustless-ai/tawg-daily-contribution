@@ -44,6 +44,9 @@ class RuntimeFailure(RuntimeError):
     """A safe production-composition failure."""
 
 
+_SOURCE_RECHECK_INTERVAL = timedelta(hours=24)
+
+
 @dataclass(frozen=True, slots=True)
 class SourceCheckSummary:
     erc_count: int
@@ -192,7 +195,11 @@ class _LivePipeline:
         self.telegram_synced_at = now
 
     async def source_check(self, now: datetime) -> None:
-        await self.check_sources(now, observe_only=False)
+        erc_numbers = self.registry.due_erc_numbers(
+            now,
+            max_age=_SOURCE_RECHECK_INTERVAL,
+        )
+        await self.check_sources(now, erc_numbers=erc_numbers, observe_only=False)
 
     async def check_sources(
         self,
@@ -202,7 +209,7 @@ class _LivePipeline:
         observe_only: bool,
     ) -> SourceCheckSummary:
         _require_utc(now, "source check time")
-        numbers = erc_numbers or self.registry.erc_numbers()
+        numbers = self.registry.erc_numbers() if erc_numbers is None else erc_numbers
         packs: list[EvidencePack] = []
         for erc_number in numbers:
             packs.append(
@@ -232,7 +239,7 @@ class _LivePipeline:
             evidence_count=sum(len(pack.evidence) for pack in packs),
             gap_count=sum(len(pack.missing_required) for pack in packs),
             refresh_job_count=sum(len(pack.source_changes) for pack in packs),
-            persisted=not observe_only,
+            persisted=bool(packs) and not observe_only,
         )
 
     async def knowledge_refresh(self, cutoff: datetime) -> None:

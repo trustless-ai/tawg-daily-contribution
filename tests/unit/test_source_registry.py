@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -215,3 +215,29 @@ def test_registry_renders_current_observation_without_a_body(tmp_path: Path) -> 
 
     assert updated.source("erc-8004-canonical").last_observed == observation
     assert "copied external specification" not in rendered
+
+
+def test_registry_only_marks_ercs_with_stale_sources_due_for_recheck(tmp_path: Path) -> None:
+    registry = SourceRegistry.from_yaml(_write_registry(tmp_path, _registry_payload()))
+    now = datetime(2026, 8, 25, 12, tzinfo=UTC)
+    fresh = SourceObservation(
+        checked_at=now - timedelta(hours=23),
+        version="fresh",
+        content_sha256="a" * 64,
+        byte_count=123,
+    )
+    stale = fresh.model_copy(update={"checked_at": now - timedelta(hours=25)})
+    observations = {
+        source.source_key: (stale if "erc-8183" in source.topics else fresh)
+        for erc in registry.erc_numbers()
+        for source in registry.resolve(erc, frozenset(EvidenceKind))
+    }
+    updated_path = tmp_path / "updated.yml"
+    updated_path.write_text(
+        registry.render_with_observations(observations),
+        encoding="utf-8",
+    )
+
+    updated = SourceRegistry.from_yaml(updated_path)
+
+    assert updated.due_erc_numbers(now, max_age=timedelta(hours=24)) == (8183,)

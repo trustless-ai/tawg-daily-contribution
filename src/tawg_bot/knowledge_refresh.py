@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections.abc import Mapping
@@ -157,6 +158,7 @@ class KnowledgeRefresh:
             timeout_seconds=self.timeout_seconds,
         )
         bound_result = self._bind_controller_fields(raw_result, pending, packs, operation_id)
+        self._preserve_omitted_claim_ledger(bound_result)
         result = self._validate_result(bound_result, pending, packs, operation_id)
         source_keys = frozenset(item.source_key for pack in packs for item in pack.evidence)
         citation_urls = frozenset(url for pack in packs for url in pack.citation_allowlist)
@@ -418,6 +420,37 @@ class KnowledgeRefresh:
         if isinstance(transaction, dict):
             transaction["operation_id"] = operation_id
         return bound
+
+    def _preserve_omitted_claim_ledger(self, raw: dict[str, Any]) -> None:
+        transaction = raw.get("transaction")
+        if not isinstance(transaction, dict):
+            return
+        writes = transaction.get("writes")
+        if not isinstance(writes, list) or any(
+            isinstance(write, dict) and write.get("path") == _CLAIM_LEDGER for write in writes
+        ):
+            return
+        path = self.root / _CLAIM_LEDGER
+        try:
+            payload = path.read_bytes()
+            content = payload.decode("utf-8")
+            parsed = json.loads(content)
+        except (OSError, UnicodeError, json.JSONDecodeError):
+            return
+        if (
+            not isinstance(parsed, dict)
+            or parsed.get("schema") != "tawg.claim-ledger.v2"
+            or not isinstance(parsed.get("entries"), dict)
+        ):
+            return
+        writes.append(
+            {
+                "path": _CLAIM_LEDGER,
+                "expected_sha256": hashlib.sha256(payload).hexdigest(),
+                "content": content,
+                "citations": [],
+            }
+        )
 
     def _validate_pages(
         self,

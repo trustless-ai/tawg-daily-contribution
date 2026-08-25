@@ -16,17 +16,24 @@ from pydantic import ValidationError
 
 from tawg_bot.context import ContextInputs, ContextPackBuilder, ContextRejected
 from tawg_bot.corrections import CorrectionService
-from tawg_bot.erc_query import ErcQuery, ErcQueryPlanner
+from tawg_bot.erc_query import ErcIntent, ErcQuery, ErcQueryPlanner
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.live_evidence import EvidencePack
 from tawg_bot.models import JobStatus, PendingBotJob, SourceRecord, StrictModel
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 from tawg_bot.query import SourceQuery
 from tawg_bot.retrieval import VaultRetriever
+from tawg_bot.source_registry import EvidenceKind
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
+from tawg_bot.vault import parse_frontmatter
 from tawg_bot.vault_transaction import VaultTransaction, VaultTransactionEngine
 
 _NON_ENGLISH = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\u0400-\u052f\u0600-\u06ff\u0900-\u097f]")
+_LIVE_ERC_REQUEST = re.compile(
+    r"\b(latest|current|currently|today|recent|up[- ]to[- ]date|verify|recheck|"
+    r"changed|updated|version|status)\b|最新|当前|现在|今天|近期|核实|验证|更新|版本|状态",
+    re.IGNORECASE,
+)
 
 
 class BotRoute(StrEnum):
@@ -148,6 +155,13 @@ class _ReplyContext:
     evidence_pack: EvidencePack | None
 
 
+@dataclass(frozen=True, slots=True)
+class _LocalErcContext:
+    citations: tuple[str, ...]
+    pages: tuple[dict[str, str], ...]
+    verified_at: tuple[str, ...]
+
+
 class BotReplyService:
     def __init__(
         self,
@@ -215,16 +229,27 @@ class BotReplyService:
         evidence_pack: EvidencePack | None = None
         try:
             erc_query = self.router.erc_query(trigger.text_original)
+            local_erc_context: _LocalErcContext | None = None
             if erc_query is not None:
-                if self.live_evidence is None or self.knowledge_state is None:
-                    raise ReplyRejected("live ERC evidence is not configured")
-                evidence_pack = await self.live_evidence.build(erc_query, now=now)
+                local_erc_context = self._local_erc_context(erc_query)
+                local_erc_citations = (
+                    local_erc_context.citations if local_erc_context is not None else ()
+                )
+                if self._needs_live_erc_evidence(
+                    trigger.text_original,
+                    erc_query,
+                    local_erc_citations,
+                ):
+                    if self.live_evidence is None or self.knowledge_state is None:
+                        raise ReplyRejected("live ERC evidence is not configured")
+                    evidence_pack = await self.live_evidence.build(erc_query, now=now)
             context = self._context(
                 trigger,
                 records,
                 processing,
                 route,
                 evidence_pack=evidence_pack,
+                local_erc_context=local_erc_context,
             )
             raw = await self.ai.run(
                 job_type="reply",
@@ -317,6 +342,7 @@ class BotReplyService:
         route: BotRoute,
         *,
         evidence_pack: EvidencePack | None,
+        local_erc_context: _LocalErcContext | None = None,
     ) -> _ReplyContext:
         chain: list[SourceRecord] = []
         current = trigger
@@ -344,16 +370,27 @@ class BotReplyService:
         ]
         nearby.sort(key=lambda record: (record.created_at, record.record_id))
         retrieved_items = VaultRetriever(self.root).query(trigger.text_original, top_k=16)
-        retrieved = [
-            {
-                "chunk_id": item.chunk_id,
-                "path": item.path,
-                "text": item.text,
-                "record_id": item.record_id,
-                "source_locator": item.source_locator,
-            }
-            for item in retrieved_items
-        ]
+        retrieved: list[dict[str, Any]] = (
+            list(local_erc_context.pages) if local_erc_context is not None else []
+        )
+        local_erc_paths = (
+            {page["path"] for page in local_erc_context.pages}
+            if local_erc_context is not None
+            else set()
+        )
+        retrieved.extend(
+            [
+                {
+                    "chunk_id": item.chunk_id,
+                    "path": item.path,
+                    "text": item.text,
+                    "record_id": item.record_id,
+                    "source_locator": item.source_locator,
+                }
+                for item in retrieved_items
+                if item.path not in local_erc_paths
+            ]
+        )
         local_ids: set[str] = (
             seen
             | {record.record_id for record in nearby[:50]}
@@ -363,7 +400,10 @@ class BotReplyService:
             allowed_citations = frozenset(evidence_pack.citation_allowlist)
             citation_entries = [{"url": url} for url in evidence_pack.citation_allowlist]
         else:
-            allowed_citations = frozenset(local_ids)
+            local_erc_citations = (
+                local_erc_context.citations if local_erc_context is not None else ()
+            )
+            allowed_citations = frozenset(local_ids | set(local_erc_citations))
             citation_entries = [
                 {
                     "record_id": record.record_id,
@@ -374,8 +414,18 @@ class BotReplyService:
                     key=lambda item: (item.created_at, item.record_id),
                 )
             ]
+            citation_entries.extend({"url": url} for url in local_erc_citations)
+        trigger_context: dict[str, Any] = {
+            "route": route.value,
+            "record": trigger.model_dump(mode="json"),
+        }
+        if evidence_pack is not None:
+            trigger_context["erc_evidence_mode"] = "live"
+        elif local_erc_context is not None:
+            trigger_context["erc_evidence_mode"] = "local_synthesis"
+            trigger_context["local_verified_at"] = list(local_erc_context.verified_at)
         inputs = ContextInputs(
-            trigger={"route": route.value, "record": trigger.model_dump(mode="json")},
+            trigger=trigger_context,
             reply_chain=[record.model_dump(mode="json") for record in chain],
             recent_telegram=[record.model_dump(mode="json") for record in nearby[:50]],
             retrieved=retrieved,
@@ -407,6 +457,74 @@ class BotReplyService:
             )
         except ContextRejected as error:
             raise ReplyRejected(str(error)) from None
+
+    def _local_erc_context(self, query: ErcQuery) -> _LocalErcContext | None:
+        if self.knowledge_state is None:
+            return None
+        citations: list[str] = []
+        pages: list[dict[str, str]] = []
+        verified_times: list[str] = []
+        for erc_number in query.erc_numbers:
+            page = self.root / f"knowledge/ercs/erc-{erc_number}.md"
+            if not page.is_file() or page.is_symlink():
+                return None
+            try:
+                frontmatter, body = parse_frontmatter(page.read_text(encoding="utf-8"))
+            except (OSError, UnicodeError, ValueError):
+                return None
+            source_keys = frontmatter.get("source_keys") if frontmatter else None
+            verified_at = frontmatter.get("verified_at") if frontmatter else None
+            if not isinstance(source_keys, list) or not all(
+                isinstance(source_key, str) for source_key in source_keys
+            ) or not isinstance(verified_at, str | datetime):
+                return None
+            active = {
+                source.source_key: source
+                for source in self.knowledge_state.registry.resolve(
+                    erc_number,
+                    frozenset(EvidenceKind),
+                )
+            }
+            page_citations = [
+                active[source_key].canonical_url
+                for source_key in source_keys
+                if source_key in active
+            ]
+            if not page_citations:
+                return None
+            citations.extend(page_citations)
+            relative = page.relative_to(self.root).as_posix()
+            pages.append(
+                {
+                    "chunk_id": f"local:erc-{erc_number}",
+                    "path": relative,
+                    "text": body[:20_000],
+                    "record_id": "",
+                    "source_locator": "",
+                }
+            )
+            verified_times.append(
+                verified_at.isoformat().replace("+00:00", "Z")
+                if isinstance(verified_at, datetime)
+                else verified_at
+            )
+        return _LocalErcContext(
+            citations=tuple(dict.fromkeys(citations)),
+            pages=tuple(pages),
+            verified_at=tuple(verified_times),
+        )
+
+    @staticmethod
+    def _needs_live_erc_evidence(
+        text: str,
+        query: ErcQuery,
+        local_citations: tuple[str, ...],
+    ) -> bool:
+        return (
+            not local_citations
+            or query.intent is ErcIntent.STATUS
+            or _LIVE_ERC_REQUEST.search(text) is not None
+        )
 
     def _validate_result(
         self,

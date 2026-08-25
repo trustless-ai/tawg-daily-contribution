@@ -101,7 +101,7 @@ been presented as production-audited code.
 
 ## Knowledge bot experiment
 
-The knowledge-bot experiment on `main` adds a public, source-cited Obsidian vault and a Telegram coordination bot. It preserves sanitized group messages and generated knowledge. Current public `trustless-ai` repository activity, canonical ERC/EIP text, and scoped Ethereum Magicians posts are fetched only for the active operation; their bodies are not retained. The bot refreshes current knowledge, answers grounded mentions and corrections, and prepares a warm English catch-up for the fixed `23:00 UTC` Daily window covering the preceding 24 hours.
+The knowledge-bot experiment on `main` adds a public, source-cited Obsidian vault and a Telegram coordination bot. It preserves sanitized group messages and generated knowledge. Ordinary questions reuse that local synthesis and its retained reliable links; external ERC sources are fetched transiently only for explicit freshness checks, missing coverage, or a source recheck that is at least 24 hours due. Current public `trustless-ai` repository activity and scoped Ethereum Magicians posts are still collected for the active Daily window, and external bodies are never retained. The bot refreshes current knowledge, answers grounded mentions and corrections, and prepares a warm English catch-up for the fixed `23:00 UTC` Daily window covering the preceding 24 hours.
 
 The bot is a collaboration aid, not the Workflow evaluator: recognition in `What moved` is not a score, reward, Round Summary, or settlement input. Start with the [GitHub Actions operator setup](docs/operator/github-actions.md) and keep delivery in observe-only mode until the staged rollout gates are accepted.
 

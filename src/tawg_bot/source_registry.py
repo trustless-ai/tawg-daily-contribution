@@ -5,7 +5,7 @@ from __future__ import annotations
 import ipaddress
 import re
 from collections.abc import Mapping
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
 from typing import Literal
@@ -247,6 +247,21 @@ class SourceRegistry:
                     if source.status is SourceStatus.ACTIVE
                     for topic in source.topics
                 }
+            )
+        )
+
+    def due_erc_numbers(self, now: datetime, *, max_age: timedelta) -> tuple[int, ...]:
+        if now.tzinfo is None or now.utcoffset() != UTC.utcoffset(now):
+            raise ValueError("source recheck time must use UTC")
+        if max_age <= timedelta(0):
+            raise ValueError("source recheck age must be positive")
+        cutoff = now - max_age
+        return tuple(
+            erc_number
+            for erc_number in self.erc_numbers()
+            if any(
+                source.last_observed is None or source.last_observed.checked_at <= cutoff
+                for source in self.resolve(erc_number, frozenset(EvidenceKind))
             )
         )
 

@@ -23,6 +23,7 @@ from tawg_bot.runtime import (
     SourceCheckSummary,
     _LivePipeline,
 )
+from tawg_bot.source_registry import EvidenceKind, SourceRegistry
 from tests.integration.test_live_knowledge_refresh import _pack
 
 ROOT = Path(__file__).parents[2]
@@ -39,8 +40,12 @@ class Checkpoint:
 
 
 class LiveEvidence:
+    def __init__(self) -> None:
+        self.calls: list[Any] = []
+
     async def build(self, query, *, now):
         assert now == NOW
+        self.calls.append(query)
         return _pack().model_copy(update={"query": query})
 
 
@@ -176,6 +181,31 @@ async def test_source_check_observe_only_does_not_change_repository(
     }
     assert not summary.persisted
     assert after == before
+
+
+@pytest.mark.asyncio
+async def test_scheduled_source_check_skips_fresh_registered_sources(tmp_path: Path) -> None:
+    scaffold(tmp_path)
+    registry = SourceRegistry.from_yaml(tmp_path / "knowledge/meta/sources.yml")
+    observations = {
+        source.source_key: source.last_observed.model_copy(update={"checked_at": NOW})
+        for erc in registry.erc_numbers()
+        for source in registry.resolve(erc, frozenset(EvidenceKind))
+        if source.last_observed is not None
+    }
+    (tmp_path / "knowledge/meta/sources.yml").write_text(
+        registry.render_with_observations(observations),
+        encoding="utf-8",
+    )
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        live = LiveEvidence()
+        pipeline.live_evidence = live
+
+        await pipeline.source_check(NOW)
+
+    assert live.calls == []
+    assert pipeline.source_checked_at == NOW
 
 
 @pytest.mark.asyncio

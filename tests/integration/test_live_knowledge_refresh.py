@@ -475,6 +475,32 @@ async def test_refresh_binds_controller_owned_result_metadata(tmp_path: Path) ->
 
 
 @pytest.mark.asyncio
+async def test_refresh_preserves_existing_claim_ledger_when_model_omits_unchanged_write(
+    tmp_path: Path,
+) -> None:
+    registry = _seed(tmp_path)
+    existing_claim_ledger = '{"schema":"tawg.claim-ledger.v2","entries":{}}\n'
+    claim_path = tmp_path / "knowledge/meta/claim-ledger.json"
+    claim_path.write_text(existing_claim_ledger, encoding="utf-8")
+    model_result = _result(tmp_path, "preserve-claim-ledger")
+    model_result["transaction"]["writes"] = [
+        write
+        for write in model_result["transaction"]["writes"]
+        if write["path"] != "knowledge/meta/claim-ledger.json"
+    ]
+
+    result = await _service(
+        tmp_path,
+        registry,
+        FakeAi(model_result),
+        FakeLiveEvidence(_pack()),
+    ).run(cutoff=NOW, operation_id="preserve-claim-ledger")
+
+    assert result.processed_job_keys == (JOB_KEY,)
+    assert claim_path.read_text(encoding="utf-8") == existing_claim_ledger
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "attack",
     [
