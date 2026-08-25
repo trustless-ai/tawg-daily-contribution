@@ -13,7 +13,9 @@ def workflow() -> dict:
         key: [item for item in value if item[0] != "tag:yaml.org,2002:bool"]
         for key, value in yaml.SafeLoader.yaml_implicit_resolvers.items()
     }
-    return yaml.load((ROOT / ".github/workflows/tawg-knowledge.yml").read_text(), Loader=Loader)
+    return yaml.load(
+        (ROOT / ".github/workflows/tawg-knowledge.yml").read_text(), Loader=Loader
+    )
 
 
 def test_workflow_is_single_non_overlapping_five_minute_writer() -> None:
@@ -21,7 +23,7 @@ def test_workflow_is_single_non_overlapping_five_minute_writer() -> None:
 
     assert value["on"]["schedule"] == [{"cron": "*/5 * * * *"}]
     inputs = value["on"]["workflow_dispatch"]["inputs"]
-    assert set(inputs) == {"observe_only", "daily_dry_run"}
+    assert {"observe_only", "daily_dry_run", "backfill"}.issubset(inputs)
     assert value["permissions"] == {"contents": "write"}
     assert value["concurrency"] == {
         "group": "tawg-knowledge-writer",
@@ -35,7 +37,9 @@ def test_workflow_pins_runtime_and_hardens_claude_environment() -> None:
     rendered = (ROOT / ".github/workflows/tawg-knowledge.yml").read_text()
 
     setup = next(
-        step for step in job["steps"] if step.get("uses", "").startswith("actions/setup-python")
+        step
+        for step in job["steps"]
+        if step.get("uses", "").startswith("actions/setup-python")
     )
     assert setup["with"]["python-version"] == "3.12"
     assert "@anthropic-ai/claude-code@2.1.240" in rendered
