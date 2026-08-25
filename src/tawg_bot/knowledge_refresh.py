@@ -156,7 +156,8 @@ class KnowledgeRefresh:
             max_budget_usd=self.max_budget_usd,
             timeout_seconds=self.timeout_seconds,
         )
-        result = self._validate_result(raw_result, pending, packs, operation_id)
+        bound_result = self._bind_controller_fields(raw_result, pending, packs, operation_id)
+        result = self._validate_result(bound_result, pending, packs, operation_id)
         source_keys = frozenset(item.source_key for pack in packs for item in pack.evidence)
         citation_urls = frozenset(url for pack in packs for url in pack.citation_allowlist)
         engine = VaultTransactionEngine(
@@ -393,6 +394,30 @@ class KnowledgeRefresh:
             (writes[_SOURCE_LEDGER].content, writes[_CLAIM_LEDGER].content), evidence
         )
         return result
+
+    @staticmethod
+    def _bind_controller_fields(
+        raw: Mapping[str, Any],
+        jobs: list[KnowledgeRefreshJob],
+        packs: tuple[EvidencePack, ...],
+        operation_id: str,
+    ) -> dict[str, Any]:
+        bound = deepcopy(dict(raw))
+        bound["processed_job_keys"] = [job.job_key for job in jobs]
+        bound["evidence_gaps"] = [
+            {
+                "erc_number": missing.erc_number,
+                "bucket": missing.bucket,
+                "source_key": missing.source_key,
+                "safe_error_code": missing.safe_error_code,
+            }
+            for pack in packs
+            for missing in pack.missing_required
+        ]
+        transaction = bound.get("transaction")
+        if isinstance(transaction, dict):
+            transaction["operation_id"] = operation_id
+        return bound
 
     def _validate_pages(
         self,

@@ -210,15 +210,28 @@ class ClaudeCli:
             Draft202012Validator(schema).validate(structured)
         except ValidationError:
             raise ClaudeCliError("Claude Code structured output failed schema validation") from None
+        sanitized = self._sanitize_structured_output(structured)
+        if not isinstance(sanitized, dict):
+            raise ClaudeCliError("Claude Code returned no structured output")
         try:
-            self.privacy.assert_public(
-                json.dumps(structured, ensure_ascii=False, separators=(",", ":"))
-            )
-        except PrivacyViolation:
-            raise ClaudeCliError(
-                "Claude Code structured output failed privacy validation"
-            ) from None
-        return structured
+            Draft202012Validator(schema).validate(sanitized)
+        except ValidationError:
+            raise ClaudeCliError("Claude Code structured output failed schema validation") from None
+        return sanitized
+
+    def _sanitize_structured_output(self, value: Any) -> Any:
+        if isinstance(value, dict):
+            return {key: self._sanitize_structured_output(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [self._sanitize_structured_output(item) for item in value]
+        if isinstance(value, str):
+            inspected = self.privacy.inspect(value)
+            if not inspected.accepted or inspected.sanitized_text is None:
+                raise ClaudeCliError(
+                    "Claude Code structured output failed privacy validation"
+                )
+            return inspected.sanitized_text
+        return value
 
     def _write_policy(self, job_type: JobType, schema: dict[str, Any], operation_id: str) -> Path:
         runtime = self.runtime_root

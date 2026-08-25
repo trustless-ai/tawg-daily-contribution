@@ -456,12 +456,29 @@ async def test_refresh_compiles_live_pack_and_atomically_resolves_job(tmp_path: 
 
 
 @pytest.mark.asyncio
+async def test_refresh_binds_controller_owned_result_metadata(tmp_path: Path) -> None:
+    registry = _seed(tmp_path)
+    ai_result = _result(tmp_path, "model-operation")
+    ai_result["processed_job_keys"] = ["model-invented-job"]
+    ai_result["evidence_gaps"] = []
+    ai = FakeAi(ai_result)
+
+    result = await _service(tmp_path, registry, ai, FakeLiveEvidence(_pack())).run(
+        cutoff=NOW, operation_id="controller-operation"
+    )
+
+    assert result.processed_job_keys == (JOB_KEY,)
+    assert json.loads((tmp_path / "data/state/pending-knowledge-refresh.json").read_text()) == []
+    assert ai.result["processed_job_keys"] == ["model-invented-job"]
+    assert ai.result["evidence_gaps"] == []
+    assert ai.result["transaction"]["operation_id"] == "model-operation"
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "attack",
     [
         "unknown_source_key",
-        "operation_id",
-        "missing_gap",
         "missing_verified_at",
         "missing_observed_version",
         "copied_body",
@@ -479,10 +496,6 @@ async def test_refresh_rejects_unbound_or_unverifiable_output(tmp_path: Path, at
             "erc-8004-canonical", "unknown-source"
         )
         page_write["citations"][0] = "unknown-source"
-    elif attack == "operation_id":
-        result["transaction"]["operation_id"] = "different-operation"
-    elif attack == "missing_gap":
-        result["evidence_gaps"] = []
     elif attack == "missing_verified_at":
         page_write["content"] = page_write["content"].replace(
             "verified_at: 2026-08-23T05:00:00Z\n", ""

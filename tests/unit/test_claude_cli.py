@@ -122,7 +122,6 @@ async def test_cli_rejects_missing_or_schema_invalid_structured_output(tmp_path:
     invalid_outputs = [
         {"type": "result", "subtype": "success", "is_error": False},
         {**outer_reply(), "num_turns": 2},
-        outer_reply(reply_text="contact private@example.com"),
         {
             **outer_reply(),
             "structured_output": {
@@ -146,6 +145,56 @@ async def test_cli_rejects_missing_or_schema_invalid_structured_output(tmp_path:
                 operation_id=f"invalid-{index}",
                 max_budget_usd="0.10",
             )
+
+
+@pytest.mark.asyncio
+async def test_cli_redacts_personal_data_in_structured_output(tmp_path: Path) -> None:
+    wallet = "0x" + "a" * 40
+    output = outer_reply(
+        reply_text=(
+            "Contact private@example.com or +1 (415) 555-0123; "
+            f"the unapproved wallet is {wallet}."
+        )
+    )
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=CapturingRunner(output),
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+
+    result = await cli.run(
+        job_type="reply",
+        context_pack="{}",
+        operation_id="redact-output",
+        max_budget_usd="0.10",
+    )
+
+    assert result["reply_text"] == (
+        "Contact [REDACTED_EMAIL] or [REDACTED_PHONE]; "
+        "the unapproved wallet is [REDACTED_WALLET]."
+    )
+
+
+@pytest.mark.asyncio
+async def test_cli_rejects_secret_material_in_structured_output(tmp_path: Path) -> None:
+    credential = "sk-" + "a" * 24
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=CapturingRunner(outer_reply(reply_text=f"Leaked credential: {credential}")),
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+
+    with pytest.raises(ClaudeCliError, match="privacy validation"):
+        await cli.run(
+            job_type="reply",
+            context_pack="{}",
+            operation_id="reject-secret-output",
+            max_budget_usd="0.10",
+        )
 
 
 @pytest.mark.asyncio
