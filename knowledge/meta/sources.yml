@@ -208,10 +208,10 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: W/"789e82dcb879e793102d860981abe5b7
-    content_sha256: 115c2730cff98ebfb478f46cb5ceb8789a4c514ed5093fdce5987c701391be49
-    byte_count: 269884
+    checked_at: '2026-08-25T21:47:41.228397Z'
+    version: W/"2faa20eb265fc22a8a8060fcb86f3be3
+    content_sha256: e5f42a85264b78fe9665a7a7671b2e56dc95ae6076345b5ccf4dbc028d496237
+    byte_count: 269898
   status: active
 - source_key: agent-ercs-8263-tests
   topics:
@@ -231,10 +231,10 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: W/"d02c0c07801942c31d9bb60205162eaf
-    content_sha256: 90896958e18a5c4e882893ad27e309d1997edbc8ae37ddfcef295d9e0bd8279f
-    byte_count: 283133
+    checked_at: '2026-08-25T21:47:41.228397Z'
+    version: W/"1b1ab7f1209e75058fb829a9fb42f289
+    content_sha256: 6c6f84a1df0e8896a2b03956df7b670704a9c6d0b15bfce6d1eed83b93708d86
+    byte_count: 283221
   status: active
 - source_key: agent-ercs-8274-implementation
   topics:
