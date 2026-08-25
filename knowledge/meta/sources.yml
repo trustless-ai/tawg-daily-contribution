@@ -254,10 +254,10 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: W/"ce82ec576418f08f6c2d788008928d35
-    content_sha256: 8e1feeb632a41b948d1e1180ee89bcb7d11dc0f554b5103afe7a10ab737f6a10
-    byte_count: 250402
+    checked_at: '2026-08-25T21:47:41.228397Z'
+    version: W/"0c223038c16005c7a296afbc1699a47e
+    content_sha256: a4418320a0407a6149e440509cee32f546f02c957c51d25d1f4dde96f65a8de7
+    byte_count: 250406
   status: active
 - source_key: agent-ercs-8275-implementation
   topics:
