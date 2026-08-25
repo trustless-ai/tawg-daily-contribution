@@ -300,10 +300,10 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: W/"f5b52032db5473ed3ea434b0ae454978
-    content_sha256: 92eccc6c8797e38e02d2e6de8e4a404fe1a6abceab64b25dc5419a767e5398c5
-    byte_count: 255899
+    checked_at: '2026-08-25T22:49:08.782832Z'
+    version: W/"5063a3607621792f6740e5c4c802ead6
+    content_sha256: 1668d93576ea5d34ab21f691484a5e5a24987d7c78509e1ecf959edbd23bc3c7
+    byte_count: 255931
   status: active
 - source_key: agent-ercs-8299-implementation
   topics:

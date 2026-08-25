@@ -142,5 +142,17 @@
     "schema_version": "tawg.knowledge-refresh-job.v1",
     "source_key": "agent-ercs-8275-implementation",
     "updated_at": "2026-08-25T22:49:08.782832Z"
+  },
+  {
+    "created_at": "2026-08-25T22:49:08.782832Z",
+    "erc_number": 8281,
+    "job_key": "refresh:erc-8281:agent-ercs-8281-implementation:1668d93576ea5d34",
+    "observed_sha256": "1668d93576ea5d34ab21f691484a5e5a24987d7c78509e1ecf959edbd23bc3c7",
+    "observed_version": "W/\"5063a3607621792f6740e5c4c802ead6",
+    "retry_count": 0,
+    "safe_error_code": null,
+    "schema_version": "tawg.knowledge-refresh-job.v1",
+    "source_key": "agent-ercs-8281-implementation",
+    "updated_at": "2026-08-25T22:49:08.782832Z"
   }
 ]
