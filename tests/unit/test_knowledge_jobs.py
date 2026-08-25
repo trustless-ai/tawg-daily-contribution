@@ -42,10 +42,11 @@ def _pack(
     observed_hash: str = "b" * 64,
     missing: bool = True,
     text: str = "EXTERNAL-BODY-CANARY",
+    source_key: str = "erc-8004-canonical",
 ) -> EvidencePack:
     item = EvidenceItem(
         erc_number=8004,
-        source_key="erc-8004-canonical",
+        source_key=source_key,
         kind=EvidenceKind.NORMATIVE_SPEC,
         authority=EvidenceAuthority.CANONICAL,
         canonical_url="https://eips.ethereum.org/EIPS/eip-8004",
@@ -207,6 +208,34 @@ def test_state_and_registry_never_serialize_transient_evidence_text(tmp_path: Pa
     )
     assert observed is not None
     assert observed.content_sha256 == "b" * 64
+
+
+def test_registered_source_key_overlap_does_not_reject_a_derived_refresh_job(
+    tmp_path: Path,
+) -> None:
+    source_key = "agent-ercs-8004-identity-interface"
+    external_body = (
+        f"Navigation for {source_key} can repeat its registered locator, while the "
+        "remaining transient source body must not be persisted."
+    )
+    registry = _seed(tmp_path)
+
+    _apply(
+        tmp_path,
+        KnowledgeStateStore(tmp_path, registry=registry),
+        _pack(source_key=source_key, text=external_body),
+        NOW,
+    )
+
+    state = KnowledgeStateStore(
+        tmp_path,
+        registry=SourceRegistry.from_yaml(tmp_path / "knowledge/meta/sources.yml"),
+    ).load()
+    persisted = (tmp_path / "data/state/pending-knowledge-refresh.json").read_text(encoding="utf-8")
+
+    assert state.refresh_jobs[0].source_key == source_key
+    assert state.refresh_jobs[0].job_key.startswith(f"refresh:erc-8004:{source_key}:")
+    assert external_body not in persisted
 
 
 def test_candidate_is_normalized_and_stored_without_registry_promotion(tmp_path: Path) -> None:

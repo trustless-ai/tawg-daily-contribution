@@ -38,6 +38,7 @@ _PREPARED_TELEGRAM_PATHS = frozenset(
         "data/state/prepared-daily.json",
     }
 )
+_REFRESH_STATE_PATH = "data/state/pending-knowledge-refresh.json"
 _SOURCE_METADATA_NAMES = frozenset(
     {
         "aliases.yml",
@@ -207,7 +208,66 @@ def _semantic_strings(
             if relative_path == "data/state/prepared-daily.json"
             else "prepared_reply_text"
         )
+    if relative_path == _REFRESH_STATE_PATH and source_registry_baseline is not None:
+        return tuple(_walk_refresh_job_strings(value, source_registry_baseline))
     return tuple(_walk_strings(value, allowed_key=allowed_key))
+
+
+def _walk_refresh_job_strings(
+    value: Any,
+    registry: SourceRegistry,
+) -> Iterable[tuple[str, bool]]:
+    if not isinstance(value, list):
+        yield from _walk_strings(value, allowed_key=None)
+        return
+    for item in value:
+        if not isinstance(item, Mapping):
+            yield from _walk_strings(item, allowed_key=None)
+            continue
+        trusted_source_key, trusted_job_key = _trusted_refresh_fields(item, registry)
+        for key, child in item.items():
+            normalized_key = _normalize(str(key))
+            yield (normalized_key, False)
+            if not isinstance(child, str):
+                yield from _walk_strings(child, allowed_key=None)
+                continue
+            normalized_child = _normalize(child)
+            if normalized_key == "source_key" and normalized_child == trusted_source_key:
+                continue
+            if normalized_key == "job_key" and normalized_child == trusted_job_key:
+                continue
+            yield (normalized_child, False)
+
+
+def _trusted_refresh_fields(
+    item: Mapping[Any, Any],
+    registry: SourceRegistry,
+) -> tuple[str | None, str | None]:
+    source_key = item.get("source_key")
+    erc_number = item.get("erc_number")
+    observed_sha256 = item.get("observed_sha256")
+    job_key = item.get("job_key")
+    if (
+        not isinstance(source_key, str)
+        or not isinstance(erc_number, int)
+        or isinstance(erc_number, bool)
+        or not 1 <= erc_number <= 99_999
+        or not isinstance(observed_sha256, str)
+        or len(observed_sha256) != 64
+        or any(character not in "0123456789abcdef" for character in observed_sha256)
+        or not isinstance(job_key, str)
+    ):
+        return None, None
+    try:
+        source = registry.source(source_key)
+    except KeyError:
+        return None, None
+    if f"erc-{erc_number}" not in source.topics:
+        return None, None
+    expected_job_key = f"refresh:erc-{erc_number}:{source_key}:{observed_sha256[:16]}"
+    if job_key != expected_job_key:
+        return None, None
+    return _normalize(source_key), _normalize(job_key)
 
 
 def _walk_strings(value: Any, *, allowed_key: str | None) -> Iterable[tuple[str, bool]]:

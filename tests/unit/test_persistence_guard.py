@@ -213,6 +213,97 @@ def test_rejects_external_body_in_a_valid_source_registry_version() -> None:
         )
 
 
+def test_rejects_unregistered_refresh_identifiers_that_overlap_external_text() -> None:
+    source_key = "unregistered-external-body-marker"
+    external_body = f"Navigation includes {source_key} from the transient source body."
+    observed_sha256 = "a" * 64
+    payload = json.dumps(
+        [
+            {
+                "erc_number": 8004,
+                "job_key": f"refresh:erc-8004:{source_key}:{observed_sha256[:16]}",
+                "observed_sha256": observed_sha256,
+                "source_key": source_key,
+            }
+        ]
+    ).encode()
+    guard = PersistenceGuard.from_external_texts(
+        (external_body,),
+        source_registry_baseline=SOURCE_REGISTRY_BASELINE,
+    )
+
+    with pytest.raises(PersistenceRejected, match="persistence policy rejection"):
+        guard.inspect_staged(
+            {"data/state/pending-knowledge-refresh.json": payload},
+            {
+                "data/state/pending-knowledge-refresh.json": (
+                    PersistenceProvenance.OPERATIONAL_STATE
+                )
+            },
+        )
+
+
+def test_rejects_non_derived_refresh_job_key_that_overlaps_external_text() -> None:
+    source_key = "agent-ercs-8004-identity-interface"
+    external_fragment = "EXTERNAL-CANARY-refresh-job-body-fragment"
+    external_body = f"Transient source text contains {external_fragment} and more content."
+    observed_sha256 = "a" * 64
+    payload = json.dumps(
+        [
+            {
+                "erc_number": 8004,
+                "job_key": f"refresh:erc-8004:{source_key}:{external_fragment}",
+                "observed_sha256": observed_sha256,
+                "source_key": source_key,
+            }
+        ]
+    ).encode()
+    guard = PersistenceGuard.from_external_texts(
+        (external_body,),
+        source_registry_baseline=SOURCE_REGISTRY_BASELINE,
+    )
+
+    with pytest.raises(PersistenceRejected, match="persistence policy rejection"):
+        guard.inspect_staged(
+            {"data/state/pending-knowledge-refresh.json": payload},
+            {
+                "data/state/pending-knowledge-refresh.json": (
+                    PersistenceProvenance.OPERATIONAL_STATE
+                )
+            },
+        )
+
+
+@pytest.mark.parametrize("transplanted_field", ["observed_version", "safe_error_code"])
+def test_refresh_identifier_exemption_is_bound_to_its_structural_field(
+    transplanted_field: str,
+) -> None:
+    source_key = "agent-ercs-8004-identity-interface"
+    external_body = f"Transient source text contains {source_key} as a page locator."
+    observed_sha256 = "a" * 64
+    record: dict[str, object] = {
+        "erc_number": 8004,
+        "job_key": f"refresh:erc-8004:{source_key}:{observed_sha256[:16]}",
+        "observed_sha256": observed_sha256,
+        "source_key": source_key,
+        transplanted_field: source_key,
+    }
+    guard = PersistenceGuard.from_external_texts(
+        (external_body,),
+        source_registry_baseline=SOURCE_REGISTRY_BASELINE,
+    )
+
+    with pytest.raises(PersistenceRejected, match="persistence policy rejection"):
+        guard.inspect_staged(
+            {"data/state/pending-knowledge-refresh.json": json.dumps([record]).encode()},
+            {
+                "data/state/pending-knowledge-refresh.json": (
+                    PersistenceProvenance.OPERATIONAL_STATE
+                )
+            },
+        )
+
+
 def test_rejects_external_body_hidden_in_source_registry_yaml_comments() -> None:
     registry = SourceRegistry.from_yaml(ROOT / "knowledge/meta/sources.yml")
     payload = f"{registry.render_with_observations({})}# {EXTERNAL_BODY}\n".encode()
