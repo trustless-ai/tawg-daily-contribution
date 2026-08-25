@@ -49,6 +49,12 @@ people:
       - tmerlini
       magicians:
       - tmerlini
+  merlini-2:
+    display_names:
+    - Merlini
+    handles:
+      telegram:
+      - gobross
   pavlo:
     display_names:
     - Pavlo
@@ -57,6 +63,12 @@ people:
       - pipavlo82
       magicians:
       - pipavlo82
+  pavlo-2:
+    display_names:
+    - Pavlo
+    handles:
+      telegram:
+      - pavlentyy82
   petchevere:
     display_names:
     - Petchevere
