@@ -220,6 +220,36 @@ async def test_daily_requires_fresh_success_from_every_required_layer(tmp_path: 
             ),
             "ranking",
         ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"] + "\nAlice ranked first today."
+            ),
+            "ranking",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "**agent-sdk**", "**agent-sdk — priority 1**"
+                )
+            ),
+            "ranking",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "**agent-sdk**", "**Tier 1 winner: agent-sdk**"
+                )
+            ),
+            "ranking",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "**agent-sdk**", "**agent-sdk — Priority: 1**"
+                )
+            ),
+            "ranking",
+        ),
         (lambda value: value.update(citations=["made-up:1"]), "citation"),
     ],
 )
@@ -265,8 +295,8 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "more concrete. [tg:tawg:1]",
-                    "more concrete. [tg:tawg:1] trailing text",
+                    "integration. [tg:tawg:1]",
+                    "integration. [tg:tawg:1] trailing text",
                     1,
                 )
             ),
@@ -284,12 +314,70 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "more concrete. [tg:tawg:1]",
-                    "more concrete [made-up:999]. [tg:tawg:1]",
+                    "integration. [tg:tawg:1]",
+                    "integration [made-up:999]. [tg:tawg:1]",
                     1,
                 )
             ),
             "citation",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "• Alice clarified ERC-8004 validation behavior, advancing the next "
+                    "implementation pass and giving the group a clearer path toward verifiable "
+                    "Trustless AI integration. [tg:tawg:1]",
+                    "- Alice clarified ERC-8004 validation behavior without a citation.",
+                )
+            ),
+            "bullet",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "\n🚀 Next up\n",
+                    "\n🙏 Appreciation\nThanks to everyone who contributed.\n\n🚀 Next up\n",
+                )
+            ),
+            "Appreciation",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "The validation direction became clearer and easier to build on this window.\n",
+                    "The validation direction became clearer and easier to build on this window.\n"
+                    "Alice merged PR 42 and resolved the blocker without a citation.\n",
+                )
+            ),
+            "structure",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "The validation direction became clearer and easier to build on this window.",
+                    "Alice merged PR 42 and resolved the ERC-8004 blocker.",
+                )
+            ),
+            "synthesis",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "\n🚀 Next up\n",
+                    "\n🙏 Shout-outs\nThanks to everyone who contributed.\n\n🚀 Next up\n",
+                )
+            ),
+            "section",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "\nPick one edge case and share it with the group. 🤝",
+                    "\n**Shout-outs**\nThanks to everyone who contributed."
+                    "\n\nPick one edge case and share it with the group. 🤝",
+                )
+            ),
+            "section",
         ),
     ],
 )

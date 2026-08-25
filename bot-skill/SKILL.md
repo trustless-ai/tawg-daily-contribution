@@ -49,6 +49,10 @@ For knowledge mutation, return one transaction with expected target hashes and c
 
 Use Obsidian Markdown with flat YAML frontmatter, stable paths, descriptive headings, and path-qualified wikilinks when basenames could collide. Represent public member contributions as acknowledgement pages at `knowledge/acknowledgements/<public-name>.md`, using the member's familiar public name or nickname and a `Related topics` section. Never use the legacy member-page directory. Keep internal TAWG-local person IDs for identity resolution and never infer or export cross-TAWG identity. A correction updates current canonical knowledge while preserving Telegram message history.
 
+## Daily recognition
+
+For a Daily, order work implicitly by contribution impact and importance, while never exposing scores, ranks, priority labels, tiers, or winners. Put all contributor recognition inside `What moved`; do not create a separate Appreciation section. Each concrete item names who did what, what it advanced, and why that specific help matters to the group or the shared Trustless AI goal. A direction may begin with one uncited high-level synthesis sentence, but all names, actions, artifacts, numbers, links, and other source-dependent details belong in `•` bullets with exact allowlisted trailing citations.
+
 ## Common mistakes
 
 - A newer timestamp does not turn discussion into normative evidence.

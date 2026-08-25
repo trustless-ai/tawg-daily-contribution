@@ -195,10 +195,23 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
         "TAWG Daily Catch-up — 2026-08-22 23:00 UTC → 2026-08-23 23:00 UTC"
     )
     assert trigger["output_contract"] == {
-        "citation_rule": "Every factual bullet except the final section ends with [citation].",
+        "citation_rule": (
+            "Each direction may have one uncited synthesis sentence; every concrete What moved "
+            "bullet starts with • and ends with an exact allowlisted citation."
+        ),
         "forbidden_terms": [
             "score",
             "leaderboard",
+            "rank",
+            "ranked",
+            "ranking",
+            "first place",
+            "top contributor",
+            "priority",
+            "tier",
+            "tiers",
+            "winner",
+            "winners",
             "MVP",
             "hero",
             "I did",
@@ -209,10 +222,19 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
             "on-chain credit",
         ],
         "max_emoji": 10,
+        "ordering_rule": (
+            "Order directions and items by contribution impact and importance, without saying "
+            "that anyone is ranked or scored."
+        ),
         "required_sections": [
             "What moved",
             "Next up",
         ],
+        "what_moved_rule": (
+            "Integrate appreciation into each concrete item: name who did what, what it "
+            "advanced, and why it helps the group or Trustless AI. Do not add a separate "
+            "Appreciation section."
+        ),
     }
     assert {
         path.relative_to(tmp_path).as_posix(): path.read_bytes()

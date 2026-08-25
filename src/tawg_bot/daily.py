@@ -25,11 +25,22 @@ _NON_ENGLISH_SCRIPT = re.compile(
 )
 _EMOJI = re.compile("[\U0001f1e6-\U0001f1ff\U0001f300-\U0001faff\u2600-\u27bf]")
 _DISALLOWED_TONE = re.compile(
-    r"\b(score[sd]?|leaderboard|mvp|hero|I did|my work|"
+    r"\b(score[sd]?|leaderboard|rank(?:ed|ing|s)?|first place|top contributor|"
+    r"priorit(?:y|ies)|"
+    r"tiers?|winners?|mvp|hero|I did|my work|"
     r"earned reward|reward eligibility|payout|on-chain credit)\b",
     re.IGNORECASE,
 )
-_CITATION = re.compile(r"\[[^\[\]\n]+\](?:\([^()\s]+\))?")
+_OTHER_LIST_ITEM = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
+_DIRECTION_LABEL = re.compile(r"^\*\*[^*\n]+\*\*$")
+_CONCRETE_SYNTHESIS = re.compile(
+    r"(?:\d|https?://|www\.|\b(?:merge[ds]?|open(?:ed|s)?|publish(?:ed|es)?|"
+    r"ship(?:ped|s)?|implement(?:ed|s)?|clarif(?:ied|ies)|resolv(?:ed|es)|"
+    r"fix(?:ed|es)?|review(?:ed|s)?|commit(?:ted|s)?|creat(?:ed|es)|"
+    r"submit(?:ted|s)?|reproduc(?:ed|es)|test(?:ed|s)?|deploy(?:ed|s)?|"
+    r"releas(?:ed|es))\b)",
+    re.IGNORECASE,
+)
 _PLAIN_CITATION = re.compile(r"\[([^\[\]\n]+)\](?!\()")
 _MARKDOWN_CITATION = re.compile(r"\[[^\[\]\n]+\]\(([^()\s]+)\)")
 _TRAILING_CITATIONS = re.compile(r"(?:\s+\[[^\[\]\n]+\](?:\([^()\s]+\))?)+$")
@@ -199,6 +210,16 @@ class DailyService:
                     "forbidden_terms": [
                         "score",
                         "leaderboard",
+                        "rank",
+                        "ranked",
+                        "ranking",
+                        "first place",
+                        "top contributor",
+                        "priority",
+                        "tier",
+                        "tiers",
+                        "winner",
+                        "winners",
                         "MVP",
                         "hero",
                         "I did",
@@ -210,7 +231,18 @@ class DailyService:
                     ],
                     "max_emoji": self.policy["max_emoji"],
                     "citation_rule": (
-                        "Every factual bullet except the final section ends with [citation]."
+                        "Each direction may have one uncited synthesis sentence; every concrete "
+                        "What moved bullet starts with • and ends with an exact allowlisted "
+                        "citation."
+                    ),
+                    "ordering_rule": (
+                        "Order directions and items by contribution impact and importance, "
+                        "without saying that anyone is ranked or scored."
+                    ),
+                    "what_moved_rule": (
+                        "Integrate appreciation into each concrete item: name who did what, what "
+                        "it advanced, and why it helps the group or Trustless AI. Do not add a "
+                        "separate Appreciation section."
                     ),
                 },
                 "window_evidence": evidence_payload,
@@ -289,6 +321,8 @@ class DailyService:
             f"{window.end.strftime('%Y-%m-%d %H:%M')} UTC"
         )
         lines = result.telegram_text.splitlines()
+        if any(self._heading_name(line).casefold() == "appreciation" for line in lines):
+            raise DailyRejected("Daily must integrate Appreciation into What moved")
         first_line = lines[0]
         if first_line != required_title:
             emoji = _EMOJI.match(first_line)
@@ -297,15 +331,25 @@ class DailyService:
         section_indices: list[int] = []
         for section in self.policy["required_sections"]:
             indices = [
-                index
-                for index, line in enumerate(lines)
-                if self._section_name(line) == section
+                index for index, line in enumerate(lines) if self._section_name(line) == section
             ]
             if len(indices) != 1:
                 raise DailyRejected(f"Daily output has an invalid required section: {section}")
             section_indices.append(indices[0])
         if section_indices != sorted(section_indices):
             raise DailyRejected("Daily output has required sections out of order")
+        allowed_emoji_headings = {
+            *self.policy["required_sections"],
+            "ideas to follow",
+            "todos",
+        }
+        for line in lines[1:]:
+            if (
+                _EMOJI.match(line.strip())
+                and self._heading_name(line) not in allowed_emoji_headings
+            ):
+                raise DailyRejected("Daily output has an unexpected top-level section")
+        self._validate_next_up(lines[section_indices[1] + 1 :])
 
         allowed_citations = {item.citation for item in evidence}
         if len(result.citations) != len(set(result.citations)):
@@ -326,39 +370,116 @@ class DailyService:
         if result.quiet_day and "No source-backed progress landed" not in result.telegram_text:
             raise DailyRejected("quiet Daily must state that no source-backed progress landed")
         if not result.quiet_day:
-            current_section = ""
-            for line in lines:
-                section = self._section_name(line)
-                if section is not None:
-                    current_section = section
-                    continue
-                if not line.lstrip().startswith("• "):
-                    continue
-                if current_section == self.policy["required_sections"][-1]:
-                    continue
-                trailing = _TRAILING_CITATIONS.search(line)
-                line_citations = (
-                    set(_PLAIN_CITATION.findall(trailing.group()))
-                    | set(_MARKDOWN_CITATION.findall(trailing.group()))
-                    if trailing
-                    else set()
-                )
-                all_line_citations = set(_PLAIN_CITATION.findall(line)) | set(
-                    _MARKDOWN_CITATION.findall(line)
-                )
-                if (
-                    not line_citations
-                    or not line_citations.issubset(result.citations)
-                    or not all_line_citations.issubset(result.citations)
-                ):
-                    raise DailyRejected("Daily factual bullet lacks a valid citation")
+            self._validate_what_moved(
+                lines[section_indices[0] + 1 : section_indices[1]],
+                set(result.citations),
+                {item.author_person_id.casefold() for item in evidence if item.author_person_id},
+            )
         return result
 
+    @staticmethod
+    def _validate_what_moved(lines: list[str], citations: set[str], contributors: set[str]) -> None:
+        content = [line.strip() for line in lines if line.strip()]
+        state = "label"
+        bullet_seen = False
+        direction_seen = False
+        for line in content:
+            if state == "label":
+                if not _DIRECTION_LABEL.fullmatch(line):
+                    raise DailyRejected("Daily What moved has an invalid direction structure")
+                direction_seen = True
+                state = "synthesis"
+                continue
+            if state == "synthesis":
+                normalized_words = re.sub(r"[^\w]+", " ", line.casefold()).strip()
+                normalized = f" {normalized_words} "
+                contributor_words = {
+                    re.sub(r"[^\w]+", " ", contributor).strip() for contributor in contributors
+                }
+                names_contributor = any(
+                    f" {contributor} " in normalized
+                    for contributor in contributor_words
+                    if contributor
+                )
+                if (
+                    _DIRECTION_LABEL.fullmatch(line)
+                    or line.startswith("• ")
+                    or _OTHER_LIST_ITEM.match(line)
+                    or _PLAIN_CITATION.search(line)
+                    or _MARKDOWN_CITATION.search(line)
+                    or _CONCRETE_SYNTHESIS.search(line)
+                    or names_contributor
+                ):
+                    raise DailyRejected("Daily synthesis contains source-dependent detail")
+                state = "bullets"
+                continue
+            if _DIRECTION_LABEL.fullmatch(line):
+                if not bullet_seen:
+                    raise DailyRejected("Daily What moved has an invalid direction structure")
+                bullet_seen = False
+                state = "synthesis"
+                continue
+            if _OTHER_LIST_ITEM.match(line):
+                raise DailyRejected("Daily concrete progress uses an invalid bullet marker")
+            if not line.startswith("• "):
+                raise DailyRejected("Daily What moved has an invalid direction structure")
+            bullet_seen = True
+            trailing = _TRAILING_CITATIONS.search(line)
+            line_citations = (
+                set(_PLAIN_CITATION.findall(trailing.group()))
+                | set(_MARKDOWN_CITATION.findall(trailing.group()))
+                if trailing
+                else set()
+            )
+            all_line_citations = set(_PLAIN_CITATION.findall(line)) | set(
+                _MARKDOWN_CITATION.findall(line)
+            )
+            if (
+                not line_citations
+                or not line_citations.issubset(citations)
+                or not all_line_citations.issubset(citations)
+            ):
+                raise DailyRejected("Daily factual bullet lacks a valid citation")
+        if not direction_seen or state != "bullets" or not bullet_seen:
+            raise DailyRejected("active Daily lacks a complete What moved direction")
+
+    def _validate_next_up(self, lines: list[str]) -> None:
+        content = [line.strip() for line in lines if line.strip()]
+        if not content or self._heading_name(content[0]) != "ideas to follow":
+            raise DailyRejected("Daily output has an unexpected top-level section")
+        todo_indices = [
+            index for index, line in enumerate(content) if self._heading_name(line) == "todos"
+        ]
+        if len(todo_indices) != 1 or todo_indices[0] < 2:
+            raise DailyRejected("Daily output has an unexpected top-level section")
+        todo_index = todo_indices[0]
+        ideas = content[1:todo_index]
+        if not ideas or any(not line.startswith("• ") for line in ideas):
+            raise DailyRejected("Daily output has an unexpected top-level section")
+        remainder = content[todo_index + 1 :]
+        todo_count = 0
+        while todo_count < len(remainder) and remainder[todo_count].startswith("• "):
+            todo_count += 1
+        closing = remainder[todo_count:]
+        if todo_count == 0 or len(closing) != 1:
+            raise DailyRejected("Daily output has an unexpected top-level section")
+        if (
+            _DIRECTION_LABEL.fullmatch(closing[0])
+            or _OTHER_LIST_ITEM.match(closing[0])
+            or _EMOJI.match(closing[0])
+        ):
+            raise DailyRejected("Daily output has an unexpected top-level section")
+
     def _section_name(self, line: str) -> str | None:
-        stripped = line.strip()
+        name = self._heading_name(line)
+        return name if name in self.policy["required_sections"] else None
+
+    @staticmethod
+    def _heading_name(line: str) -> str:
+        stripped = line.strip().strip("#").strip()
         emoji = _EMOJI.match(stripped)
         name = stripped[emoji.end() :].strip() if emoji is not None else stripped
-        return name if name in self.policy["required_sections"] else None
+        return name.strip("*: ")
 
     def _split(self, text: str) -> tuple[str, ...]:
         try:

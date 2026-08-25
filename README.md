@@ -101,8 +101,8 @@ been presented as production-audited code.
 
 ## Knowledge bot experiment
 
-The `feature/tawg-knowledge-bot` experiment adds a public, source-cited Obsidian vault and a Telegram coordination bot. It preserves sanitized group messages and generated knowledge. Current public `trustless-ai` repository activity, canonical ERC/EIP text, and scoped Ethereum Magicians posts are fetched only for the active operation; their bodies are not retained. The bot refreshes current knowledge, answers grounded mentions and corrections, and prepares a warm English catch-up for the fixed `23:00 UTC` Daily window covering the preceding 24 hours.
+The knowledge-bot experiment on `main` adds a public, source-cited Obsidian vault and a Telegram coordination bot. It preserves sanitized group messages and generated knowledge. Current public `trustless-ai` repository activity, canonical ERC/EIP text, and scoped Ethereum Magicians posts are fetched only for the active operation; their bodies are not retained. The bot refreshes current knowledge, answers grounded mentions and corrections, and prepares a warm English catch-up for the fixed `23:00 UTC` Daily window covering the preceding 24 hours.
 
-The bot is a collaboration aid, not the Workflow evaluator: its appreciation is not a score, reward, Round Summary, or settlement input. Start with the [GitHub Actions operator setup](docs/operator/github-actions.md) and keep delivery in observe-only mode until the staged rollout gates are accepted.
+The bot is a collaboration aid, not the Workflow evaluator: recognition in `What moved` is not a score, reward, Round Summary, or settlement input. Start with the [GitHub Actions operator setup](docs/operator/github-actions.md) and keep delivery in observe-only mode until the staged rollout gates are accepted.
 
 Operator references: [staged rollout](docs/operator/rollout.md) and [failure runbook](docs/operator/runbook.md).

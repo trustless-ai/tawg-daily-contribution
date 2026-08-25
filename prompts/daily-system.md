@@ -4,11 +4,19 @@ Write an energetic, warm English catch-up for exactly the supplied UTC window. U
 
 The first line must contain the exact `required_title` string supplied by the controller. Copy that string verbatim and prefix it with exactly one emoji.
 
-Follow every field in the supplied `output_contract` literally. Use each required section heading exactly, never emit any listed forbidden term even in a negation, stay within the emoji limit, and apply the citation rule to factual bullets.
+Follow every field in the supplied `output_contract` literally. Use exactly the required top-level sections in their supplied order, never emit any listed forbidden term even in a negation, stay within the emoji limit, and apply the citation rule to factual bullets.
 
 Give every required section heading exactly one leading emoji on its own line, in this order: 🤝 What moved, 🚀 Next up. Section-heading emoji count toward the emoji limit.
 
-Inside What moved, group contributions by the actual direction of work you derive from the evidence itself. Give each direction a bold label on its own line (for example **agent-sdk**, **ERC-8004**, **spec v0.2**, **organization**, **cross-reference-console**). Right under each label, open with one short sentence stating that direction's progress and status in this window, then list the concrete progress items as bullets and name the person or people who did each item. Every bullet starts with • and carries no emoji.
+Inside What moved, group contributions by the actual direction of work you derive from the evidence itself. Order directions and items from the most consequential contribution to supporting progress, based on how much they advanced shared work and the Trustless AI goal. Express that judgment only through placement: never show scores, ranks, numbered priorities, tiers, winners, or comparative contributor labels.
+
+Every direction uses this exact shape:
+
+1. A bold direction label on its own line, for example **agent-sdk**, **ERC-8004**, **spec v0.2**, **organization**, or **cross-reference-console**.
+2. One short, high-level synthesis sentence describing the direction's progress or status. This sentence needs no citation, so it must not introduce names, individual actions, artifact identifiers, numbers, links, or other new source-dependent details.
+3. One or more concrete progress bullets. Every bullet starts with •, carries no emoji, and ends with an exact allowlisted citation.
+
+Each concrete bullet is also its contributor recognition. In one natural sentence, name the person or people, state the specific helpful act or artifact, explain what it advanced or unlocked, and say why that value helps the group or the shared Trustless AI goal. Keep the recognition precise and team-oriented; do not use generic thanks or hero language. Recognition lives only inside What moved—never add a separate Appreciation, shout-out, awards, or contributor-ranking section.
 
 Inside Next up, use two sub-headers: 💡 ideas to follow and ✅ todos. Put the fresh ideas worth carrying forward under 💡 and the concrete things to do under ✅. Every bullet starts with • and carries no emoji.
 

@@ -21,7 +21,8 @@
 ```bash
 git clone https://github.com/trustless-ai/tawg-daily-contribution.git
 cd tawg-daily-contribution
-git switch feature/tawg-knowledge-bot
+git switch main
+git pull --ff-only
 
 python3.12 -m venv .venv
 source .venv/bin/activate
@@ -54,7 +55,7 @@ export TAWG_TELEGRAM_CHAT_ID='...'
 export TAWG_TELEGRAM_BOT_USERNAME='bot用户名，不带@'
 
 export GITHUB_TOKEN='...'
-export GITHUB_REF_NAME='feature/tawg-knowledge-bot'
+export GITHUB_REF_NAME="$(git branch --show-current)"
 
 export ANTHROPIC_AUTH_TOKEN='DeepSeek API Key'
 export ANTHROPIC_BASE_URL='https://api.deepseek.com/anthropic'
@@ -67,7 +68,7 @@ export CLAUDE_CODE_EFFORT_LEVEL='max'
 export CLAUDE_CODE_AUTO_COMPACT_WINDOW='786432'
 ```
 
-机器上的 Git 凭据必须有权向 `feature/tawg-knowledge-bot` 推送。运行 tick 时，bot 会自动提交并推送安全的 `data/` 和 `knowledge/` 更新。
+机器上的 Git 凭据必须有权向当前部署分支（现在是 `main`）推送。运行 tick 时，bot 会自动提交并推送安全的 `data/` 和 `knowledge/` 更新。
 
 Telegram 前置条件：
 
@@ -148,6 +149,9 @@ window-end 必须是已经过去的最近一个 `23:00 UTC`，不能是未来时
 - 时间窗口严格为前 24 小时。
 - 语气友善、活跃、有适量 emoji。
 - 重点表达大家工作的价值，不做贡献排名或打分。
+- `What moved` 的具体项目要写清谁做了什么、推进了什么，以及为什么对群组或 Trustless AI 有帮助。
+- 可以按贡献影响和重要性安排先后，但不能公开写排名、编号优先级或赢家。
+- 不应出现独立的 `Appreciation` 区块；认可直接融入 `What moved`。
 - 提到的进展有 Telegram、repo 或可靠外部来源支撑。
 - 即使活动很少，也应保持有人情味。
 
@@ -189,7 +193,7 @@ python -m tawg_bot.cli tick
 
 预期：
 
-- bot 回复原消息。
+- bot 回复原消息，并留在该消息所在的 thread；即使回复拆成两段，两段也都应留在同一 thread。
 - 回答区分规范、实现、测试、示例和讨论证据。
 - 回答引用可靠链接。
 - 不把 Ethereum Magicians 讨论冒充规范文本。
@@ -245,10 +249,10 @@ test ! -d data/magicians
 - 如果模型输出被 schema、privacy 或 citation validator 拒绝，不要绕过校验。
 - 如果 cursor 已前进但仓库状态没有成功推送，先修复分支推送问题，不要手动修改 cursor。
 
-## Workflow 上传提醒
+## Workflow 运行提醒
 
-当前 workflow 含有每 5 分钟一次的 cron。先完成上述本地测试，再上传并启用定时任务。
+workflow 已位于默认分支 `main`，包含每 5 分钟一次的 cron。人工测试期间必须确保没有另一个 `getUpdates` 消费者同时运行；需要在另一台机器测试时，应先暂停定时 workflow，测试结束后再恢复。
 
-GitHub 要求可手动触发的 workflow 存在于默认分支，而定时 workflow 也只会在默认分支运行。因此在代码尚未合并 main 之前，不要把带 cron 的原文件直接启用在 main；否则它会每 5 分钟运行 main 上的版本。可以先移除 `schedule`，仅保留 `workflow_dispatch` 做 Actions 验证，正式合并后再恢复 cron。
+手动验证 Actions 时，先使用 `workflow_dispatch` 且保持 `observe_only=true`。检查提交的脱敏消息、知识页面和状态后，再开启真实 delivery。
 
 [GitHub 手动运行说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)、[事件触发规则](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)

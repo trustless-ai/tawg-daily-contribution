@@ -237,7 +237,7 @@ One GitHub Actions scheduler ticks every five minutes. It evaluates durable `las
 | L3 Knowledge refresh | 2 hours | L2 plus Claude Code updates to current Obsidian acknowledgement, ERC, topic, repository, and timeline pages when unprocessed records exist. |
 | L4 Daily | 23:00 UTC daily | Fresh L1-L3 synchronization, knowledge refresh, catch-up generation, validation, source commit, and Telegram delivery. |
 
-There is no scheduled L5 maintenance layer in v1. Historical backfills use a manual `workflow_dispatch`.
+There is no scheduled L5 maintenance layer or general external-source backfill command in v1. Telegram Desktop import provides sanitized group history. GitHub, canonical ERC/EIP, and Ethereum Magicians evidence is fetched transiently for current source checks, knowledge refreshes, questions, and the Daily; external bodies are not retained.
 
 A heavier due layer includes the earlier layers. Every run performs L1 first. A failed layer does not update its success timestamp and is retried by a later scheduler tick.
 
@@ -367,7 +367,7 @@ The system does not send a partial catch-up when a required source sync, model j
 
 The catch-up is always in English. The Bot acts as a friendly collaboration facilitator helping contributors advance work and the shared Trustless AI goal. It is energetic, harmonious, specific, and willing to explain an important point fully. It does not center itself or cultivate an individual hero persona.
 
-Emoji are used sparingly as navigation and energy, not decoration. Recognition covers code, reviews, questions, research, explanations, organization, and corrections. Every appreciation names the specific helpful act and its value. The Bot does not score, rank, or invent praise.
+Emoji are used sparingly as navigation and energy, not decoration. Recognition covers code, reviews, questions, research, explanations, organization, and corrections. Recognition is integrated into `What moved`: every concrete item names the contributor, the specific helpful act, what it advanced, and why it helps the group or the shared Trustless AI goal. The Bot may order items implicitly by contribution impact and importance, but it does not publish scores, ranks, priority labels, tiers, winners, or invented praise.
 
 The normal structure is:
 
@@ -375,13 +375,16 @@ The normal structure is:
 Daily title and exact UTC window
 Warm, specific opening
 What moved
-Ideas and discussions worth carrying forward
-Open threads or help wanted
-Specific appreciation
+  Directions ordered implicitly by impact and importance
+  One uncited high-level synthesis sentence per direction
+  Cited concrete contribution-and-value items
+Next up
+  Ideas and discussions worth carrying forward
+  Open threads or help wanted
 Friendly, actionable close
 ```
 
-Each factual item cites the most specific source. Telegram citations point to committed repository source records when a stable public Telegram message URL is unavailable. Long days may use at most two Telegram messages.
+There is no independent Appreciation section. Each concrete factual item cites the most specific source; only a direction's high-level synthesis sentence may be uncited, and it introduces no names, actions, artifacts, numbers, links, or other source-dependent details. Telegram citations point to committed repository source records when a stable public Telegram message URL is unavailable. Long days may use at most two Telegram messages.
 
 A quiet day still produces a warm update. It states that no source-backed progress landed, carries forward open threads, and invites a useful next step without fabricating momentum.
 
@@ -393,6 +396,7 @@ A quiet day still produces a warm update. It states that no source-backed progre
 - Failed AI output is rejected without modifying canonical knowledge.
 - Required-source failure blocks Daily publication and preserves the deterministic window for retry.
 - Telegram delivery uses one configured chat ID that is never accepted from a prompt or job input.
+- Mention reply jobs preserve both the trigger `message_id` and Telegram `message_thread_id`; every split reply chunk targets that thread, while the Daily omits a thread ID and publishes to General.
 - Normal retries use deterministic job and window IDs to suppress duplicates.
 
 Telegram does not provide a general idempotency key for `sendMessage`. A process failure after Telegram accepts a message but before delivery state is committed creates a small irreducible ambiguity in v1. The controller records delivery intent and successful Telegram message metadata, avoids automatic resend after an explicitly successful response, and surfaces an ambiguous delivery for operator review. It does not claim exactly-once external delivery.
@@ -434,7 +438,7 @@ Tests cover:
 
 ### 18.2 Rollout stages
 
-1. **Bootstrap:** import sanitized Telegram history and backfill GitHub and Ethereum Magicians.
+1. **Bootstrap:** import sanitized Telegram history, audit the external source registry, and run current source checks without retaining GitHub or Ethereum Magicians bodies.
 2. **Knowledge acceptance:** pass topic, person, and time query fixtures with source citations.
 3. **Observe-only L1:** poll and persist live Telegram messages without sending group output; verify no gaps.
 4. **Daily dry run:** generate at least one complete catch-up as a review artifact without Telegram delivery.

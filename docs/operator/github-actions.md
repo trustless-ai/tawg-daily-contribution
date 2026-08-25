@@ -1,6 +1,6 @@
 # GitHub Actions operator setup
 
-The workflow is intentionally disabled until the operator supplies one Telegram group and the model backend settings. Test it first with `workflow_dispatch` and `observe_only=true` on the feature branch.
+The workflow runs from the default `main` branch. Supply one Telegram group and the model backend settings, then test it with `workflow_dispatch` and `observe_only=true` before enabling live delivery.
 
 ## Required GitHub configuration
 
@@ -47,4 +47,4 @@ Local compilation may instead use the developer's authenticated Codex setup. Tho
 
 The Bot must be an administrator in the one configured group. In BotFather, disable privacy mode so it receives ordinary group messages as well as mentions. Do not configure a webhook, and do not run any second `getUpdates` consumer: Telegram updates are consumed and cursor-committed by this single non-overlapping Actions writer.
 
-Before live delivery, manually dispatch the feature branch with `observe_only=true`. Review the committed sanitized records, current knowledge pages, metadata, citations, and absence of external-body mirrors. The scheduled Daily cutoff is `23:00 UTC`, with live activity collected for `[previous 23:00 UTC, current 23:00 UTC)` immediately before generation. Live Actions validation, secret entry, and workflow push are deliberately left to the operator.
+Before live delivery, manually dispatch `main` with `observe_only=true`. Review the committed sanitized records, current knowledge pages, metadata, citations, and absence of external-body mirrors. The scheduled Daily cutoff is `23:00 UTC`, with live activity collected for `[previous 23:00 UTC, current 23:00 UTC)` immediately before generation. Live Actions validation and secret entry remain operator-controlled.
