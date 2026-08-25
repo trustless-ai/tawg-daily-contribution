@@ -18,5 +18,22 @@
       3355
     ],
     "updated_at": "2026-08-25T19:39:40.321382Z"
+  },
+  {
+    "content_sha256": "b69a0bf82cd84339916d7b470f0274387f6bff4b80c44d488808fa6788914b69",
+    "delivery_id": "daily:2026-08-25T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-08-25T23:00:00Z",
+    "message_count": 2,
+    "message_thread_id": null,
+    "prepared_at": "2026-08-25T23:15:56.601465Z",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-08-25T23:15:56.601465Z"
   }
 ]
