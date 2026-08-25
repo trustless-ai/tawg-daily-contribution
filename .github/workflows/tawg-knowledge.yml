@@ -98,7 +98,7 @@ jobs:
               window_end="$(date -u -d 'today 23:00' +%Y-%m-%dT%H:%M:%SZ)"
             fi
             python -m tawg_bot.cli daily-dry-run --window-end "$window_end"
-          elif [[ "${{ inputs.observe_only || false }}" == "true" ]] || \
+          elif [[ "${{ inputs.observe_only  false }}" == "true" ]]  \
                [[ "$TAWG_DELIVERY_ENABLED" != "true" ]]; then
             python -m tawg_bot.cli tick --observe-only
           else
