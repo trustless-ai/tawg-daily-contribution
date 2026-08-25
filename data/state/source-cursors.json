@@ -1,4 +1,8 @@
 {
+  "github": {},
+  "knowledge_record_id": null,
+  "knowledge_updated_at": null,
+  "magicians": {},
   "schema_version": "tawg.source-cursors.v1",
-  "telegram_offset": 0
+  "telegram_offset": 998810532
 }
