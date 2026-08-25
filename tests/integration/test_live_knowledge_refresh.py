@@ -274,6 +274,96 @@ def _service(
     return KnowledgeRefresh(root, ai=ai, live_evidence=live, registry=registry)
 
 
+def test_context_redacts_personal_data_from_transient_live_evidence(tmp_path: Path) -> None:
+    registry = _seed(tmp_path)
+    pack = _pack()
+    original_text = (
+        "The public specification lists author@example.com and +1 (415) 555-0123 "
+        "alongside its normative requirements."
+    )
+    evidence = list(pack.evidence)
+    evidence[0] = evidence[0].model_copy(update={"text": original_text})
+    pack = pack.model_copy(update={"evidence": evidence})
+    service = _service(
+        tmp_path,
+        registry,
+        FakeAi(_result(tmp_path, "privacy-context")),
+        FakeLiveEvidence(pack),
+    )
+
+    context = service._context(
+        service._pending_jobs(NOW, None),
+        (pack,),
+        NOW,
+        "privacy-context",
+    )
+
+    assert "author@example.com" not in context
+    assert "+1 (415) 555-0123" not in context
+    assert "[REDACTED_EMAIL]" in context
+    assert "[REDACTED_PHONE]" in context
+    assert pack.evidence[0].text == original_text
+
+
+def test_context_rejects_secret_material_from_transient_live_evidence(tmp_path: Path) -> None:
+    registry = _seed(tmp_path)
+    pack = _pack()
+    evidence = list(pack.evidence)
+    evidence[0] = evidence[0].model_copy(update={"text": f"Leaked credential sk-{'a' * 24}"})
+    pack = pack.model_copy(update={"evidence": evidence})
+    service = _service(
+        tmp_path,
+        registry,
+        FakeAi(_result(tmp_path, "secret-context")),
+        FakeLiveEvidence(pack),
+    )
+
+    with pytest.raises(KnowledgeRefreshRejected, match="secret_material"):
+        service._context(
+            service._pending_jobs(NOW, None),
+            (pack,),
+            NOW,
+            "secret-context",
+        )
+
+
+def test_context_bounds_live_evidence_without_dropping_sources(tmp_path: Path) -> None:
+    registry = _seed(tmp_path)
+    pack = _pack()
+    original_texts = {
+        pack.evidence[0].source_key: "Normative evidence. " + "n" * 12_000,
+        pack.evidence[1].source_key: "Implementation evidence. " + "i" * 12_000,
+    }
+    evidence = [
+        item.model_copy(update={"text": original_texts[item.source_key]}) for item in pack.evidence
+    ]
+    pack = pack.model_copy(update={"evidence": evidence})
+    service = KnowledgeRefresh(
+        tmp_path,
+        ai=FakeAi(_result(tmp_path, "bounded-context")),
+        live_evidence=FakeLiveEvidence(pack),
+        registry=registry,
+        max_context_chars=12_000,
+    )
+
+    encoded = service._context(
+        service._pending_jobs(NOW, None),
+        (pack,),
+        NOW,
+        "bounded-context",
+    )
+    context = json.loads(encoded)
+    context_items = context["evidence_pack"]["packs"][0]["evidence"]
+
+    assert len(encoded) <= 12_000
+    assert {item["source_key"] for item in context_items} == set(original_texts)
+    assert all(item["text"] for item in context_items)
+    assert all(
+        len(item["text"]) < len(original_texts[item["source_key"]]) for item in context_items
+    )
+    assert all(item["excerpted"] for item in context_items)
+
+
 @pytest.mark.asyncio
 async def test_refresh_compiles_live_pack_and_atomically_resolves_job(tmp_path: Path) -> None:
     registry = _seed(tmp_path)

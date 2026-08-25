@@ -60,9 +60,9 @@ class PrivacyFilter:
     _WALLET = re.compile(r"(?<![A-Fa-f0-9])0x[A-Fa-f0-9]{40}(?![A-Fa-f0-9])")
     _TELEGRAM_TOKEN = re.compile(r"(?<!\w)\d{6,12}:[A-Za-z0-9_-]{30,}(?!\w)")
     _PRIVATE_KEY = re.compile(r"-----BEGIN (?:RSA |OPENSSH |EC )?PRIVATE KEY-----", re.I)
-    _API_TOKEN = re.compile(
-        r"(?<!\w)(?:sk[-_]|ghp_|github_pat_)[A-Za-z0-9_-]{20,}(?!\w)", re.I
-    )
+    _API_TOKEN = re.compile(r"(?<!\w)(?:sk[-_]|ghp_|github_pat_)[A-Za-z0-9_-]{20,}(?!\w)", re.I)
+    _AWS_ACCESS_KEY = re.compile(r"(?<![A-Z0-9])(?:AKIA|ASIA)[A-Z0-9]{16}(?![A-Z0-9])")
+    _SLACK_TOKEN = re.compile(r"(?<!\w)xox[baprs]-[A-Za-z0-9-]{10,}(?!\w)", re.I)
     _SEED_PHRASE = re.compile(
         r"\b(?:seed|recovery|mnemonic) phrase\s*:\s*(?:[a-z]+\s+){11,23}[a-z]+\b",
         re.I,
@@ -99,6 +99,8 @@ class PrivacyFilter:
             self._TELEGRAM_TOKEN,
             self._PRIVATE_KEY,
             self._API_TOKEN,
+            self._AWS_ACCESS_KEY,
+            self._SLACK_TOKEN,
             self._SEED_PHRASE,
         ):
             if pattern.search(text):
@@ -116,7 +118,7 @@ class PrivacyFilter:
             github_suffix = sanitized[match.end() : match.end() + 1]
             if re.search(
                 r'(?:^|["\'\s\[])gh:[A-Z0-9._-]+:'
-                r'(?:issue:\d+:comment|pr:\d+:review|release):$',
+                r"(?:issue:\d+:comment|pr:\d+:review|release):$",
                 github_prefix,
                 re.I,
             ) and (not github_suffix or github_suffix in {'"', "'", ",", "]", "}", "\n"}):

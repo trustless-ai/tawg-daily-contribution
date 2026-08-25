@@ -76,3 +76,31 @@ def test_github_comment_record_id_is_not_treated_as_a_phone(
     assert redactor.inspect("reach me at gh:phone:5379076880").sanitized_text == (
         "reach me at gh:phone:[REDACTED_PHONE]"
     )
+
+
+def test_knowledge_refresh_operation_id_does_not_allow_phone_shaped_suffixes(
+    redactor: PrivacyFilter,
+) -> None:
+    safe_operation_id = "knowledge-refresh-20260825t000000z"
+
+    assert redactor.inspect(safe_operation_id).sanitized_text == safe_operation_id
+    assert redactor.inspect("knowledge-refresh-1415555012").sanitized_text == (
+        "knowledge-refresh-[REDACTED_PHONE]"
+    )
+
+
+@pytest.mark.parametrize(
+    "credential",
+    [
+        "AK" + "IA" + "A" * 16,
+        "xo" + "xb-" + "1" * 12 + "-" + "a" * 24,
+    ],
+)
+def test_common_provider_credentials_are_rejected(
+    redactor: PrivacyFilter,
+    credential: str,
+) -> None:
+    result = redactor.inspect(f"credential: {credential}")
+
+    assert not result.accepted
+    assert result.reason_code == "secret_material"

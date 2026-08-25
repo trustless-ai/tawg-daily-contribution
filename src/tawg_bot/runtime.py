@@ -252,7 +252,7 @@ class _LivePipeline:
             registry=self.registry,
         ).run(
             cutoff=cutoff,
-            operation_id=f"knowledge-refresh-{int(cutoff.timestamp())}",
+            operation_id=f"knowledge-refresh-{cutoff.strftime('%Y%m%dt%H%M%Sz')}",
             erc_numbers=erc_numbers,
             dry_run=dry_run,
         )

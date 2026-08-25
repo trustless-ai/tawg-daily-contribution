@@ -379,6 +379,7 @@ async def test_knowledge_dry_run_uses_temporary_harness_and_leaves_repository_un
 
         async def run(self, **kwargs: Any) -> RefreshResult:
             assert kwargs["dry_run"] is True
+            assert kwargs["operation_id"] == "knowledge-refresh-20260824t011700z"
             await self.ai.run(
                 job_type="knowledge",
                 context_pack='{"safe":"preview"}',

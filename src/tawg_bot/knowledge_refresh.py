@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Mapping
+from copy import deepcopy
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -38,6 +39,8 @@ from tawg_bot.vault_transaction import (
 
 _SOURCE_LEDGER = "knowledge/meta/source-ledger.json"
 _CLAIM_LEDGER = "knowledge/meta/claim-ledger.json"
+_MIN_CONTEXT_EVIDENCE_CHARS = 1_000
+_PRIORITY_CONTEXT_REJECTION = "priority context does not fit the configured budget"
 _REQUIRED_SECTIONS = (
     "Summary",
     "Status",
@@ -205,6 +208,7 @@ class KnowledgeRefresh:
         citation_urls = list(
             dict.fromkeys(url for pack in packs for url in pack.citation_allowlist)
         )
+        context_packs = [self._context_evidence_pack(pack) for pack in packs]
         inputs = ContextInputs(
             trigger={
                 "operation": "compile_live_evidence",
@@ -244,19 +248,82 @@ class KnowledgeRefresh:
             },
             evidence_pack={
                 "schema_version": "tawg.evidence-batch.v1",
-                "packs": [pack.model_dump(mode="json") for pack in packs],
+                "packs": context_packs,
                 "allowed_source_keys": source_keys,
             },
             citation_allowlist=citation_urls,
         )
         try:
-            return (
-                ContextPackBuilder(self.privacy)
-                .build(inputs, max_chars=self.max_context_chars, max_recent_telegram=0)
-                .text
-            )
+            return self._build_context(inputs)
         except ContextRejected as error:
+            if str(error) == _PRIORITY_CONTEXT_REJECTION:
+                return self._build_bounded_evidence_context(inputs, context_packs)
             raise KnowledgeRefreshRejected(str(error)) from None
+
+    def _build_context(self, inputs: ContextInputs) -> str:
+        return (
+            ContextPackBuilder(self.privacy)
+            .build(inputs, max_chars=self.max_context_chars, max_recent_telegram=0)
+            .text
+        )
+
+    def _build_bounded_evidence_context(
+        self,
+        inputs: ContextInputs,
+        context_packs: list[dict[str, Any]],
+    ) -> str:
+        text_lengths = [len(item["text"]) for pack in context_packs for item in pack["evidence"]]
+        if not text_lengths:
+            raise KnowledgeRefreshRejected(_PRIORITY_CONTEXT_REJECTION)
+
+        low = min(_MIN_CONTEXT_EVIDENCE_CHARS, max(text_lengths))
+        high = max(text_lengths) - 1
+        best: str | None = None
+        while low <= high:
+            text_cap = (low + high) // 2
+            candidate = deepcopy(inputs)
+            candidate.evidence_pack = self._capped_evidence_pack(context_packs, text_cap=text_cap)
+            try:
+                best = self._build_context(candidate)
+            except ContextRejected as error:
+                if str(error) != _PRIORITY_CONTEXT_REJECTION:
+                    raise KnowledgeRefreshRejected(str(error)) from None
+                high = text_cap - 1
+            else:
+                low = text_cap + 1
+        if best is None:
+            raise KnowledgeRefreshRejected(_PRIORITY_CONTEXT_REJECTION)
+        return best
+
+    @staticmethod
+    def _capped_evidence_pack(
+        context_packs: list[dict[str, Any]], *, text_cap: int
+    ) -> dict[str, Any]:
+        packs = deepcopy(context_packs)
+        for pack in packs:
+            for item in pack["evidence"]:
+                text = item["text"]
+                if len(text) > text_cap:
+                    item["text"] = text[:text_cap]
+                    item["excerpted"] = True
+        return {
+            "schema_version": "tawg.evidence-batch.v1",
+            "packs": packs,
+            "allowed_source_keys": sorted(
+                {item["source_key"] for pack in packs for item in pack["evidence"]}
+            ),
+        }
+
+    def _context_evidence_pack(self, pack: EvidencePack) -> dict[str, Any]:
+        evidence: list[EvidenceItem] = []
+        for item in pack.evidence:
+            inspected = self.privacy.inspect(item.text)
+            if not inspected.accepted or inspected.sanitized_text is None:
+                raise KnowledgeRefreshRejected(
+                    f"context privacy rejection: {inspected.reason_code or 'unsafe_text'}"
+                )
+            evidence.append(item.model_copy(update={"text": inspected.sanitized_text}))
+        return pack.model_copy(update={"evidence": evidence}).model_dump(mode="json")
 
     def _validate_result(
         self,
