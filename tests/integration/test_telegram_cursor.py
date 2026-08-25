@@ -59,7 +59,9 @@ async def test_intake_persists_all_target_messages_jobs_and_cursor_atomically(
     tmp_path: Path,
 ) -> None:
     seed_repository(tmp_path)
-    api = FakeTelegramApi(fixture_updates())
+    updates = fixture_updates()
+    updates[2]["message"]["message_thread_id"] = 700
+    api = FakeTelegramApi(updates)
     intake = TelegramIntake(
         root=tmp_path,
         api=api,
@@ -92,6 +94,8 @@ async def test_intake_persists_all_target_messages_jobs_and_cursor_atomically(
     assert "secret-photo-file-id" not in serialized
     jobs = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())
     assert [job["trigger_record_id"] for job in jobs] == ["tg:tawg:503", "tg:tawg:504"]
+    assert jobs[0]["message_thread_id"] == 700
+    assert jobs[1]["message_thread_id"] is None
     cursors = json.loads((tmp_path / "data/state/source-cursors.json").read_text())
     assert cursors["telegram_offset"] == 107
 
@@ -113,9 +117,11 @@ async def test_replayed_batch_after_source_only_checkpoint_is_idempotent(tmp_pat
     cursor["telegram_offset"] = 100
     cursor_path.write_text(json.dumps(cursor), encoding="utf-8")
 
+    replay_updates = fixture_updates()
+    replay_updates[2]["message"]["message_thread_id"] = 700
     replay = TelegramIntake(
         root=tmp_path,
-        api=api,
+        api=FakeTelegramApi(replay_updates),
         chat_id=-100424242,
         group_slug="tawg",
         bot_username="tawg_helper",
@@ -126,6 +132,7 @@ async def test_replayed_batch_after_source_only_checkpoint_is_idempotent(tmp_pat
     jobs = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())
     assert len(records) == 5
     assert len(jobs) == 2
+    assert jobs[0]["message_thread_id"] == 700
 
 
 @pytest.mark.asyncio
@@ -137,9 +144,7 @@ async def test_failed_publish_keeps_old_cursor_and_no_partial_records(tmp_path: 
         chat_id=-100424242,
         group_slug="tawg",
         bot_username="tawg_helper",
-        uow_factory=lambda root, operation_id: FailingUnitOfWork(
-            root, operation_id=operation_id
-        ),
+        uow_factory=lambda root, operation_id: FailingUnitOfWork(root, operation_id=operation_id),
     )
 
     with pytest.raises(RuntimeError, match="injected"):

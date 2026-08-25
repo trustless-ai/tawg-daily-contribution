@@ -14,12 +14,16 @@ NOW = datetime(2026, 8, 23, 23, 5, tzinfo=UTC)
 
 class Api:
     def __init__(self) -> None:
-        self.calls: list[tuple[int, str, int | None]] = []
+        self.calls: list[tuple[int, str, int | None, int | None]] = []
 
     async def send_message(
-        self, chat_id: int, text: str, reply_to_message_id: int | None = None
+        self,
+        chat_id: int,
+        text: str,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
     ) -> SentMessage:
-        self.calls.append((chat_id, text, reply_to_message_id))
+        self.calls.append((chat_id, text, reply_to_message_id, message_thread_id))
         return SentMessage(message_id=100 + len(self.calls), chat_id=chat_id)
 
 
@@ -57,11 +61,12 @@ async def test_records_durable_intent_before_send_and_success_metadata(tmp_path:
         job_id="daily:2026-08-23T23:00:00Z",
         text="A grounded catch-up.",
         reply_to_message_id=None,
+        message_thread_id=None,
         now=NOW,
     )
 
     assert checkpoint.statuses == ["prepared", "sending", "delivered"]
-    assert api.calls == [(-10077, "A grounded catch-up.", None)]
+    assert api.calls == [(-10077, "A grounded catch-up.", None, None)]
     assert result.status.value == "delivered"
     assert result.telegram_chat_id == -10077
     assert result.telegram_message_ids == [101]
@@ -69,7 +74,7 @@ async def test_records_durable_intent_before_send_and_success_metadata(tmp_path:
 
 
 @pytest.mark.asyncio
-async def test_splits_at_most_two_messages_and_replies_only_on_first(tmp_path: Path) -> None:
+async def test_split_reply_keeps_every_message_in_the_trigger_thread(tmp_path: Path) -> None:
     seed(tmp_path)
     api = Api()
 
@@ -79,6 +84,7 @@ async def test_splits_at_most_two_messages_and_replies_only_on_first(tmp_path: P
         job_id="reply:tg:tawg:12",
         text="A" * 4000 + "\n\n" + "B" * 300,
         reply_to_message_id=12,
+        message_thread_id=700,
         now=NOW,
     )
 
@@ -86,6 +92,8 @@ async def test_splits_at_most_two_messages_and_replies_only_on_first(tmp_path: P
     assert len(api.calls) == 2
     assert api.calls[0][2] == 12
     assert api.calls[1][2] is None
+    assert api.calls[0][3] == 700
+    assert api.calls[1][3] == 700
     assert all(len(call[1]) <= 4096 for call in api.calls)
 
 
@@ -101,6 +109,7 @@ async def test_split_keeps_both_messages_within_limit_when_early_paragraph_is_to
         job_id="daily:long-natural-boundary",
         text=text,
         reply_to_message_id=None,
+        message_thread_id=None,
         now=NOW,
     )
 
@@ -118,6 +127,7 @@ async def test_privacy_is_rescanned_before_any_send(tmp_path: Path) -> None:
             job_id="reply:tg:tawg:12",
             text="Contact private@example.com",
             reply_to_message_id=12,
+            message_thread_id=700,
             now=NOW,
         )
 
@@ -133,5 +143,6 @@ async def test_rejects_text_that_cannot_fit_two_messages(tmp_path: Path) -> None
             job_id="oversized",
             text="x" * 8193,
             reply_to_message_id=None,
+            message_thread_id=None,
             now=NOW,
         )

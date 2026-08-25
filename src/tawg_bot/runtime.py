@@ -332,6 +332,7 @@ class _LivePipeline:
                     job_id=reply.job_id,
                     text=reply.reply_text,
                     reply_to_message_id=reply.reply_to_message_id,
+                    message_thread_id=reply.message_thread_id,
                     now=self.now,
                 )
             except (DeliveryAmbiguous, DeliveryFailed):
@@ -341,6 +342,7 @@ class _LivePipeline:
                 job_id=self.prepared_daily.window_id,
                 text=self.prepared_daily.telegram_text,
                 reply_to_message_id=None,
+                message_thread_id=None,
                 now=self.now,
             )
 

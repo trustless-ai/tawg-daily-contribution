@@ -16,9 +16,13 @@ from tests.unit.test_delivery import NOW, Api, Checkpoint, seed
 
 class FailingApi(Api):
     async def send_message(
-        self, chat_id: int, text: str, reply_to_message_id: int | None = None
+        self,
+        chat_id: int,
+        text: str,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
     ) -> SentMessage:
-        self.calls.append((chat_id, text, reply_to_message_id))
+        self.calls.append((chat_id, text, reply_to_message_id, message_thread_id))
         raise TelegramApiError("explicit Telegram failure")
 
 
@@ -77,9 +81,7 @@ async def test_crash_after_send_recovers_as_ambiguous_without_resend(tmp_path: P
 async def test_delivered_job_is_suppressed_and_content_change_is_rejected(tmp_path: Path) -> None:
     seed(tmp_path)
     first_api = Api()
-    service = DeliveryService(
-        tmp_path, api=first_api, chat_id=-10077, checkpoint=Checkpoint()
-    )
+    service = DeliveryService(tmp_path, api=first_api, chat_id=-10077, checkpoint=Checkpoint())
     first = await service.deliver(
         job_id="daily:one", text="Hello", reply_to_message_id=None, now=NOW
     )
@@ -103,9 +105,13 @@ async def test_returned_chat_mismatch_becomes_ambiguous(tmp_path: Path) -> None:
 
     class WrongChat(Api):
         async def send_message(
-            self, chat_id: int, text: str, reply_to_message_id: int | None = None
+            self,
+            chat_id: int,
+            text: str,
+            reply_to_message_id: int | None = None,
+            message_thread_id: int | None = None,
         ) -> SentMessage:
-            self.calls.append((chat_id, text, reply_to_message_id))
+            self.calls.append((chat_id, text, reply_to_message_id, message_thread_id))
             return SentMessage(message_id=88, chat_id=-999)
 
     with pytest.raises(DeliveryAmbiguous, match="destination"):

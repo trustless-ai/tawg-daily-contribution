@@ -128,13 +128,20 @@ class TelegramIntake:
             if self._triggers_reply(message):
                 job_id = f"reply:{record.record_id}"
                 existing = jobs_by_id.get(job_id)
-                jobs_by_id[job_id] = existing or PendingBotJob(
-                    job_id=job_id,
-                    trigger_record_id=record.record_id,
-                    reply_to_message_id=int(message["message_id"]),
-                    created_at=now,
-                    updated_at=now,
-                )
+                message_thread_id = self._message_thread_id(message)
+                if existing is None:
+                    jobs_by_id[job_id] = PendingBotJob(
+                        job_id=job_id,
+                        trigger_record_id=record.record_id,
+                        reply_to_message_id=int(message["message_id"]),
+                        message_thread_id=message_thread_id,
+                        created_at=now,
+                        updated_at=now,
+                    )
+                elif existing.message_thread_id is None and message_thread_id is not None:
+                    jobs_by_id[job_id] = existing.model_copy(
+                        update={"message_thread_id": message_thread_id, "updated_at": now}
+                    )
 
         monthly: dict[str, list[SourceRecord]] = defaultdict(list)
         for record in records_by_id.values():
@@ -272,6 +279,11 @@ class TelegramIntake:
         if not isinstance(update_id, int):
             raise ValueError("Telegram update has no integer update_id")
         return update_id
+
+    @staticmethod
+    def _message_thread_id(message: dict[str, Any]) -> int | None:
+        value = message.get("message_thread_id")
+        return value if isinstance(value, int) and not isinstance(value, bool) else None
 
     def _display_name(self, author: dict[str, Any]) -> str:
         names = [author.get("first_name"), author.get("last_name")]

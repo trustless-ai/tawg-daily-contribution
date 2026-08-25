@@ -1,3 +1,4 @@
+import json
 from urllib.parse import parse_qs
 
 import httpx
@@ -38,3 +39,27 @@ async def test_api_errors_are_token_safe() -> None:
             await api.get_all_updates(0)
 
     assert token not in str(captured.value)
+
+
+@pytest.mark.asyncio
+async def test_send_message_targets_the_forum_thread_and_replies_to_the_trigger() -> None:
+    captured: dict[str, list[str]] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.update(parse_qs(request.content.decode()))
+        return httpx.Response(
+            200,
+            json={"ok": True, "result": {"message_id": 99, "chat": {"id": -10077}}},
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        api = TelegramApi(token="123456:token-value-abcdefgh", client=client)
+        await api.send_message(
+            -10077,
+            "Threaded reply",
+            reply_to_message_id=12,
+            message_thread_id=700,
+        )
+
+    assert captured["message_thread_id"] == ["700"]
+    assert json.loads(captured["reply_parameters"][0]) == {"message_id": 12}

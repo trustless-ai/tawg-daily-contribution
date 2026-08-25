@@ -37,7 +37,11 @@ class DeliveryAmbiguous(RuntimeError):
 
 class DeliveryApi(Protocol):
     async def send_message(
-        self, chat_id: int, text: str, reply_to_message_id: int | None = None
+        self,
+        chat_id: int,
+        text: str,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
     ) -> SentMessage: ...
 
 
@@ -76,6 +80,7 @@ class DeliveryService:
         job_id: str,
         text: str,
         reply_to_message_id: int | None,
+        message_thread_id: int | None = None,
         now: datetime,
     ) -> DeliveryAttempt:
         self._require_utc(now)
@@ -113,6 +118,7 @@ class DeliveryService:
             content_sha256=content_sha,
             message_count=len(messages),
             reply_to_message_id=reply_to_message_id,
+            message_thread_id=message_thread_id,
             prepared_at=existing.prepared_at if existing is not None else now,
             updated_at=now,
         )
@@ -136,6 +142,7 @@ class DeliveryService:
                     self.chat_id,
                     message,
                     reply_to_message_id if index == 0 else None,
+                    message_thread_id,
                 )
             except TelegramApiError:
                 status = DeliveryStatus.AMBIGUOUS if sent else DeliveryStatus.FAILED

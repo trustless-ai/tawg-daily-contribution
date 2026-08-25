@@ -134,6 +134,7 @@ class _ReplyResult(StrictModel):
 class PreparedReply:
     job_id: str
     reply_to_message_id: int
+    message_thread_id: int | None
     reply_text: str
     citations: tuple[str, ...]
     language: str
@@ -500,6 +501,7 @@ class BotReplyService:
         return PreparedReply(
             job_id=job.job_id,
             reply_to_message_id=job.reply_to_message_id,
+            message_thread_id=job.message_thread_id,
             reply_text=job.prepared_reply_text,
             citations=tuple(job.prepared_citations),
             language=job.prepared_language,

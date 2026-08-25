@@ -57,9 +57,15 @@ class TelegramApi:
             next_offset = advanced_offset
 
     async def send_message(
-        self, chat_id: int, text: str, reply_to_message_id: int | None = None
+        self,
+        chat_id: int,
+        text: str,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
     ) -> SentMessage:
         data: dict[str, object] = {"chat_id": chat_id, "text": text}
+        if message_thread_id is not None:
+            data["message_thread_id"] = message_thread_id
         if reply_to_message_id is not None:
             data["reply_parameters"] = f'{{"message_id":{reply_to_message_id}}}'
         result = await self._call("sendMessage", data)

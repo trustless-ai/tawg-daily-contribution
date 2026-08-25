@@ -140,6 +140,7 @@ class PendingBotJob(StrictModel):
     job_id: str
     trigger_record_id: str
     reply_to_message_id: int
+    message_thread_id: int | None = None
     status: JobStatus = JobStatus.PENDING
     attempts: int = Field(default=0, ge=0)
     prepared_reply_text: str | None = Field(default=None, max_length=10_500)
@@ -198,6 +199,7 @@ class DeliveryAttempt(StrictModel):
     content_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     message_count: int = Field(default=0, ge=0, le=2)
     reply_to_message_id: int | None = None
+    message_thread_id: int | None = None
     telegram_chat_id: int | None = None
     telegram_message_ids: list[int] = Field(default_factory=list)
     sent_at: datetime | None = None
