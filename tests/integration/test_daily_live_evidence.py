@@ -237,6 +237,9 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
             "supporting bullets immediately below are cited. It must not contain a URL or "
             "citation."
         ),
+        "persistence_rule": (
+            "Paraphrase external evidence; never reproduce a source passage verbatim."
+        ),
         "what_moved_rule": (
             "Integrate appreciation into each concrete item: name who did what, what it "
             "advanced, and why it helps the group or Trustless AI. Do not add a separate "
@@ -269,7 +272,7 @@ def test_daily_context_uses_bounded_evidence_excerpts(tmp_path: Path) -> None:
     excerpt = context["trigger"]["window_evidence"][0]["text"]
 
     assert excerpt.startswith("IMPORTANT-START")
-    assert len(excerpt) <= 180
+    assert len(excerpt) <= 95
     assert "IMPORTANT-END" not in excerpt
     assert set(context["trigger"]["window_evidence"][0]) == {
         "author_person_id",

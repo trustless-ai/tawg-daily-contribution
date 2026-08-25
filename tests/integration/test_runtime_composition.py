@@ -19,6 +19,7 @@ from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import RefreshResult
 from tawg_bot.live_evidence import LiveEvidenceService
 from tawg_bot.models import PendingBotJob
+from tawg_bot.persistence_guard import PersistenceRejected
 from tawg_bot.runtime import (
     ProductionRuntime,
     RuntimeFailure,
@@ -402,6 +403,54 @@ async def test_scheduled_daily_checkpoints_before_reply_preparation(
 
 
 @pytest.mark.asyncio
+async def test_prepare_daily_does_not_expose_output_before_artifact_persists(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    window = DailyWindow.for_due_run(NOW)
+    prepared = PreparedDaily(window.window_id, "Daily", ("Daily",), (), True)
+
+    class Daily:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            del root, kwargs
+
+        async def prepare(self, *args: Any, **kwargs: Any) -> PreparedDaily:
+            del args, kwargs
+            return prepared
+
+    class Collector:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            del root, kwargs
+
+        async def collect(self, *args: Any, **kwargs: Any) -> tuple[Any, ...]:
+            del args, kwargs
+            return ()
+
+    class RejectingUnitOfWork:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            del root, kwargs
+
+        def register_external_evidence(self, evidence: Any) -> None:
+            del evidence
+
+        def stage_json(self, path: str, artifact: Any) -> None:
+            del path, artifact
+
+        def publish(self) -> None:
+            raise PersistenceRejected
+
+    monkeypatch.setattr(runtime_module, "DailyService", Daily)
+    monkeypatch.setattr(runtime_module, "DailyEvidenceCollector", Collector)
+    monkeypatch.setattr(runtime_module, "RepositoryUnitOfWork", RejectingUnitOfWork)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        with pytest.raises(PersistenceRejected):
+            await pipeline.prepare_daily(window, dry_run=False)
+
+    assert pipeline.prepared_daily is None
+
+
+@pytest.mark.asyncio
 async def test_scheduled_daily_logs_bounded_validation_code_without_raw_error(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -424,6 +473,36 @@ async def test_scheduled_daily_logs_bounded_validation_code_without_raw_error(
     captured = capsys.readouterr().out
     assert "code=daily_citation_invalid" in captured
     assert "factual bullet" not in captured
+
+
+@pytest.mark.asyncio
+async def test_scheduled_daily_clears_prepared_output_after_persistence_rejection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    scaffold(tmp_path)
+    window = DailyWindow.for_due_run(NOW)
+    prepared = PreparedDaily(window.window_id, "Daily", ("Daily",), (), True)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+
+        async def reject_persistence(
+            selected: DailyWindow, *, dry_run: bool
+        ) -> PreparedDaily:
+            assert selected == window
+            assert not dry_run
+            pipeline.prepared_daily = prepared
+            raise PersistenceRejected
+
+        monkeypatch.setattr(pipeline, "prepare_daily", reject_persistence)
+        with pytest.raises(RuntimeFailure, match="persistence"):
+            await pipeline.daily_prepare(window.window_id)
+
+    assert pipeline.prepared_daily is None
+    captured = capsys.readouterr().out
+    assert "code=daily_persistence_rejected" in captured
+    assert "persistence policy rejection" not in captured
 
 
 @pytest.mark.asyncio

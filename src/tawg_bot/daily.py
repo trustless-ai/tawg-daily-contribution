@@ -39,6 +39,7 @@ _PLAIN_CITATION = re.compile(r"\[([^\[\]\n]+)\](?!\()")
 _MARKDOWN_CITATION = re.compile(r"\[[^\[\]\n]+\]\(([^()\s]+)\)")
 _TRAILING_CITATIONS = re.compile(r"(?:\s+\[[^\[\]\n]+\](?:\([^()\s]+\))?)+$")
 _EVIDENCE_EXCERPT_CHARS = 180
+_EXTERNAL_EVIDENCE_EXCERPT_CHARS = 95
 _CONTEXT_SOURCE_LIMITS = {"telegram": 8, "github": 8, "magicians": 2}
 _CONTEXT_TOTAL_LIMIT = 14
 
@@ -173,13 +174,18 @@ class DailyService:
     def _context(self, window: DailyWindow, evidence: tuple[DailyEvidence, ...]) -> str:
         evidence_payload: list[dict[str, Any]] = []
         for item in evidence:
+            excerpt_chars = (
+                _EVIDENCE_EXCERPT_CHARS
+                if item.source_kind == "telegram"
+                else _EXTERNAL_EVIDENCE_EXCERPT_CHARS
+            )
             evidence_payload.append(
                 {
                     "evidence_id": item.evidence_id,
                     "source_kind": item.source_kind,
                     "updated_at": item.updated_at.isoformat(),
                     "author_person_id": item.author_person_id,
-                    "text": item.text[:_EVIDENCE_EXCERPT_CHARS],
+                    "text": item.text[:excerpt_chars],
                     "citation": item.citation,
                 }
             )
@@ -247,6 +253,9 @@ class DailyService:
                         "Each direction's first synthesis sentence may be uncited because its "
                         "concrete supporting bullets immediately below are cited. It must not "
                         "contain a URL or citation."
+                    ),
+                    "persistence_rule": (
+                        "Paraphrase external evidence; never reproduce a source passage verbatim."
                     ),
                     "what_moved_rule": (
                         "Integrate appreciation into each concrete item: name who did what, what "

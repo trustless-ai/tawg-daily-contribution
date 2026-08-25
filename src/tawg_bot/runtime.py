@@ -38,6 +38,7 @@ from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import KnowledgeRefresh, RefreshResult
 from tawg_bot.live_evidence import EvidencePack, LiveEvidenceService
 from tawg_bot.models import JobStatus, PendingBotJob
+from tawg_bot.persistence_guard import PersistenceRejected
 from tawg_bot.scheduler import Scheduler
 from tawg_bot.source_registry import SourceRegistry
 from tawg_bot.telegram_api import TelegramApi
@@ -380,10 +381,18 @@ class _LivePipeline:
             raise RuntimeFailure("scheduler supplied an inconsistent Daily window")
         try:
             prepared = await self.prepare_daily(window, dry_run=False)
+        except PersistenceRejected:
+            self.prepared_daily = None
+            _safe_log("daily_persistence", "daily_persistence_rejected")
+            raise RuntimeFailure("Daily persistence failed") from None
         except DailyRejected as error:
+            self.prepared_daily = None
             code = _DAILY_REJECTION_CODES.get(str(error), "daily_validation_failed")
             _safe_log("daily_validation", code)
             raise RuntimeFailure("Daily validation failed") from None
+        except Exception:
+            self.prepared_daily = None
+            raise
         if prepared is None:
             return
         try:
@@ -421,8 +430,8 @@ class _LivePipeline:
         if prepared is None:
             self.prepared_daily = None
             return None
-        self.prepared_daily = prepared
         if dry_run:
+            self.prepared_daily = prepared
             return prepared
         artifact = {
             "schema": "tawg.prepared-daily.v1",
@@ -440,6 +449,7 @@ class _LivePipeline:
         )
         uow.stage_json("data/state/prepared-daily.json", artifact)
         uow.publish()
+        self.prepared_daily = prepared
         return prepared
 
     async def publish_repository(self) -> None:
