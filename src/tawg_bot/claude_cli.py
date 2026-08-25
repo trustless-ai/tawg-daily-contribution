@@ -210,7 +210,9 @@ class ClaudeCli:
             Draft202012Validator(schema).validate(structured)
         except ValidationError:
             raise ClaudeCliError("Claude Code structured output failed schema validation") from None
-        sanitized = self._sanitize_structured_output(structured)
+        sanitized = self._sanitize_structured_output(
+            structured, controller_operation_id=operation_id
+        )
         if not isinstance(sanitized, dict):
             raise ClaudeCliError("Claude Code returned no structured output")
         try:
@@ -219,11 +221,28 @@ class ClaudeCli:
             raise ClaudeCliError("Claude Code structured output failed schema validation") from None
         return sanitized
 
-    def _sanitize_structured_output(self, value: Any) -> Any:
+    def _sanitize_structured_output(
+        self, value: Any, *, controller_operation_id: str
+    ) -> Any:
         if isinstance(value, dict):
-            return {key: self._sanitize_structured_output(item) for key, item in value.items()}
+            is_transaction = value.get("schema_version") == "tawg.vault-transaction.v1"
+            return {
+                key: (
+                    controller_operation_id
+                    if is_transaction and key == "operation_id"
+                    else self._sanitize_structured_output(
+                        item, controller_operation_id=controller_operation_id
+                    )
+                )
+                for key, item in value.items()
+            }
         if isinstance(value, list):
-            return [self._sanitize_structured_output(item) for item in value]
+            return [
+                self._sanitize_structured_output(
+                    item, controller_operation_id=controller_operation_id
+                )
+                for item in value
+            ]
         if isinstance(value, str):
             inspected = self.privacy.inspect(value)
             if not inspected.accepted or inspected.sanitized_text is None:

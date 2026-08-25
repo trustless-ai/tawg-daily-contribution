@@ -198,6 +198,39 @@ async def test_cli_rejects_secret_material_in_structured_output(tmp_path: Path) 
 
 
 @pytest.mark.asyncio
+async def test_cli_binds_transaction_id_before_privacy_normalization(tmp_path: Path) -> None:
+    output = outer_reply()
+    output["structured_output"]["correction_transaction"] = {
+        "schema_version": "tawg.vault-transaction.v1",
+        "operation_id": "model-20260825-133000",
+        "writes": [
+            {
+                "path": "knowledge/acknowledgements/alice.md",
+                "expected_sha256": None,
+                "content": "Public correction.",
+                "citations": ["tg:tawg:50"],
+            }
+        ],
+    }
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=CapturingRunner(output),
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+
+    result = await cli.run(
+        job_type="reply",
+        context_pack="{}",
+        operation_id="reply-controller",
+        max_budget_usd="0.10",
+    )
+
+    assert result["correction_transaction"]["operation_id"] == "reply-controller"
+
+
+@pytest.mark.asyncio
 async def test_cli_accepts_provider_structured_output_handoff(tmp_path: Path) -> None:
     output = outer_reply()
     output.update({"num_turns": 2, "stop_reason": "tool_use"})
