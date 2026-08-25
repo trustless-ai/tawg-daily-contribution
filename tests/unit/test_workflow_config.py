@@ -23,7 +23,7 @@ def test_workflow_is_single_non_overlapping_five_minute_writer() -> None:
 
     assert value["on"]["schedule"] == [{"cron": "*/5 * * * *"}]
     inputs = value["on"]["workflow_dispatch"]["inputs"]
-    assert {"observe_only", "daily_dry_run", "backfill"}.issubset(inputs)
+    assert set(inputs) == {"observe_only", "daily_dry_run"}
     assert value["permissions"] == {"contents": "write"}
     assert value["concurrency"] == {
         "group": "tawg-knowledge-writer",
