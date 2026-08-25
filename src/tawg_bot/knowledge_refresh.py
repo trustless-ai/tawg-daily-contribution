@@ -105,18 +105,22 @@ class KnowledgeRefresh:
         live_evidence: LiveEvidenceProvider,
         registry: SourceRegistry,
         max_jobs: int = 32,
-        max_context_chars: int = 250_000,
+        max_ercs_per_run: int = 2,
+        max_context_chars: int = 160_000,
         max_budget_usd: str = "2.00",
         timeout_seconds: float = 900,
     ) -> None:
         if max_jobs <= 0:
             raise ValueError("max_jobs must be positive")
+        if max_ercs_per_run <= 0:
+            raise ValueError("max_ercs_per_run must be positive")
         self.root = root.resolve()
         self.ai = ai
         self.live_evidence = live_evidence
         self.registry = registry
         self.state = KnowledgeStateStore(self.root, registry=registry)
         self.max_jobs = max_jobs
+        self.max_ercs_per_run = max_ercs_per_run
         self.max_context_chars = max_context_chars
         self.max_budget_usd = max_budget_usd
         self.timeout_seconds = timeout_seconds
@@ -195,7 +199,19 @@ class KnowledgeRefresh:
             if job.updated_at <= cutoff and (erc_numbers is None or job.erc_number in erc_numbers)
         ]
         jobs.sort(key=lambda job: (job.updated_at, job.job_key))
-        return jobs[: self.max_jobs]
+        groups: dict[int, list[KnowledgeRefreshJob]] = {}
+        for job in jobs:
+            groups.setdefault(job.erc_number, []).append(job)
+        selected: list[KnowledgeRefreshJob] = []
+        for group in groups.values():
+            if len(group) > self.max_jobs:
+                raise KnowledgeRefreshRejected("ERC refresh group exceeds max_jobs")
+            if len(selected) + len(group) > self.max_jobs:
+                break
+            selected.extend(group)
+            if len({job.erc_number for job in selected}) == self.max_ercs_per_run:
+                break
+        return selected
 
     def _context(
         self,

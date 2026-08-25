@@ -10,10 +10,11 @@ from typing import Any
 import pytest
 
 from tawg_bot.erc_query import ErcIntent, ErcQuery
-from tawg_bot.knowledge_jobs import KnowledgeRefreshJob
+from tawg_bot.knowledge_jobs import KnowledgeRefreshJob, refresh_key
 from tawg_bot.knowledge_refresh import KnowledgeRefresh, KnowledgeRefreshRejected
 from tawg_bot.live_evidence import EvidenceItem, EvidencePack, MissingEvidence
 from tawg_bot.source_registry import EvidenceAuthority, EvidenceKind, SourceRegistry
+from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
 PROJECT = Path(__file__).parents[2]
 NOW = datetime(2026, 8, 23, 5, 0, tzinfo=UTC)
@@ -331,8 +332,8 @@ def test_context_bounds_live_evidence_without_dropping_sources(tmp_path: Path) -
     registry = _seed(tmp_path)
     pack = _pack()
     original_texts = {
-        pack.evidence[0].source_key: "Normative evidence. " + "n" * 12_000,
-        pack.evidence[1].source_key: "Implementation evidence. " + "i" * 12_000,
+        pack.evidence[0].source_key: "Normative evidence. " + "n" * 120_000,
+        pack.evidence[1].source_key: "Implementation evidence. " + "i" * 120_000,
     }
     evidence = [
         item.model_copy(update={"text": original_texts[item.source_key]}) for item in pack.evidence
@@ -343,7 +344,6 @@ def test_context_bounds_live_evidence_without_dropping_sources(tmp_path: Path) -
         ai=FakeAi(_result(tmp_path, "bounded-context")),
         live_evidence=FakeLiveEvidence(pack),
         registry=registry,
-        max_context_chars=12_000,
     )
 
     encoded = service._context(
@@ -355,13 +355,77 @@ def test_context_bounds_live_evidence_without_dropping_sources(tmp_path: Path) -
     context = json.loads(encoded)
     context_items = context["evidence_pack"]["packs"][0]["evidence"]
 
-    assert len(encoded) <= 12_000
+    assert len(encoded) <= 160_000
     assert {item["source_key"] for item in context_items} == set(original_texts)
     assert all(item["text"] for item in context_items)
     assert all(
         len(item["text"]) < len(original_texts[item["source_key"]]) for item in context_items
     )
     assert all(item["excerpted"] for item in context_items)
+
+
+def test_pending_jobs_keep_ercs_together_in_a_bounded_batch(tmp_path: Path) -> None:
+    registry = _seed(tmp_path)
+    base_job = KnowledgeRefreshJob.model_validate(
+        json.loads((tmp_path / "data/state/pending-knowledge-refresh.json").read_text())[0]
+    )
+    source_specs = [
+        (erc, source.source_key, group)
+        for erc, group in ((8004, 0), (8183, 1), (8263, 2))
+        for source in registry.resolve(erc, frozenset(EvidenceKind))[: 2 if erc != 8263 else 1]
+    ]
+    jobs = [
+        base_job.model_copy(
+            update={
+                "job_key": refresh_key(erc, source_key, f"{index:064x}"),
+                "erc_number": erc,
+                "source_key": source_key,
+                "observed_sha256": f"{index:064x}",
+                "updated_at": NOW - timedelta(minutes=5 - group),
+            }
+        )
+        for index, (erc, source_key, group) in enumerate(source_specs, start=1)
+    ]
+    (tmp_path / "data/state/pending-knowledge-refresh.json").write_text(
+        json.dumps([job.model_dump(mode="json") for job in jobs]) + "\n",
+        encoding="utf-8",
+    )
+    service = _service(
+        tmp_path,
+        registry,
+        FakeAi(_result(tmp_path, "bounded-batch")),
+        FakeLiveEvidence(_pack()),
+    )
+
+    pending = service._pending_jobs(NOW, None)
+
+    assert [job.erc_number for job in pending] == [8004, 8004, 8183, 8183]
+
+    constrained = KnowledgeRefresh(
+        tmp_path,
+        ai=FakeAi(_result(tmp_path, "job-cap-batch")),
+        live_evidence=FakeLiveEvidence(_pack()),
+        registry=registry,
+        max_jobs=3,
+    )
+    constrained_pending = constrained._pending_jobs(NOW, None)
+    assert [job.erc_number for job in constrained_pending] == [8004, 8004]
+
+    uow = RepositoryUnitOfWork(tmp_path, operation_id="resolve-bounded-batch")
+    uow.register_external_evidence(())
+    constrained.state.stage_compilation_outcome(
+        uow,
+        (),
+        frozenset(job.job_key for job in constrained_pending),
+        now=NOW,
+    )
+    uow.publish()
+
+    assert [job.erc_number for job in constrained.state.load().refresh_jobs] == [
+        8183,
+        8183,
+        8263,
+    ]
 
 
 @pytest.mark.asyncio
