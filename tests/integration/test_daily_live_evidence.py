@@ -191,13 +191,15 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
     assert "Old GitHub activity" not in context
     assert "Future Magicians activity" not in context
     trigger = json.loads(context)["trigger"]
+    assert json.loads(context)["recent_telegram"] == []
     assert trigger["required_title"] == (
         "TAWG Daily Catch-up — 2026-08-22 23:00 UTC → 2026-08-23 23:00 UTC"
     )
     assert trigger["output_contract"] == {
         "citation_rule": (
             "Each direction may have one uncited synthesis sentence; every concrete What moved "
-            "bullet starts with • and ends with an exact allowlisted citation."
+            "bullet starts with •, contains no other citation, and ends with exactly one exact "
+            "allowlisted citation."
         ),
         "forbidden_terms": [
             "score",
@@ -230,6 +232,11 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
             "What moved",
             "Next up",
         ],
+        "synthesis_rule": (
+            "An uncited synthesis sentence may use generic progress, status, review, test, or "
+            "implementation language, but must not contain contributor names, numbers, URLs, "
+            "citations, or source-specific artifact identifiers."
+        ),
         "what_moved_rule": (
             "Integrate appreciation into each concrete item: name who did what, what it "
             "advanced, and why it helps the group or Trustless AI. Do not add a separate "
@@ -241,6 +248,82 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
         for path in tmp_path.rglob("*")
         if path.is_file()
     } == before
+
+
+def test_daily_context_uses_bounded_evidence_excerpts(tmp_path: Path) -> None:
+    _seed(tmp_path)
+    record = _record(
+        "gh:agent-ercs:pull:long",
+        SourceType.GITHUB_PULL_REQUEST,
+        "IMPORTANT-START " + ("x" * 4_000) + " IMPORTANT-END",
+        WINDOW.end - timedelta(hours=1),
+        GITHUB_URL,
+    )
+    evidence = DailyEvidenceCollector(
+        tmp_path,
+        github=RecordsClient(()),
+        magicians=RecordsClient(()),
+    )._convert(record)
+
+    context = json.loads(DailyService(tmp_path, ai=FakeAi({}))._context(WINDOW, (evidence,)))
+    excerpt = context["trigger"]["window_evidence"][0]["text"]
+
+    assert excerpt.startswith("IMPORTANT-START")
+    assert len(excerpt) <= 180
+    assert "IMPORTANT-END" not in excerpt
+    assert set(context["trigger"]["window_evidence"][0]) == {
+        "author_person_id",
+        "citation",
+        "evidence_id",
+        "source_kind",
+        "text",
+        "updated_at",
+    }
+    assert context["trigger"]["window_evidence"][0]["citation"] == GITHUB_URL
+    assert context["citations"] == []
+
+
+def test_daily_context_selection_bounds_sources_and_keeps_contributor_coverage(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    collector = DailyEvidenceCollector(
+        tmp_path,
+        github=RecordsClient(()),
+        magicians=RecordsClient(()),
+    )
+    records = tuple(
+        _record(
+            f"tg:tawg:{index}",
+            SourceType.TELEGRAM_MESSAGE,
+            f"Alice contribution {index}: implemented ERC-{8000 + index} validation.",
+            WINDOW.start + timedelta(minutes=index),
+            f"repo:data/telegram/2026/08/messages.jsonl#tg:tawg:{index}",
+        ).model_copy(update={"author_person_id": f"member-{index % 6}"})
+        for index in range(30)
+    ) + tuple(
+        _record(
+            f"gh:agent-ercs:commit:{index}",
+            SourceType.GITHUB_COMMIT,
+            f"GitHub contribution {index}: shipped implementation tests.",
+            WINDOW.start + timedelta(hours=2, minutes=index),
+            f"https://github.com/trustless-ai/agent-ercs/commit/{index}",
+        ).model_copy(update={"author_person_id": f"developer-{index % 6}"})
+        for index in range(24)
+    )
+    evidence = tuple(collector._convert(record) for record in records)
+
+    selected = DailyService(tmp_path, ai=FakeAi({}))._select_context_evidence(evidence)
+
+    assert len(selected) <= 14
+    assert sum(item.source_kind == "telegram" for item in selected) <= 8
+    assert sum(item.source_kind == "github" for item in selected) <= 8
+    assert {item.author_person_id for item in selected if item.source_kind == "telegram"} == {
+        f"member-{index}" for index in range(6)
+    }
+    assert {item.author_person_id for item in selected if item.source_kind == "github"} == {
+        f"developer-{index}" for index in range(6)
+    }
 
 
 @pytest.mark.asyncio
@@ -255,6 +338,47 @@ async def test_quiet_day_requires_all_three_sources_to_be_empty(tmp_path: Path) 
     )
 
     assert evidence == ()
+
+
+@pytest.mark.asyncio
+async def test_daily_skips_one_failed_live_source_without_losing_other_evidence(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    _seed(tmp_path)
+
+    class FailedRecords:
+        async def collect_records(
+            self, *, since: datetime, now: datetime
+        ) -> tuple[SourceRecord, ...]:
+            del since, now
+            raise RuntimeError("provider-secret-body")
+
+    magicians = RecordsClient(
+        (
+            _record(
+                "magicians:25098:post:7",
+                SourceType.MAGICIANS_POST,
+                "Available Magicians progress.",
+                WINDOW.start + timedelta(hours=3),
+                MAGICIANS_URL,
+            ),
+        )
+    )
+
+    evidence = await DailyEvidenceCollector(
+        tmp_path,
+        github=FailedRecords(),
+        magicians=magicians,
+    ).collect(WINDOW, now=NOW)
+
+    assert [item.evidence_id for item in evidence] == [
+        "tg:tawg:1",
+        "magicians:25098:post:7",
+    ]
+    captured = capsys.readouterr().out
+    assert "source=github" in captured
+    assert "code=daily_source_failed" in captured
+    assert "provider-secret-body" not in captured
 
 
 @pytest.mark.asyncio

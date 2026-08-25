@@ -45,6 +45,12 @@ class RuntimeFailure(RuntimeError):
 
 
 _SOURCE_RECHECK_INTERVAL = timedelta(hours=24)
+_MAX_SCHEDULED_SOURCE_ERCS = 2
+_SOURCE_ERC_TIMEOUT_SECONDS = 60
+_KNOWLEDGE_TIMEOUT_SECONDS = 180
+_DAILY_EVIDENCE_TIMEOUT_SECONDS = 60
+_DAILY_TIMEOUT_SECONDS = 330
+_REPLY_TIMEOUT_SECONDS = 120
 
 
 @dataclass(frozen=True, slots=True)
@@ -90,10 +96,13 @@ class ProductionRuntime:
             result = await Scheduler(self.root, pipeline=pipeline).tick(
                 now, observe_only=observe_only
             )
-        await self.checkpoint.publish(
-            f"layer-success:{result.layer.name.casefold()}:{int(now.timestamp())}",
-            self.root,
-        )
+        try:
+            await self.checkpoint.publish(
+                f"layer-success:{result.layer.name.casefold()}:{int(now.timestamp())}",
+                self.root,
+            )
+        except Exception:
+            _safe_log("final_checkpoint", "final_checkpoint_failed")
 
     async def check_sources(self, erc: int | None, *, observe_only: bool) -> SourceCheckSummary:
         now = datetime.now(UTC)
@@ -193,13 +202,32 @@ class _LivePipeline:
         intake = TelegramIntake.from_env(root=self.root, api=api)
         await intake.collect(now)
         self.telegram_synced_at = now
+        await self.checkpoint.publish(f"telegram-intake:{int(now.timestamp())}", self.root)
 
     async def source_check(self, now: datetime) -> None:
         erc_numbers = self.registry.due_erc_numbers(
             now,
             max_age=_SOURCE_RECHECK_INTERVAL,
-        )
-        await self.check_sources(now, erc_numbers=erc_numbers, observe_only=False)
+        )[:_MAX_SCHEDULED_SOURCE_ERCS]
+        incomplete = False
+        for erc_number in erc_numbers:
+            try:
+                await asyncio.wait_for(
+                    self.check_sources(
+                        now, erc_numbers=(erc_number,), observe_only=False
+                    ),
+                    timeout=_SOURCE_ERC_TIMEOUT_SECONDS,
+                )
+                await self.checkpoint.publish(
+                    f"source-check:erc-{erc_number}:{int(now.timestamp())}",
+                    self.root,
+                )
+            except Exception:
+                incomplete = True
+                _safe_log("source_check", "source_check_failed", erc=erc_number)
+        self.source_checked_at = now
+        if incomplete:
+            raise RuntimeFailure("source check incomplete")
 
     async def check_sources(
         self,
@@ -233,6 +261,7 @@ class _LivePipeline:
                 now=now,
             )
             uow.publish()
+            self._reload_registry()
         self.source_checked_at = now
         return SourceCheckSummary(
             erc_count=len(numbers),
@@ -243,7 +272,61 @@ class _LivePipeline:
         )
 
     async def knowledge_refresh(self, cutoff: datetime) -> None:
-        await self.refresh_knowledge(cutoff)
+        erc_numbers = self.knowledge_state.eligible_refresh_erc_numbers(cutoff)
+        if not erc_numbers:
+            self.knowledge_refreshed_at = self.now
+            return
+        erc_number = erc_numbers[0]
+        operation_id = f"knowledge-refresh-{cutoff.strftime('%Y%m%dt%H%M%Sz')}"
+        service = KnowledgeRefresh(
+            self.root,
+            ai=self.ai,
+            live_evidence=self.live_evidence,
+            registry=self.registry,
+            max_ercs_per_run=1,
+            timeout_seconds=_KNOWLEDGE_TIMEOUT_SECONDS,
+        )
+        try:
+            await service.run(
+                cutoff=cutoff,
+                operation_id=operation_id,
+                erc_numbers=frozenset({erc_number}),
+                dry_run=False,
+            )
+        except Exception:
+            try:
+                uow = RepositoryUnitOfWork(
+                    self.root,
+                    operation_id=(
+                        f"knowledge-deferred:erc-{erc_number}:{int(cutoff.timestamp())}"
+                    ),
+                )
+                uow.register_external_evidence(())
+                self.knowledge_state.defer_refresh_erc(
+                    uow,
+                    erc_number,
+                    now=cutoff,
+                    safe_error_code="knowledge_refresh_failed",
+                )
+                uow.publish()
+                await self.checkpoint.publish(
+                    f"knowledge-deferred:erc-{erc_number}:{int(cutoff.timestamp())}",
+                    self.root,
+                )
+            except Exception:
+                _safe_log("knowledge_refresh", "knowledge_deferral_failed", erc=erc_number)
+                raise RuntimeFailure("knowledge deferral incomplete") from None
+            _safe_log("knowledge_refresh", "knowledge_refresh_failed", erc=erc_number)
+            raise RuntimeFailure("knowledge refresh deferred") from None
+        try:
+            await self.checkpoint.publish(
+                f"knowledge-refresh:erc-{erc_number}:{int(cutoff.timestamp())}",
+                self.root,
+            )
+        except Exception:
+            _safe_log("knowledge_refresh", "knowledge_checkpoint_failed", erc=erc_number)
+            raise RuntimeFailure("knowledge checkpoint incomplete") from None
+        self.knowledge_refreshed_at = self.now
 
     async def refresh_knowledge(
         self,
@@ -276,7 +359,17 @@ class _LivePipeline:
         window = DailyWindow.for_due_run(self.now)
         if window.window_id != window_id:
             raise RuntimeFailure("scheduler supplied an inconsistent Daily window")
-        await self.prepare_daily(window, dry_run=False)
+        prepared = await self.prepare_daily(window, dry_run=False)
+        if prepared is None:
+            return
+        try:
+            await self.checkpoint.publish(
+                f"daily-prepared:{int(window.end.timestamp())}", self.root
+            )
+        except Exception:
+            self.prepared_daily = None
+            _safe_log("daily_prepare", "daily_checkpoint_failed")
+            raise RuntimeFailure("Daily checkpoint incomplete") from None
 
     async def prepare_daily(self, window: DailyWindow, *, dry_run: bool) -> PreparedDaily | None:
         ready_at = self.now
@@ -286,6 +379,7 @@ class _LivePipeline:
             magicians=MagiciansActivityRecords(
                 self.root, client=self.client, registry=self.registry
             ),
+            timeout_seconds=_DAILY_EVIDENCE_TIMEOUT_SECONDS,
         ).collect(window, now=self.now)
         self.live_evidence_collected_at = self.now
         readiness = DailyReadiness(
@@ -293,7 +387,11 @@ class _LivePipeline:
             live_evidence_collected_at=self.live_evidence_collected_at,
             knowledge_refreshed_at=self.knowledge_refreshed_at or ready_at,
         )
-        prepared = await DailyService(self.root, ai=self.ai).prepare(
+        prepared = await DailyService(
+            self.root,
+            ai=self.ai,
+            timeout_seconds=_DAILY_TIMEOUT_SECONDS,
+        ).prepare(
             window, readiness=readiness, evidence=evidence
         )
         if prepared is None:
@@ -355,7 +453,19 @@ class _LivePipeline:
 
     async def _prepare_pending_replies(self) -> None:
         jobs = self._load_jobs()
-        actionable = [job for job in jobs if job.status in {JobStatus.PENDING, JobStatus.READY}]
+        actionable_statuses = (
+            {JobStatus.READY}
+            if self.prepared_daily is not None
+            else {JobStatus.PENDING, JobStatus.READY}
+        )
+        actionable = [job for job in jobs if job.status in actionable_statuses]
+        actionable.sort(
+            key=lambda job: (
+                job.status is not JobStatus.READY,
+                job.updated_at,
+                job.job_id,
+            )
+        )
         if not actionable:
             self.prepared_replies = []
             return
@@ -368,13 +478,20 @@ class _LivePipeline:
             bot_username=username,
             live_evidence=self.live_evidence,
             knowledge_state=self.knowledge_state,
+            timeout_seconds=_REPLY_TIMEOUT_SECONDS,
         )
         self.prepared_replies = []
-        for job in actionable:
+        for job in actionable[:1]:
             try:
                 self.prepared_replies.append(await service.prepare(job.job_id, now=self.now))
             except ReplyRejected:
+                _safe_log("reply_prepare", "reply_prepare_failed")
                 continue
+
+    def _reload_registry(self) -> None:
+        self.registry = SourceRegistry.from_yaml(self.root / "knowledge/meta/sources.yml")
+        self.live_evidence.registry = self.registry
+        self.knowledge_state = KnowledgeStateStore(self.root, registry=self.registry)
 
     def _load_jobs(self) -> list[PendingBotJob]:
         path = self.root / "data/state/pending-bot-jobs.json"
@@ -399,3 +516,8 @@ class _LivePipeline:
 def _require_utc(value: datetime, label: str) -> None:
     if value.tzinfo is None or value.utcoffset() != UTC.utcoffset(value):
         raise ValueError(f"{label} must use UTC")
+
+
+def _safe_log(phase: str, code: str, *, erc: int | None = None) -> None:
+    suffix = f" erc={erc}" if erc is not None else ""
+    print(f"tawg_event=phase_failed phase={phase} code={code}{suffix}", flush=True)

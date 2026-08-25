@@ -29,6 +29,7 @@ def test_workflow_is_single_non_overlapping_five_minute_writer() -> None:
         "group": "tawg-knowledge-writer",
         "cancel-in-progress": "false",
     }
+    assert value["jobs"]["knowledge-bot"]["timeout-minutes"] == 10
 
 
 def test_workflow_pins_runtime_and_hardens_claude_environment() -> None:
@@ -46,6 +47,9 @@ def test_workflow_pins_runtime_and_hardens_claude_environment() -> None:
     assert job["env"]["DISABLE_AUTOUPDATER"] == "1"
     assert job["env"]["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] == "1"
     assert job["env"]["CLAUDE_CODE_SKIP_PROMPT_HISTORY"] == "1"
+    assert job["env"]["TAWG_DAILY_EFFORT_LEVEL"] == (
+        "${{ vars.TAWG_DAILY_EFFORT_LEVEL || 'high' }}"
+    )
     assert "echo $" not in rendered
     assert "git-auto-commit" not in rendered
 

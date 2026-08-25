@@ -80,6 +80,7 @@ JobType = Literal["knowledge", "reply", "daily"]
 class ClaudeCli:
     _OPERATION_ID = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
     _MAX_OUTPUT_BYTES = 2 * 1024 * 1024
+    _EFFORT_LEVELS = frozenset({"low", "medium", "high", "max"})
     _SCHEMA_VERSION: ClassVar[dict[JobType, str]] = {
         "knowledge": "v2",
         "reply": "v2",
@@ -144,6 +145,11 @@ class ClaudeCli:
         schema = self._load_json(
             self.root / f"src/tawg_bot/schemas/{job_type}-result.{schema_version}.json"
         )
+        effort: str | None = None
+        if job_type == "daily":
+            effort = self.source_environment.get("TAWG_DAILY_EFFORT_LEVEL", "high")
+            if effort not in self._EFFORT_LEVELS:
+                raise ClaudeCliError("invalid Daily effort level")
         cli_schema = {key: value for key, value in schema.items() if key not in {"$schema", "$id"}}
         compact_schema = json.dumps(cli_schema, separators=(",", ":"), sort_keys=True)
         policy_path = self._write_policy(job_type, schema, operation_id)
@@ -168,6 +174,8 @@ class ClaudeCli:
             "--system-prompt-file",
             str(policy_path),
         ]
+        if effort is not None:
+            argv.extend(("--effort", effort))
         try:
             completed = await self.runner.run(
                 argv=argv,

@@ -7,7 +7,7 @@ import ipaddress
 import json
 import re
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from urllib.parse import urlsplit, urlunsplit
 
@@ -24,6 +24,8 @@ _REFRESH_PATH = "data/state/pending-knowledge-refresh.json"
 _CANDIDATES_PATH = "data/state/source-candidates.json"
 _REGISTRY_PATH = "knowledge/meta/sources.yml"
 _SAFE_HOST = re.compile(r"^[a-z0-9.-]+$")
+_RETRY_BASE = timedelta(minutes=5)
+_RETRY_CAP = timedelta(hours=6)
 
 
 class KnowledgeStateRejected(ValueError):
@@ -223,6 +225,58 @@ class KnowledgeStateStore:
             refresh_jobs=jobs,
             candidates=state.candidates,
         )
+
+    def eligible_refresh_erc_numbers(self, cutoff: datetime) -> tuple[int, ...]:
+        _utc(cutoff)
+        jobs = [job for job in self.load().refresh_jobs if self._eligible(job, cutoff)]
+        jobs.sort(key=lambda job: (job.updated_at, job.job_key))
+        return tuple(dict.fromkeys(job.erc_number for job in jobs))
+
+    def defer_refresh_erc(
+        self,
+        uow: RepositoryUnitOfWork,
+        erc_number: int,
+        *,
+        now: datetime,
+        safe_error_code: str,
+    ) -> None:
+        _utc(now)
+        state = self.load()
+        found = False
+        jobs: list[KnowledgeRefreshJob] = []
+        for job in state.refresh_jobs:
+            if job.erc_number != erc_number:
+                jobs.append(job)
+                continue
+            found = True
+            jobs.append(
+                job.model_copy(
+                    update={
+                        "retry_count": min(job.retry_count + 1, 100),
+                        "safe_error_code": safe_error_code,
+                        "updated_at": now,
+                    }
+                )
+            )
+        if not found:
+            raise KnowledgeStateRejected("unknown refresh ERC")
+        self._stage_state(
+            uow,
+            gaps=state.gaps,
+            refresh_jobs=tuple(jobs),
+            candidates=state.candidates,
+        )
+
+    @staticmethod
+    def _eligible(job: KnowledgeRefreshJob, cutoff: datetime) -> bool:
+        if job.retry_count == 0:
+            return job.updated_at <= cutoff
+        multiplier = 2 ** min(job.retry_count - 1, 10)
+        delay: timedelta = _RETRY_BASE * multiplier
+        if delay > _RETRY_CAP:
+            delay = _RETRY_CAP
+        eligible_at: datetime = job.updated_at + delay
+        return eligible_at <= cutoff
 
     def stage_compilation_outcome(
         self,

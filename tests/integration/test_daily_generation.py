@@ -392,3 +392,41 @@ async def test_daily_rejects_approximate_output_contracts(
         await DailyService(tmp_path, ai=FakeAi(output)).prepare(
             WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
         )
+
+
+@pytest.mark.asyncio
+async def test_daily_allows_generic_review_language_in_uncited_synthesis(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    output = _fixture("daily-active")
+    output["telegram_text"] = output["telegram_text"].replace(
+        "The validation direction became clearer and easier to build on this window.",
+        "The validation direction moved into a clearer review phase.",
+    )
+
+    prepared = await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+        WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+    )
+
+    assert prepared is not None
+    assert "clearer review phase" in prepared.telegram_text
+
+
+@pytest.mark.asyncio
+async def test_daily_allows_generic_progress_verbs_without_source_identifiers(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    output = _fixture("daily-active")
+    output["telegram_text"] = output["telegram_text"].replace(
+        "The validation direction became clearer and easier to build on this window.",
+        "The direction was implemented and tested, making the next review easier.",
+    )
+
+    prepared = await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+        WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+    )
+
+    assert prepared is not None
+    assert "implemented and tested" in prepared.telegram_text

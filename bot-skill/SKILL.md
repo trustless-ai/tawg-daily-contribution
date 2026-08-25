@@ -52,7 +52,7 @@ Use Obsidian Markdown with flat YAML frontmatter, stable paths, descriptive head
 
 ## Daily recognition
 
-For a Daily, order work implicitly by contribution impact and importance, while never exposing scores, ranks, priority labels, tiers, or winners. Put all contributor recognition inside `What moved`; do not create a separate Appreciation section. Each concrete item names who did what, what it advanced, and why that specific help matters to the group or the shared Trustless AI goal. A direction may begin with one uncited high-level synthesis sentence, but all names, actions, artifacts, numbers, links, and other source-dependent details belong in `•` bullets with exact allowlisted trailing citations.
+For a Daily, order work implicitly by contribution impact and importance, while never exposing scores, ranks, priority labels, tiers, or winners. Put all contributor recognition inside `What moved`; do not create a separate Appreciation section. Each concrete item names who did what, what it advanced, and why that specific help matters to the group or the shared Trustless AI goal. A direction may begin with one uncited high-level synthesis sentence using generic progress, status, review, test, or implementation language. Contributor names, numbers, URLs, citations, source-specific artifact identifiers, and other source-dependent details belong in `•` bullets. Each concrete bullet contains no inline citation and ends with exactly one exact allowlisted citation.
 
 ## Common mistakes
 

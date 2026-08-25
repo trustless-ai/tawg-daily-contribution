@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import shutil
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -10,12 +11,14 @@ import httpx
 import pytest
 
 import tawg_bot.runtime as runtime_module
+from tawg_bot.bot_router import PreparedReply
 from tawg_bot.claude_cli import ClaudeCli as RealClaudeCli
 from tawg_bot.claude_cli import CompletedProcess
 from tawg_bot.daily import DailyWindow, PreparedDaily
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import RefreshResult
 from tawg_bot.live_evidence import LiveEvidenceService
+from tawg_bot.models import PendingBotJob
 from tawg_bot.runtime import (
     ProductionRuntime,
     RuntimeFailure,
@@ -97,7 +100,9 @@ async def test_live_pipeline_checks_sources_without_external_body_mirrors(
                 ai: Any,
                 live_evidence: Any,
                 registry: Any,
+                **kwargs: Any,
             ) -> None:
+                assert kwargs == {"max_ercs_per_run": 1, "timeout_seconds": 180}
                 del root, ai, live_evidence, registry
 
             async def run(self, **kwargs: Any) -> RefreshResult:
@@ -118,7 +123,8 @@ async def test_live_pipeline_checks_sources_without_external_body_mirrors(
         )
 
         class Daily:
-            def __init__(self, root: Path, *, ai: Any) -> None:
+            def __init__(self, root: Path, *, ai: Any, timeout_seconds: float) -> None:
+                assert timeout_seconds == 330
                 del root, ai
 
             async def prepare(
@@ -135,7 +141,8 @@ async def test_live_pipeline_checks_sources_without_external_body_mirrors(
 
         class Collector:
             def __init__(self, root: Path, **kwargs: Any) -> None:
-                del root, kwargs
+                assert kwargs["timeout_seconds"] == 60
+                del root
 
             async def collect(self, window: DailyWindow, *, now: datetime) -> tuple:
                 assert window.window_id == prepared.window_id
@@ -184,6 +191,53 @@ async def test_source_check_observe_only_does_not_change_repository(
 
 
 @pytest.mark.asyncio
+async def test_consecutive_source_batches_retain_both_registry_observations(
+    tmp_path: Path,
+) -> None:
+    scaffold(tmp_path)
+    hashes = {8004: "8" * 64, 8183: "1" * 64}
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+
+        class Evidence:
+            async def build(self, query: Any, *, now: datetime) -> Any:
+                erc_number = query.erc_numbers[0]
+                source = pipeline.registry.resolve(
+                    erc_number, frozenset(EvidenceKind)
+                )[0]
+                item = _pack().evidence[0].model_copy(
+                    update={
+                        "erc_number": erc_number,
+                        "source_key": source.source_key,
+                        "kind": source.kind,
+                        "authority": source.authority,
+                        "canonical_url": source.canonical_url,
+                        "citation_url": source.canonical_url,
+                        "observed_at": now,
+                        "content_sha256": hashes[erc_number],
+                    }
+                )
+                return _pack().model_copy(
+                    update={
+                        "query": query,
+                        "evidence": [item],
+                        "citation_allowlist": [item.citation_url],
+                        "missing_required": [],
+                    }
+                )
+
+        pipeline.live_evidence = Evidence()  # type: ignore[assignment]
+        await pipeline.check_sources(NOW, erc_numbers=(8004,), observe_only=False)
+        await pipeline.check_sources(NOW, erc_numbers=(8183,), observe_only=False)
+
+    registry = SourceRegistry.from_yaml(tmp_path / "knowledge/meta/sources.yml")
+    for erc_number, expected_hash in hashes.items():
+        source = registry.resolve(erc_number, frozenset(EvidenceKind))[0]
+        assert source.last_observed is not None
+        assert source.last_observed.content_sha256 == expected_hash
+
+
+@pytest.mark.asyncio
 async def test_scheduled_source_check_skips_fresh_registered_sources(tmp_path: Path) -> None:
     scaffold(tmp_path)
     registry = SourceRegistry.from_yaml(tmp_path / "knowledge/meta/sources.yml")
@@ -206,6 +260,311 @@ async def test_scheduled_source_check_skips_fresh_registered_sources(tmp_path: P
 
     assert live.calls == []
     assert pipeline.source_checked_at == NOW
+
+
+@pytest.mark.asyncio
+async def test_telegram_intake_checkpoints_before_model_work(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    checkpoint = Checkpoint()
+
+    class Api:
+        @classmethod
+        def from_env(cls, *, client: Any) -> object:
+            del client
+            return object()
+
+    class Intake:
+        @classmethod
+        def from_env(cls, *, root: Path, api: Any) -> Intake:
+            assert root == tmp_path
+            del api
+            return cls()
+
+        async def collect(self, now: datetime) -> None:
+            assert now == NOW
+
+    monkeypatch.setattr(runtime_module, "TelegramApi", Api)
+    monkeypatch.setattr(runtime_module, "TelegramIntake", Intake)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=checkpoint, now=NOW)
+        await pipeline.telegram_intake(NOW)
+
+    assert checkpoint.operations == [f"telegram-intake:{int(NOW.timestamp())}"]
+
+
+@pytest.mark.asyncio
+async def test_scheduled_source_batches_checkpoint_success_and_skip_safe_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    scaffold(tmp_path)
+    checkpoint = Checkpoint()
+    calls: list[tuple[int, ...]] = []
+    timeouts: list[float] = []
+    original_wait_for = asyncio.wait_for
+
+    async def bounded(awaitable: Any, *, timeout: float) -> Any:
+        timeouts.append(timeout)
+        return await original_wait_for(awaitable, timeout=timeout)
+
+    monkeypatch.setattr(runtime_module.asyncio, "wait_for", bounded)
+
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=checkpoint, now=NOW)
+        monkeypatch.setattr(
+            pipeline.registry,
+            "due_erc_numbers",
+            lambda now, max_age: (8004, 8183, 8263),
+        )
+
+        async def check_sources(
+            now: datetime, *, erc_numbers: tuple[int, ...], observe_only: bool
+        ) -> SourceCheckSummary:
+            assert now == NOW
+            assert not observe_only
+            calls.append(erc_numbers)
+            if erc_numbers == (8183,):
+                raise RuntimeError("provider-secret-body")
+            return SourceCheckSummary(1, 2, 0, 1, True)
+
+        monkeypatch.setattr(pipeline, "check_sources", check_sources)
+        with pytest.raises(RuntimeFailure, match="source check incomplete"):
+            await pipeline.source_check(NOW)
+
+    assert calls == [(8004,), (8183,)]
+    assert timeouts == [60, 60]
+    assert checkpoint.operations == [f"source-check:erc-8004:{int(NOW.timestamp())}"]
+    captured = capsys.readouterr().out
+    assert "erc=8183" in captured
+    assert "code=source_check_failed" in captured
+    assert "provider-secret-body" not in captured
+
+
+@pytest.mark.asyncio
+async def test_scheduled_knowledge_refresh_uses_one_erc_and_bounded_timeout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    checkpoint = Checkpoint()
+    calls: list[dict[str, Any]] = []
+
+    class State:
+        def eligible_refresh_erc_numbers(self, cutoff: datetime) -> tuple[int, ...]:
+            assert cutoff == NOW
+            return (8004, 8183)
+
+    class Refresh:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            assert root == tmp_path
+            assert kwargs["max_ercs_per_run"] == 1
+            assert kwargs["timeout_seconds"] == 180
+
+        async def run(self, **kwargs: Any) -> RefreshResult:
+            calls.append(kwargs)
+            return RefreshResult(("refresh:8004",), ("knowledge/ercs/erc-8004.md",), True)
+
+    monkeypatch.setattr(runtime_module, "KnowledgeRefresh", Refresh)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=checkpoint, now=NOW)
+        pipeline.knowledge_state = State()  # type: ignore[assignment]
+        await pipeline.knowledge_refresh(NOW)
+
+    assert calls[0]["erc_numbers"] == frozenset({8004})
+    assert checkpoint.operations == [f"knowledge-refresh:erc-8004:{int(NOW.timestamp())}"]
+
+
+@pytest.mark.asyncio
+async def test_scheduled_daily_checkpoints_before_reply_preparation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    checkpoint = Checkpoint()
+    window = DailyWindow.for_due_run(NOW)
+    prepared = PreparedDaily(window.window_id, "Daily", ("Daily",), (), True)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=checkpoint, now=NOW)
+
+        async def prepare_daily(
+            selected: DailyWindow, *, dry_run: bool
+        ) -> PreparedDaily:
+            assert selected == window
+            assert not dry_run
+            pipeline.prepared_daily = prepared
+            return prepared
+
+        monkeypatch.setattr(pipeline, "prepare_daily", prepare_daily)
+        await pipeline.daily_prepare(window.window_id)
+
+    assert checkpoint.operations == [f"daily-prepared:{int(window.end.timestamp())}"]
+
+
+@pytest.mark.asyncio
+async def test_scheduled_knowledge_failure_is_deferred_and_logged_without_raw_error(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    scaffold(tmp_path)
+    checkpoint = Checkpoint()
+    deferred: list[tuple[int, str]] = []
+
+    class State:
+        def eligible_refresh_erc_numbers(self, cutoff: datetime) -> tuple[int, ...]:
+            del cutoff
+            return (8004,)
+
+        def defer_refresh_erc(
+            self,
+            uow: Any,
+            erc_number: int,
+            *,
+            now: datetime,
+            safe_error_code: str,
+        ) -> None:
+            assert now == NOW
+            deferred.append((erc_number, safe_error_code))
+
+    class Refresh:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            del root, kwargs
+
+        async def run(self, **kwargs: Any) -> RefreshResult:
+            del kwargs
+            raise RuntimeError("model-secret-output")
+
+    monkeypatch.setattr(runtime_module, "KnowledgeRefresh", Refresh)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=checkpoint, now=NOW)
+        pipeline.knowledge_state = State()  # type: ignore[assignment]
+        with pytest.raises(RuntimeFailure, match="knowledge refresh deferred"):
+            await pipeline.knowledge_refresh(NOW)
+
+    assert deferred == [(8004, "knowledge_refresh_failed")]
+    assert checkpoint.operations == [f"knowledge-deferred:erc-8004:{int(NOW.timestamp())}"]
+    captured = capsys.readouterr().out
+    assert "code=knowledge_refresh_failed" in captured
+    assert "model-secret-output" not in captured
+
+
+@pytest.mark.asyncio
+async def test_successful_knowledge_is_not_deferred_when_only_checkpoint_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    scaffold(tmp_path)
+
+    class CheckpointFailure:
+        async def publish(self, operation_id: str, root: Path) -> None:
+            del operation_id, root
+            raise RuntimeError("push-secret-output")
+
+    class State:
+        def eligible_refresh_erc_numbers(self, cutoff: datetime) -> tuple[int, ...]:
+            del cutoff
+            return (8004,)
+
+        def defer_refresh_erc(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+            raise AssertionError("successful refresh must not be deferred")
+
+    class Refresh:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            del root, kwargs
+
+        async def run(self, **kwargs: Any) -> RefreshResult:
+            del kwargs
+            return RefreshResult(("refresh:8004",), ("knowledge/ercs/erc-8004.md",), True)
+
+    monkeypatch.setattr(runtime_module, "KnowledgeRefresh", Refresh)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(
+            tmp_path,
+            client=client,
+            checkpoint=CheckpointFailure(),
+            now=NOW,
+        )
+        pipeline.knowledge_state = State()  # type: ignore[assignment]
+        with pytest.raises(RuntimeFailure, match="knowledge checkpoint incomplete"):
+            await pipeline.knowledge_refresh(NOW)
+
+    captured = capsys.readouterr().out
+    assert "code=knowledge_checkpoint_failed" in captured
+    assert "push-secret-output" not in captured
+
+
+@pytest.mark.asyncio
+async def test_reply_preparation_processes_only_one_pending_job_per_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    jobs = [
+        PendingBotJob(
+            job_id=f"reply:tg:tawg:{message_id}",
+            trigger_record_id=f"tg:tawg:{message_id}",
+            reply_to_message_id=message_id,
+            created_at=NOW,
+            updated_at=NOW if message_id == 10 else NOW - timedelta(minutes=1),
+        )
+        for message_id in (10, 11)
+    ]
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps([job.model_dump(mode="json") for job in jobs]) + "\n",
+        encoding="utf-8",
+    )
+    prepared_ids: list[str] = []
+
+    class ReplyService:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            assert root == tmp_path
+            assert kwargs["timeout_seconds"] == 120
+
+        async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply:
+            assert now == NOW
+            prepared_ids.append(job_id)
+            return PreparedReply(job_id, 10, None, "reply", (), "en", False)
+
+    monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
+    monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        await pipeline._prepare_pending_replies()
+
+    assert prepared_ids == ["reply:tg:tawg:11"]
+
+
+@pytest.mark.asyncio
+async def test_daily_run_defers_new_pending_reply_model_work(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    job = PendingBotJob(
+        job_id="reply:tg:tawg:10",
+        trigger_record_id="tg:tawg:10",
+        reply_to_message_id=10,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps([job.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+
+    class ReplyService:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+            raise AssertionError("Daily must not start another model job")
+
+    monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        pipeline.prepared_daily = PreparedDaily("daily", "Daily", ("Daily",), (), True)
+        await pipeline._prepare_pending_replies()
+
+    assert pipeline.prepared_replies == []
 
 
 @pytest.mark.asyncio

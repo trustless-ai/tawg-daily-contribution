@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Awaitable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from enum import IntEnum
@@ -58,10 +59,10 @@ class Scheduler:
         latest_daily = DailyWindow.for_due_run(now).end
         if success.l4 is None or success.l4 < latest_daily:
             return Layer.L4
-        if success.l3 is None or now - success.l3 >= timedelta(hours=2):
-            return Layer.L3
         if success.l2 is None or now - success.l2 >= timedelta(minutes=30):
             return Layer.L2
+        if success.l3 is None or now - success.l3 >= timedelta(hours=2):
+            return Layer.L3
         return Layer.L1
 
     async def tick(self, now: datetime, *, observe_only: bool = False) -> TickResult:
@@ -69,23 +70,55 @@ class Scheduler:
         layer = self.due_layer(now)
         window = DailyWindow.for_due_run(now) if layer is Layer.L4 else None
 
-        await self.pipeline.telegram_intake(now)
-        if layer >= Layer.L2:
-            await self.pipeline.source_check(now)
-        if layer >= Layer.L3:
-            await self.pipeline.knowledge_refresh(now)
-            await self.pipeline.validate()
+        telegram_ok = await self._phase("telegram_intake", self.pipeline.telegram_intake(now))
+        phase_ok = True
+        validation_ok = True
+        if layer is Layer.L2:
+            phase_ok = await self._phase("source_check", self.pipeline.source_check(now))
+        elif layer is Layer.L3:
+            phase_ok = await self._phase(
+                "knowledge_refresh", self.pipeline.knowledge_refresh(now)
+            )
+            validation_ok = await self._phase("validate", self.pipeline.validate())
+        elif layer is Layer.L4:
+            validation_ok = await self._phase("validate", self.pipeline.validate())
+        daily_ok = True
         if layer is Layer.L4:
             assert window is not None
-            await self.pipeline.daily_prepare(window.window_id)
-        await self.pipeline.publish_repository()
-        delivered = False
+            if validation_ok:
+                daily_ok = await self._phase(
+                    "daily_prepare", self.pipeline.daily_prepare(window.window_id)
+                )
+            else:
+                daily_ok = False
+        repository_ok = await self._phase(
+            "publish_repository", self.pipeline.publish_repository()
+        )
+        delivery_ok = True
         if not observe_only:
-            await self.pipeline.telegram_delivery()
-            delivered = layer is Layer.L4
+            delivery_ok = await self._phase(
+                "telegram_delivery", self.pipeline.telegram_delivery()
+            )
 
-        completed_layer = Layer.L3 if layer is Layer.L4 and observe_only else layer
-        self._record_success(completed_layer, now)
+        completed_layer: Layer | None = None
+        base_ok = telegram_ok and repository_ok
+        if base_ok:
+            completed_layer = Layer.L1
+            if layer is Layer.L2 and phase_ok:
+                completed_layer = Layer.L2
+            elif layer is Layer.L3 and phase_ok and validation_ok:
+                completed_layer = Layer.L3
+            elif (
+                layer is Layer.L4
+                and validation_ok
+                and daily_ok
+                and not observe_only
+                and delivery_ok
+            ):
+                completed_layer = Layer.L4
+        if completed_layer is not None:
+            self._record_success(completed_layer, now)
+        delivered = layer is Layer.L4 and daily_ok and not observe_only and delivery_ok
         return TickResult(
             layer=layer,
             window_id=window.window_id if window is not None else None,
@@ -103,16 +136,9 @@ class Scheduler:
 
     def _record_success(self, layer: Layer, now: datetime) -> None:
         success = self.load_success()
-        updates = {
-            name: now
-            for value, name in (
-                (Layer.L1, "l1"),
-                (Layer.L2, "l2"),
-                (Layer.L3, "l3"),
-                (Layer.L4, "l4"),
-            )
-            if value <= layer
-        }
+        updates = {"l1": now}
+        if layer is not Layer.L1:
+            updates[layer.name.casefold()] = now
         updated = success.model_copy(update=updates)
         uow = RepositoryUnitOfWork(
             self.root, operation_id=f"layer-success:{layer.name.lower()}:{int(now.timestamp())}"
@@ -120,6 +146,18 @@ class Scheduler:
         uow.register_external_evidence(())
         uow.stage_json(self._STATE_PATH, updated.model_dump(mode="json"))
         uow.publish()
+
+    @staticmethod
+    async def _phase(name: str, operation: Awaitable[None]) -> bool:
+        try:
+            await operation
+        except Exception:
+            print(
+                f"tawg_event=phase_failed phase={name} code={name}_failed",
+                flush=True,
+            )
+            return False
+        return True
 
     @staticmethod
     def _require_utc(value: datetime) -> None:

@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 import re
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, Literal, Protocol
@@ -33,17 +33,13 @@ _DISALLOWED_TONE = re.compile(
 )
 _OTHER_LIST_ITEM = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
 _DIRECTION_LABEL = re.compile(r"^\*\*[^*\n]+\*\*$")
-_CONCRETE_SYNTHESIS = re.compile(
-    r"(?:\d|https?://|www\.|\b(?:merge[ds]?|open(?:ed|s)?|publish(?:ed|es)?|"
-    r"ship(?:ped|s)?|implement(?:ed|s)?|clarif(?:ied|ies)|resolv(?:ed|es)|"
-    r"fix(?:ed|es)?|review(?:ed|s)?|commit(?:ted|s)?|creat(?:ed|es)|"
-    r"submit(?:ted|s)?|reproduc(?:ed|es)|test(?:ed|s)?|deploy(?:ed|s)?|"
-    r"releas(?:ed|es))\b)",
-    re.IGNORECASE,
-)
+_SYNTHESIS_IDENTIFIER = re.compile(r"(?:\d|https?://|www\.)", re.IGNORECASE)
 _PLAIN_CITATION = re.compile(r"\[([^\[\]\n]+)\](?!\()")
 _MARKDOWN_CITATION = re.compile(r"\[[^\[\]\n]+\]\(([^()\s]+)\)")
 _TRAILING_CITATIONS = re.compile(r"(?:\s+\[[^\[\]\n]+\](?:\([^()\s]+\))?)+$")
+_EVIDENCE_EXCERPT_CHARS = 180
+_CONTEXT_SOURCE_LIMITS = {"telegram": 8, "github": 8, "magicians": 2}
+_CONTEXT_TOTAL_LIMIT = 14
 
 
 class DailyRejected(ValueError):
@@ -153,7 +149,8 @@ class DailyService:
         readiness.assert_fresh_for(window)
         if any(not window.contains(item.updated_at) for item in evidence):
             raise DailyRejected("Daily evidence falls outside the fixed UTC window")
-        context = self._context(window, evidence)
+        context_evidence = self._select_context_evidence(evidence)
+        context = self._context(window, context_evidence)
         operation_id = window.window_id.replace(":", "-")
         raw = await self.ai.run(
             job_type="daily",
@@ -162,7 +159,7 @@ class DailyService:
             max_budget_usd=str(self.policy["max_model_budget_usd"]),
             timeout_seconds=self.timeout_seconds,
         )
-        result = self._validate_result(raw, window, evidence)
+        result = self._validate_result(raw, window, context_evidence)
         messages = self._split(result.telegram_text)
         return PreparedDaily(
             window_id=result.window_id,
@@ -173,12 +170,18 @@ class DailyService:
         )
 
     def _context(self, window: DailyWindow, evidence: tuple[DailyEvidence, ...]) -> str:
-        evidence_payload = []
+        evidence_payload: list[dict[str, Any]] = []
         for item in evidence:
-            payload = asdict(item)
-            payload["created_at"] = item.created_at.isoformat()
-            payload["updated_at"] = item.updated_at.isoformat()
-            evidence_payload.append(payload)
+            evidence_payload.append(
+                {
+                    "evidence_id": item.evidence_id,
+                    "source_kind": item.source_kind,
+                    "updated_at": item.updated_at.isoformat(),
+                    "author_person_id": item.author_person_id,
+                    "text": item.text[:_EVIDENCE_EXCERPT_CHARS],
+                    "citation": item.citation,
+                }
+            )
         query = " ".join(item.text for item in evidence)[:8000]
         if not query:
             query = "open threads help wanted Trustless AI"
@@ -232,12 +235,17 @@ class DailyService:
                     "max_emoji": self.policy["max_emoji"],
                     "citation_rule": (
                         "Each direction may have one uncited synthesis sentence; every concrete "
-                        "What moved bullet starts with • and ends with an exact allowlisted "
-                        "citation."
+                        "What moved bullet starts with •, contains no other citation, and ends "
+                        "with exactly one exact allowlisted citation."
                     ),
                     "ordering_rule": (
                         "Order directions and items by contribution impact and importance, "
                         "without saying that anyone is ranked or scored."
+                    ),
+                    "synthesis_rule": (
+                        "An uncited synthesis sentence may use generic progress, status, review, "
+                        "test, or implementation language, but must not contain contributor "
+                        "names, numbers, URLs, citations, or source-specific artifact identifiers."
                     ),
                     "what_moved_rule": (
                         "Integrate appreciation into each concrete item: name who did what, what "
@@ -249,19 +257,9 @@ class DailyService:
                 "quiet_day_required": not evidence,
             },
             reply_chain=[],
-            recent_telegram=[
-                item for item in evidence_payload if item["source_kind"] == "telegram"
-            ],
+            recent_telegram=[],
             retrieved=current_context,
-            citations=[
-                {
-                    "evidence_id": item.evidence_id,
-                    "source_kind": item.source_kind,
-                    "source_url": item.source_url,
-                    "citation": item.citation,
-                }
-                for item in evidence
-            ],
+            citations=[],
             aliases=self._yaml_mapping(self.root / "knowledge/meta/aliases.yml"),
             job_state={"window_id": window.window_id, "status": "preparing"},
             allowed_paths=[],
@@ -279,12 +277,63 @@ class DailyService:
                 .build(
                     inputs,
                     max_chars=int(self.policy["max_context_chars"]),
-                    max_recent_telegram=len(evidence),
+                    max_recent_telegram=0,
                 )
                 .text
             )
         except ContextRejected as error:
             raise DailyRejected(str(error)) from None
+
+    @classmethod
+    def _select_context_evidence(
+        cls, evidence: tuple[DailyEvidence, ...]
+    ) -> tuple[DailyEvidence, ...]:
+        selected: list[DailyEvidence] = []
+        for source_kind, limit in _CONTEXT_SOURCE_LIMITS.items():
+            source_items = [item for item in evidence if item.source_kind == source_kind]
+            selected.extend(cls._select_contributor_coverage(source_items, limit))
+        selected = cls._select_contributor_coverage(selected, _CONTEXT_TOTAL_LIMIT)
+        selected.sort(key=lambda item: (item.updated_at, item.evidence_id))
+        return tuple(selected)
+
+    @classmethod
+    def _select_contributor_coverage(
+        cls, evidence: list[DailyEvidence], limit: int
+    ) -> list[DailyEvidence]:
+        if len(evidence) <= limit:
+            return evidence
+        by_contributor: dict[str, list[DailyEvidence]] = {}
+        for item in evidence:
+            key = item.author_person_id or item.evidence_id
+            by_contributor.setdefault(key, []).append(item)
+        for items in by_contributor.values():
+            items.sort(key=cls._context_priority, reverse=True)
+        representatives = sorted(
+            (items[0] for items in by_contributor.values()),
+            key=cls._context_priority,
+            reverse=True,
+        )[:limit]
+        selected_ids = {item.evidence_id for item in representatives}
+        remaining = sorted(evidence, key=cls._context_priority, reverse=True)
+        for item in remaining:
+            if len(representatives) == limit:
+                break
+            if item.evidence_id in selected_ids:
+                continue
+            representatives.append(item)
+            selected_ids.add(item.evidence_id)
+        return representatives
+
+    @staticmethod
+    def _context_priority(item: DailyEvidence) -> tuple[bool, bool, int, datetime, str]:
+        text = item.text
+        return (
+            _SYNTHESIS_IDENTIFIER.search(text) is not None,
+            "http://" in text or "https://" in text or "erc-" in text.casefold(),
+            min(len(text), 2_000),
+            item.updated_at,
+            item.evidence_id,
+        )
 
     def _validate_result(
         self,
@@ -407,7 +456,7 @@ class DailyService:
                     or _OTHER_LIST_ITEM.match(line)
                     or _PLAIN_CITATION.search(line)
                     or _MARKDOWN_CITATION.search(line)
-                    or _CONCRETE_SYNTHESIS.search(line)
+                    or _SYNTHESIS_IDENTIFIER.search(line)
                     or names_contributor
                 ):
                     raise DailyRejected("Daily synthesis contains source-dependent detail")

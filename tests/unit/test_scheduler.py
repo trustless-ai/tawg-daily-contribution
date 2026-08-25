@@ -51,7 +51,7 @@ class Pipeline:
 
 def scheduler(root: Path, pipeline: Pipeline, success: LayerSuccess) -> Scheduler:
     state = root / "data/state"
-    state.mkdir(parents=True)
+    state.mkdir(parents=True, exist_ok=True)
     (state / "layer-success.json").write_text(success.model_dump_json(indent=2) + "\n")
     return Scheduler(root, pipeline=pipeline)
 
@@ -91,7 +91,7 @@ def test_due_layer_uses_durable_success_times(
 
 
 @pytest.mark.asyncio
-async def test_every_tick_runs_l1_first_and_heavier_layer_includes_earlier_work(
+async def test_daily_tick_prioritizes_current_daily_over_deferred_heavy_work(
     tmp_path: Path,
 ) -> None:
     pipeline = Pipeline()
@@ -103,8 +103,6 @@ async def test_every_tick_runs_l1_first_and_heavier_layer_includes_earlier_work(
     assert result.layer is Layer.L4
     assert pipeline.events == [
         "telegram",
-        "source_check",
-        "knowledge",
         "validate",
         "daily",
         "repo_publish",
@@ -113,17 +111,61 @@ async def test_every_tick_runs_l1_first_and_heavier_layer_includes_earlier_work(
 
 
 @pytest.mark.asyncio
-async def test_failed_layer_keeps_old_success_state(tmp_path: Path) -> None:
+async def test_failed_source_is_logged_safely_and_later_work_continues(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
     old = NOW - timedelta(days=2)
-    initial = LayerSuccess(l1=old, l2=old, l3=old, l4=old)
+    initial = LayerSuccess(l1=old, l2=old, l3=NOW, l4=NOW)
     pipeline = Pipeline(fail_at="source_check")
     service = scheduler(tmp_path, pipeline, initial)
 
-    with pytest.raises(RuntimeError, match="source_check"):
-        await service.tick(NOW)
+    await service.tick(NOW)
 
-    assert service.load_success() == initial
-    assert pipeline.events == ["telegram", "source_check"]
+    success = service.load_success()
+    assert success.l1 == NOW
+    assert success.l2 == old
+    assert pipeline.events == ["telegram", "source_check", "repo_publish", "delivery"]
+    captured = capsys.readouterr().out
+    assert "phase=source_check" in captured
+    assert "code=source_check_failed" in captured
+    assert "failed: source_check" not in captured
+
+
+@pytest.mark.asyncio
+async def test_failed_daily_stays_retryable_but_replies_can_still_deliver(
+    tmp_path: Path,
+) -> None:
+    old = NOW - timedelta(days=2)
+    pipeline = Pipeline(fail_at="daily")
+    service = scheduler(tmp_path, pipeline, LayerSuccess(l1=old, l2=NOW, l3=NOW, l4=old))
+
+    result = await service.tick(NOW)
+
+    assert not result.delivered
+    assert service.load_success().l4 == old
+    assert pipeline.events == ["telegram", "validate", "daily", "repo_publish", "delivery"]
+
+
+@pytest.mark.asyncio
+async def test_l2_and_l3_runs_each_do_only_their_bounded_heavy_phase(tmp_path: Path) -> None:
+    old = NOW - timedelta(days=2)
+    l2_pipeline = Pipeline()
+    l2 = scheduler(
+        tmp_path,
+        l2_pipeline,
+        LayerSuccess(l1=old, l2=old, l3=NOW, l4=NOW),
+    )
+    await l2.tick(NOW)
+    assert l2_pipeline.events == ["telegram", "source_check", "repo_publish", "delivery"]
+
+    l3_pipeline = Pipeline()
+    l3 = scheduler(
+        tmp_path,
+        l3_pipeline,
+        LayerSuccess(l1=old, l2=NOW, l3=old, l4=NOW),
+    )
+    await l3.tick(NOW)
+    assert l3_pipeline.events == ["telegram", "knowledge", "validate", "repo_publish", "delivery"]
 
 
 @pytest.mark.asyncio

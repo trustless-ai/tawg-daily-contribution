@@ -21,18 +21,17 @@ def service(root: Path, pipeline: Pipeline) -> Scheduler:
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("failure", ["source_check", "validate"])
-async def test_required_source_or_validator_failure_skips_daily_and_delivery(
-    tmp_path: Path, failure: str
+async def test_validator_failure_skips_daily_but_allows_reply_delivery(
+    tmp_path: Path,
 ) -> None:
-    pipeline = Pipeline(fail_at=failure)
+    pipeline = Pipeline(fail_at="validate")
 
-    with pytest.raises(RuntimeError):
-        await service(tmp_path, pipeline).tick(NOW)
+    result = await service(tmp_path, pipeline).tick(NOW)
 
-    assert "delivery" not in pipeline.events
-    if failure != "validate":
-        assert "daily" not in pipeline.events
+    assert not result.delivered
+    assert "daily" not in pipeline.events
+    assert "repo_publish" in pipeline.events
+    assert "delivery" in pipeline.events
 
 
 @pytest.mark.asyncio

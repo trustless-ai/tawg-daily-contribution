@@ -104,13 +104,18 @@ class DailyEvidenceCollector:
         try:
             github_records, magicians_records = await asyncio.wait_for(
                 asyncio.gather(
-                    self.github.collect_records(since=window.start, now=now),
-                    self.magicians.collect_records(since=window.start, now=now),
+                    self._collect_source(
+                        "github", self.github, since=window.start, now=now
+                    ),
+                    self._collect_source(
+                        "magicians", self.magicians, since=window.start, now=now
+                    ),
                 ),
                 timeout=self.timeout_seconds,
             )
-        except (TimeoutError, OSError, RuntimeError, ValueError):
-            raise DailyEvidenceRejected("live Daily activity collection failed") from None
+        except TimeoutError:
+            _log_source_failure("all", "daily_collection_timeout")
+            github_records, magicians_records = (), ()
         records = [
             *SourceQuery(self.root).records(),
             *github_records,
@@ -136,6 +141,22 @@ class DailyEvidenceCollector:
                 raise DailyEvidenceRejected("conflicting live Daily evidence")
             by_id[evidence.evidence_id] = evidence
         return tuple(by_id[key] for key in by_id)
+
+    @staticmethod
+    async def _collect_source(
+        name: Literal["github", "magicians"],
+        client: ActivityRecordsClient,
+        *,
+        since: datetime,
+        now: datetime,
+    ) -> tuple[SourceRecord, ...]:
+        try:
+            return await client.collect_records(since=since, now=now)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            _log_source_failure(name, "daily_source_failed")
+            return ()
 
     def _convert(self, record: SourceRecord) -> DailyEvidence:
         if record.source_type is SourceType.TELEGRAM_MESSAGE:
@@ -228,3 +249,10 @@ class MagiciansActivityRecords:
 def _require_utc(value: datetime, label: str) -> None:
     if value.tzinfo is None or value.utcoffset() != UTC.utcoffset(value):
         raise ValueError(f"{label} must use UTC")
+
+
+def _log_source_failure(source: str, code: str) -> None:
+    print(
+        f"tawg_event=phase_failed phase=daily_evidence source={source} code={code}",
+        flush=True,
+    )

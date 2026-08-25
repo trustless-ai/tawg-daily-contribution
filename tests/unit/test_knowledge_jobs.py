@@ -191,6 +191,47 @@ def test_resolve_refresh_removes_only_the_completed_job(tmp_path: Path) -> None:
     assert len(store.load().gaps) == 1
 
 
+def test_failed_refresh_is_deferred_without_blocking_another_erc(tmp_path: Path) -> None:
+    registry = _seed(tmp_path)
+    _apply(tmp_path, KnowledgeStateStore(tmp_path, registry=registry), _pack(), NOW)
+    store = KnowledgeStateStore(
+        tmp_path,
+        registry=SourceRegistry.from_yaml(tmp_path / "knowledge/meta/sources.yml"),
+    )
+    first = store.load().refresh_jobs[0]
+    other_source = registry.resolve(8183, frozenset(EvidenceKind))[0]
+    second = first.model_copy(
+        update={
+            "job_key": f"refresh:erc-8183:{other_source.source_key}:{'c' * 16}",
+            "erc_number": 8183,
+            "source_key": other_source.source_key,
+            "observed_sha256": "c" * 64,
+            "updated_at": NOW + timedelta(minutes=1),
+        }
+    )
+    state_path = tmp_path / "data/state/pending-knowledge-refresh.json"
+    state_path.write_text(
+        json.dumps([first.model_dump(mode="json"), second.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+    uow = RepositoryUnitOfWork(tmp_path, operation_id="defer-8004")
+    uow.register_external_evidence(())
+
+    store.defer_refresh_erc(
+        uow,
+        8004,
+        now=NOW + timedelta(minutes=2),
+        safe_error_code="knowledge_refresh_failed",
+    )
+    uow.publish()
+
+    deferred = store.load().refresh_jobs[0]
+    assert deferred.retry_count == 1
+    assert deferred.safe_error_code == "knowledge_refresh_failed"
+    assert store.eligible_refresh_erc_numbers(NOW + timedelta(minutes=3)) == (8183,)
+    assert store.eligible_refresh_erc_numbers(NOW + timedelta(minutes=7)) == (8183, 8004)
+
+
 def test_state_and_registry_never_serialize_transient_evidence_text(tmp_path: Path) -> None:
     registry = _seed(tmp_path)
     _apply(tmp_path, KnowledgeStateStore(tmp_path, registry=registry), _pack(), NOW)

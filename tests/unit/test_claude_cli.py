@@ -53,6 +53,44 @@ def outer_reply(reply_text: str = "Here is the update.") -> dict:
     }
 
 
+def outer_daily() -> dict:
+    structured = json.loads(
+        (ROOT / "tests/fixtures/ai/daily-active.json").read_text(encoding="utf-8")
+    )
+    return {
+        "type": "result",
+        "subtype": "success",
+        "is_error": False,
+        "num_turns": 1,
+        "total_cost_usd": 0.01,
+        "structured_output": structured,
+    }
+
+
+@pytest.mark.asyncio
+async def test_daily_uses_bounded_configurable_effort(tmp_path: Path) -> None:
+    runner = CapturingRunner(outer_daily())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={
+            "PATH": "/usr/bin",
+            "TAWG_DAILY_EFFORT_LEVEL": "medium",
+        },
+        runtime_root=tmp_path,
+    )
+
+    await cli.run(
+        job_type="daily",
+        context_pack="{}",
+        operation_id="daily-2026-08-24T23-00-00Z",
+        max_budget_usd="1.00",
+    )
+
+    assert runner.argv[runner.argv.index("--effort") + 1] == "medium"
+
+
 @pytest.mark.asyncio
 async def test_cli_is_toolless_sessionless_and_does_not_expose_secrets(
     tmp_path: Path,
