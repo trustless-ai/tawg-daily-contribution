@@ -107,7 +107,7 @@ class KnowledgeRefresh:
         max_jobs: int = 32,
         max_context_chars: int = 250_000,
         max_budget_usd: str = "2.00",
-        timeout_seconds: float = 300,
+        timeout_seconds: float = 900,
     ) -> None:
         if max_jobs <= 0:
             raise ValueError("max_jobs must be positive")

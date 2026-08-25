@@ -377,6 +377,7 @@ async def test_refresh_compiles_live_pack_and_atomically_resolves_job(tmp_path: 
     assert result.processed_job_keys == (JOB_KEY,)
     assert result.changed_paths
     assert live.calls[0].erc_numbers == (8004,)
+    assert ai.calls[0]["timeout_seconds"] == 900
     context = ai.calls[0]["context_pack"]
     assert CANONICAL_TEXT in context
     assert '"citation_allowlist"' in context
