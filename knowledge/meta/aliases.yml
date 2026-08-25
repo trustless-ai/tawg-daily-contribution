@@ -7,6 +7,12 @@ people:
       - babyblueviper1
       magicians:
       - babyblueviper1
+  baby-blue-viper-2:
+    display_names:
+    - Baby Blue Viper
+    handles:
+      telegram:
+      - babyblueviper1
   damon-zwicker:
     display_names:
     - Damon Zwicker
