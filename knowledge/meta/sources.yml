@@ -45,8 +45,8 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: 6a8a97db-1df40
+    checked_at: '2026-08-25T20:43:15.866528Z'
+    version: 6a8dfb67-1df40
     content_sha256: 1ebe6f0a16933d3498011744cad9c88f07e12f52e31d397e4677ab6457a1590a
     byte_count: 122688
   status: active
@@ -185,9 +185,9 @@ sources:
     - text/plain
     - application/json
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
+    checked_at: '2026-08-25T20:43:15.866528Z'
     version: Wed, 11 Mar 2026 07:48:34 GMT
-    content_sha256: 59412419f40f167fc26aa23d3f213fb46c1cb8cc46d4d1f39a109bdf56470f37
+    content_sha256: 0c534b369b9d4eaa2032eb9b4f66d0e94bc2a830c1db585f32773714a4c2b954
     byte_count: 66271
   status: active
 - source_key: agent-ercs-8263-implementation

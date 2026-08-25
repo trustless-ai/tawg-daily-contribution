@@ -70,5 +70,29 @@
     "schema_version": "tawg.knowledge-refresh-job.v1",
     "source_key": "magicians-8004",
     "updated_at": "2026-08-25T20:43:15.866528Z"
+  },
+  {
+    "created_at": "2026-08-25T20:43:15.866528Z",
+    "erc_number": 8183,
+    "job_key": "refresh:erc-8183:erc-8183-canonical:1ebe6f0a16933d34",
+    "observed_sha256": "1ebe6f0a16933d3498011744cad9c88f07e12f52e31d397e4677ab6457a1590a",
+    "observed_version": "6a8dfb67-1df40",
+    "retry_count": 0,
+    "safe_error_code": null,
+    "schema_version": "tawg.knowledge-refresh-job.v1",
+    "source_key": "erc-8183-canonical",
+    "updated_at": "2026-08-25T20:43:15.866528Z"
+  },
+  {
+    "created_at": "2026-08-25T20:43:15.866528Z",
+    "erc_number": 8183,
+    "job_key": "refresh:erc-8183:magicians-8183:0c534b369b9d4eaa",
+    "observed_sha256": "0c534b369b9d4eaa2032eb9b4f66d0e94bc2a830c1db585f32773714a4c2b954",
+    "observed_version": "Wed, 11 Mar 2026 07:48:34 GMT",
+    "retry_count": 0,
+    "safe_error_code": null,
+    "schema_version": "tawg.knowledge-refresh-job.v1",
+    "source_key": "magicians-8183",
+    "updated_at": "2026-08-25T20:43:15.866528Z"
   }
 ]
