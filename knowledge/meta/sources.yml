@@ -20,8 +20,8 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: 6a8a97dc-1211d
+    checked_at: '2026-08-25T20:43:15.866528Z'
+    version: 6a8dfb67-1211d
     content_sha256: 0e785851da48ad080dd188642770eeeb42a6b63d99d6a893cb162a2bdc508650
     byte_count: 74013
   status: active
@@ -68,10 +68,10 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: W/"aa779f7a48b2ff777e79d591bc7268ff
-    content_sha256: 043567d198e04a66c177f710cf63d675204477ff98618cf378f952821c896657
-    byte_count: 251252
+    checked_at: '2026-08-25T20:43:15.866528Z'
+    version: W/"169972f9f334e5635a07e8f0034a1a0e
+    content_sha256: 13ed2e37fae0b29121e45435987d8947a7cdefbbd33d85cdb396a4e05ef34d7d
+    byte_count: 251253
   status: active
 - source_key: agent-ercs-8004-identity-interface
   topics:
@@ -91,10 +91,10 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: W/"47f9e91e650d98fc287ef65e46dc853c
-    content_sha256: ab2ec9ef38e06a0e9afeef18b45905c51568f971abfa626b6c3f313746db3d8d
-    byte_count: 280483
+    checked_at: '2026-08-25T20:43:15.866528Z'
+    version: W/"69c4bdcb67313d2d62ceafafa17dd2bf
+    content_sha256: bf1ae23cc70945a890fa3fd89300e309bead43be669dd0c0ec6da3456b461ba2
+    byte_count: 280485
   status: active
 - source_key: agent-ercs-8004-reputation-interface
   topics:
@@ -114,10 +114,10 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: W/"4d554ef2dd916a039c33419ab3dfa97d
-    content_sha256: eb7ca7e5d0641ae8b3f2ef05b0a816c675477d8d9d9573bb412a88acae7381ca
-    byte_count: 321838
+    checked_at: '2026-08-25T20:43:15.866528Z'
+    version: W/"32369d16155a860183e65ba8ec177ff4
+    content_sha256: e35dd8dfe35bfaae4e9426668a7d123265fedce6218f099acb36f53f29222810
+    byte_count: 321848
   status: active
 - source_key: agent-ercs-8004-validation-interface
   topics:
@@ -137,9 +137,9 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: W/"a369cad89a7a9c6cffbb268c9e489fd8
-    content_sha256: f7c3324fe309e6b863c891a71b5cb0a93f0a8a22194e1058b3681a51b43f20b8
+    checked_at: '2026-08-25T20:43:15.866528Z'
+    version: W/"900d744a0c422e547a887bd84a597b7a
+    content_sha256: c05c970d729d1a5b13f6889a4d5747cbdfecbeccea8e92dba952a7cd81574293
     byte_count: 289097
   status: active
 - source_key: magicians-8004
@@ -161,9 +161,9 @@ sources:
     - text/plain
     - application/json
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
+    checked_at: '2026-08-25T20:43:15.866528Z'
     version: Thu, 28 Aug 2025 18:15:01 GMT
-    content_sha256: d82faa2c700b69751f5e16813e8721bcedc7e7d925776a64a1e1cbd6f5bcbea3
+    content_sha256: 17d95992856090d5ef4ba4f0d6bad31c4d9c3d3391260529ce5870ff4672fefd
     byte_count: 63981
   status: active
 - source_key: magicians-8183
