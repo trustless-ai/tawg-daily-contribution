@@ -13,14 +13,6 @@ on:
         description: Prepare the latest due Daily as a review artifact
         type: boolean
         default: false
-      backfill:
-        description: Run one historical source backfill instead of a normal tick
-        type: choice
-        options:
-          - none
-          - github
-          - magicians
-        default: none
 
 permissions:
   contents: write
@@ -87,10 +79,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          backfill="${{ inputs.backfill || 'none' }}"
-          if [[ "$backfill" != "none" ]]; then
-            python -m tawg_bot.cli backfill "$backfill"
-          elif [[ "${{ inputs.daily_dry_run || false }}" == "true" ]]; then
+          if [[ "${{ inputs.daily_dry_run || false }}" == "true" ]]; then
             current_hour="$(date -u +%H)"
             if (( 10#$current_hour < 23 )); then
               window_end="$(date -u -d 'yesterday 23:00' +%Y-%m-%dT%H:%M:%SZ)"
