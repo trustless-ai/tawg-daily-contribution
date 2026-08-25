@@ -190,7 +190,17 @@ class RepositoryUnitOfWork:
         self._writes.clear()
 
     def _guard(self) -> PersistenceGuard:
-        return PersistenceGuard.from_external_texts(self._external_evidence or ())
+        registry_path = self.root / "knowledge/meta/sources.yml"
+        try:
+            registry_baseline = (
+                registry_path.read_text(encoding="utf-8") if registry_path.exists() else None
+            )
+        except (OSError, UnicodeError):
+            raise PersistenceRejected from None
+        return PersistenceGuard.from_external_texts(
+            self._external_evidence or (),
+            source_registry_baseline=registry_baseline,
+        )
 
     def _inspect_staged(self) -> None:
         self._guard().inspect_staged(

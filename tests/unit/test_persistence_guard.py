@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import json
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
+import yaml
 from pydantic import ValidationError
 
 from tawg_bot.live_evidence import EvidenceObservation
@@ -12,6 +14,10 @@ from tawg_bot.persistence_guard import (
     PersistenceProvenance,
     PersistenceRejected,
 )
+from tawg_bot.source_registry import SourceObservation, SourceRegistry
+
+ROOT = Path(__file__).resolve().parents[2]
+SOURCE_REGISTRY_BASELINE = (ROOT / "knowledge/meta/sources.yml").read_text(encoding="utf-8")
 
 EXTERNAL_BODY = (
     "EXTERNAL-CANARY-9f63: the normative source body is transient and must never be "
@@ -96,15 +102,157 @@ def test_rejects_json_escaped_and_short_complete_bodies(external_body: str) -> N
 
 
 @pytest.mark.parametrize("external_body", ["2026-08-23", "true", "8183"])
-def test_rejects_yaml_plain_scalars_that_look_typed(external_body: str) -> None:
-    relative_path = "knowledge/meta/sources.yml"
-    guard = PersistenceGuard.from_external_texts((external_body,))
+def test_rejects_yaml_typed_scalars_in_source_registry_version(external_body: str) -> None:
+    registry = SourceRegistry.from_yaml(ROOT / "knowledge/meta/sources.yml")
+    observation = SourceObservation(
+        checked_at=datetime(2026, 8, 25, 2, 0, tzinfo=UTC),
+        version="fixture-revision",
+        content_sha256="a" * 64,
+        byte_count=1234,
+    )
+    rendered = registry.render_with_observations({"erc-8004-canonical": observation})
+    payload = rendered.replace("version: fixture-revision", f"version: {external_body}")
+    assert payload != rendered
+    guard = PersistenceGuard.from_external_texts(
+        (external_body,),
+        source_registry_baseline=SOURCE_REGISTRY_BASELINE,
+    )
 
     with pytest.raises(PersistenceRejected, match="persistence policy rejection"):
         guard.inspect_staged(
-            {relative_path: f"version: {external_body}\n".encode()},
-            {relative_path: PersistenceProvenance.SOURCE_METADATA},
+            {"knowledge/meta/sources.yml": payload.encode()},
+            {"knowledge/meta/sources.yml": PersistenceProvenance.SOURCE_METADATA},
         )
+
+
+def test_allows_valid_source_registry_locators_that_also_occur_in_external_text() -> None:
+    registry = SourceRegistry.from_yaml(ROOT / "knowledge/meta/sources.yml")
+    source = registry.source("erc-8004-canonical")
+    observation = SourceObservation(
+        checked_at=datetime(2026, 8, 25, 2, 0, tzinfo=UTC),
+        version="fixture-revision",
+        content_sha256="a" * 64,
+        byte_count=1234,
+    )
+    payload = registry.render_with_observations({source.source_key: observation}).encode()
+    external_text = (
+        f"Fetched from {source.canonical_url} on "
+        f"{source.fetch_policy.allowed_hosts[0]} with normative content."
+    )
+    guard = PersistenceGuard.from_external_texts(
+        (external_text,),
+        source_registry_baseline=SOURCE_REGISTRY_BASELINE,
+    )
+
+    guard.inspect_staged(
+        {"knowledge/meta/sources.yml": payload},
+        {"knowledge/meta/sources.yml": PersistenceProvenance.SOURCE_METADATA},
+    )
+
+
+def test_rejects_unknown_fields_in_an_otherwise_valid_source_registry() -> None:
+    registry = SourceRegistry.from_yaml(ROOT / "knowledge/meta/sources.yml")
+    payload = yaml.safe_load(registry.render_with_observations({}))
+    payload["sources"][0]["content"] = "harmless-looking copied source body"
+    encoded = yaml.safe_dump(payload, sort_keys=False).encode()
+
+    with pytest.raises(PersistenceRejected, match="persistence policy rejection"):
+        PersistenceGuard.from_external_texts(
+            (),
+            source_registry_baseline=SOURCE_REGISTRY_BASELINE,
+        ).inspect_staged(
+            {"knowledge/meta/sources.yml": encoded},
+            {"knowledge/meta/sources.yml": PersistenceProvenance.SOURCE_METADATA},
+        )
+
+
+@pytest.mark.parametrize(
+    ("field_name", "body_shaped_value"),
+    [
+        ("allowed_hosts", "external-canary-9f63.example.com"),
+        ("allowed_path_prefixes", "/external-canary-9f63-normative-source-body"),
+        ("mime_types", "text/external-canary-9f63"),
+    ],
+)
+def test_rejects_body_shaped_values_in_structural_source_metadata(
+    field_name: str,
+    body_shaped_value: str,
+) -> None:
+    registry = SourceRegistry.from_yaml(ROOT / "knowledge/meta/sources.yml")
+    payload = yaml.safe_load(registry.render_with_observations({}))
+    payload["sources"][0]["fetch_policy"][field_name].append(body_shaped_value)
+    encoded = yaml.safe_dump(payload, sort_keys=False).encode()
+
+    with pytest.raises(PersistenceRejected, match="persistence policy rejection"):
+        PersistenceGuard.from_external_texts(
+            (body_shaped_value,),
+            source_registry_baseline=SOURCE_REGISTRY_BASELINE,
+        ).inspect_staged(
+            {"knowledge/meta/sources.yml": encoded},
+            {"knowledge/meta/sources.yml": PersistenceProvenance.SOURCE_METADATA},
+        )
+
+
+def test_rejects_external_body_in_a_valid_source_registry_version() -> None:
+    registry = SourceRegistry.from_yaml(ROOT / "knowledge/meta/sources.yml")
+    observation = SourceObservation(
+        checked_at=datetime(2026, 8, 25, 2, 0, tzinfo=UTC),
+        version=EXTERNAL_BODY,
+        content_sha256="a" * 64,
+        byte_count=1234,
+    )
+    payload = registry.render_with_observations({"erc-8004-canonical": observation}).encode()
+
+    with pytest.raises(PersistenceRejected, match="persistence policy rejection"):
+        PersistenceGuard.from_external_texts(
+            (EXTERNAL_BODY,),
+            source_registry_baseline=SOURCE_REGISTRY_BASELINE,
+        ).inspect_staged(
+            {"knowledge/meta/sources.yml": payload},
+            {"knowledge/meta/sources.yml": PersistenceProvenance.SOURCE_METADATA},
+        )
+
+
+def test_rejects_external_body_hidden_in_source_registry_yaml_comments() -> None:
+    registry = SourceRegistry.from_yaml(ROOT / "knowledge/meta/sources.yml")
+    payload = f"{registry.render_with_observations({})}# {EXTERNAL_BODY}\n".encode()
+
+    with pytest.raises(PersistenceRejected, match="persistence policy rejection"):
+        PersistenceGuard.from_external_texts(
+            (EXTERNAL_BODY,),
+            source_registry_baseline=SOURCE_REGISTRY_BASELINE,
+        ).inspect_staged(
+            {"knowledge/meta/sources.yml": payload},
+            {"knowledge/meta/sources.yml": PersistenceProvenance.SOURCE_METADATA},
+        )
+
+
+def test_unit_of_work_binds_source_registry_writes_to_the_repository_baseline(
+    tmp_path: Path,
+) -> None:
+    from tawg_bot.unit_of_work import RepositoryUnitOfWork
+
+    registry_path = tmp_path / "knowledge/meta/sources.yml"
+    registry_path.parent.mkdir(parents=True)
+    registry_path.write_text(SOURCE_REGISTRY_BASELINE, encoding="utf-8")
+    registry = SourceRegistry.from_yaml(registry_path)
+    source = registry.source("erc-8004-canonical")
+    observation = SourceObservation(
+        checked_at=datetime(2026, 8, 25, 2, 0, tzinfo=UTC),
+        version="fixture-revision",
+        content_sha256="a" * 64,
+        byte_count=1234,
+    )
+    external_text = f"Fetched source body from {source.canonical_url}."
+    uow = RepositoryUnitOfWork(tmp_path, operation_id="source-registry-observation")
+    uow.register_external_evidence((external_text,))
+
+    uow.stage_bytes(
+        "knowledge/meta/sources.yml",
+        registry.render_with_observations({source.source_key: observation}).encode(),
+    )
+
+    assert uow.publish().changed_paths == ("knowledge/meta/sources.yml",)
 
 
 def test_rejects_short_body_embedded_in_a_forbidden_field() -> None:

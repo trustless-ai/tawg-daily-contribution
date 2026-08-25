@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import ipaddress
+import re
 from collections.abc import Mapping
 from datetime import UTC, datetime
 from enum import StrEnum
@@ -14,6 +15,9 @@ import yaml
 from pydantic import Field, ValidationError, field_validator, model_validator
 
 from tawg_bot.models import StrictModel
+
+_URL_PATH = re.compile(r"^/(?:[A-Za-z0-9._~!$&'()*+,;=:@/-]|%[0-9A-Fa-f]{2})*$")
+_MIME_TYPE = re.compile(r"^[a-z0-9][a-z0-9!#$&^_.+-]{0,126}/[a-z0-9][a-z0-9!#$&^_.+-]{0,126}$")
 
 
 class RegistryRejected(ValueError):
@@ -90,7 +94,7 @@ class FetchPolicy(StrictModel):
         if len(values) != len(set(values)):
             raise ValueError("allowed path prefixes must be unique")
         for value in values:
-            if not value.startswith("/") or ".." in value.split("/"):
+            if len(value) > 1024 or _URL_PATH.fullmatch(value) is None or ".." in value.split("/"):
                 raise ValueError("allowed path prefix is invalid")
         return values
 
@@ -99,7 +103,7 @@ class FetchPolicy(StrictModel):
     def mimes_are_normalized(cls, values: list[str]) -> list[str]:
         normalized = [value.casefold().strip() for value in values]
         if len(normalized) != len(set(normalized)) or any(
-            "/" not in value or ";" in value for value in normalized
+            _MIME_TYPE.fullmatch(value) is None for value in normalized
         ):
             raise ValueError("MIME allowlist is invalid")
         return normalized
@@ -120,6 +124,8 @@ class FetchPolicy(StrictModel):
         if host not in self.allowed_hosts or host == "example.invalid":
             return False
         path = parsed.path or "/"
+        if len(path) > 1024 or _URL_PATH.fullmatch(path) is None:
+            return False
         return any(
             path == prefix.rstrip("/") or path.startswith(prefix.rstrip("/") + "/")
             for prefix in self.allowed_path_prefixes
@@ -187,13 +193,21 @@ class SourceRegistry:
     @classmethod
     def from_yaml(cls, path: Path) -> SourceRegistry:
         try:
-            raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+            text = path.read_text(encoding="utf-8")
+        except (OSError, UnicodeError) as error:
+            raise RegistryRejected("invalid source registry") from error
+        return cls.from_yaml_text(text)
+
+    @classmethod
+    def from_yaml_text(cls, text: str) -> SourceRegistry:
+        try:
+            raw = yaml.safe_load(text)
             if not isinstance(raw, dict):
                 raise ValueError("registry root must be a mapping")
             return cls(_RegistryDocument.model_validate(raw))
         except RegistryRejected:
             raise
-        except (OSError, UnicodeError, ValueError, ValidationError, yaml.YAMLError) as error:
+        except (UnicodeError, ValueError, ValidationError, yaml.YAMLError) as error:
             raise RegistryRejected("invalid source registry") from error
 
     def resolve(
@@ -235,6 +249,36 @@ class SourceRegistry:
                 }
             )
         )
+
+    def updated_versions_from(self, baseline: SourceRegistry) -> tuple[str, ...]:
+        current_definitions = [
+            source.model_dump(mode="json", exclude={"last_observed"})
+            for source in self._document.sources
+        ]
+        baseline_definitions = [
+            source.model_dump(mode="json", exclude={"last_observed"})
+            for source in baseline._document.sources
+        ]
+        if current_definitions != baseline_definitions:
+            raise RegistryRejected("source definitions cannot change during observation updates")
+
+        updated_versions: list[str] = []
+        for current, previous in zip(
+            self._document.sources,
+            baseline._document.sources,
+            strict=True,
+        ):
+            observation = current.last_observed
+            previous_observation = previous.last_observed
+            if (
+                observation != previous_observation
+                and observation is not None
+                and observation.version is not None
+                and observation.version
+                != (previous_observation.version if previous_observation is not None else None)
+            ):
+                updated_versions.append(observation.version)
+        return tuple(updated_versions)
 
     def render_with_observations(self, observations: Mapping[str, SourceObservation]) -> str:
         unknown = set(observations) - set(self._by_key)

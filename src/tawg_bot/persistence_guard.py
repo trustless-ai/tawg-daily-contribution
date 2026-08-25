@@ -11,6 +11,8 @@ from typing import Any
 
 import yaml
 
+from tawg_bot.source_registry import RegistryRejected, SourceRegistry
+
 
 class PersistenceRejected(ValueError):
     """A deliberately non-descriptive persistence policy failure."""
@@ -56,14 +58,33 @@ class PersistenceGuard:
     _FORBIDDEN_EXCERPT_CHARS = 16
     _GENERATED_EXCERPT_CHARS = 96
 
-    def __init__(self, external_texts: tuple[str, ...] = ()) -> None:
+    def __init__(
+        self,
+        external_texts: tuple[str, ...] = (),
+        *,
+        source_registry_baseline: str | None = None,
+    ) -> None:
         self._external_texts = tuple(
             normalized for value in external_texts if (normalized := _normalize(value))
         )
+        if source_registry_baseline is None:
+            self._source_registry_baseline: SourceRegistry | None = None
+        else:
+            try:
+                self._source_registry_baseline = SourceRegistry.from_yaml_text(
+                    _normalize(source_registry_baseline)
+                )
+            except RegistryRejected:
+                raise PersistenceRejected from None
 
     @classmethod
-    def from_external_texts(cls, values: Iterable[str]) -> PersistenceGuard:
-        return cls(tuple(values))
+    def from_external_texts(
+        cls,
+        values: Iterable[str],
+        *,
+        source_registry_baseline: str | None = None,
+    ) -> PersistenceGuard:
+        return cls(tuple(values), source_registry_baseline=source_registry_baseline)
 
     @staticmethod
     def provenance_for_path(relative_path: str) -> PersistenceProvenance:
@@ -100,7 +121,12 @@ class PersistenceGuard:
                 text = _normalize(payload.decode("utf-8"))
             except UnicodeDecodeError:
                 raise PersistenceRejected from None
-            for value, allow_short_quote in _semantic_strings(relative_path, text, expected):
+            for value, allow_short_quote in _semantic_strings(
+                relative_path,
+                text,
+                expected,
+                source_registry_baseline=self._source_registry_baseline,
+            ):
                 if self._contains_external_excerpt(value, allow_short_quote):
                     raise PersistenceRejected
 
@@ -146,10 +172,23 @@ def _semantic_strings(
     relative_path: str,
     text: str,
     provenance: PersistenceProvenance,
+    *,
+    source_registry_baseline: SourceRegistry | None,
 ) -> tuple[tuple[str, bool], ...]:
     path = PurePosixPath(relative_path)
     if provenance is PersistenceProvenance.GENERATED_KNOWLEDGE:
         return ((text, True),)
+    if relative_path == "knowledge/meta/sources.yml":
+        if source_registry_baseline is None:
+            raise PersistenceRejected
+        try:
+            registry = SourceRegistry.from_yaml_text(text)
+            if text != _normalize(registry.render_with_observations({})):
+                raise RegistryRejected("source registry is not canonically rendered")
+            updated_versions = registry.updated_versions_from(source_registry_baseline)
+        except RegistryRejected:
+            raise PersistenceRejected from None
+        return tuple((_normalize(version), False) for version in updated_versions)
     try:
         if path.suffix == ".json":
             value = json.loads(text)
