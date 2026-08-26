@@ -214,5 +214,29 @@
     "schema_version": "tawg.knowledge-refresh-job.v1",
     "source_key": "magicians-8312",
     "updated_at": "2026-08-26T03:27:43.677775Z"
+  },
+  {
+    "created_at": "2026-08-26T03:27:43.677775Z",
+    "erc_number": 8323,
+    "job_key": "refresh:erc-8323:agent-ercs-8323-implementation:113a05265bbf9e1d",
+    "observed_sha256": "113a05265bbf9e1df91c508892dfe398d10c7b3ac2bbc1e092a8b86212c41eae",
+    "observed_version": "W/\"191e38ae4bc7747a2142730cc67a7aa6",
+    "retry_count": 0,
+    "safe_error_code": null,
+    "schema_version": "tawg.knowledge-refresh-job.v1",
+    "source_key": "agent-ercs-8323-implementation",
+    "updated_at": "2026-08-26T03:27:43.677775Z"
+  },
+  {
+    "created_at": "2026-08-26T03:27:43.677775Z",
+    "erc_number": 8323,
+    "job_key": "refresh:erc-8323:magicians-8323:744be1bc46167a9a",
+    "observed_sha256": "744be1bc46167a9a34b542c5b3286b85b75c3aaef8896e62259530d1183a2e79",
+    "observed_version": "Thu, 06 Aug 2026 00:28:58 GMT",
+    "retry_count": 0,
+    "safe_error_code": null,
+    "schema_version": "tawg.knowledge-refresh-job.v1",
+    "source_key": "magicians-8323",
+    "updated_at": "2026-08-26T03:27:43.677775Z"
   }
 ]
