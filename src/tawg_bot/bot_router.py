@@ -772,6 +772,23 @@ class BotReplyService:
             raise ReplyRejected("reply citations contain duplicates")
         if not set(result.citations).issubset(allowed_citations):
             raise ReplyRejected("reply cites fabricated evidence")
+        deduplicated_reply_text, deduplicated_english_recap = (
+            self._deduplicate_declared_local_citations(
+                result.reply_text,
+                result.english_recap,
+                frozenset(result.citations),
+            )
+        )
+        if (
+            deduplicated_reply_text != result.reply_text
+            or deduplicated_english_recap != result.english_recap
+        ):
+            result = result.model_copy(
+                update={
+                    "reply_text": deduplicated_reply_text,
+                    "english_recap": deduplicated_english_recap,
+                }
+            )
         model_text = result.reply_text
         if result.english_recap is not None:
             model_text = f"{model_text}\n{result.english_recap}"
@@ -859,6 +876,31 @@ class BotReplyService:
                 f"[{citation}]",
             )
         return normalized
+
+    @staticmethod
+    def _deduplicate_declared_local_citations(
+        reply_text: str,
+        english_recap: str | None,
+        declared_citations: frozenset[str],
+    ) -> tuple[str, str | None]:
+        seen: set[str] = set()
+
+        def deduplicate(text: str) -> str:
+            def replace(match: re.Match[str]) -> str:
+                citation = match.group(1)
+                if citation not in declared_citations:
+                    return match.group(0)
+                if citation in seen:
+                    return ""
+                seen.add(citation)
+                return match.group(0)
+
+            return _LOCAL_CITATION.sub(replace, text)
+
+        return (
+            deduplicate(reply_text),
+            deduplicate(english_recap) if english_recap is not None else None,
+        )
 
     @staticmethod
     def _suggested_urls(text: str) -> tuple[str, ...]:

@@ -362,7 +362,7 @@ async def test_literal_record_prefix_is_normalized_for_an_exact_allowed_citation
 
 
 @pytest.mark.asyncio
-async def test_reply_text_rejects_duplicate_occurrences_of_a_declared_citation(
+async def test_reply_text_deduplicates_occurrences_of_a_declared_local_citation(
     tmp_path: Path,
 ) -> None:
     job = seed(tmp_path, "@bot What is the TAWG validation focus?")
@@ -372,12 +372,14 @@ async def test_reply_text_rejects_duplicate_occurrences_of_a_declared_citation(
         "That remains the current focus. [tg:tawg:10]"
     )
 
-    with pytest.raises(ReplyRejected, match="reply preparation failed safely"):
-        await BotReplyService(
-            tmp_path,
-            ai=FakeAi(output),
-            bot_username="bot",
-        ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(output),
+        bot_username="bot",
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.reply_text.count("[tg:tawg:10]") == 1
+    assert prepared.citations == ("tg:tawg:10",)
 
 
 @pytest.mark.asyncio
