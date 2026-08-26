@@ -486,8 +486,8 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: W/"c22a2e22f40a2dfbc8b380a4ece1468c
-    content_sha256: f015359606eb820793112a9ddbb45a062d4e932b29e256dcf6e81c938dc6ae43
-    byte_count: 260032
+    checked_at: '2026-08-26T04:19:43.287631Z'
+    version: W/"4f90f9b057dfd05c63319fa22705bfae
+    content_sha256: a717564948b28b8d1feb17db509087779b814440fd3c144f98c4b19b1a9a64f3
+    byte_count: 260070
   status: active

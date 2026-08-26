@@ -238,5 +238,17 @@
     "schema_version": "tawg.knowledge-refresh-job.v1",
     "source_key": "magicians-8323",
     "updated_at": "2026-08-26T03:27:43.677775Z"
+  },
+  {
+    "created_at": "2026-08-26T04:19:43.287631Z",
+    "erc_number": 8354,
+    "job_key": "refresh:erc-8354:agent-ercs-8354-implementation:a717564948b28b8d",
+    "observed_sha256": "a717564948b28b8d1feb17db509087779b814440fd3c144f98c4b19b1a9a64f3",
+    "observed_version": "W/\"4f90f9b057dfd05c63319fa22705bfae",
+    "retry_count": 0,
+    "safe_error_code": null,
+    "schema_version": "tawg.knowledge-refresh-job.v1",
+    "source_key": "agent-ercs-8354-implementation",
+    "updated_at": "2026-08-26T04:19:43.287631Z"
   }
 ]

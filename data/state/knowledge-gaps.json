@@ -192,7 +192,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8354:implementation:normative_spec:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "last_observed_at": "2026-08-26T04:19:43.287631Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
@@ -203,7 +203,7 @@
     "first_observed_at": "2026-08-23T06:55:28.909924Z",
     "gap_key": "gap:erc-8354:implementation:test_or_example:unregistered",
     "intent": "implementation",
-    "last_observed_at": "2026-08-23T06:55:28.909924Z",
+    "last_observed_at": "2026-08-26T04:19:43.287631Z",
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
