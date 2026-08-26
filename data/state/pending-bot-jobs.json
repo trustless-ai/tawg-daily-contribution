@@ -37,14 +37,14 @@
     "job_id": "reply:tg:tawg:3380",
     "message_thread_id": null,
     "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
-    "refusal": false,
+    "prepared_language": "en",
+    "prepared_reply_text": "I can help with TAWG knowledge, local identity corrections, evidence-backed knowledge corrections, and relevant source suggestions. I can't take that action.",
+    "refusal": true,
     "reply_to_message_id": 3380,
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_record_id": "tg:tawg:3380",
-    "updated_at": "2026-08-26T03:27:43.677775Z"
+    "updated_at": "2026-08-26T04:19:43.287631Z"
   }
 ]
