@@ -96,10 +96,20 @@ def test_job_prompts_narrow_each_output_contract() -> None:
 
     assert "English recap" in reply
     assert "not verified" in reply
+    assert "expected_sha256" in reply
+    assert "exact supplied revision" in reply
     assert "ten-section" in knowledge
     assert "source-key/URL" in knowledge
     assert "current-window evidence" in daily
     assert "citation_allowlist" in daily
+
+
+def test_shared_skill_scopes_reply_corrections_to_supplied_revisions() -> None:
+    skill = (ROOT / "bot-skill/SKILL.md").read_text(encoding="utf-8")
+
+    assert "interactive reply correction" in skill
+    assert "expected_sha256" in skill
+    assert "Do not add ledger writes" in skill
 
 
 def test_real_acceptance_scope_has_reliable_8004_and_8183_evidence_classes() -> None:

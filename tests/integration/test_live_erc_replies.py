@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import shutil
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -27,6 +28,9 @@ NOW = datetime(2026, 8, 23, 4, 0, tzinfo=UTC)
 CANONICAL = "https://eips.ethereum.org/EIPS/eip-8004"
 IMPLEMENTATION = (
     "https://github.com/trustless-ai/agent-ercs/blob/main/contracts/identity/ERC8004/README.md"
+)
+ERC_8281_IMPLEMENTATION = (
+    "https://github.com/trustless-ai/agent-ercs/blob/main/contracts/verify/ERC8281/README.md"
 )
 
 
@@ -235,6 +239,79 @@ async def test_ordinary_erc_reply_reuses_local_knowledge_without_live_fetch(
     assert CANONICAL in context
     assert prepared.citations == (CANONICAL, IMPLEMENTATION)
     assert live.calls == []
+
+
+@pytest.mark.asyncio
+async def test_local_erc_correction_context_exposes_exact_current_page_revision(
+    tmp_path: Path,
+) -> None:
+    job = _seed(tmp_path, "@bot Please add OCP to your knowledge, which is ERC 8281")
+    shutil.copytree(PROJECT / "knowledge", tmp_path / "knowledge", dirs_exist_ok=True)
+    current = (PROJECT / "knowledge/ercs/erc-8281.md").read_text(encoding="utf-8")
+    ai = FakeAi(
+        {
+            **_result(citations=["tg:tawg:100"]),
+            "reply_text": "I need stronger evidence before changing the page. [tg:tawg:100]",
+            "evidence_status": "not_verified",
+            "verification_gaps": ["The trigger does not establish the acronym."],
+        }
+    )
+
+    await _service(tmp_path, ai=ai, live=FakeLiveEvidence(_pack())).prepare(
+        job.job_id, now=NOW + timedelta(minutes=1)
+    )
+
+    context = json.loads(ai.calls[0]["context_pack"])
+    retrieved = context["retrieved"][0]
+    assert retrieved["path"] == "knowledge/ercs/erc-8281.md"
+    assert retrieved["expected_sha256"] == hashlib.sha256(current.encode()).hexdigest()
+    assert retrieved["text"] == current
+
+
+@pytest.mark.asyncio
+async def test_local_erc_correction_persists_against_v2_evidence_frontmatter(
+    tmp_path: Path,
+) -> None:
+    job = _seed(tmp_path, "@bot Please add OCP to your knowledge, which is ERC 8281")
+    shutil.copytree(PROJECT / "knowledge", tmp_path / "knowledge", dirs_exist_ok=True)
+    page = tmp_path / "knowledge/ercs/erc-8281.md"
+    current = (PROJECT / "knowledge/ercs/erc-8281.md").read_text(encoding="utf-8")
+    corrected = current.replace(
+        "telegram_record_ids: []",
+        "telegram_record_ids:\n- tg:tawg:100",
+    ).replace(
+        "The agent-ercs implementation draft provides",
+        "OCP means Observation Commitment Protocol. The agent-ercs implementation draft provides",
+    )
+    result = {
+        **_result(citations=["tg:tawg:100"]),
+        "reply_text": "Added the evidence-backed OCP expansion. [tg:tawg:100]",
+        "correction_transaction": {
+            "schema_version": "tawg.vault-transaction.v1",
+            "operation_id": job.job_id,
+            "writes": [
+                {
+                    "path": "knowledge/ercs/erc-8281.md",
+                    "expected_sha256": hashlib.sha256(current.encode()).hexdigest(),
+                    "content": corrected,
+                    "citations": [
+                        "agent-ercs-8281-implementation",
+                        "tg:tawg:100",
+                        ERC_8281_IMPLEMENTATION,
+                    ],
+                }
+            ],
+        },
+    }
+
+    prepared = await _service(
+        tmp_path,
+        ai=FakeAi(result),
+        live=FakeLiveEvidence(_pack()),
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=1))
+
+    assert "Added" in prepared.reply_text
+    assert page.read_text(encoding="utf-8") == corrected
 
 
 @pytest.mark.asyncio

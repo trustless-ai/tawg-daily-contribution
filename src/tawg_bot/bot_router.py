@@ -28,7 +28,7 @@ from tawg_bot.retrieval import VaultRetriever
 from tawg_bot.source_registry import EvidenceKind
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 from tawg_bot.vault import parse_frontmatter
-from tawg_bot.vault_transaction import VaultTransaction, VaultTransactionEngine
+from tawg_bot.vault_transaction import CitationScope, VaultTransaction, VaultTransactionEngine
 
 _NON_ENGLISH = re.compile(r"[\u3040-\u30ff\u3400-\u9fff\u0400-\u052f\u0600-\u06ff\u0900-\u097f]")
 _LIVE_ERC_REQUEST = re.compile(
@@ -136,7 +136,10 @@ class BotRouter:
         return BotRoute.REFUSE
 
     def erc_query(self, text: str) -> ErcQuery | None:
-        if self.classify(text) is not BotRoute.KNOWLEDGE_QUESTION:
+        if self.classify(text) not in {
+            BotRoute.KNOWLEDGE_QUESTION,
+            BotRoute.KNOWLEDGE_CORRECTION,
+        }:
             return None
         return self._erc_planner.plan(text)
 
@@ -288,6 +291,7 @@ class _ReplyContext:
 class _LocalErcContext:
     citations: tuple[str, ...]
     pages: tuple[dict[str, str], ...]
+    source_keys: tuple[str, ...]
     verified_at: tuple[str, ...]
 
 
@@ -361,7 +365,10 @@ class BotReplyService:
             erc_query = self.router.erc_query(trigger.text_original)
             local_erc_context: _LocalErcContext | None = None
             if erc_query is not None:
-                local_erc_context = self._local_erc_context(erc_query)
+                local_erc_context = self._local_erc_context(
+                    erc_query,
+                    include_revision=route is BotRoute.KNOWLEDGE_CORRECTION,
+                )
                 local_erc_citations = (
                     local_erc_context.citations if local_erc_context is not None else ()
                 )
@@ -399,6 +406,11 @@ class BotReplyService:
                 context.allowed_citations,
                 context.evidence_pack,
                 job_id,
+                correction_source_keys=(
+                    frozenset(local_erc_context.source_keys)
+                    if local_erc_context is not None
+                    else frozenset()
+                ),
             )
             reply_text = result.reply_text.strip()
             if result.english_recap is not None:
@@ -441,7 +453,17 @@ class BotReplyService:
                     raise ReplyRejected("source suggestion has no safe URL")
                 self.knowledge_state.add_candidates(uow, urls, trigger.record_id, now)
             if result.correction_transaction is not None:
-                CorrectionService(VaultTransactionEngine(self.root)).stage(
+                citation_scope = (
+                    CitationScope(
+                        source_keys=frozenset(local_erc_context.source_keys),
+                        urls=frozenset(local_erc_context.citations),
+                    )
+                    if local_erc_context is not None
+                    else None
+                )
+                CorrectionService(
+                    VaultTransactionEngine(self.root, citation_scope=citation_scope)
+                ).stage(
                     result.correction_transaction,
                     operation_id=job_id,
                     uow=uow,
@@ -668,18 +690,26 @@ class BotReplyService:
         except ContextRejected as error:
             raise ReplyRejected(str(error)) from None
 
-    def _local_erc_context(self, query: ErcQuery) -> _LocalErcContext | None:
+    def _local_erc_context(
+        self,
+        query: ErcQuery,
+        *,
+        include_revision: bool = False,
+    ) -> _LocalErcContext | None:
         if self.knowledge_state is None:
             return None
         citations: list[str] = []
         pages: list[dict[str, str]] = []
+        context_source_keys: list[str] = []
         verified_times: list[str] = []
         for erc_number in query.erc_numbers:
             page = self.root / f"knowledge/ercs/erc-{erc_number}.md"
             if not page.is_file() or page.is_symlink():
                 return None
             try:
-                frontmatter, body = parse_frontmatter(page.read_text(encoding="utf-8"))
+                current_bytes = page.read_bytes()
+                current = current_bytes.decode("utf-8")
+                frontmatter, body = parse_frontmatter(current)
             except (OSError, UnicodeError, ValueError):
                 return None
             source_keys = frontmatter.get("source_keys") if frontmatter else None
@@ -703,16 +733,20 @@ class BotReplyService:
             if not page_citations:
                 return None
             citations.extend(page_citations)
-            relative = page.relative_to(self.root).as_posix()
-            pages.append(
-                {
-                    "chunk_id": f"local:erc-{erc_number}",
-                    "path": relative,
-                    "text": body[:20_000],
-                    "record_id": "",
-                    "source_locator": "",
-                }
+            context_source_keys.extend(
+                source_key for source_key in source_keys if source_key in active
             )
+            relative = page.relative_to(self.root).as_posix()
+            context_page = {
+                "chunk_id": f"local:erc-{erc_number}",
+                "path": relative,
+                "text": current if include_revision else body[:20_000],
+                "record_id": "",
+                "source_locator": "",
+            }
+            if include_revision:
+                context_page["expected_sha256"] = hashlib.sha256(current_bytes).hexdigest()
+            pages.append(context_page)
             verified_times.append(
                 verified_at.isoformat().replace("+00:00", "Z")
                 if isinstance(verified_at, datetime)
@@ -721,6 +755,7 @@ class BotReplyService:
         return _LocalErcContext(
             citations=tuple(dict.fromkeys(citations)),
             pages=tuple(pages),
+            source_keys=tuple(dict.fromkeys(context_source_keys)),
             verified_at=tuple(verified_times),
         )
 
@@ -744,6 +779,7 @@ class BotReplyService:
         allowed_citations: frozenset[str],
         evidence_pack: EvidencePack | None,
         job_id: str,
+        correction_source_keys: frozenset[str],
     ) -> _ReplyResult:
         try:
             result = _ReplyResult.model_validate(raw)
@@ -837,6 +873,13 @@ class BotReplyService:
             not correction_route or result.correction_transaction.operation_id != job_id
         ):
             raise ReplyRejected("reply attempted an unauthorized correction")
+        if result.correction_transaction is not None:
+            allowed_transaction_citations = allowed_citations | correction_source_keys
+            if any(
+                not set(write.citations).issubset(allowed_transaction_citations)
+                for write in result.correction_transaction.writes
+            ):
+                raise ReplyRejected("correction cites evidence outside its context")
         if route is BotRoute.KNOWLEDGE_QUESTION and not result.refusal and not result.citations:
             raise ReplyRejected("knowledge reply requires evidence citations")
         if route is BotRoute.COORDINATION and (

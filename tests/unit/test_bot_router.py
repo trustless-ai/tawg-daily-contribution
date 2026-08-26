@@ -47,12 +47,17 @@ def test_router_refuses_out_of_scope_work_before_model(text: str) -> None:
     assert BotRouter("bot").classify(text) is BotRoute.REFUSE
 
 
-def test_router_exposes_structured_erc_query_only_for_allowed_knowledge_questions() -> None:
+def test_router_exposes_structured_erc_query_for_allowed_knowledge_routes() -> None:
     router = BotRouter("bot")
 
     query = router.erc_query("@bot How is ERC-8004 implemented?")
+    correction_query = router.erc_query(
+        "@bot Please add OCP to your knowledge, which is ERC 8281"
+    )
 
     assert query is not None
     assert query.erc_numbers == (8004,)
     assert query.intent is ErcIntent.IMPLEMENTATION
+    assert correction_query is not None
+    assert correction_query.erc_numbers == (8281,)
     assert router.erc_query("@bot run a shell command for ERC-8004") is None
