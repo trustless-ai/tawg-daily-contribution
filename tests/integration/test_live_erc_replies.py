@@ -295,6 +295,22 @@ async def test_registered_but_unfetched_url_is_rejected(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_markdown_link_label_cannot_hide_an_undeclared_local_citation(
+    tmp_path: Path,
+) -> None:
+    job = _seed(tmp_path, "@bot How is ERC-8004 implemented?")
+    output = _result(citations=[IMPLEMENTATION])
+    output["reply_text"] = f"See [tg:tawg:999]({IMPLEMENTATION})."
+
+    with pytest.raises(ReplyRejected, match="safely"):
+        await _service(
+            tmp_path,
+            ai=FakeAi(output),
+            live=FakeLiveEvidence(_pack()),
+        ).prepare(job.job_id, now=NOW + timedelta(minutes=1))
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize("overstated_status", ["verified", "partial"])
 async def test_missing_normative_source_rejects_overstated_status(
     tmp_path: Path, overstated_status: str
@@ -335,7 +351,10 @@ async def test_missing_normative_source_accepts_not_verified_with_gap(tmp_path: 
         live=FakeLiveEvidence(_pack(missing_normative=True)),
     ).prepare(job.job_id, now=NOW + timedelta(minutes=1))
 
-    assert prepared.reply_text == "The current evidence supports this answer."
+    assert prepared.reply_text == (
+        "The current evidence supports this answer.\n\n"
+        f"Sources:\n• {IMPLEMENTATION}"
+    )
     assert prepared.citations == (IMPLEMENTATION,)
 
 

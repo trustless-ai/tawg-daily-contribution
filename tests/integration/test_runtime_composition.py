@@ -666,6 +666,33 @@ async def test_reply_preparation_gives_one_pending_job_a_five_minute_model_budge
 
 
 @pytest.mark.asyncio
+async def test_reply_preparation_reconciles_policy_repairs_before_selecting_work(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text("[]\n", encoding="utf-8")
+    reconciled: list[datetime] = []
+
+    class Reconciler:
+        def __init__(self, root: Path, *, bot_username: str) -> None:
+            assert root == tmp_path
+            assert bot_username == "tawg_bot"
+
+        def reconcile(self, *, now: datetime) -> tuple[str, ...]:
+            reconciled.append(now)
+            return ()
+
+    monkeypatch.setattr(runtime_module, "ReplyRepairReconciler", Reconciler)
+    monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        await pipeline._prepare_pending_replies()
+
+    assert reconciled == [NOW]
+    assert pipeline.prepared_replies == []
+
+
+@pytest.mark.asyncio
 async def test_reply_preparation_skips_a_failed_job_while_fresh_work_is_pending(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

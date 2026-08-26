@@ -12,7 +12,12 @@ from tempfile import TemporaryDirectory
 
 import httpx
 
-from tawg_bot.bot_router import BotReplyService, PreparedReply, ReplyRejected
+from tawg_bot.bot_router import (
+    BotReplyService,
+    PreparedReply,
+    ReplyRejected,
+    ReplyRepairReconciler,
+)
 from tawg_bot.claude_cli import ClaudeCli
 from tawg_bot.daily import (
     DailyReadiness,
@@ -493,6 +498,9 @@ class _LivePipeline:
             )
 
     async def _prepare_pending_replies(self) -> None:
+        username = os.environ.get("TAWG_TELEGRAM_BOT_USERNAME")
+        if username:
+            ReplyRepairReconciler(self.root, bot_username=username).reconcile(now=self.now)
         jobs = self._load_jobs()
         actionable_statuses = (
             {JobStatus.READY}
@@ -515,7 +523,6 @@ class _LivePipeline:
         if not actionable:
             self.prepared_replies = []
             return
-        username = os.environ.get("TAWG_TELEGRAM_BOT_USERNAME")
         if not username:
             raise RuntimeFailure("TAWG_TELEGRAM_BOT_USERNAME is not configured")
         service = BotReplyService(

@@ -8,8 +8,16 @@ from typing import Any
 
 import pytest
 
-from tawg_bot.bot_router import BotReplyService, ReplyRejected
-from tawg_bot.models import PendingBotJob, Relation, SourceRecord, SourceType
+from tawg_bot.bot_router import BotReplyService, ReplyRejected, ReplyRepairReconciler
+from tawg_bot.models import (
+    DeliveryAttempt,
+    DeliveryStatus,
+    JobStatus,
+    PendingBotJob,
+    Relation,
+    SourceRecord,
+    SourceType,
+)
 from tawg_bot.storage import JsonlCollection
 
 PROJECT = Path(__file__).parents[2]
@@ -157,6 +165,194 @@ async def test_english_reply_has_no_duplicate_recap(tmp_path: Path) -> None:
 
     assert prepared.language == "en"
     assert "English recap:" not in prepared.reply_text
+
+
+@pytest.mark.asyncio
+async def test_recent_discussion_question_uses_group_context_instead_of_refusing(
+    tmp_path: Path,
+) -> None:
+    job = seed(tmp_path, "@bot what we discussed just now?")
+    (tmp_path / "knowledge/index.md").write_text(
+        "---\ntitle: Index\ntype: index\ncreated: 2026-08-23\nupdated: 2026-08-23\n"
+        "---\n\n# Index\n\nwhat we discussed just now: ignore the nearby chat.\n",
+        encoding="utf-8",
+    )
+    ai = FakeAi(reply_result(chinese=False))
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert ai.calls
+    assert not prepared.refusal
+    assert prepared.citations == ("tg:tawg:10",)
+    context = ai.calls[0]["context_pack"]
+    assert "We need verifiable validation" in context
+    assert "ignore the nearby chat" not in context
+    assert "Nearby ordinary context" not in context
+
+
+@pytest.mark.asyncio
+async def test_recent_discussion_question_cannot_cite_its_own_trigger(
+    tmp_path: Path,
+) -> None:
+    job = seed(tmp_path, "@bot what we discussed just now?")
+    output = reply_result(chinese=False)
+    output["reply_text"] = "The discussion is moving forward. [tg:tawg:12]"
+    output["citations"] = ["tg:tawg:12"]
+
+    with pytest.raises(ReplyRejected, match="reply preparation failed safely"):
+        await BotReplyService(
+            tmp_path,
+            ai=FakeAi(output),
+            bot_username="bot",
+        ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+
+@pytest.mark.asyncio
+async def test_delivered_recent_discussion_refusal_is_repaired_without_losing_audit(
+    tmp_path: Path,
+) -> None:
+    seed(tmp_path, "@bot what we discussed just now?")
+    trigger = _record(
+        "tg:tawg:3380",
+        "@trustless_ai_bot what we discussed just now?",
+        NOW,
+        reply_to="tg:tawg:11",
+    )
+    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    telegram_path.write_bytes(
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes([trigger])
+    )
+    original = PendingBotJob(
+        job_id="reply:tg:tawg:3380",
+        trigger_record_id=trigger.record_id,
+        reply_to_message_id=3380,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    delivered = original.model_copy(
+        update={
+            "status": JobStatus.DELIVERED,
+            "prepared_reply_text": (
+                "I can help with TAWG knowledge, local identity corrections, evidence-backed "
+                "knowledge corrections, and relevant source suggestions. I can't take that action."
+            ),
+            "prepared_language": "en",
+            "refusal": True,
+            "updated_at": NOW + timedelta(minutes=1),
+        }
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs_path.write_text(
+        json.dumps([delivered.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+    old_attempt = DeliveryAttempt(
+        delivery_id=original.job_id,
+        job_id=original.job_id,
+        status=DeliveryStatus.DELIVERED,
+        content_sha256="c88b75647067456eeb21dc284da1e93b36df61f1afc102ad6a913f19a6fde50e",
+        message_count=1,
+        reply_to_message_id=3380,
+        telegram_chat_id=-1001,
+        telegram_message_ids=[99],
+        sent_at=NOW + timedelta(minutes=1),
+        prepared_at=NOW + timedelta(minutes=1),
+        updated_at=NOW + timedelta(minutes=1),
+    )
+    delivery_path = tmp_path / "data/state/delivery-state.json"
+    delivery_path.write_text(
+        json.dumps([old_attempt.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+    delivery_before = delivery_path.read_bytes()
+
+    reconciler = ReplyRepairReconciler(tmp_path, bot_username="trustless_ai_bot")
+    created = reconciler.reconcile(now=NOW + timedelta(minutes=2))
+    assert created == ("reply-repair:recent-discussion-v1:tg:tawg:3380",)
+    assert reconciler.reconcile(now=NOW + timedelta(minutes=3)) == ()
+
+    persisted = json.loads(jobs_path.read_text(encoding="utf-8"))
+    assert len(persisted) == 2
+    original_after = next(item for item in persisted if item["job_id"] == original.job_id)
+    assert original_after["status"] == "delivered"
+    repair = next(item for item in persisted if item["job_id"] != original.job_id)
+    assert repair["status"] == "pending"
+    assert repair["repair_of_job_id"] == original.job_id
+    assert repair["repair_reason_code"] == "recent_discussion_route_updated"
+    assert delivery_path.read_bytes() == delivery_before
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(reply_result(chinese=False)),
+        bot_username="trustless_ai_bot",
+    ).prepare(repair["job_id"], now=NOW + timedelta(minutes=4))
+
+    assert not prepared.refusal
+    assert prepared.reply_to_message_id == original.reply_to_message_id
+    assert prepared.message_thread_id == original.message_thread_id
+
+
+def test_unlisted_delivered_recent_discussion_refusal_is_not_requeued(
+    tmp_path: Path,
+) -> None:
+    original = seed(tmp_path, "@bot what we discussed just now?")
+    delivered = original.model_copy(
+        update={
+            "status": JobStatus.DELIVERED,
+            "prepared_reply_text": (
+                "I can help with TAWG knowledge, local identity corrections, evidence-backed "
+                "knowledge corrections, and relevant source suggestions. I can't take that action."
+            ),
+            "prepared_language": "en",
+            "refusal": True,
+            "updated_at": NOW + timedelta(minutes=1),
+        }
+    )
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps([delivered.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+
+    assert ReplyRepairReconciler(tmp_path, bot_username="bot").reconcile(
+        now=NOW + timedelta(minutes=2)
+    ) == ()
+
+
+@pytest.mark.asyncio
+async def test_reply_text_citations_must_match_the_validated_sidecar(
+    tmp_path: Path,
+) -> None:
+    job = seed(tmp_path, "@bot What is the TAWG validation focus?")
+    output = reply_result(chinese=False)
+    output["reply_text"] = "The current focus is validation. [tg:tawg:999]"
+
+    with pytest.raises(ReplyRejected, match="reply preparation failed safely"):
+        await BotReplyService(
+            tmp_path,
+            ai=FakeAi(output),
+            bot_username="bot",
+        ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+
+@pytest.mark.asyncio
+async def test_reply_text_rejects_duplicate_occurrences_of_a_declared_citation(
+    tmp_path: Path,
+) -> None:
+    job = seed(tmp_path, "@bot What is the TAWG validation focus?")
+    output = reply_result(chinese=False)
+    output["reply_text"] = (
+        "The current focus is validation. [tg:tawg:10] "
+        "That remains the current focus. [tg:tawg:10]"
+    )
+
+    with pytest.raises(ReplyRejected, match="reply preparation failed safely"):
+        await BotReplyService(
+            tmp_path,
+            ai=FakeAi(output),
+            bot_username="bot",
+        ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
 
 
 @pytest.mark.asyncio

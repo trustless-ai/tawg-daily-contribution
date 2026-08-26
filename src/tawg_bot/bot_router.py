@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from collections.abc import Mapping
@@ -38,6 +39,8 @@ _INLINE_CITATION = re.compile(
     r"https?://|\[[^\]\s]+:[^\]]+\]|\[[^\]]+\]\(https?://[^)]+\)",
     re.IGNORECASE,
 )
+_LOCAL_CITATION = re.compile(r"\[((?:[A-Za-z0-9_.-]+:){2,}[A-Za-z0-9_.:/@-]+)\]")
+_URL_CITATION = re.compile(r"https?://[^\s<>()\[\]]+", re.IGNORECASE)
 
 
 class BotRoute(StrEnum):
@@ -87,6 +90,12 @@ class BotRouter:
         r"[?\uFF1F]|\b(what|why|when|where|who|how|which|status|explain|summarize)\b",
         re.I,
     )
+    _RECENT_DISCUSSION_QUESTION = re.compile(
+        r"^\s*(?:what (?:did we discuss|we discussed)(?: (?:just now|recently))?|"
+        r"(?:please )?summari[sz]e (?:what we discussed|the (?:recent|latest) discussion))"
+        r"\s*[?!.]*$",
+        re.IGNORECASE,
+    )
     _BOT_SOCIAL = re.compile(
         r"^\s*(?:(?:looks?|sounds?) good(?:[!,. ]+(?:you(?:'re| are|\u2019re) )?"
         r"(?:online|here|back|ready|present))?|(?:you(?:'re| are|\u2019re) )?"
@@ -114,6 +123,8 @@ class BotRouter:
             return BotRoute.SOURCE_SUGGESTION
         if self._TAWG.search(cleaned) and self._QUESTION.search(cleaned):
             return BotRoute.KNOWLEDGE_QUESTION
+        if self._RECENT_DISCUSSION_QUESTION.fullmatch(cleaned):
+            return BotRoute.KNOWLEDGE_QUESTION
         if self._BOT_SOCIAL.fullmatch(cleaned):
             return BotRoute.COORDINATION
         return BotRoute.REFUSE
@@ -122,6 +133,103 @@ class BotRouter:
         if self.classify(text) is not BotRoute.KNOWLEDGE_QUESTION:
             return None
         return self._erc_planner.plan(text)
+
+    def is_recent_discussion_question(self, text: str) -> bool:
+        cleaned = re.sub(
+            rf"@{re.escape(self.bot_username)}\b", "", text, flags=re.IGNORECASE
+        ).strip()
+        return self._RECENT_DISCUSSION_QUESTION.fullmatch(cleaned) is not None
+
+
+class ReplyRepairReconciler:
+    """Create one auditable correction job for a refusal invalidated by routing policy."""
+
+    _POLICY_VERSION = "recent-discussion-v1"
+    _REASON_CODE = "recent_discussion_route_updated"
+    _STATE_PATH = "data/state/pending-bot-jobs.json"
+    _LEGACY_REPAIRS: Mapping[str, tuple[str, str, str]] = {
+        "reply:tg:tawg:3380": (
+            "tg:tawg:3380",
+            "dc6114743926cd5f4f9577807beb9211598fcff2c43b3244f2a1aa8a70660d5d",
+            "c88b75647067456eeb21dc284da1e93b36df61f1afc102ad6a913f19a6fde50e",
+        )
+    }
+
+    def __init__(self, root: Path, *, bot_username: str) -> None:
+        self.root = root.resolve()
+        self.router = BotRouter(bot_username)
+
+    def reconcile(self, *, now: datetime) -> tuple[str, ...]:
+        if now.tzinfo is None or now.utcoffset() != UTC.utcoffset(now):
+            raise ValueError("reply repair time must use UTC")
+        jobs = self._load_jobs()
+        records = {record.record_id: record for record in SourceQuery(self.root).records()}
+        created: list[str] = []
+        for original in sorted(jobs.values(), key=lambda item: item.job_id):
+            if original.status is not JobStatus.DELIVERED or not original.refusal:
+                continue
+            repair_spec = self._LEGACY_REPAIRS.get(original.job_id)
+            if repair_spec is None:
+                continue
+            trigger_id, trigger_sha256, refusal_sha256 = repair_spec
+            trigger = records.get(trigger_id)
+            prepared_text = original.prepared_reply_text
+            if (
+                original.trigger_record_id != trigger_id
+                or trigger is None
+                or trigger.content_sha256 != trigger_sha256
+                or prepared_text is None
+                or hashlib.sha256(prepared_text.encode("utf-8")).hexdigest()
+                != refusal_sha256
+                or not self.router.is_recent_discussion_question(trigger.text_original)
+            ):
+                continue
+            repair_id = f"reply-repair:{self._POLICY_VERSION}:{trigger.record_id}"
+            if repair_id in jobs:
+                continue
+            jobs[repair_id] = PendingBotJob(
+                job_id=repair_id,
+                trigger_record_id=original.trigger_record_id,
+                reply_to_message_id=original.reply_to_message_id,
+                message_thread_id=original.message_thread_id,
+                repair_of_job_id=original.job_id,
+                repair_reason_code=self._REASON_CODE,
+                created_at=now,
+                updated_at=now,
+            )
+            created.append(repair_id)
+        if created:
+            uow = RepositoryUnitOfWork(
+                self.root,
+                operation_id=f"reply-repair-reconcile:{int(now.timestamp())}",
+            )
+            uow.register_external_evidence(())
+            uow.stage_json(
+                self._STATE_PATH,
+                [jobs[job_id].model_dump(mode="json") for job_id in sorted(jobs)],
+            )
+            uow.publish()
+        return tuple(created)
+
+    def _load_jobs(self) -> dict[str, PendingBotJob]:
+        path = self.root / self._STATE_PATH
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(raw, list):
+                raise ValueError
+            parsed = [PendingBotJob.model_validate(item) for item in raw]
+        except (
+            OSError,
+            UnicodeError,
+            ValueError,
+            ValidationError,
+            json.JSONDecodeError,
+        ) as error:
+            raise ReplyRejected("invalid pending reply state") from error
+        jobs = {job.job_id: job for job in parsed}
+        if len(jobs) != len(parsed):
+            raise ReplyRejected("duplicate pending reply job")
+        return jobs
 
 
 class ReplyAi(Protocol):
@@ -284,6 +392,7 @@ class BotReplyService:
             reply_text = result.reply_text.strip()
             if result.english_recap is not None:
                 reply_text = f"{reply_text}\n\nEnglish recap: {result.english_recap.strip()}"
+            reply_text = self._bind_reply_citations(reply_text, result.citations)
             if len(reply_text) > 8192:
                 raise ReplyRejected("reply cannot fit in two Telegram messages")
             self.privacy.assert_public(reply_text)
@@ -383,10 +492,23 @@ class BotReplyService:
             if abs(record.created_at - trigger.created_at) <= timedelta(minutes=30)
             and record.record_id not in seen
         ]
+        recent_discussion = self.router.is_recent_discussion_question(
+            trigger.text_original
+        )
+        if recent_discussion:
+            nearby = [
+                record for record in nearby if record.created_at <= trigger.created_at
+            ]
         nearby.sort(key=lambda record: (record.created_at, record.record_id))
-        retrieved_items = VaultRetriever(self.root).query(trigger.text_original, top_k=16)
+        retrieved_items = (
+            []
+            if recent_discussion
+            else VaultRetriever(self.root).query(trigger.text_original, top_k=16)
+        )
         retrieved: list[dict[str, Any]] = (
-            list(local_erc_context.pages) if local_erc_context is not None else []
+            list(local_erc_context.pages)
+            if local_erc_context is not None and not recent_discussion
+            else []
         )
         local_erc_paths = (
             {page["path"] for page in local_erc_context.pages}
@@ -411,6 +533,14 @@ class BotReplyService:
             | {record.record_id for record in nearby[:50]}
             | {item.record_id for item in retrieved_items if item.record_id is not None}
         )
+        if recent_discussion:
+            local_ids.discard(trigger.record_id)
+            local_ids = {
+                record_id
+                for record_id in local_ids
+                if record_id in records
+                and records[record_id].created_at <= trigger.created_at
+            }
         allowed_citations: frozenset[str]
         citation_entries: list[dict[str, str]]
         if route is BotRoute.COORDINATION:
@@ -563,6 +693,14 @@ class BotReplyService:
             raise ReplyRejected("reply citations contain duplicates")
         if not set(result.citations).issubset(allowed_citations):
             raise ReplyRejected("reply cites fabricated evidence")
+        model_text = result.reply_text
+        if result.english_recap is not None:
+            model_text = f"{model_text}\n{result.english_recap}"
+        text_citations = self._text_citations(model_text)
+        if len(text_citations) != len(set(text_citations)):
+            raise ReplyRejected("reply text repeats an evidence citation")
+        if not set(text_citations).issubset(result.citations):
+            raise ReplyRejected("reply text cites undeclared evidence")
         if evidence_pack is not None and evidence_pack.missing_required:
             normative_missing = any(
                 missing.bucket == "normative_spec" for missing in evidence_pack.missing_required
@@ -602,6 +740,32 @@ class BotReplyService:
         except PrivacyViolation:
             raise ReplyRejected("reply output failed privacy validation") from None
         return result
+
+    @classmethod
+    def _bind_reply_citations(cls, text: str, citations: list[str]) -> str:
+        occurrences = cls._text_citations(text)
+        if len(occurrences) != len(set(occurrences)):
+            raise ReplyRejected("reply text repeats an evidence citation")
+        present = set(occurrences)
+        missing = [citation for citation in citations if citation not in present]
+        if missing:
+            rendered = [
+                f"[{citation}]" if ":" in citation and not citation.startswith("http") else citation
+                for citation in missing
+            ]
+            text = f"{text}\n\nSources:\n" + "\n".join(f"• {item}" for item in rendered)
+        bound = cls._text_citations(text)
+        if len(bound) != len(citations) or set(bound) != set(citations):
+            raise ReplyRejected("reply text citations do not match declared evidence")
+        return text
+
+    @staticmethod
+    def _text_citations(text: str) -> tuple[str, ...]:
+        found: list[str] = _LOCAL_CITATION.findall(text)
+        found.extend(
+            match.rstrip(".,;:!?") for match in _URL_CITATION.findall(text)
+        )
+        return tuple(found)
 
     @staticmethod
     def _suggested_urls(text: str) -> tuple[str, ...]:

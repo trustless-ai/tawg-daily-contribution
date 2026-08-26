@@ -148,11 +148,21 @@ class PendingBotJob(StrictModel):
     prepared_language: str | None = Field(default=None, max_length=32)
     refusal: bool = False
     safe_error_code: str | None = Field(default=None, max_length=64)
+    repair_of_job_id: str | None = Field(default=None, max_length=128)
+    repair_reason_code: str | None = Field(default=None, max_length=64)
     created_at: datetime
     updated_at: datetime
 
     _created_at_utc = field_validator("created_at")(_require_utc)
     _updated_at_utc = field_validator("updated_at")(_require_utc)
+
+    @model_validator(mode="after")
+    def repair_metadata_is_complete(self) -> PendingBotJob:
+        if (self.repair_of_job_id is None) != (self.repair_reason_code is None):
+            raise ValueError("reply repair metadata must be complete")
+        if self.repair_of_job_id == self.job_id:
+            raise ValueError("reply repair cannot supersede itself")
+        return self
 
 
 class SourceCursors(StrictModel):
