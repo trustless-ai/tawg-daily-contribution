@@ -122,21 +122,24 @@
     "updated_at": "2026-08-26T10:42:04.774207Z"
   },
   {
-    "attempts": 2,
+    "attempts": 3,
     "created_at": "2026-08-26T11:14:46.435246Z",
     "job_id": "reply:tg:tawg:3401",
     "message_thread_id": null,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "tg:tawg:3401",
+      "tg:tawg:3400"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "Got it, Jimmy! ERC-8281 already had a knowledge page — I've updated it to make **OCP** (Observation Commitment Protocol) prominent as the group's shorthand, added a composition section covering the full on-chain chain, the WYRIWE/8263 relationship, type-2 off-chain source-auth, and agent architecture patterns, and registered the supporting Telegram record IDs in frontmatter. [tg:tawg:3401]\n\nThe page now reflects: OCP = observation → digest → on-chain commitment → verify-inclusion, the EVM-native input commitment layer in the TAWG ERC stack. [tg:tawg:3400]",
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
     "reply_to_message_id": 3401,
-    "safe_error_code": "reply_persistence_failed",
+    "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_record_id": "tg:tawg:3401",
-    "updated_at": "2026-08-26T12:39:51.602138Z"
+    "updated_at": "2026-08-26T13:41:34.703946Z"
   }
 ]
