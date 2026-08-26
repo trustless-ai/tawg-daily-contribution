@@ -748,6 +748,26 @@ class BotReplyService:
             result = _ReplyResult.model_validate(raw)
         except ValidationError as error:
             raise ReplyRejected("invalid reply model output") from error
+        normalized_reply_text = self._normalize_local_citation_rendering(
+            result.reply_text, allowed_citations
+        )
+        normalized_english_recap = (
+            self._normalize_local_citation_rendering(
+                result.english_recap, allowed_citations
+            )
+            if result.english_recap is not None
+            else None
+        )
+        if (
+            normalized_reply_text != result.reply_text
+            or normalized_english_recap != result.english_recap
+        ):
+            result = result.model_copy(
+                update={
+                    "reply_text": normalized_reply_text,
+                    "english_recap": normalized_english_recap,
+                }
+            )
         if len(result.citations) != len(set(result.citations)):
             raise ReplyRejected("reply citations contain duplicates")
         if not set(result.citations).issubset(allowed_citations):
@@ -825,6 +845,20 @@ class BotReplyService:
             match.rstrip(".,;:!?") for match in _URL_CITATION.findall(text)
         )
         return tuple(found)
+
+    @staticmethod
+    def _normalize_local_citation_rendering(
+        text: str, allowed_citations: frozenset[str]
+    ) -> str:
+        normalized = text
+        for citation in sorted(allowed_citations, key=lambda value: (-len(value), value)):
+            if ":" not in citation or citation.startswith("http"):
+                continue
+            normalized = normalized.replace(
+                f"[record:{citation}]",
+                f"[{citation}]",
+            )
+        return normalized
 
     @staticmethod
     def _suggested_urls(text: str) -> tuple[str, ...]:

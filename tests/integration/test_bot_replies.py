@@ -341,6 +341,27 @@ async def test_reply_text_citations_must_match_the_validated_sidecar(
 
 
 @pytest.mark.asyncio
+async def test_literal_record_prefix_is_normalized_for_an_exact_allowed_citation(
+    tmp_path: Path,
+) -> None:
+    job = seed(tmp_path, "@bot What is the TAWG validation focus?")
+    output = reply_result(chinese=False)
+    output["reply_text"] = (
+        "The current focus is a verifiable validation path. [record:tg:tawg:10]"
+    )
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(output),
+        bot_username="bot",
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.reply_text.endswith("[tg:tawg:10]")
+    assert "[record:tg:tawg:10]" not in prepared.reply_text
+    assert prepared.citations == ("tg:tawg:10",)
+
+
+@pytest.mark.asyncio
 async def test_reply_text_rejects_duplicate_occurrences_of_a_declared_citation(
     tmp_path: Path,
 ) -> None:
