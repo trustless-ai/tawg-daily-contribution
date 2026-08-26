@@ -122,6 +122,12 @@ people:
       - zexoverz
       magicians:
       - zexoverz
+  zexo-2:
+    display_names:
+    - Zexo
+    handles:
+      telegram:
+      - zexoverz
   zidan:
     display_names:
     - Zidan
