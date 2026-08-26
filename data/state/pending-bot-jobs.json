@@ -1,6 +1,6 @@
 [
   {
-    "attempts": 1,
+    "attempts": 2,
     "created_at": "2026-08-26T05:03:41.673472Z",
     "job_id": "reply-repair:recent-discussion-v1:tg:tawg:3380",
     "message_thread_id": null,
@@ -11,11 +11,11 @@
     "repair_of_job_id": "reply:tg:tawg:3380",
     "repair_reason_code": "recent_discussion_route_updated",
     "reply_to_message_id": 3380,
-    "safe_error_code": "reply_prepare_failed",
+    "safe_error_code": "reply_text_citation_duplicate",
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "pending",
     "trigger_record_id": "tg:tawg:3380",
-    "updated_at": "2026-08-26T05:03:41.673472Z"
+    "updated_at": "2026-08-26T07:26:39.331734Z"
   },
   {
     "attempts": 0,
