@@ -8,7 +8,7 @@ from typing import Any
 
 import pytest
 
-from tawg_bot.bot_router import BotReplyService
+from tawg_bot.bot_router import BotReplyService, ReplyRejected
 from tawg_bot.models import PendingBotJob, Relation, SourceRecord, SourceType
 from tawg_bot.storage import JsonlCollection
 
@@ -157,6 +157,64 @@ async def test_english_reply_has_no_duplicate_recap(tmp_path: Path) -> None:
 
     assert prepared.language == "en"
     assert "English recap:" not in prepared.reply_text
+
+
+@pytest.mark.asyncio
+async def test_bot_status_acknowledgement_gets_a_friendly_in_scope_reply(
+    tmp_path: Path,
+) -> None:
+    job = seed(tmp_path, "Looks good! @bot you\u2019re online 👍")
+    ai = FakeAi(
+        {
+            "schema_version": "tawg.reply-result.v2",
+            "reply_text": (
+                "I\u2019m here and ready to help the group move Trustless AI work forward. 👍"
+            ),
+            "language": "en",
+            "english_recap": None,
+            "citations": [],
+            "evidence_status": "not_verified",
+            "verification_gaps": [],
+            "correction_transaction": None,
+            "refusal": False,
+        }
+    )
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert ai.calls
+    assert not prepared.refusal
+    assert prepared.reply_text.startswith("I\u2019m here")
+
+
+@pytest.mark.asyncio
+async def test_coordination_reply_rejects_citations(tmp_path: Path) -> None:
+    job = seed(tmp_path, "@bot you\u2019re online")
+    ai = FakeAi(
+        {
+            "schema_version": "tawg.reply-result.v2",
+            "reply_text": "I\u2019m here. [tg:tawg:10]",
+            "language": "en",
+            "english_recap": None,
+            "citations": [],
+            "evidence_status": "not_verified",
+            "verification_gaps": [],
+            "correction_transaction": None,
+            "refusal": False,
+        }
+    )
+
+    with pytest.raises(ReplyRejected, match="reply preparation failed safely"):
+        await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+            job.job_id, now=NOW + timedelta(minutes=2)
+        )
+
+    assert ai.calls
+    persisted = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())[0]
+    assert persisted["status"] == "pending"
+    assert persisted["safe_error_code"] == "reply_prepare_failed"
 
 
 @pytest.mark.asyncio

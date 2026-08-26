@@ -34,6 +34,10 @@ _LIVE_ERC_REQUEST = re.compile(
     r"changed|updated|version|status)\b|最新|当前|现在|今天|近期|核实|验证|更新|版本|状态",
     re.IGNORECASE,
 )
+_INLINE_CITATION = re.compile(
+    r"https?://|\[[^\]\s]+:[^\]]+\]|\[[^\]]+\]\(https?://[^)]+\)",
+    re.IGNORECASE,
+)
 
 
 class BotRoute(StrEnum):
@@ -41,6 +45,7 @@ class BotRoute(StrEnum):
     IDENTITY_CORRECTION = "identity_correction"
     KNOWLEDGE_CORRECTION = "knowledge_correction"
     SOURCE_SUGGESTION = "source_suggestion"
+    COORDINATION = "coordination"
     REFUSE = "refuse"
 
 
@@ -82,6 +87,14 @@ class BotRouter:
         r"[?\uFF1F]|\b(what|why|when|where|who|how|which|status|explain|summarize)\b",
         re.I,
     )
+    _BOT_SOCIAL = re.compile(
+        r"^\s*(?:(?:looks?|sounds?) good(?:[!,. ]+(?:you(?:'re| are|\u2019re) )?"
+        r"(?:online|here|back|ready|present))?|(?:you(?:'re| are|\u2019re) )?"
+        r"(?:online|here|back|ready|present)|(?:hi|hello|hey|thanks|thank you|welcome|"
+        r"good (?:morning|afternoon|evening))(?:[!,. ]+(?:you(?:'re| are|\u2019re) )?"
+        r"(?:online|here|back|ready|present))?)\s*[^\w]*$",
+        re.IGNORECASE,
+    )
 
     def __init__(self, bot_username: str) -> None:
         self.bot_username = bot_username.casefold().lstrip("@")
@@ -101,6 +114,8 @@ class BotRouter:
             return BotRoute.SOURCE_SUGGESTION
         if self._TAWG.search(cleaned) and self._QUESTION.search(cleaned):
             return BotRoute.KNOWLEDGE_QUESTION
+        if self._BOT_SOCIAL.fullmatch(cleaned):
+            return BotRoute.COORDINATION
         return BotRoute.REFUSE
 
     def erc_query(self, text: str) -> ErcQuery | None:
@@ -396,7 +411,12 @@ class BotReplyService:
             | {record.record_id for record in nearby[:50]}
             | {item.record_id for item in retrieved_items if item.record_id is not None}
         )
-        if evidence_pack is not None:
+        allowed_citations: frozenset[str]
+        citation_entries: list[dict[str, str]]
+        if route is BotRoute.COORDINATION:
+            allowed_citations = frozenset()
+            citation_entries = []
+        elif evidence_pack is not None:
             allowed_citations = frozenset(evidence_pack.citation_allowlist)
             citation_entries = [{"url": url} for url in evidence_pack.citation_allowlist]
         else:
@@ -571,6 +591,10 @@ class BotReplyService:
             raise ReplyRejected("reply attempted an unauthorized correction")
         if route is BotRoute.KNOWLEDGE_QUESTION and not result.refusal and not result.citations:
             raise ReplyRejected("knowledge reply requires evidence citations")
+        if route is BotRoute.COORDINATION and (
+            result.citations or _INLINE_CITATION.search(result.reply_text)
+        ):
+            raise ReplyRejected("coordination reply cannot cite evidence")
         if result.refusal and result.correction_transaction is not None:
             raise ReplyRejected("refused reply cannot modify knowledge")
         try:

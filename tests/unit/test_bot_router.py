@@ -18,6 +18,8 @@ from tawg_bot.erc_query import ErcIntent
             BotRoute.SOURCE_SUGGESTION,
         ),
         ("@bot 更正: 知识库这里应该是可选验证", BotRoute.KNOWLEDGE_CORRECTION),
+        ("@bot you\u2019re present", BotRoute.COORDINATION),
+        ("@bot present", BotRoute.COORDINATION),
     ],
 )
 def test_router_allows_exactly_in_scope_routes(text: str, route: BotRoute) -> None:
