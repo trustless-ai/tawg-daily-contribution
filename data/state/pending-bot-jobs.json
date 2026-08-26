@@ -98,5 +98,23 @@
     "status": "delivered",
     "trigger_record_id": "tg:tawg:3387",
     "updated_at": "2026-08-26T08:11:31.117465Z"
+  },
+  {
+    "attempts": 0,
+    "created_at": "2026-08-26T10:42:04.774207Z",
+    "job_id": "reply:tg:tawg:3398",
+    "message_thread_id": null,
+    "prepared_citations": [],
+    "prepared_language": null,
+    "prepared_reply_text": null,
+    "refusal": false,
+    "repair_of_job_id": null,
+    "repair_reason_code": null,
+    "reply_to_message_id": 3398,
+    "safe_error_code": null,
+    "schema_version": "tawg.pending-bot-job.v1",
+    "status": "pending",
+    "trigger_record_id": "tg:tawg:3398",
+    "updated_at": "2026-08-26T10:42:04.774207Z"
   }
 ]
