@@ -72,21 +72,25 @@
     "updated_at": "2026-08-26T04:19:43.287631Z"
   },
   {
-    "attempts": 1,
+    "attempts": 2,
     "created_at": "2026-08-26T05:03:41.673472Z",
     "job_id": "reply:tg:tawg:3387",
     "message_thread_id": null,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "https://eips.ethereum.org/EIPS/eip-8183",
+      "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902",
+      "tg:tawg:3388"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "**ERC-8183: Agentic Commerce**\n\nERC-8183 (currently **Draft**) defines an escrow-backed job lifecycle for agent-to-agent work. Its goal is a minimal settlement kernel that protects funded work, makes evaluation authority explicit, and provides deterministic refund paths. Canonical spec: https://eips.ethereum.org/EIPS/eip-8183\n\n---\n\n**Architecture**\n\nEach job binds a client, provider, evaluator, budget, expiry, status, and optional hook data. Funds remain in escrow until a valid terminal transition pays the provider or refunds the client.\n\n**State Machine**\n\n```\nOpen → Funded → Submitted → Completed\n                           → Rejected\n                           → Expired\n```\n\nRejection is also available from Open and Funded under the roles the spec defines. Invalid transitions must revert.\n\n**Interfaces**\n\nThe core surface covers: job creation, provider and budget assignment, funding, submission, completion, rejection, and expired-job refund. Authorization is role- and state-dependent throughout.\n\n**Security Considerations**\n\nImplementations must protect: escrow accounting, authorization checks, expiry handling, hook isolation, reentrancy boundaries, and signer identity when meta-transactions are supported.\n\n---\n\n**Discussion context** (informative, not normative)\n\nThe community thread at https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902 is active (383+ posts). Discussion mentions optional hooks for reputation (ERC-8004) and gasless flows (ERC-2771), and a structural audit flagged a budget-authorization mismatch and a front-running gap on budget negotiation as open items still being worked — [tg:tawg:3388]\n\n---\n\n**Evidence gaps**\n\n- No registered implementation source in the Trustless AI registry (conformance unverified)\n- No registered test or example source\n\n*Local synthesis verified at 2026-08-23T06:55:28Z.*",
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
     "reply_to_message_id": 3387,
-    "safe_error_code": "reply_validation_failed",
+    "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_record_id": "tg:tawg:3387",
-    "updated_at": "2026-08-26T05:47:57.019733Z"
+    "updated_at": "2026-08-26T08:11:31.117465Z"
   }
 ]
