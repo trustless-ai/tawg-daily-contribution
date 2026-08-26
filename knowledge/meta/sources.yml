@@ -346,10 +346,10 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: W/"c8f9cbc77137176dab8fb65369af9978
-    content_sha256: b188286d3f548d640e1c3a409e2a4d3d77d031e2cb03822eb7e5006766c26f99
-    byte_count: 252563
+    checked_at: '2026-08-26T02:10:57.226837Z'
+    version: W/"aba40340c3f4f40fad7ce16636336145
+    content_sha256: ea16e2fa6725dedf672c963a67d9609deda725a3095f2d8419372d9409d6d80d
+    byte_count: 291113
   status: active
 - source_key: agent-ercs-8312-implementation
   topics:
