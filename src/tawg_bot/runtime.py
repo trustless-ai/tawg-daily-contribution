@@ -9,6 +9,7 @@ from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from time import monotonic
 
 import httpx
 
@@ -63,6 +64,8 @@ _KNOWLEDGE_TIMEOUT_SECONDS = 180
 _DAILY_EVIDENCE_TIMEOUT_SECONDS = 60
 _DAILY_TIMEOUT_SECONDS = 360
 _REPLY_TIMEOUT_SECONDS = 300
+_REPLY_PHASE_BUDGET_SECONDS = 360
+_MAX_REPLIES_PER_TICK = 10
 _DAILY_REJECTION_CODES = {
     "Daily factual bullet lacks a valid citation": "daily_citation_invalid",
     "Daily synthesis contains source-dependent detail": "daily_synthesis_invalid",
@@ -525,16 +528,20 @@ class _LivePipeline:
             return
         if not username:
             raise RuntimeFailure("TAWG_TELEGRAM_BOT_USERNAME is not configured")
-        service = BotReplyService(
-            self.root,
-            ai=self.ai,
-            bot_username=username,
-            live_evidence=self.live_evidence,
-            knowledge_state=self.knowledge_state,
-            timeout_seconds=_REPLY_TIMEOUT_SECONDS,
-        )
+        reply_deadline = monotonic() + _REPLY_PHASE_BUDGET_SECONDS
         self.prepared_replies = []
-        for job in actionable[:1]:
+        for job in actionable[:_MAX_REPLIES_PER_TICK]:
+            remaining_seconds = reply_deadline - monotonic()
+            if remaining_seconds <= 0:
+                break
+            service = BotReplyService(
+                self.root,
+                ai=self.ai,
+                bot_username=username,
+                live_evidence=self.live_evidence,
+                knowledge_state=self.knowledge_state,
+                timeout_seconds=min(_REPLY_TIMEOUT_SECONDS, remaining_seconds),
+            )
             try:
                 self.prepared_replies.append(await service.prepare(job.job_id, now=self.now))
             except ReplyRejected as error:

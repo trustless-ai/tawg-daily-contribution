@@ -11,7 +11,7 @@ import httpx
 import pytest
 
 import tawg_bot.runtime as runtime_module
-from tawg_bot.bot_router import PreparedReply
+from tawg_bot.bot_router import PreparedReply, ReplyRejected
 from tawg_bot.claude_cli import ClaudeCli as RealClaudeCli
 from tawg_bot.claude_cli import CompletedProcess
 from tawg_bot.daily import DailyRejected, DailyWindow, PreparedDaily
@@ -626,7 +626,7 @@ async def test_successful_knowledge_is_not_deferred_when_only_checkpoint_fails(
 
 
 @pytest.mark.asyncio
-async def test_reply_preparation_gives_one_pending_job_a_five_minute_model_budget(
+async def test_reply_preparation_processes_at_most_ten_pending_jobs_per_tick(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     scaffold(tmp_path)
@@ -636,9 +636,9 @@ async def test_reply_preparation_gives_one_pending_job_a_five_minute_model_budge
             trigger_record_id=f"tg:tawg:{message_id}",
             reply_to_message_id=message_id,
             created_at=NOW,
-            updated_at=NOW if message_id == 10 else NOW - timedelta(minutes=1),
+            updated_at=NOW,
         )
-        for message_id in (10, 11)
+        for message_id in range(10, 22)
     ]
     (tmp_path / "data/state/pending-bot-jobs.json").write_text(
         json.dumps([job.model_dump(mode="json") for job in jobs]) + "\n",
@@ -654,7 +654,8 @@ async def test_reply_preparation_gives_one_pending_job_a_five_minute_model_budge
         async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply:
             assert now == NOW
             prepared_ids.append(job_id)
-            return PreparedReply(job_id, 10, None, "reply", (), "en", False)
+            message_id = int(job_id.rsplit(":", 1)[-1])
+            return PreparedReply(job_id, message_id, None, "reply", (), "en", False)
 
     monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
     monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
@@ -662,7 +663,7 @@ async def test_reply_preparation_gives_one_pending_job_a_five_minute_model_budge
         pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
         await pipeline._prepare_pending_replies()
 
-    assert prepared_ids == ["reply:tg:tawg:11"]
+    assert prepared_ids == [f"reply:tg:tawg:{message_id}" for message_id in range(10, 20)]
 
 
 @pytest.mark.asyncio
@@ -693,7 +694,7 @@ async def test_reply_preparation_reconciles_policy_repairs_before_selecting_work
 
 
 @pytest.mark.asyncio
-async def test_reply_preparation_skips_a_failed_job_while_fresh_work_is_pending(
+async def test_reply_preparation_processes_fresh_work_before_a_failed_job(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     scaffold(tmp_path)
@@ -735,7 +736,103 @@ async def test_reply_preparation_skips_a_failed_job_while_fresh_work_is_pending(
         pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
         await pipeline._prepare_pending_replies()
 
-    assert prepared_ids == ["reply:tg:tawg:11"]
+    assert prepared_ids == ["reply:tg:tawg:11", "reply:tg:tawg:10"]
+
+
+@pytest.mark.asyncio
+async def test_reply_preparation_continues_after_one_job_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    scaffold(tmp_path)
+    jobs = [
+        PendingBotJob(
+            job_id=f"reply:tg:tawg:{message_id}",
+            trigger_record_id=f"tg:tawg:{message_id}",
+            reply_to_message_id=message_id,
+            created_at=NOW,
+            updated_at=NOW,
+        )
+        for message_id in range(10, 13)
+    ]
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps([job.model_dump(mode="json") for job in jobs]) + "\n",
+        encoding="utf-8",
+    )
+    attempted_ids: list[str] = []
+
+    class ReplyService:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+
+        async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply:
+            assert now == NOW
+            attempted_ids.append(job_id)
+            if job_id == "reply:tg:tawg:10":
+                raise ReplyRejected("safe failure", safe_code="reply_test_failed")
+            message_id = int(job_id.rsplit(":", 1)[-1])
+            return PreparedReply(job_id, message_id, None, "reply", (), "en", False)
+
+    monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
+    monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        await pipeline._prepare_pending_replies()
+
+    assert attempted_ids == [f"reply:tg:tawg:{message_id}" for message_id in range(10, 13)]
+    assert [reply.job_id for reply in pipeline.prepared_replies] == [
+        "reply:tg:tawg:11",
+        "reply:tg:tawg:12",
+    ]
+    assert "tawg_event=phase_failed phase=reply_prepare code=reply_test_failed" in (
+        capsys.readouterr().out
+    )
+
+
+@pytest.mark.asyncio
+async def test_reply_preparation_stops_before_the_reply_phase_budget_expires(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    jobs = [
+        PendingBotJob(
+            job_id=f"reply:tg:tawg:{message_id}",
+            trigger_record_id=f"tg:tawg:{message_id}",
+            reply_to_message_id=message_id,
+            created_at=NOW,
+            updated_at=NOW,
+        )
+        for message_id in range(10, 13)
+    ]
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps([job.model_dump(mode="json") for job in jobs]) + "\n",
+        encoding="utf-8",
+    )
+    monotonic_values = iter((100.0, 160.0, 461.0))
+    attempted_ids: list[str] = []
+    model_timeouts: list[float] = []
+
+    class ReplyService:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            del args
+            model_timeouts.append(kwargs["timeout_seconds"])
+
+        async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply:
+            assert now == NOW
+            attempted_ids.append(job_id)
+            message_id = int(job_id.rsplit(":", 1)[-1])
+            return PreparedReply(job_id, message_id, None, "reply", (), "en", False)
+
+    monkeypatch.setattr(runtime_module, "monotonic", lambda: next(monotonic_values), raising=False)
+    monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
+    monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        await pipeline._prepare_pending_replies()
+
+    assert attempted_ids == ["reply:tg:tawg:10"]
+    assert model_timeouts == [300]
 
 
 @pytest.mark.asyncio
