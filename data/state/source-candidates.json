@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "candidate_key": "candidate:1ddfafb41896f164d578fb50e9586433",
+    "last_suggested_at": "2026-08-26T09:05:26.624815Z",
+    "schema_version": "tawg.source-candidate.v1",
+    "suggested_at": "2026-08-26T09:05:26.624815Z",
+    "trigger_record_id": "tg:tawg:3372",
+    "url": "https://github.com/trustless-ai/tawg-daily-contribution"
+  }
+]

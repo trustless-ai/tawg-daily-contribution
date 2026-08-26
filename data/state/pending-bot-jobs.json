@@ -36,22 +36,28 @@
     "updated_at": "2026-08-26T02:10:57.226837Z"
   },
   {
-    "attempts": 2,
+    "attempts": 3,
     "created_at": "2026-08-26T03:27:43.677775Z",
     "job_id": "reply:tg:tawg:3372",
     "message_thread_id": null,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "tg:tawg:3374",
+      "tg:tawg:3376",
+      "tg:tawg:3375",
+      "tg:tawg:3378",
+      "tg:tawg:3306"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "Good framing — provenance-first is exactly right. As Pavlo noted, anchoring provenance is evidence preservation and not automatic enrollment in any compensation scheme; keeping those two lanes explicitly separate before the on-chain step is the right boundary to set [tg:tawg:3374].\n\nOn current state: Trusty's knowledge model already has claim-ledger.v2 and source-ledger.v2 tracking claim kind/state/source keys, authority, hashes, and versions. What's missing is a mechanical `verified_by` equivalent — a way to mark that a specific contribution claim was independently confirmed by another participant, distinct from Trusty synthesizing it from sources [tg:tawg:3376].\n\nThe attribution ledger v3 already covers the anchor-ready layer: content-addressed `entry_id` over JCS-canonicalized claim/actor/verified_by/timestamp, with evidence required to be a hash/url/commit/recompute pointer rather than raw content [tg:tawg:3375]. The cleanest path is an adapter: Trusty emits candidate observed/synthesized entries, independent confirmation adds `verified_by`, then `entry_id` is computed and anchored — keeping Trusty's existing knowledge model intact while making the stronger attribution contract explicit at the boundary.\n\nBefore weights or formulas, locking down the contribution vocabulary first makes sense: what kind of contribution happened, what evidence proves it, and who independently validated it. Causal application needs to be a first-class record shape so a find or audit that leads to someone else's build doesn't disappear just because the original contributor didn't author the final commit [tg:tawg:3378]. The earlier framing of an append-only log of claim/actor/verified-by/timestamp entries is precisely this shape [tg:tawg:3306].",
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
     "reply_to_message_id": 3372,
-    "safe_error_code": "reply_text_citation_undeclared",
+    "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_record_id": "tg:tawg:3372",
-    "updated_at": "2026-08-26T06:23:46.996607Z"
+    "updated_at": "2026-08-26T09:05:26.624815Z"
   },
   {
     "attempts": 0,
