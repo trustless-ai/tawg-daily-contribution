@@ -458,10 +458,28 @@ async def test_prepare_daily_does_not_expose_output_before_artifact_persists(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("rejection", "safe_code", "sensitive_fragment"),
+    [
+        (
+            "Daily factual bullet lacks a valid citation",
+            "daily_citation_invalid",
+            "factual bullet",
+        ),
+        (
+            "Daily contributor lacks a confirmed Telegram mention",
+            "daily_mention_invalid",
+            "Telegram mention",
+        ),
+    ],
+)
 async def test_scheduled_daily_logs_bounded_validation_code_without_raw_error(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
+    rejection: str,
+    safe_code: str,
+    sensitive_fragment: str,
 ) -> None:
     scaffold(tmp_path)
     window = DailyWindow.for_due_run(NOW)
@@ -471,15 +489,15 @@ async def test_scheduled_daily_logs_bounded_validation_code_without_raw_error(
         async def prepare_daily(selected: DailyWindow, *, dry_run: bool) -> PreparedDaily:
             assert selected == window
             assert not dry_run
-            raise DailyRejected("Daily factual bullet lacks a valid citation")
+            raise DailyRejected(rejection)
 
         monkeypatch.setattr(pipeline, "prepare_daily", prepare_daily)
         with pytest.raises(RuntimeFailure, match="Daily validation failed"):
             await pipeline.daily_prepare(window.window_id)
 
     captured = capsys.readouterr().out
-    assert "code=daily_citation_invalid" in captured
-    assert "factual bullet" not in captured
+    assert f"code={safe_code}" in captured
+    assert sensitive_fragment not in captured
 
 
 @pytest.mark.asyncio

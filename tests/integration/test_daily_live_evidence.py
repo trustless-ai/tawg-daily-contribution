@@ -245,6 +245,11 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
             "advanced, and why it helps the group or Trustless AI. Do not add a separate "
             "Appreciation section."
         ),
+        "telegram_mention_rule": (
+            "When window evidence supplies contributor_label, begin every concrete bullet "
+            "citing the evidence with that exact Public Name (@telegram_handle) label. Never "
+            "invent or infer a Telegram handle."
+        ),
     }
     assert {
         path.relative_to(tmp_path).as_posix(): path.read_bytes()

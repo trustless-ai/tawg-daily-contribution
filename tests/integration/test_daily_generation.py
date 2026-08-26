@@ -118,6 +118,19 @@ def _ready() -> DailyReadiness:
     )
 
 
+def _confirm_alice_telegram_handle(root: Path) -> None:
+    (root / "knowledge/meta/aliases.yml").write_text(
+        "schema: tawg.aliases.v1\n"
+        "scope: tawg-only\n"
+        "people:\n"
+        "  alice:\n"
+        "    display_names: [Alice]\n"
+        "    handles:\n"
+        "      telegram: [alice_tg]\n",
+        encoding="utf-8",
+    )
+
+
 def _evidence(root: Path) -> tuple[DailyEvidence, ...]:
     path = root / "data/telegram/2026/08/messages.jsonl"
     records = JsonlCollection(path, SourceRecord).decode(path.read_bytes())
@@ -153,6 +166,151 @@ async def test_active_daily_is_grounded_warm_english_and_excludes_post_cutoff(
     assert "What moved" in prepared.telegram_text
     assert "post-cutoff" not in ai.calls[0]["context_pack"]
     assert "tg:tawg:1" in ai.calls[0]["context_pack"]
+
+
+@pytest.mark.asyncio
+async def test_daily_uses_confirmed_telegram_mention_for_mapped_contributor(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    _confirm_alice_telegram_handle(tmp_path)
+    output = _fixture("daily-active")
+    output["telegram_text"] = output["telegram_text"].replace(
+        "• Alice clarified", "• Alice (@alice_tg) clarified"
+    )
+    ai = FakeAi(output)
+
+    prepared = await DailyService(tmp_path, ai=ai).prepare(
+        WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+    )
+
+    assert prepared is not None
+    context = json.loads(ai.calls[0]["context_pack"])
+    item = context["trigger"]["window_evidence"][0]
+    assert item.get("contributor_label") == "Alice (@alice_tg)"
+    assert "Alice (@alice_tg) clarified" in prepared.telegram_text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "contributor",
+    ["Alice", "Alice (@not_alice)", "FakeAlice (@alice_tg)"],
+)
+async def test_daily_rejects_missing_or_unknown_mapped_contributor_mention(
+    tmp_path: Path,
+    contributor: str,
+) -> None:
+    _seed(tmp_path)
+    _confirm_alice_telegram_handle(tmp_path)
+    output = _fixture("daily-active")
+    output["telegram_text"] = output["telegram_text"].replace(
+        "• Alice clarified", f"• {contributor} clarified"
+    )
+
+    with pytest.raises(DailyRejected, match="Telegram mention"):
+        await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+            WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )
+
+
+@pytest.mark.asyncio
+async def test_daily_rejects_borrowing_a_confirmed_handle_for_unmapped_evidence(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    _confirm_alice_telegram_handle(tmp_path)
+    evidence = (
+        *_evidence(tmp_path),
+        DailyEvidence(
+            evidence_id="tg:tawg:2",
+            source_kind="telegram",
+            source_url="repo:data/telegram/2026/08/messages.jsonl#tg:tawg:2",
+            created_at=datetime(2026, 8, 23, 13, tzinfo=UTC),
+            updated_at=datetime(2026, 8, 23, 13, tzinfo=UTC),
+            author_person_id="bob",
+            text="Bob reviewed the validation edge cases.",
+        ),
+    )
+    output = _fixture("daily-active")
+    output["telegram_text"] = output["telegram_text"].replace(
+        "• Alice clarified", "• Alice (@alice_tg) clarified"
+    ).replace(
+        "\n\n🚀 Next up",
+        "\n• Bob (@alice_tg) reviewed the validation edge cases, helping the group "
+        "find integration risks earlier. [tg:tawg:2]\n\n🚀 Next up",
+    )
+    output["citations"].append("tg:tawg:2")
+
+    with pytest.raises(DailyRejected, match="Telegram mention"):
+        await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+            WINDOW, readiness=_ready(), evidence=evidence
+        )
+
+
+@pytest.mark.asyncio
+async def test_daily_rejects_a_confirmed_mention_outside_what_moved(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    _confirm_alice_telegram_handle(tmp_path)
+    output = _fixture("daily-active")
+    output["telegram_text"] = output["telegram_text"].replace(
+        "• Alice clarified", "• Alice (@alice_tg) clarified"
+    ).replace(
+        "Pick one edge case and share it with the group. 🤝",
+        "Alice (@alice_tg), pick one edge case and share it with the group. 🤝",
+    )
+
+    with pytest.raises(DailyRejected, match="Telegram mention"):
+        await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+            WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )
+
+
+@pytest.mark.asyncio
+async def test_daily_rejects_a_citation_bound_to_conflicting_contributors(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    (tmp_path / "knowledge/meta/aliases.yml").write_text(
+        "schema: tawg.aliases.v1\n"
+        "scope: tawg-only\n"
+        "people:\n"
+        "  alice:\n"
+        "    display_names: [Alice]\n"
+        "    handles:\n"
+        "      github: [alice-gh]\n"
+        "      telegram: [alice_tg]\n"
+        "  bob:\n"
+        "    display_names: [Bob]\n"
+        "    handles:\n"
+        "      github: [bob-gh]\n"
+        "      telegram: [bob_tg]\n",
+        encoding="utf-8",
+    )
+    shared_url = "https://github.com/trustless-ai/agent-ercs/pull/42"
+    evidence = tuple(
+        DailyEvidence(
+            evidence_id=f"gh:agent-ercs:review:{index}",
+            source_kind="github",
+            source_url=shared_url,
+            created_at=datetime(2026, 8, 23, 13 + index, tzinfo=UTC),
+            updated_at=datetime(2026, 8, 23, 13 + index, tzinfo=UTC),
+            author_person_id=author,
+            text=f"{name} reviewed the validation change.",
+        )
+        for index, (author, name) in enumerate(
+            (("alice-gh", "Alice"), ("bob-gh", "Bob"))
+        )
+    )
+    ai = FakeAi(_fixture("daily-active"))
+
+    with pytest.raises(DailyRejected, match="conflicting contributor"):
+        await DailyService(tmp_path, ai=ai).prepare(
+            WINDOW, readiness=_ready(), evidence=evidence
+        )
+
+    assert not ai.calls
 
 
 @pytest.mark.asyncio
@@ -305,8 +463,27 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
+                    "integration. [tg:tawg:1]",
+                    "integration. [tg:tawg:1] [tg:tawg:1]",
+                    1,
+                )
+            ),
+            "citation",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
                     "• Alice clarified ERC-8004",
                     "• Alice [made-up:next] clarified ERC-8004",
+                )
+            ),
+            "citation",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "• Alice clarified ERC-8004",
+                    "• Alice [tg:tawg:1] clarified ERC-8004",
                 )
             ),
             "citation",

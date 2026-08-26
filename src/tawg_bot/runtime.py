@@ -70,6 +70,9 @@ _DAILY_REJECTION_CODES = {
     "Daily output contains ranking or persona language": "daily_tone_invalid",
     "Daily output exceeds the emoji limit": "daily_tone_invalid",
     "Daily must integrate Appreciation into What moved": "daily_tone_invalid",
+    "Daily contributor lacks a confirmed Telegram mention": "daily_mention_invalid",
+    "Daily contains an invalid Telegram mention": "daily_mention_invalid",
+    "Daily citation has conflicting contributor mappings": "daily_mention_invalid",
 }
 
 

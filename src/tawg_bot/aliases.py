@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import re
+import unicodedata
 from pathlib import Path
 from typing import Any
 
@@ -24,6 +25,7 @@ class InvalidAliasScope(AliasError):
 class AliasRegistry:
     _SOURCES = frozenset({"telegram", "github", "magicians"})
     _PERSON_ID = re.compile(r"^[^\s:/\\]{1,128}$", re.UNICODE)
+    _TELEGRAM_HANDLE = re.compile(r"^[A-Za-z][A-Za-z0-9_]{4,31}$")
 
     def __init__(self, people: dict[str, dict[str, Any]] | None = None) -> None:
         self.people = people or {}
@@ -55,11 +57,14 @@ class AliasRegistry:
 
     def resolve_telegram_live(self, *, public_username: str | None, display_name: str) -> str:
         if public_username:
-            return self.resolve_public_handle(
-                source="telegram",
-                public_handle=public_username,
-                display_name=display_name,
-            )
+            try:
+                return self.resolve_public_handle(
+                    source="telegram",
+                    public_handle=public_username,
+                    display_name=display_name,
+                )
+            except InvalidAliasScope:
+                pass
         return self.resolve_telegram_export(
             transient_key=f"name:{self._normalize_name(display_name)}",
             display_name=display_name,
@@ -69,7 +74,9 @@ class AliasRegistry:
         self, *, source: str, public_handle: str, display_name: str
     ) -> str:
         normalized_source = self._source(source)
-        normalized_handle = self._normalize_handle(public_handle)
+        normalized_handle = self._normalize_source_handle(
+            normalized_source, public_handle
+        )
         existing = self.lookup_public_handle(normalized_source, normalized_handle)
         if existing is not None:
             self._add_display_name(existing, display_name)
@@ -88,7 +95,9 @@ class AliasRegistry:
     def add_public_handle(self, person_id: str, *, source: str, public_handle: str) -> None:
         self._require_person(person_id)
         normalized_source = self._source(source)
-        normalized_handle = self._normalize_handle(public_handle)
+        normalized_handle = self._normalize_source_handle(
+            normalized_source, public_handle
+        )
         owner = self.lookup_public_handle(normalized_source, normalized_handle)
         if owner is not None and owner != person_id:
             raise AmbiguousAlias(f"handle already belongs to {owner}")
@@ -101,7 +110,9 @@ class AliasRegistry:
 
     def lookup_public_handle(self, source: str, public_handle: str) -> str | None:
         normalized_source = self._source(source)
-        normalized_handle = self._normalize_handle(public_handle)
+        normalized_handle = self._normalize_source_handle(
+            normalized_source, public_handle
+        )
         matches = [
             person_id
             for person_id, identity in self.people.items()
@@ -126,6 +137,33 @@ class AliasRegistry:
         if len(matches) > 1:
             raise AmbiguousAlias("display name matches multiple TAWG-local people")
         return matches[0] if matches else None
+
+    def telegram_mention_label(self, *, source: str, author_person_id: str) -> str | None:
+        normalized_source = self._source(source)
+        if normalized_source == "telegram":
+            person_id = author_person_id if author_person_id in self.people else None
+        else:
+            person_id = self.lookup_public_handle(normalized_source, author_person_id)
+        if person_id is None:
+            return None
+        identity = self.people[person_id]
+        display_names = identity.get("display_names", [])
+        telegram_handles = self._identity_handles(identity).get("telegram", [])
+        if len(display_names) != 1 or len(telegram_handles) != 1:
+            return None
+        display_name = display_names[0]
+        if (
+            display_name != display_name.strip()
+            or len(display_name) > 128
+            or len(display_name.splitlines()) != 1
+            or any(
+                character in "@[]"
+                or unicodedata.category(character) in {"Cc", "Cf", "Zl", "Zp"}
+                for character in display_name
+            )
+        ):
+            return None
+        return f"{display_name} (@{telegram_handles[0]})"
 
     def merge(self, primary_person_id: str, secondary_person_id: str) -> None:
         self._require_person(primary_person_id)
@@ -173,7 +211,11 @@ class AliasRegistry:
             existing = self.people.get(candidate)
             if existing is None:
                 return candidate
-            if reuse_display and display_name in existing.get("display_names", []):
+            if (
+                reuse_display
+                and display_name in existing.get("display_names", [])
+                and not self._identity_handles(existing).get("telegram")
+            ):
                 return candidate
 
     def _add_display_name(self, person_id: str, display_name: str) -> None:
@@ -203,7 +245,9 @@ class AliasRegistry:
                 telegram_handles = handles.setdefault("telegram", [])
                 for handle in legacy_handles:
                     if isinstance(handle, str) and handle not in telegram_handles:
-                        telegram_handles.append(self._normalize_handle(handle))
+                        telegram_handles.append(
+                            self._normalize_source_handle("telegram", handle)
+                        )
             for source, source_handles in handles.items():
                 self._source(source)
                 if not isinstance(source_handles, list) or not all(
@@ -211,7 +255,10 @@ class AliasRegistry:
                 ):
                     raise InvalidAliasScope("public handles must be strings")
                 handles[source] = sorted(
-                    {self._normalize_handle(handle) for handle in source_handles}
+                    {
+                        self._normalize_source_handle(source, handle)
+                        for handle in source_handles
+                    }
                 )
                 for handle in handles[source]:
                     key = (source, handle)
@@ -247,6 +294,13 @@ class AliasRegistry:
         handle = value.casefold().strip().lstrip("@")
         if not handle or len(handle) > 128 or any(character.isspace() for character in handle):
             raise InvalidAliasScope("public handle is invalid")
+        return handle
+
+    @classmethod
+    def _normalize_source_handle(cls, source: str, value: str) -> str:
+        handle = cls._normalize_handle(value)
+        if source == "telegram" and cls._TELEGRAM_HANDLE.fullmatch(handle) is None:
+            raise InvalidAliasScope("Telegram public handle is invalid")
         return handle
 
     @staticmethod

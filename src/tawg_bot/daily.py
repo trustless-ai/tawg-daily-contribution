@@ -13,6 +13,7 @@ from typing import Any, Literal, Protocol
 import yaml
 from pydantic import field_validator
 
+from tawg_bot.aliases import AliasError, AliasRegistry
 from tawg_bot.context import ContextInputs, ContextPackBuilder, ContextRejected
 from tawg_bot.daily_evidence import DailyEvidence
 from tawg_bot.models import DeliveryAttempt, DeliveryStatus, StrictModel
@@ -38,6 +39,7 @@ _SYNTHESIS_URL = re.compile(r"(?:https?://|www\.)", re.IGNORECASE)
 _PLAIN_CITATION = re.compile(r"\[([^\[\]\n]+)\](?!\()")
 _MARKDOWN_CITATION = re.compile(r"\[[^\[\]\n]+\]\(([^()\s]+)\)")
 _TRAILING_CITATIONS = re.compile(r"(?:\s+\[[^\[\]\n]+\](?:\([^()\s]+\))?)+$")
+_TELEGRAM_MENTION = re.compile(r"(?<![\w@])@([A-Za-z][A-Za-z0-9_]{4,31})\b")
 _EVIDENCE_EXCERPT_CHARS = 180
 _EXTERNAL_EVIDENCE_EXCERPT_CHARS = 95
 _CONTEXT_SOURCE_LIMITS = {"telegram": 8, "github": 8, "magicians": 2}
@@ -172,6 +174,7 @@ class DailyService:
         )
 
     def _context(self, window: DailyWindow, evidence: tuple[DailyEvidence, ...]) -> str:
+        mention_labels = self._mention_labels(evidence)
         evidence_payload: list[dict[str, Any]] = []
         for item in evidence:
             excerpt_chars = (
@@ -179,16 +182,18 @@ class DailyService:
                 if item.source_kind == "telegram"
                 else _EXTERNAL_EVIDENCE_EXCERPT_CHARS
             )
-            evidence_payload.append(
-                {
-                    "evidence_id": item.evidence_id,
-                    "source_kind": item.source_kind,
-                    "updated_at": item.updated_at.isoformat(),
-                    "author_person_id": item.author_person_id,
-                    "text": item.text[:excerpt_chars],
-                    "citation": item.citation,
-                }
-            )
+            payload = {
+                "evidence_id": item.evidence_id,
+                "source_kind": item.source_kind,
+                "updated_at": item.updated_at.isoformat(),
+                "author_person_id": item.author_person_id,
+                "text": item.text[:excerpt_chars],
+                "citation": item.citation,
+            }
+            contributor_label = mention_labels.get(item.citation)
+            if contributor_label is not None:
+                payload["contributor_label"] = contributor_label
+            evidence_payload.append(payload)
         query = " ".join(item.text for item in evidence)[:8000]
         if not query:
             query = "open threads help wanted Trustless AI"
@@ -261,6 +266,11 @@ class DailyService:
                         "Integrate appreciation into each concrete item: name who did what, what "
                         "it advanced, and why it helps the group or Trustless AI. Do not add a "
                         "separate Appreciation section."
+                    ),
+                    "telegram_mention_rule": (
+                        "When window evidence supplies contributor_label, begin every concrete "
+                        "bullet citing the evidence with that exact Public Name "
+                        "(@telegram_handle) label. Never invent or infer a Telegram handle."
                     ),
                 },
                 "window_evidence": evidence_payload,
@@ -411,6 +421,11 @@ class DailyService:
         self._validate_next_up(lines[section_indices[1] + 1 :])
 
         allowed_citations = {item.citation for item in evidence}
+        mention_labels = self._mention_labels(evidence)
+        what_moved_lines = lines[section_indices[0] + 1 : section_indices[1]]
+        outside_what_moved = lines[: section_indices[0] + 1] + lines[section_indices[1] :]
+        if any(_TELEGRAM_MENTION.search(line) for line in outside_what_moved):
+            raise DailyRejected("Daily contains an invalid Telegram mention")
         if len(result.citations) != len(set(result.citations)):
             raise DailyRejected("Daily citation list contains duplicates")
         if not set(result.citations).issubset(allowed_citations):
@@ -430,20 +445,25 @@ class DailyService:
             raise DailyRejected("quiet Daily must state that no source-backed progress landed")
         if not result.quiet_day:
             self._validate_what_moved(
-                lines[section_indices[0] + 1 : section_indices[1]],
+                what_moved_lines,
                 set(result.citations),
+                mention_labels,
             )
+        elif any(_TELEGRAM_MENTION.search(line) for line in what_moved_lines):
+            raise DailyRejected("Daily contains an invalid Telegram mention")
         return result
 
     @staticmethod
-    def _validate_what_moved(lines: list[str], citations: set[str]) -> None:
+    def _validate_what_moved(
+        lines: list[str], citations: set[str], mention_labels: Mapping[str, str]
+    ) -> None:
         content = [line.strip() for line in lines if line.strip()]
         state = "label"
         bullet_seen = False
         direction_seen = False
         for line in content:
             if state == "label":
-                if not _DIRECTION_LABEL.fullmatch(line):
+                if _TELEGRAM_MENTION.search(line) or not _DIRECTION_LABEL.fullmatch(line):
                     raise DailyRejected("Daily What moved has an invalid direction structure")
                 direction_seen = True
                 state = "synthesis"
@@ -456,6 +476,7 @@ class DailyService:
                     or _PLAIN_CITATION.search(line)
                     or _MARKDOWN_CITATION.search(line)
                     or _SYNTHESIS_URL.search(line)
+                    or _TELEGRAM_MENTION.search(line)
                 ):
                     raise DailyRejected("Daily synthesis contains source-dependent detail")
                 state = "bullets"
@@ -473,22 +494,69 @@ class DailyService:
             bullet_seen = True
             trailing = _TRAILING_CITATIONS.search(line)
             line_citations = (
-                set(_PLAIN_CITATION.findall(trailing.group()))
-                | set(_MARKDOWN_CITATION.findall(trailing.group()))
+                _PLAIN_CITATION.findall(trailing.group())
+                + _MARKDOWN_CITATION.findall(trailing.group())
                 if trailing
-                else set()
+                else []
             )
-            all_line_citations = set(_PLAIN_CITATION.findall(line)) | set(
+            all_line_citations = _PLAIN_CITATION.findall(line) + (
                 _MARKDOWN_CITATION.findall(line)
             )
             if (
-                not line_citations
-                or not line_citations.issubset(citations)
-                or not all_line_citations.issubset(citations)
+                len(line_citations) != 1
+                or len(all_line_citations) != 1
+                or all_line_citations[0] != line_citations[0]
+                or line_citations[0] not in citations
             ):
                 raise DailyRejected("Daily factual bullet lacks a valid citation")
+            citation = line_citations[0]
+            expected_label = mention_labels.get(citation)
+            mention_matches = list(_TELEGRAM_MENTION.finditer(line))
+            if expected_label is None:
+                if mention_matches:
+                    raise DailyRejected("Daily contains an invalid Telegram mention")
+            else:
+                expected_match = _TELEGRAM_MENTION.search(expected_label)
+                if (
+                    expected_match is None
+                    or not line.startswith(f"• {expected_label} ")
+                    or len(mention_matches) != 1
+                    or mention_matches[0].group(1).casefold()
+                    != expected_match.group(1).casefold()
+                ):
+                    raise DailyRejected(
+                        "Daily contributor lacks a confirmed Telegram mention"
+                    )
         if not direction_seen or state != "bullets" or not bullet_seen:
             raise DailyRejected("active Daily lacks a complete What moved direction")
+
+    def _mention_labels(self, evidence: tuple[DailyEvidence, ...]) -> dict[str, str]:
+        try:
+            aliases = AliasRegistry.from_yaml(self.root / "knowledge/meta/aliases.yml")
+            bindings: dict[str, tuple[str | None, str | None]] = {}
+            for item in evidence:
+                label = (
+                    aliases.telegram_mention_label(
+                        source=item.source_kind,
+                        author_person_id=item.author_person_id,
+                    )
+                    if item.author_person_id is not None
+                    else None
+                )
+                binding = (item.author_person_id, label)
+                existing = bindings.get(item.citation)
+                if existing is not None and existing != binding:
+                    raise DailyRejected(
+                        "Daily citation has conflicting contributor mappings"
+                    )
+                bindings[item.citation] = binding
+            return {
+                citation: label
+                for citation, (_, label) in bindings.items()
+                if label is not None
+            }
+        except AliasError:
+            raise DailyRejected("invalid TAWG alias registry") from None
 
     def _validate_next_up(self, lines: list[str]) -> None:
         content = [line.strip() for line in lines if line.strip()]
