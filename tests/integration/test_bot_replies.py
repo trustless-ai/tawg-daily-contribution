@@ -169,6 +169,27 @@ async def test_english_reply_has_no_duplicate_recap(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_english_reply_merges_an_unexpected_english_recap(tmp_path: Path) -> None:
+    job = seed(tmp_path, "@bot What did we discuss just now?")
+    output = reply_result(chinese=False)
+    output["reply_text"] = "The discussion focused on a verifiable validation path."
+    output["english_recap"] = (
+        "The recap adds one final implementation detail. [tg:tawg:10]"
+    )
+
+    prepared = await BotReplyService(
+        tmp_path, ai=FakeAi(output), bot_username="bot"
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.language == "en"
+    assert prepared.reply_text.endswith(
+        "The recap adds one final implementation detail. [tg:tawg:10]"
+    )
+    assert prepared.reply_text.count("[tg:tawg:10]") == 1
+    assert "English recap:" not in prepared.reply_text
+
+
+@pytest.mark.asyncio
 async def test_recent_discussion_question_uses_group_context_instead_of_refusing(
     tmp_path: Path,
 ) -> None:

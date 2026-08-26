@@ -10,7 +10,7 @@ from tawg_bot.delivery import (
     DeliveryFailed,
     DeliveryService,
 )
-from tawg_bot.telegram_api import SentMessage, TelegramApiError
+from tawg_bot.telegram_api import SentMessage, TelegramApiAmbiguousError, TelegramApiError
 from tests.unit.test_delivery import NOW, Api, Checkpoint, seed
 
 
@@ -112,11 +112,44 @@ async def test_returned_chat_mismatch_becomes_ambiguous(tmp_path: Path) -> None:
             message_thread_id: int | None = None,
         ) -> SentMessage:
             self.calls.append((chat_id, text, reply_to_message_id, message_thread_id))
-            return SentMessage(message_id=88, chat_id=-999)
+            return SentMessage(
+                message_id=88,
+                chat_id=-999,
+                delivery_format="plain_text_fallback_v1",
+            )
 
     with pytest.raises(DeliveryAmbiguous, match="destination"):
         await DeliveryService(
             tmp_path, api=WrongChat(), chat_id=-10077, checkpoint=Checkpoint()
         ).deliver(job_id="daily:one", text="Hello", reply_to_message_id=None, now=NOW)
 
+    assert status(tmp_path) == "ambiguous"
+    state = json.loads((tmp_path / "data/state/delivery-state.json").read_text())[0]
+    assert state["delivery_format"] == "plain_text_fallback_v1"
+
+
+@pytest.mark.asyncio
+async def test_transport_uncertainty_becomes_ambiguous_without_plain_text_retry(
+    tmp_path: Path,
+) -> None:
+    seed(tmp_path)
+
+    class AmbiguousApi(Api):
+        async def send_message(
+            self,
+            chat_id: int,
+            text: str,
+            reply_to_message_id: int | None = None,
+            message_thread_id: int | None = None,
+        ) -> SentMessage:
+            self.calls.append((chat_id, text, reply_to_message_id, message_thread_id))
+            raise TelegramApiAmbiguousError("Telegram outcome is unknown")
+
+    api = AmbiguousApi()
+    with pytest.raises(DeliveryAmbiguous):
+        await DeliveryService(
+            tmp_path, api=api, chat_id=-10077, checkpoint=Checkpoint()
+        ).deliver(job_id="daily:one", text="Hello", reply_to_message_id=None, now=NOW)
+
+    assert len(api.calls) == 1
     assert status(tmp_path) == "ambiguous"

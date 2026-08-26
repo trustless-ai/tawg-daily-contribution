@@ -2,23 +2,44 @@
 
 from __future__ import annotations
 
+import json
 import os
 from dataclasses import dataclass
-from typing import Any, cast
+from html import escape
+from typing import Any, Literal, cast
 
 import httpx
 
-from tawg_bot.http import SafeHttpError, SafeJsonHttpClient
+_LEGACY_TEXT_LIMIT = 4096
 
 
 class TelegramApiError(RuntimeError):
     """A safe Telegram API failure that never includes the bot token."""
+
+    ambiguous = False
+
+
+class TelegramApiAmbiguousError(TelegramApiError):
+    """A Telegram failure where the server may have accepted the request."""
+
+    ambiguous = True
+
+
+class TelegramRichMessageRejected(TelegramApiError):
+    """An explicit pre-acceptance rejection eligible for rendered fallback."""
+
+    def __init__(
+        self, message: str, *, reason: Literal["parse", "unsupported"]
+    ) -> None:
+        super().__init__(message)
+        self.reason = reason
 
 
 @dataclass(frozen=True, slots=True)
 class SentMessage:
     message_id: int
     chat_id: int
+    delivery_format: str = "rich_markdown_v1"
 
 
 class TelegramApi:
@@ -26,7 +47,7 @@ class TelegramApi:
         if not token:
             raise ValueError("Telegram bot token is required")
         self._base_url = f"https://api.telegram.org/bot{token}"
-        self._http = SafeJsonHttpClient(client)
+        self._client = client
 
     @classmethod
     def from_env(cls, *, client: httpx.AsyncClient) -> TelegramApi:
@@ -63,35 +84,132 @@ class TelegramApi:
         reply_to_message_id: int | None = None,
         message_thread_id: int | None = None,
     ) -> SentMessage:
-        data: dict[str, object] = {"chat_id": chat_id, "text": text}
+        data: dict[str, object] = {
+            "chat_id": chat_id,
+            "rich_message": json.dumps(
+                {"markdown": text}, ensure_ascii=False, separators=(",", ":")
+            ),
+        }
+        self._add_reply_context(data, reply_to_message_id, message_thread_id)
+        try:
+            result = await self._call("sendRichMessage", data)
+            delivery_format = "rich_markdown_v1"
+            method = "sendRichMessage"
+        except TelegramRichMessageRejected as error:
+            if error.reason == "parse":
+                data = {
+                    "chat_id": chat_id,
+                    "rich_message": json.dumps(
+                        {"html": escape(text, quote=False)},
+                        ensure_ascii=False,
+                        separators=(",", ":"),
+                    ),
+                }
+                self._add_reply_context(data, reply_to_message_id, message_thread_id)
+                result = await self._call("sendRichMessage", data)
+                delivery_format = "rich_html_fallback_v1"
+                method = "sendRichMessage"
+            else:
+                if len(text) > _LEGACY_TEXT_LIMIT:
+                    raise TelegramApiError(
+                        "Telegram Rich Messages are unavailable for oversized content"
+                    ) from None
+                data = {"chat_id": chat_id, "text": text}
+                self._add_reply_context(data, reply_to_message_id, message_thread_id)
+                result = await self._call("sendMessage", data)
+                delivery_format = "plain_text_fallback_v1"
+                method = "sendMessage"
+        return self._sent_message(result, method=method, delivery_format=delivery_format)
+
+    @staticmethod
+    def _add_reply_context(
+        data: dict[str, object],
+        reply_to_message_id: int | None,
+        message_thread_id: int | None,
+    ) -> None:
         if message_thread_id is not None:
             data["message_thread_id"] = message_thread_id
         if reply_to_message_id is not None:
-            data["reply_parameters"] = f'{{"message_id":{reply_to_message_id}}}'
-        result = await self._call("sendMessage", data)
+            data["reply_parameters"] = json.dumps(
+                {"message_id": reply_to_message_id}, separators=(",", ":")
+            )
+
+    @staticmethod
+    def _sent_message(
+        result: list[dict[str, Any]], *, method: str, delivery_format: str
+    ) -> SentMessage:
         if len(result) != 1:
-            raise TelegramApiError("Telegram sendMessage returned an invalid result")
+            raise TelegramApiAmbiguousError(f"Telegram {method} returned an invalid result")
         message = result[0]
         message_id = message.get("message_id")
         chat = message.get("chat")
         returned_chat_id = chat.get("id") if isinstance(chat, dict) else None
         if not isinstance(message_id, int) or not isinstance(returned_chat_id, int):
-            raise TelegramApiError("Telegram sendMessage returned an invalid message")
-        return SentMessage(message_id=message_id, chat_id=returned_chat_id)
+            raise TelegramApiAmbiguousError(f"Telegram {method} returned an invalid message")
+        return SentMessage(
+            message_id=message_id,
+            chat_id=returned_chat_id,
+            delivery_format=delivery_format,
+        )
 
     async def _call(self, method: str, data: dict[str, object]) -> list[dict[str, Any]]:
         try:
-            payload = await self._http.post_form(f"{self._base_url}/{method}", data)
-        except SafeHttpError as error:
-            raise TelegramApiError(str(error)) from None
-        if payload.get("ok") is not True or not isinstance(payload.get("result"), list | dict):
-            raise TelegramApiError(f"Telegram {method} returned an invalid response")
+            response = await self._client.post(f"{self._base_url}/{method}", data=data)
+        except httpx.HTTPError:
+            raise TelegramApiAmbiguousError("Telegram request outcome is unknown") from None
+        try:
+            payload = response.json()
+        except ValueError:
+            if response.is_success or response.status_code >= 500:
+                raise TelegramApiAmbiguousError(
+                    f"Telegram {method} returned an invalid response"
+                ) from None
+            raise TelegramApiError(f"Telegram {method} rejected the request") from None
+        if not isinstance(payload, dict):
+            if response.is_success:
+                raise TelegramApiAmbiguousError(
+                    f"Telegram {method} returned an invalid response"
+                )
+            raise TelegramApiError(f"Telegram {method} rejected the request")
+        if not response.is_success or payload.get("ok") is not True:
+            fallback_reason = self._fallback_reason(response, payload)
+            if method == "sendRichMessage" and fallback_reason is not None:
+                raise TelegramRichMessageRejected(
+                    "Telegram rejected Rich Markdown",
+                    reason=fallback_reason,
+                )
+            if response.status_code >= 500:
+                raise TelegramApiAmbiguousError("Telegram request outcome is unknown")
+            raise TelegramApiError(f"Telegram {method} rejected the request")
+        if not isinstance(payload.get("result"), list | dict):
+            raise TelegramApiAmbiguousError(f"Telegram {method} returned an invalid response")
         result = payload["result"]
         if isinstance(result, dict):
             return [result]
         if not all(isinstance(item, dict) for item in result):
-            raise TelegramApiError(f"Telegram {method} returned invalid items")
+            raise TelegramApiAmbiguousError(f"Telegram {method} returned invalid items")
         return cast(list[dict[str, Any]], result)
+
+    @staticmethod
+    def _fallback_reason(
+        response: httpx.Response, payload: dict[str, Any]
+    ) -> Literal["parse", "unsupported"] | None:
+        if response.status_code == 404:
+            return "unsupported"
+        if response.status_code != 400:
+            return None
+        description = payload.get("description")
+        if not isinstance(description, str):
+            return None
+        normalized = description.casefold()
+        if "can't parse" in normalized:
+            return "parse"
+        if (
+            "rich message" in normalized
+            and ("not supported" in normalized or "unsupported" in normalized)
+        ):
+            return "unsupported"
+        return None
 
     @staticmethod
     def _update_id(update: dict[str, Any]) -> int:

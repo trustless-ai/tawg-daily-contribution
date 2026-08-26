@@ -208,6 +208,13 @@ class DeliveryAttempt(StrictModel):
     status: DeliveryStatus = DeliveryStatus.PREPARED
     content_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     message_count: int = Field(default=0, ge=0, le=2)
+    delivery_format: str | None = Field(
+        default=None,
+        pattern=(
+            r"^(rich_markdown_v1|rich_html_fallback_v1|"
+            r"plain_text_fallback_v1|mixed_v1)$"
+        ),
+    )
     reply_to_message_id: int | None = None
     message_thread_id: int | None = None
     telegram_chat_id: int | None = None

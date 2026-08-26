@@ -32,11 +32,22 @@ def test_window_rejects_non_utc_run_time() -> None:
         DailyWindow.for_due_run(datetime(2026, 8, 24, 1, 17))
 
 
-def test_daily_split_chooses_a_boundary_that_keeps_both_messages_within_limit() -> None:
+def test_daily_keeps_legacy_two_part_content_in_one_rich_message() -> None:
     service = DailyService(ROOT, ai=cast(Any, object()))
     text = "a" * 3_000 + "\n\n" + "b" * 900 + "\n" + "c" * 3_800
 
     messages = service._split(text)
 
+    assert messages == (text,)
+
+
+def test_daily_splits_content_above_the_rich_message_limit_at_a_paragraph() -> None:
+    service = DailyService(ROOT, ai=cast(Any, object()))
+    text = "a" * 32_000 + "\n\n" + "b" * 2_000
+
+    messages = service._split(text)
+
     assert len(messages) == 2
-    assert all(len(message) <= 4_096 for message in messages)
+    assert messages[0] == "a" * 32_000
+    assert messages[1] == "b" * 2_000
+    assert all(len(message) <= 32_768 for message in messages)

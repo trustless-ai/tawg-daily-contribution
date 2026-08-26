@@ -399,7 +399,9 @@ A quiet day still produces a warm update. It states that no source-backed progre
 - Mention reply jobs preserve both the trigger `message_id` and Telegram `message_thread_id`; every split reply chunk targets that thread, while the Daily omits a thread ID and publishes to General.
 - Normal retries use deterministic job and window IDs to suppress duplicates.
 
-Telegram does not provide a general idempotency key for `sendMessage`. A process failure after Telegram accepts a message but before delivery state is committed creates a small irreducible ambiguity in v1. The controller records delivery intent and successful Telegram message metadata, avoids automatic resend after an explicitly successful response, and surfaces an ambiguous delivery for operator review. It does not claim exactly-once external delivery.
+All user-visible output uses Telegram Rich Messages with Markdown input. The controller keeps each rendered message within 32,768 characters, splits only at safe Markdown boundaries, and uses at most two Telegram messages. Explicit Rich Markdown parsing rejection falls back to escaped Rich HTML; an unavailable Rich Messages endpoint may fall back to legacy plain text only when the content fits that endpoint's 4,096-character limit.
+
+Telegram does not provide a general idempotency key for message delivery. A process failure after Telegram accepts a message but before delivery state is committed creates a small irreducible ambiguity in v1. The controller records delivery intent and successful Telegram message metadata, avoids automatic resend after an explicitly successful response, and surfaces an ambiguous delivery for operator review. It does not claim exactly-once external delivery.
 
 ## 17. Security Boundaries
 

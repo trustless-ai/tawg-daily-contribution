@@ -748,6 +748,20 @@ class BotReplyService:
             result = _ReplyResult.model_validate(raw)
         except ValidationError as error:
             raise ReplyRejected("invalid reply model output") from error
+        requester_non_english = bool(_NON_ENGLISH.search(trigger.text_original))
+        if (
+            not requester_non_english
+            and result.language.casefold().startswith("en")
+            and result.english_recap
+        ):
+            result = result.model_copy(
+                update={
+                    "reply_text": (
+                        f"{result.reply_text.rstrip()}\n\n{result.english_recap.strip()}"
+                    ),
+                    "english_recap": None,
+                }
+            )
         normalized_reply_text = self._normalize_local_citation_rendering(
             result.reply_text, allowed_citations
         )
@@ -807,7 +821,6 @@ class BotReplyService:
                 raise ReplyRejected("reply overstates incomplete evidence")
             if not result.verification_gaps:
                 raise ReplyRejected("reply hides required evidence gaps")
-        requester_non_english = bool(_NON_ENGLISH.search(trigger.text_original))
         if requester_non_english:
             if result.language.casefold().startswith("en") or not result.english_recap:
                 raise ReplyRejected(

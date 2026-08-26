@@ -18,7 +18,11 @@ from tawg_bot.models import (
     PendingBotJob,
 )
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
-from tawg_bot.telegram_api import SentMessage, TelegramApiError
+from tawg_bot.telegram_api import (
+    SentMessage,
+    TelegramApiAmbiguousError,
+    TelegramApiError,
+)
 from tawg_bot.telegram_text import TelegramTextSplitError, split_telegram_text
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
@@ -53,7 +57,7 @@ class DeliveryCheckpoint(Protocol):
 class DeliveryService:
     _STATE_PATH = "data/state/delivery-state.json"
     _JOBS_PATH = "data/state/pending-bot-jobs.json"
-    _TELEGRAM_LIMIT = 4096
+    _TELEGRAM_LIMIT = 32768
     _MAX_MESSAGES = 2
 
     def __init__(
@@ -117,6 +121,7 @@ class DeliveryService:
             status=DeliveryStatus.PREPARED,
             content_sha256=content_sha,
             message_count=len(messages),
+            delivery_format="rich_markdown_v1",
             reply_to_message_id=reply_to_message_id,
             message_thread_id=message_thread_id,
             prepared_at=existing.prepared_at if existing is not None else now,
@@ -144,14 +149,30 @@ class DeliveryService:
                     reply_to_message_id if index == 0 else None,
                     message_thread_id,
                 )
-            except TelegramApiError:
-                status = DeliveryStatus.AMBIGUOUS if sent else DeliveryStatus.FAILED
-                error_code = "partial_telegram_failure" if sent else "telegram_api_failure"
+            except TelegramApiError as error:
+                ambiguous_error = isinstance(error, TelegramApiAmbiguousError)
+                status = (
+                    DeliveryStatus.AMBIGUOUS
+                    if sent or ambiguous_error
+                    else DeliveryStatus.FAILED
+                )
+                error_code = (
+                    "partial_telegram_failure"
+                    if sent
+                    else "telegram_outcome_unknown"
+                    if ambiguous_error
+                    else "telegram_api_failure"
+                )
                 failed = sending.model_copy(
                     update={
                         "status": status,
                         "telegram_chat_id": self.chat_id if sent else None,
                         "telegram_message_ids": [item.message_id for item in sent],
+                        "delivery_format": (
+                            self._actual_delivery_format(sent)
+                            if sent
+                            else sending.delivery_format
+                        ),
                         "updated_at": now,
                         "safe_error_code": error_code,
                     }
@@ -159,8 +180,8 @@ class DeliveryService:
                 attempts[job_id] = failed
                 self._publish_attempts(attempts, f"delivery:{job_id}:{status.value}")
                 await self.checkpoint.publish(f"delivery:{job_id}:{status.value}", self.root)
-                if sent:
-                    raise DeliveryAmbiguous("Telegram accepted only part of the delivery") from None
+                if status is DeliveryStatus.AMBIGUOUS:
+                    raise DeliveryAmbiguous("Telegram delivery outcome is unknown") from None
                 raise DeliveryFailed("Telegram explicitly rejected the delivery") from None
             if response.chat_id != self.chat_id:
                 ambiguous = sending.model_copy(
@@ -171,6 +192,9 @@ class DeliveryService:
                             *[item.message_id for item in sent],
                             response.message_id,
                         ],
+                        "delivery_format": self._actual_delivery_format(
+                            [*sent, response]
+                        ),
                         "updated_at": now,
                         "safe_error_code": "destination_mismatch",
                     }
@@ -187,6 +211,7 @@ class DeliveryService:
                 "status": DeliveryStatus.DELIVERED,
                 "telegram_chat_id": self.chat_id,
                 "telegram_message_ids": [item.message_id for item in sent],
+                "delivery_format": self._actual_delivery_format(sent),
                 "sent_at": now,
                 "updated_at": now,
                 "safe_error_code": None,
@@ -206,6 +231,11 @@ class DeliveryService:
             )
         except (TelegramTextSplitError, ValueError):
             raise DeliveryRejected("delivery cannot fit in at most two Telegram messages") from None
+
+    @staticmethod
+    def _actual_delivery_format(sent: list[SentMessage]) -> str:
+        delivery_formats = {item.delivery_format for item in sent}
+        return next(iter(delivery_formats)) if len(delivery_formats) == 1 else "mixed_v1"
 
     def _load_attempts(self) -> dict[str, DeliveryAttempt]:
         path = self.root / self._STATE_PATH
@@ -264,9 +294,15 @@ class DeliveryService:
 
     @staticmethod
     def _stage_attempts(uow: RepositoryUnitOfWork, attempts: Mapping[str, DeliveryAttempt]) -> None:
+        serialized: list[dict[str, object]] = []
+        for key in sorted(attempts):
+            item = attempts[key].model_dump(mode="json")
+            if item.get("delivery_format") is None:
+                item.pop("delivery_format", None)
+            serialized.append(item)
         uow.stage_json(
             DeliveryService._STATE_PATH,
-            [attempts[key].model_dump(mode="json") for key in sorted(attempts)],
+            serialized,
         )
 
     @staticmethod

@@ -1,7 +1,7 @@
 schema: tawg.bot-policy.v1
 daily:
   due_hour_utc: 23
-  telegram_message_chars: 4096
+  telegram_message_chars: 32768
   max_messages: 2
   max_emoji: 10
   max_model_budget_usd: "2.00"

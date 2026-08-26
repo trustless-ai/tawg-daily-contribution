@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -71,10 +72,14 @@ async def test_records_durable_intent_before_send_and_success_metadata(tmp_path:
     assert result.telegram_chat_id == -10077
     assert result.telegram_message_ids == [101]
     assert result.sent_at == NOW
+    state = json.loads(
+        (tmp_path / "data/state/delivery-state.json").read_text(encoding="utf-8")
+    )
+    assert state[0]["delivery_format"] == "rich_markdown_v1"
 
 
 @pytest.mark.asyncio
-async def test_split_reply_keeps_every_message_in_the_trigger_thread(tmp_path: Path) -> None:
+async def test_rich_reply_keeps_legacy_over_4096_content_in_one_message(tmp_path: Path) -> None:
     seed(tmp_path)
     api = Api()
 
@@ -88,17 +93,15 @@ async def test_split_reply_keeps_every_message_in_the_trigger_thread(tmp_path: P
         now=NOW,
     )
 
-    assert result.message_count == 2
-    assert len(api.calls) == 2
+    assert result.message_count == 1
+    assert len(api.calls) == 1
     assert api.calls[0][2] == 12
-    assert api.calls[1][2] is None
     assert api.calls[0][3] == 700
-    assert api.calls[1][3] == 700
-    assert all(len(call[1]) <= 4096 for call in api.calls)
+    assert len(api.calls[0][1]) > 4096
 
 
 @pytest.mark.asyncio
-async def test_split_keeps_both_messages_within_limit_when_early_paragraph_is_too_short(
+async def test_rich_daily_keeps_legacy_two_part_content_in_one_message(
     tmp_path: Path,
 ) -> None:
     seed(tmp_path)
@@ -113,8 +116,8 @@ async def test_split_keeps_both_messages_within_limit_when_early_paragraph_is_to
         now=NOW,
     )
 
-    assert len(api.calls) == 2
-    assert all(len(call[1]) <= 4096 for call in api.calls)
+    assert len(api.calls) == 1
+    assert len(api.calls[0][1]) == len(text)
 
 
 @pytest.mark.asyncio
@@ -141,7 +144,7 @@ async def test_rejects_text_that_cannot_fit_two_messages(tmp_path: Path) -> None
     with pytest.raises(DeliveryRejected, match="two"):
         await DeliveryService(tmp_path, api=Api(), chat_id=-10077, checkpoint=Checkpoint()).deliver(
             job_id="oversized",
-            text="x" * 8193,
+            text="x" * 65_537,
             reply_to_message_id=None,
             message_thread_id=None,
             now=NOW,
