@@ -154,9 +154,16 @@ async def test_live_pipeline_checks_sources_without_external_body_mirrors(
         monkeypatch.setattr(runtime_module, "DailyEvidenceCollector", Collector)
         pipeline.telegram_synced_at = NOW
         pipeline.source_checked_at = NOW
+        prepared_daily_path = tmp_path / "data/state/prepared-daily.json"
+        prepared_daily_before = (
+            prepared_daily_path.read_bytes() if prepared_daily_path.exists() else None
+        )
         await pipeline.prepare_daily(DailyWindow.for_due_run(NOW), dry_run=True)
         assert pipeline.prepared_daily == prepared
-        assert not (tmp_path / "data/state/prepared-daily.json").exists()
+        prepared_daily_after = (
+            prepared_daily_path.read_bytes() if prepared_daily_path.exists() else None
+        )
+        assert prepared_daily_after == prepared_daily_before
 
         async def no_replies() -> None:
             pipeline.prepared_replies = []
