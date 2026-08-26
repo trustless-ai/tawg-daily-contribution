@@ -178,5 +178,41 @@
     "schema_version": "tawg.knowledge-refresh-job.v1",
     "source_key": "agent-ercs-8301-implementation",
     "updated_at": "2026-08-26T02:10:57.226837Z"
+  },
+  {
+    "created_at": "2026-08-26T03:27:43.677775Z",
+    "erc_number": 8312,
+    "job_key": "refresh:erc-8312:agent-ercs-8312-implementation:fb75a5a404be4257",
+    "observed_sha256": "fb75a5a404be425766114a487fcff23f755770c1f9718ea88e60b79903d07f76",
+    "observed_version": "W/\"7bd12e920c18e7531884fdac4d56459a",
+    "retry_count": 0,
+    "safe_error_code": null,
+    "schema_version": "tawg.knowledge-refresh-job.v1",
+    "source_key": "agent-ercs-8312-implementation",
+    "updated_at": "2026-08-26T03:27:43.677775Z"
+  },
+  {
+    "created_at": "2026-08-26T03:27:43.677775Z",
+    "erc_number": 8312,
+    "job_key": "refresh:erc-8312:agent-ercs-8312-tests:f7d486f80bf172bc",
+    "observed_sha256": "f7d486f80bf172bca9fce1b25c7c532e45fcaea78e711e481ae0205e6d1f228a",
+    "observed_version": "W/\"2f50e4825b393d0c601fe1783a501acc",
+    "retry_count": 0,
+    "safe_error_code": null,
+    "schema_version": "tawg.knowledge-refresh-job.v1",
+    "source_key": "agent-ercs-8312-tests",
+    "updated_at": "2026-08-26T03:27:43.677775Z"
+  },
+  {
+    "created_at": "2026-08-26T03:27:43.677775Z",
+    "erc_number": 8312,
+    "job_key": "refresh:erc-8312:magicians-8312:894dde284d549f1f",
+    "observed_sha256": "894dde284d549f1f87dcff277d183b5ad85456c102fff3a23403bd19f644d59b",
+    "observed_version": "Wed, 24 Jun 2026 13:20:59 GMT",
+    "retry_count": 0,
+    "safe_error_code": null,
+    "schema_version": "tawg.knowledge-refresh-job.v1",
+    "source_key": "magicians-8312",
+    "updated_at": "2026-08-26T03:27:43.677775Z"
   }
 ]

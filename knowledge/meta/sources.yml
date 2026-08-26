@@ -369,10 +369,10 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: W/"b03844326d4ce5651095ba41958e4d1c
-    content_sha256: f729ccb497cb42850ca42d96a0ec4ee6aa663dacd6f3d543d3234ca90cfbaa8d
-    byte_count: 273038
+    checked_at: '2026-08-26T03:27:43.677775Z'
+    version: W/"7bd12e920c18e7531884fdac4d56459a
+    content_sha256: fb75a5a404be425766114a487fcff23f755770c1f9718ea88e60b79903d07f76
+    byte_count: 273076
   status: active
 - source_key: agent-ercs-8312-tests
   topics:
@@ -392,10 +392,10 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: W/"cf2b5cc0db7d338f17a263479540af04
-    content_sha256: 282c61e5cc48f94799f9800da5fb8831f4dc54ec00c5f44c54cff16a0177d6dd
-    byte_count: 245537
+    checked_at: '2026-08-26T03:27:43.677775Z'
+    version: W/"2f50e4825b393d0c601fe1783a501acc
+    content_sha256: f7d486f80bf172bca9fce1b25c7c532e45fcaea78e711e481ae0205e6d1f228a
+    byte_count: 245641
   status: active
 - source_key: magicians-8312
   topics:
@@ -416,9 +416,9 @@ sources:
     - text/plain
     - application/json
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
+    checked_at: '2026-08-26T03:27:43.677775Z'
     version: Wed, 24 Jun 2026 13:20:59 GMT
-    content_sha256: 47dab403db3bbf89a446438e7bcc7b49de14ada493c8f52268312c3f8548412f
+    content_sha256: 894dde284d549f1f87dcff277d183b5ad85456c102fff3a23403bd19f644d59b
     byte_count: 99627
   status: active
 - source_key: agent-ercs-8323-implementation
