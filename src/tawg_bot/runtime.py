@@ -537,8 +537,8 @@ class _LivePipeline:
         for job in actionable[:1]:
             try:
                 self.prepared_replies.append(await service.prepare(job.job_id, now=self.now))
-            except ReplyRejected:
-                _safe_log("reply_prepare", "reply_prepare_failed")
+            except ReplyRejected as error:
+                _safe_log("reply_prepare", error.safe_code)
                 continue
 
     def _reload_registry(self) -> None:

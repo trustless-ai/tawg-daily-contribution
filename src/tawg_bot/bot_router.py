@@ -15,6 +15,7 @@ from typing import Any, Literal, Protocol
 import yaml
 from pydantic import ValidationError
 
+from tawg_bot.claude_cli import ClaudeCliError
 from tawg_bot.context import ContextInputs, ContextPackBuilder, ContextRejected
 from tawg_bot.corrections import CorrectionService
 from tawg_bot.erc_query import ErcIntent, ErcQuery, ErcQueryPlanner
@@ -54,6 +55,10 @@ class BotRoute(StrEnum):
 
 class ReplyRejected(ValueError):
     """Raised when a mention or generated reply cannot safely be prepared."""
+
+    def __init__(self, message: str, *, safe_code: str = "reply_prepare_failed") -> None:
+        super().__init__(message)
+        self.safe_code = safe_code
 
 
 class BotRouter:
@@ -350,6 +355,7 @@ class BotReplyService:
         jobs[job_id] = processing
         self._publish_jobs(jobs, f"{job_id}:processing")
         evidence_pack: EvidencePack | None = None
+        failure_code = "reply_context_failed"
         try:
             erc_query = self.router.erc_query(trigger.text_original)
             local_erc_context: _LocalErcContext | None = None
@@ -365,7 +371,9 @@ class BotReplyService:
                 ):
                     if self.live_evidence is None or self.knowledge_state is None:
                         raise ReplyRejected("live ERC evidence is not configured")
+                    failure_code = "reply_evidence_failed"
                     evidence_pack = await self.live_evidence.build(erc_query, now=now)
+                    failure_code = "reply_context_failed"
             context = self._context(
                 trigger,
                 records,
@@ -374,6 +382,7 @@ class BotReplyService:
                 evidence_pack=evidence_pack,
                 local_erc_context=local_erc_context,
             )
+            failure_code = "reply_model_failed"
             raw = await self.ai.run(
                 job_type="reply",
                 context_pack=context.text,
@@ -381,6 +390,7 @@ class BotReplyService:
                 max_budget_usd=self.max_budget_usd,
                 timeout_seconds=self.timeout_seconds,
             )
+            failure_code = "reply_validation_failed"
             result = self._validate_result(
                 raw,
                 trigger,
@@ -392,9 +402,11 @@ class BotReplyService:
             reply_text = result.reply_text.strip()
             if result.english_recap is not None:
                 reply_text = f"{reply_text}\n\nEnglish recap: {result.english_recap.strip()}"
+            failure_code = "reply_citation_binding_failed"
             reply_text = self._bind_reply_citations(reply_text, result.citations)
             if len(reply_text) > 8192:
                 raise ReplyRejected("reply cannot fit in two Telegram messages")
+            failure_code = "reply_privacy_failed"
             self.privacy.assert_public(reply_text)
             ready = processing.model_copy(
                 update={
@@ -407,6 +419,7 @@ class BotReplyService:
                 }
             )
             jobs[job_id] = ready
+            failure_code = "reply_persistence_failed"
             uow = RepositoryUnitOfWork(self.root, operation_id=job_id)
             external_texts = (
                 tuple(item.text for item in evidence_pack.evidence)
@@ -435,14 +448,15 @@ class BotReplyService:
             self._stage_jobs(uow, jobs)
             uow.publish()
             return self._prepared(ready)
-        except Exception:
+        except Exception as error:
+            safe_error_code = self._safe_failure_code(failure_code, error)
             failed_jobs = self._load_jobs()
             current = failed_jobs[job_id]
             failed_jobs[job_id] = current.model_copy(
                 update={
                     "status": JobStatus.PENDING,
                     "updated_at": now,
-                    "safe_error_code": "reply_prepare_failed",
+                    "safe_error_code": safe_error_code,
                 }
             )
             failure_uow = RepositoryUnitOfWork(self.root, operation_id=f"{job_id}:failed")
@@ -456,7 +470,30 @@ class BotReplyService:
                 )
             self._stage_jobs(failure_uow, failed_jobs)
             failure_uow.publish()
-            raise ReplyRejected("reply preparation failed safely") from None
+            raise ReplyRejected(
+                "reply preparation failed safely", safe_code=safe_error_code
+            ) from None
+
+    @staticmethod
+    def _safe_failure_code(stage_code: str, error: Exception) -> str:
+        if stage_code != "reply_model_failed" or not isinstance(error, ClaudeCliError):
+            return stage_code
+        message = str(error)
+        if message == "Claude Code exceeded its time limit":
+            return "reply_model_timeout"
+        if message == "Claude Code could not be started" or message.startswith(
+            "Claude Code failed with exit status"
+        ):
+            return "reply_model_process_failed"
+        if message == "Claude Code structured output failed schema validation":
+            return "reply_model_schema_invalid"
+        if message in {
+            "Claude Code did not return one bounded successful result",
+            "Claude Code returned no structured output",
+            "Claude Code returned invalid JSON",
+        }:
+            return "reply_model_contract_invalid"
+        return stage_code
 
     def _context(
         self,

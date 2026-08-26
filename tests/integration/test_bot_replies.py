@@ -9,6 +9,7 @@ from typing import Any
 import pytest
 
 from tawg_bot.bot_router import BotReplyService, ReplyRejected, ReplyRepairReconciler
+from tawg_bot.claude_cli import ClaudeCliError
 from tawg_bot.models import (
     DeliveryAttempt,
     DeliveryStatus,
@@ -410,7 +411,7 @@ async def test_coordination_reply_rejects_citations(tmp_path: Path) -> None:
     assert ai.calls
     persisted = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())[0]
     assert persisted["status"] == "pending"
-    assert persisted["safe_error_code"] == "reply_prepare_failed"
+    assert persisted["safe_error_code"] == "reply_validation_failed"
 
 
 @pytest.mark.asyncio
@@ -444,5 +445,33 @@ async def test_failed_model_attempt_returns_job_to_retryable_pending_state(
     persisted = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())[0]
     assert persisted["status"] == "pending"
     assert persisted["attempts"] == 1
-    assert persisted["safe_error_code"] == "reply_prepare_failed"
+    assert persisted["safe_error_code"] == "reply_model_failed"
     assert "sensitive" not in json.dumps(persisted)
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("message", "expected_code"),
+    [
+        ("Claude Code exceeded its time limit", "reply_model_timeout"),
+        ("Claude Code could not be started", "reply_model_process_failed"),
+    ],
+)
+async def test_model_failure_is_persisted_as_a_specific_safe_code(
+    tmp_path: Path, message: str, expected_code: str
+) -> None:
+    job = seed(tmp_path, "@bot What is the TAWG validation focus?")
+
+    class TimeoutAi:
+        async def run(self, **kwargs: Any) -> dict[str, Any]:
+            del kwargs
+            raise ClaudeCliError(message)
+
+    with pytest.raises(ReplyRejected) as caught:
+        await BotReplyService(tmp_path, ai=TimeoutAi(), bot_username="bot").prepare(
+            job.job_id, now=NOW + timedelta(minutes=2)
+        )
+
+    assert caught.value.safe_code == expected_code
+    persisted = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())[0]
+    assert persisted["safe_error_code"] == expected_code
