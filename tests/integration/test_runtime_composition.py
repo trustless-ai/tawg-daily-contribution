@@ -626,7 +626,7 @@ async def test_successful_knowledge_is_not_deferred_when_only_checkpoint_fails(
 
 
 @pytest.mark.asyncio
-async def test_reply_preparation_processes_only_one_pending_job_per_run(
+async def test_reply_preparation_gives_one_pending_job_a_five_minute_model_budget(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     scaffold(tmp_path)
@@ -649,12 +649,58 @@ async def test_reply_preparation_processes_only_one_pending_job_per_run(
     class ReplyService:
         def __init__(self, root: Path, **kwargs: Any) -> None:
             assert root == tmp_path
-            assert kwargs["timeout_seconds"] == 120
+            assert kwargs["timeout_seconds"] == 300
 
         async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply:
             assert now == NOW
             prepared_ids.append(job_id)
             return PreparedReply(job_id, 10, None, "reply", (), "en", False)
+
+    monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
+    monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        await pipeline._prepare_pending_replies()
+
+    assert prepared_ids == ["reply:tg:tawg:11"]
+
+
+@pytest.mark.asyncio
+async def test_reply_preparation_skips_a_failed_job_while_fresh_work_is_pending(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    jobs = [
+        PendingBotJob(
+            job_id="reply:tg:tawg:10",
+            trigger_record_id="tg:tawg:10",
+            reply_to_message_id=10,
+            created_at=NOW - timedelta(minutes=2),
+            updated_at=NOW - timedelta(minutes=1),
+            safe_error_code="reply_prepare_failed",
+        ),
+        PendingBotJob(
+            job_id="reply:tg:tawg:11",
+            trigger_record_id="tg:tawg:11",
+            reply_to_message_id=11,
+            created_at=NOW,
+            updated_at=NOW,
+        ),
+    ]
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps([job.model_dump(mode="json") for job in jobs]) + "\n",
+        encoding="utf-8",
+    )
+    prepared_ids: list[str] = []
+
+    class ReplyService:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+
+        async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply:
+            del now
+            prepared_ids.append(job_id)
+            return PreparedReply(job_id, 11, None, "reply", (), "en", False)
 
     monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
     monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
@@ -691,6 +737,90 @@ async def test_daily_run_defers_new_pending_reply_model_work(
     async with httpx.AsyncClient() as client:
         pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
         pipeline.prepared_daily = PreparedDaily("daily", "Daily", ("Daily",), (), True)
+        await pipeline._prepare_pending_replies()
+
+    assert pipeline.prepared_replies == []
+
+
+@pytest.mark.asyncio
+async def test_failed_daily_attempt_defers_new_pending_reply_model_work(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    window = DailyWindow.for_due_run(NOW)
+    job = PendingBotJob(
+        job_id="reply:tg:tawg:10",
+        trigger_record_id="tg:tawg:10",
+        reply_to_message_id=10,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps([job.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+
+    class ReplyService:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+            raise AssertionError("failed Daily must not start another model job")
+
+    async def reject_daily(*args: Any, **kwargs: Any) -> PreparedDaily:
+        del args, kwargs
+        raise DailyRejected("Daily output has an unexpected top-level section")
+
+    monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        monkeypatch.setattr(pipeline, "prepare_daily", reject_daily)
+        with pytest.raises(RuntimeFailure, match="Daily validation failed"):
+            await pipeline.daily_prepare(window.window_id)
+        await pipeline._prepare_pending_replies()
+
+    assert pipeline.prepared_replies == []
+
+
+@pytest.mark.asyncio
+async def test_knowledge_run_defers_new_pending_reply_model_work(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    job = PendingBotJob(
+        job_id="reply:tg:tawg:10",
+        trigger_record_id="tg:tawg:10",
+        reply_to_message_id=10,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps([job.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+
+    class State:
+        def eligible_refresh_erc_numbers(self, cutoff: datetime) -> tuple[int, ...]:
+            del cutoff
+            return (8004,)
+
+    class Refresh:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+
+        async def run(self, **kwargs: Any) -> RefreshResult:
+            del kwargs
+            return RefreshResult(("refresh:8004",), (), True)
+
+    class ReplyService:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+            raise AssertionError("knowledge run must not start another model job")
+
+    monkeypatch.setattr(runtime_module, "KnowledgeRefresh", Refresh)
+    monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        pipeline.knowledge_state = State()  # type: ignore[assignment]
+        await pipeline.knowledge_refresh(NOW)
         await pipeline._prepare_pending_replies()
 
     assert pipeline.prepared_replies == []

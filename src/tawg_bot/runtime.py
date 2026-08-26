@@ -57,7 +57,7 @@ _SOURCE_ERC_TIMEOUT_SECONDS = 60
 _KNOWLEDGE_TIMEOUT_SECONDS = 180
 _DAILY_EVIDENCE_TIMEOUT_SECONDS = 60
 _DAILY_TIMEOUT_SECONDS = 360
-_REPLY_TIMEOUT_SECONDS = 120
+_REPLY_TIMEOUT_SECONDS = 300
 _DAILY_REJECTION_CODES = {
     "Daily factual bullet lacks a valid citation": "daily_citation_invalid",
     "Daily synthesis contains source-dependent detail": "daily_synthesis_invalid",
@@ -217,6 +217,8 @@ class _LivePipeline:
         self.source_checked_at: datetime | None = None
         self.live_evidence_collected_at: datetime | None = None
         self.knowledge_refreshed_at: datetime | None = None
+        self.knowledge_attempted = False
+        self.daily_attempted = False
         self.prepared_daily: PreparedDaily | None = None
         self.prepared_replies: list[PreparedReply] = []
 
@@ -299,6 +301,7 @@ class _LivePipeline:
         if not erc_numbers:
             self.knowledge_refreshed_at = self.now
             return
+        self.knowledge_attempted = True
         erc_number = erc_numbers[0]
         operation_id = f"knowledge-refresh-{cutoff.strftime('%Y%m%dt%H%M%Sz')}"
         service = KnowledgeRefresh(
@@ -382,6 +385,7 @@ class _LivePipeline:
         window = DailyWindow.for_due_run(self.now)
         if window.window_id != window_id:
             raise RuntimeFailure("scheduler supplied an inconsistent Daily window")
+        self.daily_attempted = True
         try:
             prepared = await self.prepare_daily(window, dry_run=False)
         except PersistenceRejected:
@@ -492,13 +496,18 @@ class _LivePipeline:
         jobs = self._load_jobs()
         actionable_statuses = (
             {JobStatus.READY}
-            if self.prepared_daily is not None
+            if (
+                self.knowledge_attempted
+                or self.daily_attempted
+                or self.prepared_daily is not None
+            )
             else {JobStatus.PENDING, JobStatus.READY}
         )
         actionable = [job for job in jobs if job.status in actionable_statuses]
         actionable.sort(
             key=lambda job: (
                 job.status is not JobStatus.READY,
+                job.safe_error_code is not None,
                 job.updated_at,
                 job.job_id,
             )
