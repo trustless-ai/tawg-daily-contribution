@@ -130,6 +130,12 @@ people:
       - mzf11125
       magicians:
       - mzf11125
+  zidan-2:
+    display_names:
+    - Zidan
+    handles:
+      telegram:
+      - mzf11125
   繁星之上:
     display_names:
     - 繁星之上
