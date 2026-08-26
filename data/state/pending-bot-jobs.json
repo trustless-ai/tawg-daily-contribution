@@ -1,21 +1,25 @@
 [
   {
-    "attempts": 3,
+    "attempts": 4,
     "created_at": "2026-08-26T05:03:41.673472Z",
     "job_id": "reply-repair:recent-discussion-v1:tg:tawg:3380",
     "message_thread_id": null,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "tg:tawg:3376",
+      "tg:tawg:3377",
+      "tg:tawg:3378"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "Here's a recap of what the group just discussed:\n\n**Attribution gaps and the path to on-chain anchoring**\n\nPavlo (@Pavlentyy82) opened by noting that Trusty's current model (claim-ledger.v2 + source-ledger.v2) tracks claim state and source authority well, but is missing a `verified_by` field — a way to record that a specific contribution claim was independently confirmed by another participant, rather than just synthesized by Trusty from sources. He proposed an adapter route: keep Trusty's knowledge model as-is, but make the stronger attribution contract explicit at the boundary before emitting any anchor-ready entries. [tg:tawg:3376]\n\nYou agreed that on-chain anchoring needs validation from other parties, and flagged that TAWG's current contribution types (contribute / review) are too coarse. You pointed to Fede's proposal as a place to integrate more precise measurement definitions, with a goal of making sure every person's work gets properly recorded. [tg:tawg:3377]\n\nPavlo then laid out a concrete next step: define the contribution vocabulary first, before any weights or formulas. Drawing on Fede's ledger, the proposed types are **find / prove / audit / verify / build**. He argued for keeping three things strictly separate: (1) what kind of contribution happened, (2) what evidence proves it, and (3) who independently validated it — only stabilizing those before discussing weighting or settlement. He also flagged **causal application**: a find or audit that leads to someone else's build should not disappear just because the original contributor didn't author the final commit. [tg:tawg:3378]\n\nIn short: the thread was about bridging Trusty's record-keeping layer with a structured attribution/validation layer, and eventually a work-metric/allocation layer — without rewriting provenance at each step.\n\nJimmy asked for a recap of the recent discussion. The thread covered: (1) Pavlo identifying a missing `verified_by` mechanism in Trusty's attribution model and proposing an adapter route ; (2) Jimmy agreeing that on-chain anchoring requires independent validation and that contribution types need expanding beyond contribute/review ; (3) Pavlo proposing to define contribution vocabulary (find/prove/audit/verify/build) before any weighting, keeping kind/evidence/validation separate, and explicitly including causal application .",
     "refusal": false,
     "repair_of_job_id": "reply:tg:tawg:3380",
     "repair_reason_code": "recent_discussion_route_updated",
     "reply_to_message_id": 3380,
-    "safe_error_code": "reply_language_invalid",
+    "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_record_id": "tg:tawg:3380",
-    "updated_at": "2026-08-26T09:56:19.801868Z"
+    "updated_at": "2026-08-26T11:51:21.004539Z"
   },
   {
     "attempts": 0,
