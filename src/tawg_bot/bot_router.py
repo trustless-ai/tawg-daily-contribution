@@ -78,7 +78,8 @@ class BotRouter:
     )
     _KNOWLEDGE_CORRECTION = re.compile(
         r"\b(correction|correct the|page is wrong|should say|old (?:rule|fact)|"
-        r"update (?:the )?knowledge)\b|更正|纠正|知识库.{0,10}错|应该是",
+        r"update (?:the )?knowledge|add [^\n]{1,80} to (?:your|the) knowledge)\b|"
+        r"更正|纠正|知识库.{0,10}错|应该是",
         re.IGNORECASE,
     )
     _SOURCE = re.compile(

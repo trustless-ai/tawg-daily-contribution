@@ -14,6 +14,10 @@ from tawg_bot.erc_query import ErcIntent
             BotRoute.KNOWLEDGE_CORRECTION,
         ),
         (
+            "@bot Please add OCP to your knowledge, which is ERC 8281",
+            BotRoute.KNOWLEDGE_CORRECTION,
+        ),
+        (
             "@bot source suggestion: https://ethereum-magicians.org/t/25098",
             BotRoute.SOURCE_SUGGESTION,
         ),
