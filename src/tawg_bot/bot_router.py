@@ -476,6 +476,28 @@ class BotReplyService:
 
     @staticmethod
     def _safe_failure_code(stage_code: str, error: Exception) -> str:
+        if stage_code == "reply_validation_failed" and isinstance(error, ReplyRejected):
+            return {
+                "invalid reply model output": "reply_model_output_invalid",
+                "reply citations contain duplicates": "reply_citations_duplicate",
+                "reply cites fabricated evidence": "reply_citation_not_allowed",
+                "reply text repeats an evidence citation": "reply_text_citation_duplicate",
+                "reply text cites undeclared evidence": "reply_text_citation_undeclared",
+                "reply overstates missing normative evidence": "reply_evidence_status_invalid",
+                "reply overstates incomplete evidence": "reply_evidence_status_invalid",
+                "reply hides required evidence gaps": "reply_evidence_gaps_missing",
+                "non-English reply requires matching language and English recap": (
+                    "reply_language_invalid"
+                ),
+                "English reply must not duplicate an English recap": "reply_language_invalid",
+                "reply attempted an unauthorized correction": "reply_correction_unauthorized",
+                "knowledge reply requires evidence citations": "reply_knowledge_citation_missing",
+                "coordination reply cannot cite evidence": (
+                    "reply_coordination_citation_forbidden"
+                ),
+                "refused reply cannot modify knowledge": "reply_correction_unauthorized",
+                "reply output failed privacy validation": "reply_output_privacy_failed",
+            }.get(str(error), stage_code)
         if stage_code != "reply_model_failed" or not isinstance(error, ClaudeCliError):
             return stage_code
         message = str(error)

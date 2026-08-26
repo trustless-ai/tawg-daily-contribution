@@ -336,6 +336,9 @@ async def test_reply_text_citations_must_match_the_validated_sidecar(
             bot_username="bot",
         ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
 
+    persisted = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())[0]
+    assert persisted["safe_error_code"] == "reply_text_citation_undeclared"
+
 
 @pytest.mark.asyncio
 async def test_reply_text_rejects_duplicate_occurrences_of_a_declared_citation(
@@ -411,7 +414,7 @@ async def test_coordination_reply_rejects_citations(tmp_path: Path) -> None:
     assert ai.calls
     persisted = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())[0]
     assert persisted["status"] == "pending"
-    assert persisted["safe_error_code"] == "reply_validation_failed"
+    assert persisted["safe_error_code"] == "reply_text_citation_undeclared"
 
 
 @pytest.mark.asyncio
