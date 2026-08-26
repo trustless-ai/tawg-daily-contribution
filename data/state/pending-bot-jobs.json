@@ -138,7 +138,7 @@
     "reply_to_message_id": 3401,
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "ready",
+    "status": "delivered",
     "trigger_record_id": "tg:tawg:3401",
     "updated_at": "2026-08-26T13:41:34.703946Z"
   }
