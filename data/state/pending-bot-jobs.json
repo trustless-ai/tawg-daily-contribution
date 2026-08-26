@@ -156,7 +156,7 @@
     "reply_to_message_id": 3436,
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "ready",
+    "status": "delivered",
     "trigger_record_id": "tg:tawg:3436",
     "updated_at": "2026-08-26T16:04:46.036497Z"
   }
