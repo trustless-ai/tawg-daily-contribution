@@ -323,10 +323,10 @@ sources:
     - text/html
     - text/plain
   last_observed:
-    checked_at: '2026-08-23T06:55:28.909924Z'
-    version: W/"a3decb0bc374a096d62a58e230a57cca
-    content_sha256: 2b152a4b26571cde9f0a643cd9515ac4facbdb8f5bfee30c6350e3dc1a59c880
-    byte_count: 255957
+    checked_at: '2026-08-26T02:10:57.226837Z'
+    version: W/"b23cde2bca6d0a666775219b29b35c09
+    content_sha256: f4799011e0bf2ec73669cb41a69ba91002a705a5d4f862c3d41b3d1084d6e1f9
+    byte_count: 255988
   status: active
 - source_key: agent-ercs-8301-implementation
   topics:
