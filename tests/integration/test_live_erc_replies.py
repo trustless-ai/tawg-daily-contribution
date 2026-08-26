@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import shutil
 from copy import deepcopy
 from datetime import UTC, datetime, timedelta
@@ -276,12 +277,19 @@ async def test_local_erc_correction_persists_against_v2_evidence_frontmatter(
     shutil.copytree(PROJECT / "knowledge", tmp_path / "knowledge", dirs_exist_ok=True)
     page = tmp_path / "knowledge/ercs/erc-8281.md"
     current = (PROJECT / "knowledge/ercs/erc-8281.md").read_text(encoding="utf-8")
-    corrected = current.replace(
+    corrected = re.sub(
+        r"^telegram_record_ids:.*?(?=^---$)",
+        "telegram_record_ids: []\n",
+        current,
+        count=1,
+        flags=re.MULTILINE | re.DOTALL,
+    )
+    corrected = corrected.replace(
         "telegram_record_ids: []",
         "telegram_record_ids:\n- tg:tawg:100",
     ).replace(
-        "The agent-ercs implementation draft provides",
-        "OCP means Observation Commitment Protocol. The agent-ercs implementation draft provides",
+        "## Summary\n\n",
+        "## Summary\n\nOCP means Observation Commitment Protocol. ",
     )
     result = {
         **_result(citations=["tg:tawg:100"]),
