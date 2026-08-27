@@ -8,6 +8,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from time import monotonic
 from typing import Any, Literal, Protocol
 
 import yaml
@@ -156,22 +157,37 @@ class DailyService:
         context_evidence = self._select_context_evidence(evidence)
         context = self._context(window, context_evidence)
         operation_id = window.window_id.replace(":", "-")
-        raw = await self.ai.run(
-            job_type="daily",
-            context_pack=context,
-            operation_id=operation_id,
-            max_budget_usd=str(self.policy["max_model_budget_usd"]),
-            timeout_seconds=self.timeout_seconds,
-        )
-        result = self._validate_result(raw, window, context_evidence)
-        messages = self._split(result.telegram_text)
-        return PreparedDaily(
-            window_id=result.window_id,
-            telegram_text=result.telegram_text,
-            messages=messages,
-            citations=tuple(result.citations),
-            quiet_day=result.quiet_day,
-        )
+        deadline = monotonic() + self.timeout_seconds
+        rejection: DailyRejected | None = None
+        for attempt in range(2):
+            timeout_seconds = (
+                self.timeout_seconds if attempt == 0 else deadline - monotonic()
+            )
+            if timeout_seconds <= 0:
+                assert rejection is not None
+                raise rejection
+            raw = await self.ai.run(
+                job_type="daily",
+                context_pack=context,
+                operation_id=operation_id,
+                max_budget_usd=str(self.policy["max_model_budget_usd"]),
+                timeout_seconds=timeout_seconds,
+            )
+            try:
+                result = self._validate_result(raw, window, context_evidence)
+                messages = self._split(result.telegram_text)
+            except DailyRejected as error:
+                rejection = error
+                continue
+            return PreparedDaily(
+                window_id=result.window_id,
+                telegram_text=result.telegram_text,
+                messages=messages,
+                citations=tuple(result.citations),
+                quiet_day=result.quiet_day,
+            )
+        assert rejection is not None
+        raise rejection
 
     def _context(self, window: DailyWindow, evidence: tuple[DailyEvidence, ...]) -> str:
         mention_labels = self._mention_labels(evidence)

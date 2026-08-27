@@ -471,6 +471,21 @@ async def test_prepare_daily_does_not_expose_output_before_artifact_persists(
             "daily_mention_invalid",
             "Telegram mention",
         ),
+        (
+            "invalid Daily model output",
+            "daily_model_output_invalid",
+            "model output",
+        ),
+        (
+            "Daily title must match the exact UTC window",
+            "daily_title_invalid",
+            "exact UTC window",
+        ),
+        (
+            "Daily output has an invalid required section: Next up",
+            "daily_sections_invalid",
+            "Next up",
+        ),
     ],
 )
 async def test_scheduled_daily_logs_bounded_validation_code_without_raw_error(

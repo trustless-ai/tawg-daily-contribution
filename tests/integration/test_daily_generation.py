@@ -8,6 +8,7 @@ from typing import Any
 
 import pytest
 
+import tawg_bot.daily as daily_module
 from tawg_bot.daily import DailyReadiness, DailyRejected, DailyService, DailyWindow
 from tawg_bot.daily_evidence import DailyEvidence
 from tawg_bot.models import SourceRecord, SourceType
@@ -25,6 +26,16 @@ class FakeAi:
     async def run(self, **kwargs: Any) -> dict[str, Any]:
         self.calls.append(kwargs)
         return deepcopy(self.output)
+
+
+class SequenceAi:
+    def __init__(self, outputs: list[dict[str, Any]]) -> None:
+        self.outputs = outputs
+        self.calls: list[dict[str, Any]] = []
+
+    async def run(self, **kwargs: Any) -> dict[str, Any]:
+        self.calls.append(kwargs)
+        return deepcopy(self.outputs[len(self.calls) - 1])
 
 
 def _fixture(name: str) -> dict[str, Any]:
@@ -166,6 +177,66 @@ async def test_active_daily_is_grounded_warm_english_and_excludes_post_cutoff(
     assert "What moved" in prepared.telegram_text
     assert "post-cutoff" not in ai.calls[0]["context_pack"]
     assert "tg:tawg:1" in ai.calls[0]["context_pack"]
+
+
+@pytest.mark.asyncio
+async def test_daily_retries_one_rejected_model_draft_within_the_same_run(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    rejected = _fixture("daily-active")
+    rejected["telegram_text"] = rejected["telegram_text"].replace(
+        "TAWG Daily Catch-up", "Wrong Daily title", 1
+    )
+    accepted = _fixture("daily-active")
+    ai = SequenceAi([rejected, accepted])
+
+    prepared = await DailyService(tmp_path, ai=ai).prepare(
+        WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+    )
+
+    assert prepared is not None
+    assert prepared.telegram_text == accepted["telegram_text"]
+    assert len(ai.calls) == 2
+
+
+@pytest.mark.asyncio
+async def test_daily_stops_after_two_rejected_model_drafts(tmp_path: Path) -> None:
+    _seed(tmp_path)
+    rejected = _fixture("daily-active")
+    rejected["telegram_text"] = rejected["telegram_text"].replace(
+        "TAWG Daily Catch-up", "Wrong Daily title", 1
+    )
+    ai = SequenceAi([rejected, rejected])
+
+    with pytest.raises(DailyRejected, match="title"):
+        await DailyService(tmp_path, ai=ai).prepare(
+            WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )
+
+    assert len(ai.calls) == 2
+
+
+@pytest.mark.asyncio
+async def test_daily_retry_shares_the_original_model_timeout(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    _seed(tmp_path)
+    rejected = _fixture("daily-active")
+    rejected["telegram_text"] = rejected["telegram_text"].replace(
+        "TAWG Daily Catch-up", "Wrong Daily title", 1
+    )
+    ai = SequenceAi([rejected, _fixture("daily-active")])
+    times = iter((100.0, 111.0))
+    monkeypatch.setattr(daily_module, "monotonic", lambda: next(times))
+
+    with pytest.raises(DailyRejected, match="title"):
+        await DailyService(tmp_path, ai=ai, timeout_seconds=10).prepare(
+            WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )
+
+    assert len(ai.calls) == 1
+    assert ai.calls[0]["timeout_seconds"] == 10
 
 
 @pytest.mark.asyncio

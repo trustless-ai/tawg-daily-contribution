@@ -67,12 +67,22 @@ _REPLY_TIMEOUT_SECONDS = 300
 _REPLY_PHASE_BUDGET_SECONDS = 360
 _MAX_REPLIES_PER_TICK = 10
 _DAILY_REJECTION_CODES = {
+    "invalid Daily model output": "daily_model_output_invalid",
+    "Daily output changed the fixed UTC window": "daily_window_invalid",
+    "Daily title must match the exact UTC window": "daily_title_invalid",
+    "Daily output exceeds the Telegram budget": "daily_size_invalid",
+    "Daily cannot fit in at most two Telegram messages": "daily_size_invalid",
+    "Daily output failed privacy validation": "daily_privacy_invalid",
+    "Daily output must be English": "daily_language_invalid",
     "Daily factual bullet lacks a valid citation": "daily_citation_invalid",
+    "Daily citation list contains duplicates": "daily_citation_invalid",
+    "active Daily lacks a citation from its fixed window": "daily_citation_invalid",
     "Daily synthesis contains source-dependent detail": "daily_synthesis_invalid",
     "Daily What moved has an invalid direction structure": "daily_structure_invalid",
     "Daily concrete progress uses an invalid bullet marker": "daily_structure_invalid",
     "active Daily lacks a complete What moved direction": "daily_structure_invalid",
     "Daily output has an unexpected top-level section": "daily_sections_invalid",
+    "Daily output has required sections out of order": "daily_sections_invalid",
     "Daily text contains an unknown citation": "daily_citation_unknown",
     "Daily citation references unknown evidence": "daily_citation_unknown",
     "Daily output contains ranking or persona language": "daily_tone_invalid",
@@ -81,7 +91,34 @@ _DAILY_REJECTION_CODES = {
     "Daily contributor lacks a confirmed Telegram mention": "daily_mention_invalid",
     "Daily contains an invalid Telegram mention": "daily_mention_invalid",
     "Daily citation has conflicting contributor mappings": "daily_mention_invalid",
+    "quiet Daily invents source-backed progress": "daily_grounding_invalid",
+    "quiet Daily must state that no source-backed progress landed": (
+        "daily_grounding_invalid"
+    ),
+    "Daily evidence falls outside the fixed UTC window": "daily_evidence_invalid",
+    "priority context does not fit the configured budget": "daily_context_invalid",
+    "invalid TAWG alias registry": "daily_alias_invalid",
+    "invalid delivery state": "daily_state_invalid",
+    "invalid Daily Telegram split policy": "daily_config_invalid",
+    "invalid bot policy": "daily_config_invalid",
+    "incomplete Daily bot policy": "daily_config_invalid",
+    "Daily schema must be an object": "daily_config_invalid",
+    "configuration must be a mapping": "daily_config_invalid",
 }
+
+
+def _daily_rejection_code(error: DailyRejected) -> str:
+    reason = str(error)
+    exact = _DAILY_REJECTION_CODES.get(reason)
+    if exact is not None:
+        return exact
+    if reason.startswith("Daily output has an invalid required section:"):
+        return "daily_sections_invalid"
+    if reason.endswith(" is not fresh through the Daily cutoff"):
+        return "daily_readiness_stale"
+    if reason.startswith("context privacy rejection:"):
+        return "daily_privacy_invalid"
+    return "daily_validation_failed"
 
 
 @dataclass(frozen=True, slots=True)
@@ -402,8 +439,7 @@ class _LivePipeline:
             raise RuntimeFailure("Daily persistence failed") from None
         except DailyRejected as error:
             self.prepared_daily = None
-            code = _DAILY_REJECTION_CODES.get(str(error), "daily_validation_failed")
-            _safe_log("daily_validation", code)
+            _safe_log("daily_validation", _daily_rejection_code(error))
             raise RuntimeFailure("Daily validation failed") from None
         except Exception:
             self.prepared_daily = None
