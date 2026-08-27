@@ -8,7 +8,7 @@ from typing import Any, Literal, Protocol
 from pydantic import ValidationError
 
 from tawg_bot.conversation_context import ConversationContext
-from tawg_bot.models import BotRoute, StrictModel
+from tawg_bot.models import BotRoute, RouteContextScope, StrictModel
 
 
 class AiRouteRejected(ValueError):
@@ -28,13 +28,15 @@ class RouteAi(Protocol):
 
 
 class _RouteResult(StrictModel):
-    schema_version: Literal["tawg.route-result.v1"]
+    schema_version: Literal["tawg.route-result.v2"]
     route: BotRoute
+    context_scope: RouteContextScope
 
 
 @dataclass(frozen=True, slots=True)
 class RouteDecision:
     route: BotRoute
+    context_scope: RouteContextScope
     context_sha256: str
 
 
@@ -63,4 +65,13 @@ class ContextualAiRouter:
             result = _RouteResult.model_validate(raw)
         except ValidationError:
             raise AiRouteRejected("invalid AI route output") from None
-        return RouteDecision(route=result.route, context_sha256=context.sha256)
+        if result.context_scope is RouteContextScope.ERC and result.route not in {
+            BotRoute.KNOWLEDGE_QUESTION,
+            BotRoute.KNOWLEDGE_CORRECTION,
+        }:
+            raise AiRouteRejected("invalid AI route output")
+        return RouteDecision(
+            route=result.route,
+            context_scope=result.context_scope,
+            context_sha256=context.sha256,
+        )
