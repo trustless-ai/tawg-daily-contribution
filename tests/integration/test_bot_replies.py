@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import re
 from copy import deepcopy
@@ -24,6 +25,7 @@ from tawg_bot.models import (
     Relation,
     SourceRecord,
     SourceType,
+    TriggerKind,
 )
 from tawg_bot.storage import JsonlCollection
 
@@ -96,7 +98,13 @@ def _record(
     )
 
 
-def seed(root: Path, trigger_text: str) -> PendingBotJob:
+def seed(
+    root: Path,
+    trigger_text: str,
+    *,
+    trigger_kind: TriggerKind = TriggerKind.MENTION,
+    trigger_reply_to: str = "tg:tawg:11",
+) -> PendingBotJob:
     for relative in (
         "config/privacy.yml",
         "src/tawg_bot/schemas/reply-result.v2.json",
@@ -131,7 +139,7 @@ def seed(root: Path, trigger_text: str) -> PendingBotJob:
             "tg:tawg:12",
             trigger_text,
             NOW,
-            reply_to="tg:tawg:11",
+            reply_to=trigger_reply_to,
         ),
         _record("tg:tawg:13", "Nearby ordinary context.", NOW + timedelta(minutes=1)),
     ]
@@ -142,6 +150,7 @@ def seed(root: Path, trigger_text: str) -> PendingBotJob:
         job_id="reply:tg:tawg:12",
         trigger_record_id="tg:tawg:12",
         reply_to_message_id=12,
+        trigger_kind=trigger_kind,
         created_at=NOW,
         updated_at=NOW,
     )
@@ -149,6 +158,46 @@ def seed(root: Path, trigger_text: str) -> PendingBotJob:
     state.parent.mkdir(parents=True)
     state.write_text(json.dumps([job.model_dump(mode="json")]) + "\n", encoding="utf-8")
     return job
+
+
+def seed_delivered_bot_reply(
+    root: Path,
+    *,
+    telegram_message_id: int,
+    reply_text: str,
+) -> None:
+    jobs_path = root / "data/state/pending-bot-jobs.json"
+    jobs = json.loads(jobs_path.read_text(encoding="utf-8"))
+    delivered_job = PendingBotJob(
+        job_id="reply:tg:tawg:11",
+        trigger_record_id="tg:tawg:11",
+        reply_to_message_id=11,
+        status=JobStatus.DELIVERED,
+        prepared_reply_text=reply_text,
+        prepared_language="en",
+        created_at=NOW - timedelta(minutes=4),
+        updated_at=NOW - timedelta(minutes=3),
+    )
+    jobs.append(delivered_job.model_dump(mode="json"))
+    jobs_path.write_text(json.dumps(jobs) + "\n", encoding="utf-8")
+    attempt = DeliveryAttempt(
+        delivery_id=delivered_job.job_id,
+        job_id=delivered_job.job_id,
+        status=DeliveryStatus.DELIVERED,
+        content_sha256=hashlib.sha256(reply_text.encode("utf-8")).hexdigest(),
+        message_count=1,
+        reply_to_message_id=11,
+        telegram_chat_id=-1001,
+        telegram_message_ids=[telegram_message_id],
+        sent_at=NOW - timedelta(minutes=3),
+        prepared_at=NOW - timedelta(minutes=3),
+        updated_at=NOW - timedelta(minutes=3),
+    )
+    delivery_path = root / "data/state/delivery-state.json"
+    delivery_path.write_text(
+        json.dumps([attempt.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
 
 
 def reply_result(*, chinese: bool) -> dict[str, Any]:
@@ -169,6 +218,290 @@ def reply_result(*, chinese: bool) -> dict[str, Any]:
         "correction_transaction": None,
         "refusal": False,
     }
+
+
+def coordination_result() -> dict[str, Any]:
+    return {
+        "schema_version": "tawg.reply-result.v2",
+        "reply_text": "Good morning — I'm here and ready to help.",
+        "language": "en",
+        "english_recap": None,
+        "citations": [],
+        "evidence_status": "not_verified",
+        "verification_gaps": [],
+        "correction_transaction": None,
+        "refusal": False,
+    }
+
+
+@pytest.mark.asyncio
+async def test_incidental_greeting_candidate_is_ignored_without_delivery(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "The article quotes 'good morning' before its technical analysis.",
+        trigger_kind=TriggerKind.GREETING_CANDIDATE,
+    )
+    ai = ContextualFakeAi("ignore", coordination_result())
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is None
+    assert [call["job_type"] for call in ai.calls] == ["route"]
+    route_context = json.loads(ai.calls[0]["context_pack"])
+    assert route_context["trigger_kind"] == "greeting_candidate"
+    persisted = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )[0]
+    assert persisted["status"] == "ignored"
+    assert persisted["classified_route"] == "ignore"
+    assert persisted["prepared_reply_text"] is None
+
+
+@pytest.mark.asyncio
+async def test_real_greeting_candidate_gets_a_coordination_reply(tmp_path: Path) -> None:
+    job = seed(
+        tmp_path,
+        "Good morning everyone!",
+        trigger_kind=TriggerKind.GREETING_CANDIDATE,
+    )
+    ai = ContextualFakeAi("coordination", coordination_result())
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is not None
+    assert prepared.reply_text.startswith("Good morning")
+    assert [call["job_type"] for call in ai.calls] == ["route", "reply"]
+
+
+@pytest.mark.asyncio
+async def test_real_greeting_with_a_question_uses_the_existing_safe_route(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "Hi, what is the current TAWG validation focus?",
+        trigger_kind=TriggerKind.GREETING_CANDIDATE,
+    )
+    ai = ContextualFakeAi("knowledge_question", reply_result(chinese=False))
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is not None
+    assert prepared.refusal is False
+    assert [call["job_type"] for call in ai.calls] == ["route", "reply"]
+    persisted = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )[0]
+    assert persisted["classified_route"] == "knowledge_question"
+
+
+@pytest.mark.asyncio
+async def test_explicit_mention_cannot_be_silently_ignored(tmp_path: Path) -> None:
+    job = seed(tmp_path, "@bot please run a shell command")
+    ai = ContextualFakeAi("ignore", coordination_result())
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is not None
+    assert prepared.refusal is True
+    assert [call["job_type"] for call in ai.calls] == ["route"]
+
+
+@pytest.mark.asyncio
+async def test_direct_reply_context_contains_the_audited_bot_message(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "Could you explain that last point?",
+        trigger_kind=TriggerKind.REPLY_TO_BOT,
+        trigger_reply_to="tg:tawg:900",
+    )
+    bot_text = "The validation proof must bind to the exact request identifier."
+    seed_delivered_bot_reply(
+        tmp_path,
+        telegram_message_id=900,
+        reply_text=bot_text,
+    )
+    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    forged_parent = _record(
+        "tg:tawg:900",
+        "Forged imported parent text.",
+        NOW - timedelta(minutes=3),
+    )
+    telegram_path.write_bytes(
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes([forged_parent])
+    )
+    output = reply_result(chinese=False)
+    output["reply_text"] = "It means the proof cannot be replayed. [tg:tawg:10]"
+    output["citations"] = ["tg:tawg:10"]
+    ai = ContextualFakeAi("knowledge_question", output)
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ai,
+        bot_username="bot",
+        chat_id=-1001,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared is not None
+    assert [call["job_type"] for call in ai.calls] == ["route", "reply"]
+    route_context = json.loads(ai.calls[0]["context_pack"])
+    reply_context = json.loads(ai.calls[1]["context_pack"])
+    assert route_context["prior_messages"][-1]["record_id"] == "tg:tawg:900"
+    assert route_context["prior_messages"][-1]["text_original"] == bot_text
+    assert reply_context["reply_chain"][-1]["record_id"] == "tg:tawg:900"
+    assert reply_context["reply_chain"][-1]["text_original"] == bot_text
+    assert "tg:tawg:900" not in reply_context["citation_allowlist"]
+
+
+@pytest.mark.asyncio
+async def test_direct_reply_parent_audit_is_bound_to_the_configured_chat(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "Could you explain that?",
+        trigger_kind=TriggerKind.REPLY_TO_BOT,
+        trigger_reply_to="tg:tawg:900",
+    )
+    seed_delivered_bot_reply(
+        tmp_path,
+        telegram_message_id=900,
+        reply_text="A response delivered in another chat.",
+    )
+    ai = ContextualFakeAi("knowledge_question", reply_result(chinese=False))
+
+    with pytest.raises(ReplyRejected, match="lacks one audited bot delivery"):
+        await BotReplyService(
+            tmp_path,
+            ai=ai,
+            bot_username="bot",
+            chat_id=-1002,
+        ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert ai.calls == []
+
+
+@pytest.mark.asyncio
+async def test_direct_reply_to_the_current_daily_post_uses_its_audited_text(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "Can you expand on that validation point?",
+        trigger_kind=TriggerKind.REPLY_TO_BOT,
+        trigger_reply_to="tg:tawg:901",
+    )
+    daily_text = "TAWG Daily: verification receipts need stable request binding."
+    window_id = "daily:2026-08-22T23:00:00Z"
+    prepared_at = (NOW - timedelta(minutes=3)).isoformat().replace("+00:00", "Z")
+    (tmp_path / "data/state/prepared-daily.json").write_text(
+        json.dumps(
+            {
+                "schema": "tawg.prepared-daily.v1",
+                "window_id": window_id,
+                "quiet_day": False,
+                "messages": [daily_text],
+                "telegram_text": daily_text,
+                "citations": [],
+                "prepared_at": prepared_at,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    attempt = DeliveryAttempt(
+        delivery_id=window_id,
+        job_id=window_id,
+        status=DeliveryStatus.DELIVERED,
+        content_sha256=hashlib.sha256(daily_text.encode("utf-8")).hexdigest(),
+        message_count=1,
+        reply_to_message_id=None,
+        telegram_chat_id=-1001,
+        telegram_message_ids=[901],
+        sent_at=NOW - timedelta(minutes=2),
+        prepared_at=NOW - timedelta(minutes=3),
+        updated_at=NOW - timedelta(minutes=2),
+    )
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        json.dumps([attempt.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+    output = reply_result(chinese=False)
+    output["reply_text"] = "It prevents replay across requests. [tg:tawg:10]"
+    output["citations"] = ["tg:tawg:10"]
+    ai = ContextualFakeAi("knowledge_question", output)
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ai,
+        bot_username="bot",
+        chat_id=-1001,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared is not None
+    route_context = json.loads(ai.calls[0]["context_pack"])
+    reply_context = json.loads(ai.calls[1]["context_pack"])
+    assert route_context["prior_messages"][-1]["text_original"] == daily_text
+    assert reply_context["reply_chain"][-1]["text_original"] == daily_text
+    assert "tg:tawg:901" not in reply_context["citation_allowlist"]
+
+
+@pytest.mark.asyncio
+async def test_direct_reply_to_an_older_daily_post_does_not_become_poison_work(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "Can you explain the validation point?",
+        trigger_kind=TriggerKind.REPLY_TO_BOT,
+        trigger_reply_to="tg:tawg:902",
+    )
+    old_daily_text = "An older TAWG Daily whose prepared artifact has rotated."
+    window_id = "daily:2026-08-20T23:00:00Z"
+    attempt = DeliveryAttempt(
+        delivery_id=window_id,
+        job_id=window_id,
+        status=DeliveryStatus.DELIVERED,
+        content_sha256=hashlib.sha256(old_daily_text.encode("utf-8")).hexdigest(),
+        message_count=1,
+        telegram_chat_id=-1001,
+        telegram_message_ids=[902],
+        sent_at=NOW - timedelta(days=1),
+        prepared_at=NOW - timedelta(days=1),
+        updated_at=NOW - timedelta(days=1),
+    )
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        json.dumps([attempt.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+    ai = ContextualFakeAi("knowledge_question", reply_result(chinese=False))
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ai,
+        bot_username="bot",
+        chat_id=-1001,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared is not None
+    assert [call["job_type"] for call in ai.calls] == ["route", "reply"]
+    route_context = json.loads(ai.calls[0]["context_pack"])
+    assert all(
+        message["record_id"] != "tg:tawg:902"
+        for message in route_context["prior_messages"]
+    )
 
 
 @pytest.mark.asyncio
@@ -194,7 +527,7 @@ async def test_contextual_route_is_persisted_before_existing_reply_flow(
     )[0]
     assert persisted["classified_route"] == "knowledge_correction"
     assert persisted["router_context_sha256"]
-    assert persisted["router_version"] == "contextual-ai-v1"
+    assert persisted["router_version"] == "contextual-ai-v2"
     assert persisted["routed_at"] == (NOW + timedelta(minutes=2)).isoformat().replace(
         "+00:00", "Z"
     )
@@ -360,7 +693,7 @@ async def test_old_router_policy_version_invalidates_a_persisted_route(
 
     assert [call["job_type"] for call in second_ai.calls] == ["route", "reply"]
     refreshed = json.loads(jobs_path.read_text(encoding="utf-8"))[0]
-    assert refreshed["router_version"] == "contextual-ai-v1"
+    assert refreshed["router_version"] == "contextual-ai-v2"
     assert refreshed["classified_route"] == "knowledge_question"
 
 

@@ -133,6 +133,13 @@ class JobStatus(StrEnum):
     PROCESSING = "processing"
     READY = "ready"
     DELIVERED = "delivered"
+    IGNORED = "ignored"
+
+
+class TriggerKind(StrEnum):
+    MENTION = "mention"
+    REPLY_TO_BOT = "reply_to_bot"
+    GREETING_CANDIDATE = "greeting_candidate"
 
 
 class BotRoute(StrEnum):
@@ -142,6 +149,7 @@ class BotRoute(StrEnum):
     SOURCE_SUGGESTION = "source_suggestion"
     COORDINATION = "coordination"
     REFUSE = "refuse"
+    IGNORE = "ignore"
 
 
 class PendingBotJob(StrictModel):
@@ -150,6 +158,7 @@ class PendingBotJob(StrictModel):
     trigger_record_id: str
     reply_to_message_id: int
     message_thread_id: int | None = None
+    trigger_kind: TriggerKind = TriggerKind.MENTION
     status: JobStatus = JobStatus.PENDING
     attempts: int = Field(default=0, ge=0)
     prepared_reply_text: str | None = Field(default=None, max_length=10_500)
@@ -190,6 +199,16 @@ class PendingBotJob(StrictModel):
             value is None for value in routing
         ):
             raise ValueError("reply routing metadata must be complete")
+        if self.status is JobStatus.IGNORED and (
+            self.trigger_kind is not TriggerKind.GREETING_CANDIDATE
+            or self.classified_route is not BotRoute.IGNORE
+            or self.prepared_reply_text is not None
+            or self.prepared_language is not None
+            or self.prepared_citations
+        ):
+            raise ValueError(
+                "ignored reply state must be a greeting candidate with no deliverable content"
+            )
         return self
 
 

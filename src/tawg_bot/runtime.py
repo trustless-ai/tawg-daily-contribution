@@ -592,10 +592,17 @@ class _LivePipeline:
                 bot_username=username,
                 live_evidence=self.live_evidence,
                 knowledge_state=self.knowledge_state,
+                chat_id=(
+                    self._chat_id()
+                    if os.environ.get("TAWG_TELEGRAM_CHAT_ID")
+                    else None
+                ),
                 timeout_seconds=min(_REPLY_TIMEOUT_SECONDS, remaining_seconds),
             )
             try:
-                self.prepared_replies.append(await service.prepare(job.job_id, now=self.now))
+                prepared = await service.prepare(job.job_id, now=self.now)
+                if prepared is not None:
+                    self.prepared_replies.append(prepared)
             except ReplyRejected as error:
                 _safe_log("reply_prepare", error.safe_code)
                 continue

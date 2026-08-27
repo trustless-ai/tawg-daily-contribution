@@ -16,7 +16,8 @@
         "knowledge_correction",
         "source_suggestion",
         "coordination",
-        "refuse"
+        "refuse",
+        "ignore"
       ]
     }
   }

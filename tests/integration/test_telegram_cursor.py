@@ -5,6 +5,8 @@ from typing import Any
 
 import pytest
 
+from tawg_bot.models import Relation, SourceRecord, SourceType
+from tawg_bot.query import SourceQuery
 from tawg_bot.telegram_intake import TelegramIntake
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
@@ -48,10 +50,355 @@ def seed_repository(root: Path) -> None:
         encoding="utf-8",
     )
     (root / "data/state/pending-bot-jobs.json").write_text("[]\n", encoding="utf-8")
+    (root / "data/state/delivery-state.json").write_text("[]\n", encoding="utf-8")
 
 
 def fixture_updates() -> list[dict[str, Any]]:
     return json.loads((ROOT / "tests/fixtures/telegram_updates.json").read_text())
+
+
+def telegram_update(
+    message_id: int,
+    text: str,
+    *,
+    update_id: int | None = None,
+    is_bot: bool = False,
+    reply_to_message_id: int | None = None,
+    message_thread_id: int | None = 16,
+) -> dict[str, Any]:
+    message: dict[str, Any] = {
+        "message_id": message_id,
+        "date": int(NOW.timestamp()) + message_id,
+        "chat": {"id": -100424242, "type": "supergroup", "title": "TAWG"},
+        "from": {
+            "id": 10_000 + message_id,
+            "is_bot": is_bot,
+            "first_name": "Member",
+            "username": f"member_{message_id}",
+        },
+        "text": text,
+        "entities": [],
+    }
+    if message_thread_id is not None:
+        message["message_thread_id"] = message_thread_id
+    if reply_to_message_id is not None:
+        message["reply_to_message"] = {"message_id": reply_to_message_id}
+    return {"update_id": update_id or message_id, "message": message}
+
+
+def seed_delivered_bot_message(
+    root: Path,
+    message_id: int,
+    *,
+    thread_id: int = 16,
+    chat_id: int = -100424242,
+) -> None:
+    timestamp = NOW.isoformat().replace("+00:00", "Z")
+    delivery = {
+        "schema_version": "tawg.delivery-attempt.v1",
+        "delivery_id": "reply:tg:tawg:899",
+        "job_id": "reply:tg:tawg:899",
+        "destination": "tawg",
+        "status": "delivered",
+        "content_sha256": "a" * 64,
+        "message_count": 1,
+        "delivery_format": "rich_markdown_v1",
+        "reply_to_message_id": 899,
+        "message_thread_id": thread_id,
+        "telegram_chat_id": chat_id,
+        "telegram_message_ids": [message_id],
+        "sent_at": timestamp,
+        "prepared_at": timestamp,
+        "updated_at": timestamp,
+        "safe_error_code": None,
+    }
+    (root / "data/state/delivery-state.json").write_text(
+        json.dumps([delivery]) + "\n", encoding="utf-8"
+    )
+
+
+@pytest.mark.asyncio
+async def test_direct_reply_to_a_delivered_bot_message_creates_a_reply_job(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    seed_delivered_bot_message(tmp_path, 900)
+
+    result = await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi(
+            [
+                telegram_update(
+                    901,
+                    "RVR stands for Recomputable Verification Receipts.",
+                    reply_to_message_id=900,
+                )
+            ]
+        ),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert result.jobs_created == 1
+    assert len(jobs) == 1
+    assert jobs[0]["job_id"] == "reply:tg:tawg:901"
+    assert jobs[0]["trigger_record_id"] == "tg:tawg:901"
+    assert jobs[0]["reply_to_message_id"] == 901
+    assert jobs[0]["message_thread_id"] == 16
+    assert jobs[0]["trigger_kind"] == "reply_to_bot"
+
+
+@pytest.mark.asyncio
+async def test_direct_reply_audit_is_bound_to_the_configured_chat(tmp_path: Path) -> None:
+    seed_repository(tmp_path)
+    seed_delivered_bot_message(tmp_path, 900, chat_id=-100999999)
+
+    result = await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi(
+            [telegram_update(901, "This is unrelated.", reply_to_message_id=900)]
+        ),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+
+    assert result.jobs_created == 0
+    assert json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    ) == []
+
+
+@pytest.mark.asyncio
+async def test_direct_reply_takes_precedence_over_a_redundant_explicit_mention(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    seed_delivered_bot_message(tmp_path, 900)
+    update = telegram_update(
+        901,
+        "@tawg_helper what did you mean?",
+        reply_to_message_id=900,
+    )
+    update["message"]["entities"] = [
+        {"type": "mention", "offset": 0, "length": len("@tawg_helper")}
+    ]
+
+    await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi([update]),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert jobs[0]["trigger_kind"] == "reply_to_bot"
+
+
+@pytest.mark.asyncio
+async def test_missing_reply_job_is_reconciled_after_the_source_cursor_advanced(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    seed_delivered_bot_message(tmp_path, 3467)
+    pavlo = next(
+        record
+        for record in SourceQuery(ROOT).records()
+        if record.record_id == "tg:tawg:3470"
+    )
+    telegram = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    telegram.parent.mkdir(parents=True)
+    telegram.write_text(pavlo.model_dump_json() + "\n", encoding="utf-8")
+
+    result = await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi([]),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert result.received == 0
+    assert result.jobs_created == 1
+    assert jobs[0]["job_id"] == "reply:tg:tawg:3470"
+    assert jobs[0]["trigger_kind"] == "reply_to_bot"
+    assert jobs[0]["message_thread_id"] == 16
+
+
+@pytest.mark.asyncio
+async def test_reconciliation_never_backfills_a_reply_from_another_bot(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    seed_delivered_bot_message(tmp_path, 3467)
+    bot_reply = SourceRecord.from_text(
+        record_id="tg:tawg:3471",
+        source_type=SourceType.TELEGRAM_MESSAGE,
+        source_locator="repo:data/telegram/2026/08/messages.jsonl#tg:tawg:3471",
+        author_person_id="other-bot",
+        author_source_handle="Trusty Assistant",
+        created_at=NOW,
+        updated_at=NOW,
+        text_original="Automated acknowledgement",
+        ingested_at=NOW,
+        relations=[Relation(relation_type="reply_to", target_record_id="tg:tawg:3467")],
+        source_payload={"message_kind": "group_message", "message_thread_id": 16},
+    )
+    telegram = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    telegram.parent.mkdir(parents=True)
+    telegram.write_text(bot_reply.model_dump_json() + "\n", encoding="utf-8")
+
+    result = await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi([]),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert result.jobs_created == 0
+    assert jobs == []
+
+
+@pytest.mark.asyncio
+async def test_every_greeting_candidate_is_sent_to_the_router_even_inside_prose(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    greetings = (
+        "hello",
+        "hi",
+        "hey",
+        "yo",
+        "greetings",
+        "gm",
+        "gn",
+        "good morning",
+        "morning",
+        "good afternoon",
+        "afternoon",
+        "good evening",
+        "evening",
+        "good night",
+        "how are you",
+        "how's it going",
+        "how is it going",
+        "what's up",
+        "whats up",
+        "sup",
+        "hola",
+        "buenos días",
+        "buenas tardes",
+        "buenas noches",
+        "bonjour",
+        "bonsoir",
+        "salut",
+        "hallo",
+        "guten morgen",
+        "guten tag",
+        "guten abend",
+        "ciao",
+        "buongiorno",
+        "buonasera",
+        "olá",
+        "bom dia",
+        "boa tarde",
+        "boa noite",
+        "namaste",
+        "salaam",
+        "shalom",
+        "konnichiwa",
+        "ohayo",
+        "привет",
+        "здравствуйте",
+        "доброе утро",
+        "добрый день",
+        "добрый вечер",
+        "你好",
+        "您好",
+        "嗨",
+        "哈喽",
+        "哈啰",
+        "嘿",
+        "早",
+        "早安",
+        "早上好",
+        "上午好",
+        "中午好",
+        "下午好",
+        "晚上好",
+        "晚安",
+        "大家好",
+        "各位好",
+        "你好吗",
+        "最近好吗",
+        "こんにちは",
+        "おはようございます",
+        "こんばんは",
+        "안녕하세요",
+        "좋은 아침",
+        "مرحبا",
+        "السلام عليكم",
+        "صباح الخير",
+        "مساء الخير",
+        "नमस्ते",
+        "सुप्रभात",
+    )
+    updates = [
+        telegram_update(1_000 + index, f"Article example: {greeting}; analysis follows.")
+        for index, greeting in enumerate(greetings)
+    ]
+
+    result = await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi(updates),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert result.jobs_created == len(greetings)
+    assert {job["trigger_kind"] for job in jobs} == {"greeting_candidate"}
+
+
+@pytest.mark.asyncio
+async def test_greeting_matching_uses_words_and_never_starts_a_bot_loop(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    updates = [
+        telegram_update(1_100, "This proposal is ready."),
+        telegram_update(1_101, "good morning", is_bot=True),
+    ]
+
+    result = await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi(updates),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+
+    assert result.jobs_created == 0
+    assert json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    ) == []
 
 
 @pytest.mark.asyncio
@@ -233,6 +580,54 @@ async def test_edit_that_removes_mention_withdraws_an_undelivered_job(
     ).collect(NOW)
 
     assert json.loads(jobs_path.read_text(encoding="utf-8")) == []
+
+
+@pytest.mark.asyncio
+async def test_edit_that_removes_a_greeting_preserves_the_ignored_audit(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    first = telegram_update(1_200, "good morning")
+    await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi([first]),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs = json.loads(jobs_path.read_text(encoding="utf-8"))
+    jobs[0].update(
+        {
+            "status": "ignored",
+            "classified_route": "ignore",
+            "router_context_sha256": "a" * 64,
+            "router_version": "contextual-ai-v2",
+            "routed_at": NOW.isoformat().replace("+00:00", "Z"),
+        }
+    )
+    jobs_path.write_text(json.dumps(jobs), encoding="utf-8")
+    edited = {
+        "update_id": 1_201,
+        "edited_message": {
+            **first["message"],
+            "edit_date": first["message"]["date"] + 60,
+            "text": "The article has been revised.",
+        },
+    }
+
+    await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi([edited]),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+
+    persisted = json.loads(jobs_path.read_text(encoding="utf-8"))
+    assert len(persisted) == 1
+    assert persisted[0]["status"] == "ignored"
+    assert persisted[0]["classified_route"] == "ignore"
 
 
 @pytest.mark.asyncio

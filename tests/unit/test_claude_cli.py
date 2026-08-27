@@ -117,8 +117,9 @@ async def test_route_job_uses_the_strict_toolless_classifier_contract(
         "source_suggestion",
         "coordination",
         "refuse",
+        "ignore",
     ]
-    assert "Classify exactly one current Telegram mention" in runner.policy
+    assert "Classify exactly one current Telegram trigger" in runner.policy
 
 
 @pytest.mark.asyncio

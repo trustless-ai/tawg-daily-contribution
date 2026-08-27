@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
 
-from tawg_bot.models import SourceRecord, SourceType
+from tawg_bot.models import SourceRecord, SourceType, TriggerKind
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 
 
@@ -40,6 +40,7 @@ class ConversationContextBuilder:
         message_thread_id: int | None,
         max_chars: int,
         max_prior_records: int,
+        trigger_kind: TriggerKind = TriggerKind.MENTION,
     ) -> ConversationContext:
         if max_chars < 512:
             raise ValueError("conversation context max_chars must be at least 512")
@@ -74,7 +75,7 @@ class ConversationContextBuilder:
 
         selected = sorted([*chain, *ordinary], key=self._order_key)
         while True:
-            text = self._encode(trigger, selected, omitted)
+            text = self._encode(trigger, selected, omitted, trigger_kind)
             if len(text) <= max_chars:
                 break
             removable = next(
@@ -142,6 +143,7 @@ class ConversationContextBuilder:
         trigger: SourceRecord,
         prior: list[SourceRecord],
         omitted_items: int,
+        trigger_kind: TriggerKind,
     ) -> str:
         payload: dict[str, Any] = {
             "context_schema": "tawg.route-context.v1",
@@ -151,6 +153,7 @@ class ConversationContextBuilder:
             ),
             "prior_messages": [record.model_dump(mode="json") for record in prior],
             "trigger": trigger.model_dump(mode="json"),
+            "trigger_kind": trigger_kind.value,
             "omitted_items": omitted_items,
         }
         return json.dumps(payload, ensure_ascii=False, separators=(",", ":"), sort_keys=True)

@@ -27,11 +27,23 @@ from tawg_bot.corrections import CorrectionService
 from tawg_bot.erc_query import ErcIntent, ErcQuery, ErcQueryPlanner
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.live_evidence import EvidencePack
-from tawg_bot.models import BotRoute, JobStatus, PendingBotJob, SourceRecord, StrictModel
+from tawg_bot.models import (
+    BotRoute,
+    DeliveryAttempt,
+    DeliveryStatus,
+    JobStatus,
+    PendingBotJob,
+    Relation,
+    SourceRecord,
+    SourceType,
+    StrictModel,
+    TriggerKind,
+)
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 from tawg_bot.query import SourceQuery
 from tawg_bot.retrieval import VaultRetriever
 from tawg_bot.source_registry import EvidenceKind
+from tawg_bot.telegram_text import TelegramTextSplitError, split_telegram_text
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 from tawg_bot.vault import parse_frontmatter
 from tawg_bot.vault_transaction import CitationScope, VaultTransaction, VaultTransactionEngine
@@ -142,8 +154,20 @@ class BotRouter:
             return BotRoute.COORDINATION
         return BotRoute.REFUSE
 
-    def authorize_ai_route(self, text: str, route: BotRoute) -> BotRoute:
+    def authorize_ai_route(
+        self,
+        text: str,
+        route: BotRoute,
+        trigger_kind: TriggerKind = TriggerKind.MENTION,
+    ) -> BotRoute:
         """Clamp an AI decision to the controller's non-negotiable authority boundary."""
+        if (
+            trigger_kind is TriggerKind.GREETING_CANDIDATE
+            and route is BotRoute.IGNORE
+        ):
+            return BotRoute.IGNORE
+        if route is BotRoute.IGNORE:
+            return BotRoute.REFUSE
         cleaned = self._clean(text)
         if self._FORBIDDEN.search(cleaned):
             return BotRoute.REFUSE
@@ -352,7 +376,7 @@ class _LocalErcContext:
 
 
 class BotReplyService:
-    _ROUTER_VERSION = "contextual-ai-v1"
+    _ROUTER_VERSION = "contextual-ai-v2"
     _ROUTE_TIMEOUT_SECONDS = 60.0
     _ROUTE_CONTEXT_MAX_CHARS = 64_000
     _ROUTE_CONTEXT_MAX_PRIOR_RECORDS = 100
@@ -365,6 +389,7 @@ class BotReplyService:
         bot_username: str,
         live_evidence: LiveEvidenceProvider | None = None,
         knowledge_state: KnowledgeStateStore | None = None,
+        chat_id: int | None = None,
         max_budget_usd: str = "1.00",
         route_max_budget_usd: str = "0.10",
         timeout_seconds: float = 300,
@@ -374,6 +399,11 @@ class BotReplyService:
         self.router = BotRouter(bot_username)
         self.live_evidence = live_evidence
         self.knowledge_state = knowledge_state
+        if chat_id is not None and (
+            isinstance(chat_id, bool) or not isinstance(chat_id, int)
+        ):
+            raise ValueError("configured Telegram chat ID must be an integer")
+        self.chat_id = chat_id
         self.max_budget_usd = max_budget_usd
         self.route_max_budget_usd = self._bounded_route_budget(
             max_budget_usd,
@@ -382,19 +412,22 @@ class BotReplyService:
         self.timeout_seconds = timeout_seconds
         self.privacy = PrivacyFilter.from_yaml(self.root / "config/privacy.yml")
 
-    async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply:
+    async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply | None:
         self._require_utc(now)
         model_deadline = monotonic() + self.timeout_seconds
         jobs = self._load_jobs()
         job = jobs.get(job_id)
         if job is None:
             raise ReplyRejected("unknown reply job")
+        if job.status is JobStatus.IGNORED:
+            return None
         if job.status in {JobStatus.READY, JobStatus.DELIVERED}:
             return self._prepared(job)
         records = {record.record_id: record for record in SourceQuery(self.root).records()}
         trigger = records.get(job.trigger_record_id)
         if trigger is None:
             raise ReplyRejected("reply trigger evidence is missing")
+        records = self._with_audited_bot_parent(records, jobs, job, trigger)
         processing = job.model_copy(
             update={
                 "status": JobStatus.PROCESSING,
@@ -414,6 +447,7 @@ class BotReplyService:
                 message_thread_id=processing.message_thread_id,
                 max_chars=self._ROUTE_CONTEXT_MAX_CHARS,
                 max_prior_records=self._ROUTE_CONTEXT_MAX_PRIOR_RECORDS,
+                trigger_kind=processing.trigger_kind,
             )
             routing_is_current = (
                 processing.classified_route is not None
@@ -445,6 +479,7 @@ class BotReplyService:
                 route = self.router.authorize_ai_route(
                     trigger.text_original,
                     decision.route,
+                    processing.trigger_kind,
                 )
                 processing = processing.model_copy(
                     update={
@@ -459,6 +494,22 @@ class BotReplyService:
             else:
                 assert processing.classified_route is not None
                 route = processing.classified_route
+
+            if route is BotRoute.IGNORE:
+                ignored = processing.model_copy(
+                    update={
+                        "status": JobStatus.IGNORED,
+                        "prepared_reply_text": None,
+                        "prepared_language": None,
+                        "prepared_citations": [],
+                        "refusal": False,
+                        "updated_at": now,
+                        "safe_error_code": None,
+                    }
+                )
+                jobs[job_id] = ignored
+                self._publish_jobs(jobs, f"{job_id}:ignored")
+                return None
 
             if route is BotRoute.REFUSE:
                 text = (
@@ -777,6 +828,11 @@ class BotReplyService:
             | {record.record_id for record in nearby[:50]}
             | {item.record_id for item in retrieved_items if item.record_id is not None}
         )
+        local_ids -= {
+            record.record_id
+            for record in records.values()
+            if record.source_payload.get("message_kind") == "audited_bot_delivery"
+        }
         if recent_discussion:
             local_ids.discard(trigger.record_id)
             local_ids = {
@@ -851,6 +907,151 @@ class BotReplyService:
             )
         except ContextRejected as error:
             raise ReplyRejected(str(error)) from None
+
+    def _with_audited_bot_parent(
+        self,
+        records: Mapping[str, SourceRecord],
+        jobs: Mapping[str, PendingBotJob],
+        job: PendingBotJob,
+        trigger: SourceRecord,
+    ) -> dict[str, SourceRecord]:
+        augmented = dict(records)
+        if job.trigger_kind is not TriggerKind.REPLY_TO_BOT:
+            return augmented
+        if self.chat_id is None:
+            raise ReplyRejected("direct reply preparation requires configured chat identity")
+        reply_targets = [
+            relation.target_record_id
+            for relation in trigger.relations
+            if relation.relation_type == "reply_to"
+        ]
+        if len(reply_targets) != 1:
+            return augmented
+        target_record_id = reply_targets[0]
+        augmented.pop(target_record_id, None)
+        target_message_id = target_record_id.rsplit(":", 1)[-1]
+        if not target_message_id.isdigit():
+            raise ReplyRejected("direct reply target is invalid")
+        attempts = self._load_delivery_attempts()
+        matching = [
+            attempt
+            for attempt in attempts
+            if attempt.status is DeliveryStatus.DELIVERED
+            and attempt.telegram_chat_id == self.chat_id
+            and int(target_message_id) in attempt.telegram_message_ids
+        ]
+        if len(matching) != 1:
+            raise ReplyRejected("direct reply target lacks one audited bot delivery")
+        attempt = matching[0]
+        if attempt.message_thread_id != job.message_thread_id:
+            raise ReplyRejected("direct reply target failed thread audit binding")
+        delivered_text = self._audited_delivery_text(attempt, jobs)
+        if delivered_text is None:
+            return augmented
+        try:
+            delivered_messages = split_telegram_text(
+                delivered_text,
+                limit=32_768,
+                max_messages=2,
+            )
+        except TelegramTextSplitError as error:
+            raise ReplyRejected("audited bot delivery text cannot be reconstructed") from error
+        if len(delivered_messages) != len(attempt.telegram_message_ids):
+            raise ReplyRejected("audited bot delivery message count does not match")
+        target_index = attempt.telegram_message_ids.index(int(target_message_id))
+        target_text = delivered_messages[target_index]
+        group_parts = target_record_id.split(":", 2)
+        if len(group_parts) != 3 or group_parts[0] != "tg" or not group_parts[1]:
+            raise ReplyRejected("direct reply target is outside Telegram scope")
+        relations = (
+            [
+                Relation(
+                    relation_type="reply_to",
+                    target_record_id=f"tg:{group_parts[1]}:{attempt.reply_to_message_id}",
+                )
+            ]
+            if attempt.reply_to_message_id is not None
+            else []
+        )
+        delivered_at = attempt.sent_at or attempt.updated_at
+        if delivered_at >= trigger.created_at:
+            raise ReplyRejected("direct reply target does not precede its trigger")
+        augmented[target_record_id] = SourceRecord.from_text(
+            record_id=target_record_id,
+            source_type=SourceType.TELEGRAM_MESSAGE,
+            source_locator=(
+                "repo:data/state/delivery-state.json#"
+                f"{attempt.delivery_id}:{target_message_id}"
+            ),
+            author_person_id="tawg-bot",
+            author_source_handle=f"@{self.router.bot_username}",
+            created_at=delivered_at,
+            updated_at=delivered_at,
+            text_original=target_text,
+            ingested_at=attempt.updated_at,
+            relations=relations,
+            source_payload={
+                "message_kind": "audited_bot_delivery",
+                "message_thread_id": attempt.message_thread_id,
+            },
+        )
+        return augmented
+
+    def _audited_delivery_text(
+        self,
+        attempt: DeliveryAttempt,
+        jobs: Mapping[str, PendingBotJob],
+    ) -> str | None:
+        delivered_job = jobs.get(attempt.job_id)
+        if delivered_job is not None:
+            delivered_text = delivered_job.prepared_reply_text
+            if (
+                delivered_job.status is not JobStatus.DELIVERED
+                or delivered_text is None
+                or attempt.content_sha256
+                != hashlib.sha256(delivered_text.encode("utf-8")).hexdigest()
+            ):
+                raise ReplyRejected("direct reply target failed delivery audit binding")
+            return delivered_text
+        if not attempt.job_id.startswith("daily:"):
+            return None
+        path = self.root / "data/state/prepared-daily.json"
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except FileNotFoundError:
+            return None
+        except (OSError, UnicodeError, json.JSONDecodeError) as error:
+            raise ReplyRejected("invalid prepared Daily audit state") from error
+        if not isinstance(raw, dict) or raw.get("window_id") != attempt.job_id:
+            return None
+        delivered_text = raw.get("telegram_text")
+        if not isinstance(delivered_text, str) or not delivered_text.strip():
+            raise ReplyRejected("prepared Daily audit text is invalid")
+        if attempt.content_sha256 != hashlib.sha256(
+            delivered_text.encode("utf-8")
+        ).hexdigest():
+            raise ReplyRejected("prepared Daily text failed delivery audit binding")
+        return delivered_text
+
+    def _load_delivery_attempts(self) -> tuple[DeliveryAttempt, ...]:
+        path = self.root / "data/state/delivery-state.json"
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(raw, list):
+                raise ValueError
+            attempts = tuple(DeliveryAttempt.model_validate(item) for item in raw)
+        except (
+            OSError,
+            UnicodeError,
+            ValueError,
+            ValidationError,
+            json.JSONDecodeError,
+        ) as error:
+            raise ReplyRejected("invalid delivery state for direct reply") from error
+        delivery_ids = {attempt.delivery_id for attempt in attempts}
+        if len(delivery_ids) != len(attempts):
+            raise ReplyRejected("duplicate delivery audit for direct reply")
+        return attempts
 
     def _local_erc_context(
         self,
