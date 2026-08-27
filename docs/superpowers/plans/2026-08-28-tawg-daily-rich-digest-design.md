@@ -1,6 +1,6 @@
 # TAWG Daily Rich Digest Design
 
-Date: 2026-08-28  
+Date: 2026-08-28
 Status: Approved
 
 ## Goal
