@@ -33,8 +33,9 @@ _DISALLOWED_TONE = re.compile(
     r"earned reward|reward eligibility|payout|on-chain credit)\b",
     re.IGNORECASE,
 )
-_OTHER_LIST_ITEM = re.compile(r"^\s*(?:[-*+]|\d+[.)])\s+")
-_DIRECTION_LABEL = re.compile(r"^\*\*[^*\n]+\*\*$")
+_OTHER_LIST_ITEM = re.compile(r"^\s*(?:[•*+]|\d+[.)])\s+")
+_DIRECTION_LABEL = re.compile(r"^###\s+[^#\s][^\n]*$")
+_DIRECTION_SYNTHESIS = re.compile(r"^_[^_\n].*_$")
 _SYNTHESIS_IDENTIFIER = re.compile(r"(?:\d|https?://|www\.)", re.IGNORECASE)
 _SYNTHESIS_URL = re.compile(r"(?:https?://|www\.)", re.IGNORECASE)
 _PLAIN_CITATION = re.compile(r"\[([^\[\]\n]+)\](?!\()")
@@ -45,6 +46,17 @@ _EVIDENCE_EXCERPT_CHARS = 180
 _EXTERNAL_EVIDENCE_EXCERPT_CHARS = 95
 _CONTEXT_SOURCE_LIMITS = {"telegram": 8, "github": 8, "magicians": 2}
 _CONTEXT_TOTAL_LIMIT = 14
+_TITLE_LINE = "🗓 **TAWG Daily Catch-up**"
+_SECTION_HEADINGS = {
+    "Highlights": "## ⚡ **Highlights**",
+    "What moved": "## 🤝 **What moved**",
+    "Next up": "## 🚀 **Next up**",
+    "Trusty's take": "## 🤖 **Trusty's take**",
+}
+_IDEAS_HEADING = "### 💡 **Ideas to follow**"
+_TODOS_HEADING = "### ✅ **TODOs**"
+_QUIET_HIGHLIGHT = "No source-backed highlight landed in this window."
+_TRUSTY_SPARK_PREFIX = "**Today's spark:** "
 
 
 class DailyRejected(ValueError):
@@ -231,11 +243,8 @@ class DailyService:
                 "window_id": window.window_id,
                 "window_start": window.start.isoformat(),
                 "window_end": window.end.isoformat(),
-                "required_title": (
-                    "TAWG Daily Catch-up — "
-                    f"{window.start.strftime('%Y-%m-%d %H:%M')} UTC → "
-                    f"{window.end.strftime('%Y-%m-%d %H:%M')} UTC"
-                ),
+                "required_heading": "TAWG Daily Catch-up",
+                "required_window_label": self._window_label(window),
                 "output_contract": {
                     "required_sections": list(self.policy["required_sections"]),
                     "forbidden_terms": [
@@ -262,9 +271,9 @@ class DailyService:
                     ],
                     "max_emoji": self.policy["max_emoji"],
                     "citation_rule": (
-                        "Each direction may have one uncited synthesis sentence; every concrete "
-                        "What moved bullet starts with •, contains no other citation, and ends "
-                        "with exactly one exact allowlisted citation."
+                        "Every active Highlight quote and every concrete What moved list item "
+                        "contains no other citation and ends with exactly one exact allowlisted "
+                        "citation."
                     ),
                     "ordering_rule": (
                         "Order directions and items by contribution impact and importance, "
@@ -278,6 +287,17 @@ class DailyService:
                     "persistence_rule": (
                         "Paraphrase external evidence; never reproduce a source passage verbatim."
                     ),
+                    "highlight_rule": (
+                        "Select one to four event-centric outcomes on active days, render each "
+                        "as a separate Rich Markdown quote, and never frame a contributor as a "
+                        "winner."
+                    ),
+                    "rich_markdown_rule": (
+                        "Use the exact bold title and italic UTC window, level-two section "
+                        "headings, level-three direction/subsection headings, quote blocks for "
+                        "Highlights and Trusty's take, and '- ' list items for What moved and "
+                        "Next up."
+                    ),
                     "what_moved_rule": (
                         "Integrate appreciation into each concrete item: name who did what, what "
                         "it advanced, and why it helps the group or Trustless AI. Do not add a "
@@ -285,8 +305,14 @@ class DailyService:
                     ),
                     "telegram_mention_rule": (
                         "When window evidence supplies contributor_label, begin every concrete "
-                        "bullet citing the evidence with that exact Public Name "
+                        "'- ' list item citing the evidence with that exact Public Name "
                         "(@telegram_handle) label. Never invent or infer a Telegram handle."
+                    ),
+                    "trustys_take_rule": (
+                        "From Trusty's observer perspective, synthesize one already-established "
+                        "collaboration event and end with a playful team-wide encouragement. Add "
+                        "no names, mentions, URLs, citations, rankings, or new source-dependent "
+                        "facts."
                     ),
                 },
                 "window_evidence": evidence_payload,
@@ -400,46 +426,61 @@ class DailyService:
         tone_violation = _DISALLOWED_TONE.search(result.telegram_text)
         if tone_violation:
             raise DailyRejected("Daily output contains ranking or persona language")
-        required_title = (
-            "TAWG Daily Catch-up — "
-            f"{window.start.strftime('%Y-%m-%d %H:%M')} UTC → "
-            f"{window.end.strftime('%Y-%m-%d %H:%M')} UTC"
-        )
         lines = result.telegram_text.splitlines()
+        if len(lines) < 2:
+            raise DailyRejected("Daily title or UTC window is missing")
         if any(self._heading_name(line).casefold() == "appreciation" for line in lines):
             raise DailyRejected("Daily must integrate Appreciation into What moved")
-        first_line = lines[0]
-        if first_line != required_title:
-            emoji = _EMOJI.match(first_line)
-            if emoji is None or first_line[emoji.end() :].lstrip() != required_title:
-                raise DailyRejected("Daily title must match the exact UTC window")
-        section_indices: list[int] = []
+        if lines[0] != _TITLE_LINE:
+            raise DailyRejected("Daily title must match the Rich Markdown contract")
+        if lines[1] != f"_{self._window_label(window)}_":
+            raise DailyRejected("Daily UTC window must match the fixed window")
+        section_indices: dict[str, int] = {}
         for section in self.policy["required_sections"]:
+            expected_heading = _SECTION_HEADINGS.get(section)
+            if expected_heading is None:
+                raise DailyRejected("Daily policy has an unknown required section")
             indices = [
-                index for index, line in enumerate(lines) if self._section_name(line) == section
+                index for index, line in enumerate(lines) if line.strip() == expected_heading
             ]
             if len(indices) != 1:
                 raise DailyRejected(f"Daily output has an invalid required section: {section}")
-            section_indices.append(indices[0])
-        if section_indices != sorted(section_indices):
+            section_indices[section] = indices[0]
+        ordered_indices = [
+            section_indices[section] for section in self.policy["required_sections"]
+        ]
+        if ordered_indices != sorted(ordered_indices):
             raise DailyRejected("Daily output has required sections out of order")
+        if any(line.strip() for line in lines[2 : ordered_indices[0]]):
+            raise DailyRejected("Daily output has content before Highlights")
         allowed_emoji_headings = {
             *self.policy["required_sections"],
-            "ideas to follow",
-            "todos",
+            "Ideas to follow",
+            "TODOs",
         }
-        for line in lines[1:]:
+        for line in lines[2:]:
             if (
-                _EMOJI.match(line.strip())
+                self._has_heading_emoji(line)
                 and self._heading_name(line) not in allowed_emoji_headings
             ):
                 raise DailyRejected("Daily output has an unexpected top-level section")
-        self._validate_next_up(lines[section_indices[1] + 1 :])
 
         allowed_citations = {item.citation for item in evidence}
         mention_labels = self._mention_labels(evidence)
-        what_moved_lines = lines[section_indices[0] + 1 : section_indices[1]]
-        outside_what_moved = lines[: section_indices[0] + 1] + lines[section_indices[1] :]
+        highlights_lines = lines[
+            section_indices["Highlights"] + 1 : section_indices["What moved"]
+        ]
+        what_moved_lines = lines[
+            section_indices["What moved"] + 1 : section_indices["Next up"]
+        ]
+        next_up_lines = lines[
+            section_indices["Next up"] + 1 : section_indices["Trusty's take"]
+        ]
+        trustys_take_lines = lines[section_indices["Trusty's take"] + 1 :]
+        outside_what_moved = (
+            lines[: section_indices["What moved"] + 1]
+            + lines[section_indices["Next up"] :]
+        )
         if any(_TELEGRAM_MENTION.search(line) for line in outside_what_moved):
             raise DailyRejected("Daily contains an invalid Telegram mention")
         if len(result.citations) != len(set(result.citations)):
@@ -459,6 +500,13 @@ class DailyService:
             raise DailyRejected("quiet Daily invents source-backed progress")
         if result.quiet_day and "No source-backed progress landed" not in result.telegram_text:
             raise DailyRejected("quiet Daily must state that no source-backed progress landed")
+        self._validate_highlights(
+            highlights_lines,
+            set(result.citations),
+            quiet_day=result.quiet_day,
+        )
+        self._validate_next_up(next_up_lines)
+        self._validate_trustys_take(trustys_take_lines)
         if not result.quiet_day:
             self._validate_what_moved(
                 what_moved_lines,
@@ -486,8 +534,9 @@ class DailyService:
                 continue
             if state == "synthesis":
                 if (
-                    _DIRECTION_LABEL.fullmatch(line)
-                    or line.startswith("• ")
+                    not _DIRECTION_SYNTHESIS.fullmatch(line)
+                    or _DIRECTION_LABEL.fullmatch(line)
+                    or line.startswith("- ")
                     or _OTHER_LIST_ITEM.match(line)
                     or _PLAIN_CITATION.search(line)
                     or _MARKDOWN_CITATION.search(line)
@@ -504,28 +553,17 @@ class DailyService:
                 state = "synthesis"
                 continue
             if _OTHER_LIST_ITEM.match(line):
-                raise DailyRejected("Daily concrete progress uses an invalid bullet marker")
-            if not line.startswith("• "):
+                raise DailyRejected(
+                    "Daily concrete progress bullet uses an invalid Rich Markdown list marker"
+                )
+            if not line.startswith("- "):
                 raise DailyRejected("Daily What moved has an invalid direction structure")
             bullet_seen = True
-            trailing = _TRAILING_CITATIONS.search(line)
-            line_citations = (
-                _PLAIN_CITATION.findall(trailing.group())
-                + _MARKDOWN_CITATION.findall(trailing.group())
-                if trailing
-                else []
+            citation = DailyService._validate_trailing_citation(
+                line,
+                citations,
+                message="Daily factual bullet lacks a valid citation",
             )
-            all_line_citations = _PLAIN_CITATION.findall(line) + (
-                _MARKDOWN_CITATION.findall(line)
-            )
-            if (
-                len(line_citations) != 1
-                or len(all_line_citations) != 1
-                or all_line_citations[0] != line_citations[0]
-                or line_citations[0] not in citations
-            ):
-                raise DailyRejected("Daily factual bullet lacks a valid citation")
-            citation = line_citations[0]
             expected_label = mention_labels.get(citation)
             mention_matches = list(_TELEGRAM_MENTION.finditer(line))
             if expected_label is None:
@@ -535,7 +573,7 @@ class DailyService:
                 expected_match = _TELEGRAM_MENTION.search(expected_label)
                 if (
                     expected_match is None
-                    or not line.startswith(f"• {expected_label} ")
+                    or not line.startswith(f"- {expected_label} ")
                     or len(mention_matches) != 1
                     or mention_matches[0].group(1).casefold()
                     != expected_match.group(1).casefold()
@@ -579,34 +617,93 @@ class DailyService:
 
     def _validate_next_up(self, lines: list[str]) -> None:
         content = [line.strip() for line in lines if line.strip()]
-        if not content or self._heading_name(content[0]) != "ideas to follow":
+        if not content or content[0] != _IDEAS_HEADING:
             raise DailyRejected("Daily output has an unexpected top-level section")
         todo_indices = [
-            index for index, line in enumerate(content) if self._heading_name(line) == "todos"
+            index for index, line in enumerate(content) if line == _TODOS_HEADING
         ]
         if len(todo_indices) != 1 or todo_indices[0] < 2:
             raise DailyRejected("Daily output has an unexpected top-level section")
         todo_index = todo_indices[0]
         ideas = content[1:todo_index]
-        if not ideas or any(not line.startswith("• ") for line in ideas):
+        if not ideas or any(not line.startswith("- ") for line in ideas):
             raise DailyRejected("Daily output has an unexpected top-level section")
         remainder = content[todo_index + 1 :]
-        todo_count = 0
-        while todo_count < len(remainder) and remainder[todo_count].startswith("• "):
-            todo_count += 1
-        closing = remainder[todo_count:]
-        if todo_count == 0 or len(closing) != 1:
-            raise DailyRejected("Daily output has an unexpected top-level section")
-        if (
-            _DIRECTION_LABEL.fullmatch(closing[0])
-            or _OTHER_LIST_ITEM.match(closing[0])
-            or _EMOJI.match(closing[0])
-        ):
+        if not remainder or any(not line.startswith("- ") for line in remainder):
             raise DailyRejected("Daily output has an unexpected top-level section")
 
-    def _section_name(self, line: str) -> str | None:
-        name = self._heading_name(line)
-        return name if name in self.policy["required_sections"] else None
+    @staticmethod
+    def _validate_highlights(
+        lines: list[str], citations: set[str], *, quiet_day: bool
+    ) -> None:
+        content = [line.strip() for line in lines if line.strip()]
+        if quiet_day:
+            if content != [_QUIET_HIGHLIGHT]:
+                raise DailyRejected("quiet Daily has an invalid highlight")
+            return
+        if not 1 <= len(content) <= 4:
+            raise DailyRejected("active Daily has an invalid highlight count")
+        for line in content:
+            if not line.startswith("> ") or _TELEGRAM_MENTION.search(line):
+                raise DailyRejected("Daily highlight has an invalid Rich Markdown shape")
+            DailyService._validate_trailing_citation(
+                line,
+                citations,
+                message="Daily highlight lacks a valid citation",
+            )
+
+    @staticmethod
+    def _validate_trustys_take(lines: list[str]) -> None:
+        content = [line.strip() for line in lines]
+        while content and not content[0]:
+            content.pop(0)
+        while content and not content[-1]:
+            content.pop()
+        if (
+            len(content) != 3
+            or content[1] != ">"
+            or not content[0].startswith("> ")
+            or not content[2].startswith("> ")
+        ):
+            raise DailyRejected("Daily Trusty's take has an invalid quote structure")
+        spark = content[0][2:]
+        punchline = content[2][2:]
+        if not spark.startswith(_TRUSTY_SPARK_PREFIX) or not spark.removeprefix(
+            _TRUSTY_SPARK_PREFIX
+        ).strip():
+            raise DailyRejected("Daily Trusty's take lacks Today's spark")
+        combined = f"{spark}\n{punchline}"
+        if (
+            _TELEGRAM_MENTION.search(combined)
+            or _PLAIN_CITATION.search(combined)
+            or _MARKDOWN_CITATION.search(combined)
+            or _SYNTHESIS_URL.search(combined)
+        ):
+            raise DailyRejected("Daily Trusty's take contains source-dependent detail")
+        emoji = list(_EMOJI.finditer(punchline))
+        if not emoji or punchline[emoji[-1].end() :].strip():
+            raise DailyRejected("Daily Trusty's take must end with an emoji")
+
+    @staticmethod
+    def _validate_trailing_citation(
+        line: str, citations: set[str], *, message: str
+    ) -> str:
+        trailing = _TRAILING_CITATIONS.search(line)
+        line_citations: list[str] = (
+            _PLAIN_CITATION.findall(trailing.group())
+            + _MARKDOWN_CITATION.findall(trailing.group())
+            if trailing
+            else []
+        )
+        all_line_citations = _PLAIN_CITATION.findall(line) + _MARKDOWN_CITATION.findall(line)
+        if (
+            len(line_citations) != 1
+            or len(all_line_citations) != 1
+            or all_line_citations[0] != line_citations[0]
+            or line_citations[0] not in citations
+        ):
+            raise DailyRejected(message)
+        return line_citations[0]
 
     @staticmethod
     def _heading_name(line: str) -> str:
@@ -614,6 +711,18 @@ class DailyService:
         emoji = _EMOJI.match(stripped)
         name = stripped[emoji.end() :].strip() if emoji is not None else stripped
         return name.strip("*: ")
+
+    @staticmethod
+    def _has_heading_emoji(line: str) -> bool:
+        stripped = line.strip().lstrip("#").strip()
+        return _EMOJI.match(stripped) is not None
+
+    @staticmethod
+    def _window_label(window: DailyWindow) -> str:
+        return (
+            f"{window.start.strftime('%Y-%m-%d %H:%M')} → "
+            f"{window.end.strftime('%Y-%m-%d %H:%M')} UTC"
+        )
 
     def _split(self, text: str) -> tuple[str, ...]:
         try:

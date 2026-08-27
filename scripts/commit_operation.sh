@@ -26,7 +26,14 @@ allowed_path() {
 }
 
 paths_file="$(mktemp)"
-trap 'rm -f "$paths_file"' EXIT
+push_output_file=""
+cleanup() {
+  rm -f -- "$paths_file"
+  if [[ -n "$push_output_file" ]]; then
+    rm -f -- "$push_output_file"
+  fi
+}
+trap cleanup EXIT
 git ls-files --modified --others --deleted --exclude-standard -z >"$paths_file"
 git diff --cached --name-only -z >>"$paths_file"
 
@@ -53,4 +60,15 @@ done < <(git diff --cached --name-only -z)
 git config user.name "TAWG Knowledge Bot"
 git config user.email "tawg-knowledge-bot@users.noreply.github.com"
 git commit -m "bot: checkpoint ${operation_id}"
-git push origin "HEAD:${GITHUB_REF_NAME:?GITHUB_REF_NAME is required}"
+push_output_file="$(mktemp "${TMPDIR:-/tmp}/tawg-push.XXXXXX")"
+chmod 600 "$push_output_file"
+if LC_ALL=C git push --porcelain origin \
+  "HEAD:${GITHUB_REF_NAME:?GITHUB_REF_NAME is required}" >"$push_output_file" 2>&1; then
+  exit 0
+fi
+if grep -Eq \
+  '^![[:space:]]+[^[:space:]]+[[:space:]]+\[rejected\][[:space:]]+\((non-fast-forward|fetch first)\)$' \
+  "$push_output_file"; then
+  exit 75
+fi
+exit 1
