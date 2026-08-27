@@ -10,7 +10,7 @@ ROOT = Path(__file__).parents[2]
 ACTION_PINS = {
     "actions/checkout": "11bd71901bbe5b1630ceea73d27597364c9af683",
     "actions/setup-python": "a26af69be951a213d495a4c3e4e4022e16d87065",
-    "actions/setup-node": "1e60f620b9541d64bece96c5465dc8ee9832be0b",
+    "actions/setup-node": "49933ea5288caeca8642d1e84afbd3f7d6820020",
 }
 
 
