@@ -760,6 +760,43 @@ async def test_reply_preparation_processes_at_most_ten_pending_jobs_per_tick(
 
 
 @pytest.mark.asyncio
+async def test_reply_preparation_does_not_deliver_an_ai_ignored_job(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    job = PendingBotJob(
+        job_id="reply:tg:tawg:10",
+        trigger_record_id="tg:tawg:10",
+        reply_to_message_id=10,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps([job.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+
+    class ReplyService:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+
+        async def prepare(
+            self, job_id: str, *, now: datetime
+        ) -> PreparedReply | None:
+            assert job_id == "reply:tg:tawg:10"
+            assert now == NOW
+            return None
+
+    monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
+    monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        await pipeline._prepare_pending_replies()
+
+    assert pipeline.prepared_replies == []
+
+
+@pytest.mark.asyncio
 async def test_reply_preparation_reconciles_policy_repairs_before_selecting_work(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
