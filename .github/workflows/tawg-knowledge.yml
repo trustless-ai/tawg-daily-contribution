@@ -5,10 +5,15 @@ on:
     - cron: "*/5 * * * *"
   workflow_dispatch:
     inputs:
-      observe_only:
-        description: Prepare and checkpoint output without Telegram delivery
-        type: boolean
-        default: true
+      runtime_mode:
+        description: Runtime mode for this manual operation
+        type: choice
+        options:
+          - inherit
+          - observe
+          - poll
+          - webhook
+        default: observe
       daily_dry_run:
         description: Prepare the latest due Daily as a review artifact
         type: boolean
@@ -23,50 +28,35 @@ concurrency:
 
 jobs:
   knowledge-bot:
+    if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 55
-    env:
-      PYTHONUNBUFFERED: "1"
-      DISABLE_AUTOUPDATER: "1"
-      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
-      CLAUDE_CODE_SKIP_PROMPT_HISTORY: "1"
-      GITHUB_TOKEN: ${{ github.token }}
-      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-      ANTHROPIC_AUTH_TOKEN: ${{ secrets.ANTHROPIC_AUTH_TOKEN }}
-      TAWG_TELEGRAM_CHAT_ID: ${{ vars.TAWG_TELEGRAM_CHAT_ID }}
-      TAWG_TELEGRAM_BOT_USERNAME: ${{ vars.TAWG_TELEGRAM_BOT_USERNAME }}
-      ANTHROPIC_BASE_URL: ${{ vars.ANTHROPIC_BASE_URL }}
-      ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
-      ANTHROPIC_DEFAULT_OPUS_MODEL: ${{ vars.ANTHROPIC_DEFAULT_OPUS_MODEL }}
-      ANTHROPIC_DEFAULT_SONNET_MODEL: ${{ vars.ANTHROPIC_DEFAULT_SONNET_MODEL }}
-      ANTHROPIC_DEFAULT_HAIKU_MODEL: ${{ vars.ANTHROPIC_DEFAULT_HAIKU_MODEL }}
-      CLAUDE_CODE_SUBAGENT_MODEL: ${{ vars.CLAUDE_CODE_SUBAGENT_MODEL }}
-      CLAUDE_CODE_EFFORT_LEVEL: ${{ vars.CLAUDE_CODE_EFFORT_LEVEL }}
-      CLAUDE_CODE_AUTO_COMPACT_WINDOW: ${{ vars.CLAUDE_CODE_AUTO_COMPACT_WINDOW }}
-      TAWG_DELIVERY_ENABLED: ${{ vars.TAWG_DELIVERY_ENABLED }}
     steps:
       - name: Check out the single writer branch
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           fetch-depth: 0
-          persist-credentials: true
+          persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           python-version: "3.12"
           cache: pip
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@1e60f620b9541d64bece96c5465dc8ee9832be0b # v4
         with:
           node-version: "22"
 
-      - name: Install pinned runtimes
+      - name: Install pinned Python runtime
         run: |
           python -m pip install --require-hashes -r requirements-dev.lock
           python -m pip install --no-deps .
-          npm install --global @anthropic-ai/claude-code@2.1.240
+
+      - name: Install locked Claude runtime
+        working-directory: deploy/claude-runtime
+        run: npm ci --omit=dev --ignore-scripts
 
       - name: Verify code and canonical knowledge before operation
         run: |
@@ -77,8 +67,56 @@ jobs:
 
       - name: Run bot with ordered repository checkpoints
         shell: bash
+        env:
+          PYTHONUNBUFFERED: "1"
+          DISABLE_AUTOUPDATER: "1"
+          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: "1"
+          CLAUDE_CODE_SKIP_PROMPT_HISTORY: "1"
+          GITHUB_TOKEN: ${{ github.token }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          ANTHROPIC_AUTH_TOKEN: ${{ secrets.ANTHROPIC_AUTH_TOKEN }}
+          TAWG_TELEGRAM_CHAT_ID: ${{ vars.TAWG_TELEGRAM_CHAT_ID }}
+          TAWG_TELEGRAM_BOT_USERNAME: ${{ vars.TAWG_TELEGRAM_BOT_USERNAME }}
+          ANTHROPIC_BASE_URL: ${{ vars.ANTHROPIC_BASE_URL }}
+          ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+          ANTHROPIC_DEFAULT_OPUS_MODEL: ${{ vars.ANTHROPIC_DEFAULT_OPUS_MODEL }}
+          ANTHROPIC_DEFAULT_SONNET_MODEL: ${{ vars.ANTHROPIC_DEFAULT_SONNET_MODEL }}
+          ANTHROPIC_DEFAULT_HAIKU_MODEL: ${{ vars.ANTHROPIC_DEFAULT_HAIKU_MODEL }}
+          CLAUDE_CODE_SUBAGENT_MODEL: ${{ vars.CLAUDE_CODE_SUBAGENT_MODEL }}
+          CLAUDE_CODE_EFFORT_LEVEL: ${{ vars.CLAUDE_CODE_EFFORT_LEVEL }}
+          CLAUDE_CODE_AUTO_COMPACT_WINDOW: ${{ vars.CLAUDE_CODE_AUTO_COMPACT_WINDOW }}
+          TAWG_DELIVERY_ENABLED: ${{ vars.TAWG_DELIVERY_ENABLED }}
+          TAWG_RUNTIME_MODE: ${{ vars.TAWG_RUNTIME_MODE }}
         run: |
           set -euo pipefail
+          export PATH="$GITHUB_WORKSPACE/deploy/claude-runtime/node_modules/.bin:$PATH"
+          authoritative_mode="${TAWG_RUNTIME_MODE:-poll}"
+          manual_mode="${{ github.event_name == 'workflow_dispatch' && inputs.runtime_mode || 'inherit' }}"
+
+          case "$authoritative_mode" in
+            poll|webhook|observe) ;;
+            *)
+              echo "TAWG_RUNTIME_MODE must be poll, webhook, or observe" >&2
+              exit 2
+              ;;
+          esac
+
+          if [[ "$authoritative_mode" == "webhook" && "${{ inputs.runtime_mode }}" == "poll" ]]; then
+            echo "Manual polling is disabled while the authoritative runtime mode is webhook" >&2
+            exit 2
+          fi
+
+          clear_runtime_credentials() {
+            unset GITHUB_TOKEN GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0
+          }
+          trap clear_runtime_credentials EXIT
+          git_credential="x-access-token:$GITHUB_TOKEN"
+          git_authorization="$(printf '%s' "$git_credential" | base64 | tr -d '\n')"
+          export GIT_CONFIG_COUNT="1"
+          export GIT_CONFIG_KEY_0="http.https://github.com/.extraheader"
+          export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $git_authorization"
+          unset git_credential git_authorization
+
           if [[ "${{ inputs.daily_dry_run }}" == "true" ]]; then
             current_hour="$(date -u +%H)"
             if (( 10#$current_hour < 23 )); then
@@ -87,10 +125,35 @@ jobs:
               window_end="$(date -u -d 'today 23:00' +%Y-%m-%dT%H:%M:%SZ)"
             fi
             python -m tawg_bot.cli daily-dry-run --window-end "$window_end"
-          elif [[ "${{ inputs.observe_only }}" == "true" ]]; then
-            python -m tawg_bot.cli tick --observe-only
-          elif [[ "$TAWG_DELIVERY_ENABLED" != "true" ]]; then
-            python -m tawg_bot.cli tick --observe-only
           else
-            python -m tawg_bot.cli tick
+            selected_mode="$authoritative_mode"
+            if [[ "$manual_mode" != "inherit" ]]; then
+              selected_mode="$manual_mode"
+            fi
+
+            case "$selected_mode" in
+              poll)
+                operation=(tick)
+                ;;
+              webhook)
+                operation=(maintenance-tick)
+                ;;
+              observe)
+                if [[ "$authoritative_mode" == "webhook" ]]; then
+                  operation=(maintenance-tick --observe-only)
+                else
+                  operation=(tick --observe-only)
+                fi
+                ;;
+              *)
+                echo "runtime_mode must be inherit, observe, poll, or webhook" >&2
+                exit 2
+                ;;
+            esac
+
+            if [[ "$TAWG_DELIVERY_ENABLED" != "true" && "$selected_mode" != "observe" ]]; then
+              operation+=(--observe-only)
+            fi
+
+            python -m tawg_bot.cli "${operation[@]}"
           fi
