@@ -1,7 +1,7 @@
 [
   {
-    "attempts": 1,
-    "classified_route": null,
+    "attempts": 2,
+    "classified_route": "knowledge_correction",
     "created_at": "2026-08-27T14:29:40.281306Z",
     "job_id": "reply-repair:knowledge-correction-v1:tg:tawg:3446",
     "message_thread_id": 16,
@@ -12,14 +12,14 @@
     "repair_of_job_id": "reply:tg:tawg:3446",
     "repair_reason_code": "knowledge_correction_route_updated",
     "reply_to_message_id": 3446,
-    "routed_at": null,
-    "router_context_sha256": null,
-    "router_version": null,
+    "routed_at": "2026-08-27T15:00:52.868096Z",
+    "router_context_sha256": "c08863ca049e28f61e25fac1844329af2c48433a78762c7a806624d43830b3c8",
+    "router_version": "contextual-ai-v1",
     "safe_error_code": "reply_persistence_failed",
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "pending",
     "trigger_record_id": "tg:tawg:3446",
-    "updated_at": "2026-08-27T14:29:40.281306Z"
+    "updated_at": "2026-08-27T15:00:52.868096Z"
   },
   {
     "attempts": 4,
@@ -261,24 +261,24 @@
     "updated_at": "2026-08-27T14:29:40.281306Z"
   },
   {
-    "attempts": 0,
-    "classified_route": null,
+    "attempts": 1,
+    "classified_route": "coordination",
     "created_at": "2026-08-27T15:00:52.868096Z",
     "job_id": "reply:tg:tawg:3468",
     "message_thread_id": 16,
     "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_language": "en",
+    "prepared_reply_text": "Hey Jimmy! Doing great and ready to help — good to hear from you. 👋 What can I do for you today?",
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
     "reply_to_message_id": 3468,
-    "routed_at": null,
-    "router_context_sha256": null,
-    "router_version": null,
+    "routed_at": "2026-08-27T15:00:52.868096Z",
+    "router_context_sha256": "0dedab5203f5fd174cd46287ab4e50147cd2ab82be9e462f63338a0a7e231421",
+    "router_version": "contextual-ai-v1",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_record_id": "tg:tawg:3468",
     "updated_at": "2026-08-27T15:00:52.868096Z"
   }
