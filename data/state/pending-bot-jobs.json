@@ -1,5 +1,23 @@
 [
   {
+    "attempts": 1,
+    "created_at": "2026-08-27T14:29:40.281306Z",
+    "job_id": "reply-repair:knowledge-correction-v1:tg:tawg:3446",
+    "message_thread_id": 16,
+    "prepared_citations": [],
+    "prepared_language": null,
+    "prepared_reply_text": null,
+    "refusal": false,
+    "repair_of_job_id": "reply:tg:tawg:3446",
+    "repair_reason_code": "knowledge_correction_route_updated",
+    "reply_to_message_id": 3446,
+    "safe_error_code": "reply_persistence_failed",
+    "schema_version": "tawg.pending-bot-job.v1",
+    "status": "pending",
+    "trigger_record_id": "tg:tawg:3446",
+    "updated_at": "2026-08-27T14:29:40.281306Z"
+  },
+  {
     "attempts": 4,
     "created_at": "2026-08-26T05:03:41.673472Z",
     "job_id": "reply-repair:recent-discussion-v1:tg:tawg:3380",
@@ -179,20 +197,22 @@
     "updated_at": "2026-08-27T08:40:07.230785Z"
   },
   {
-    "attempts": 0,
+    "attempts": 1,
     "created_at": "2026-08-27T14:29:40.281306Z",
     "job_id": "reply:tg:tawg:3466",
     "message_thread_id": 16,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "tg:tawg:3466"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "Hey Jimmy! Happy to record RVR into the knowledge base — I just need a bit more context to do it properly.\n\nCould you share:\n1. **What RVR stands for** (full name or expansion)?\n2. **What it covers** — is it an ERC, a protocol, a tool, a process, or something else?\n3. Any key details, links, or prior discussion messages I should anchor the entry to?\n\nOnce I have those, I'll write it up and commit it. [tg:tawg:3466]",
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
     "reply_to_message_id": 3466,
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_record_id": "tg:tawg:3466",
     "updated_at": "2026-08-27T14:29:40.281306Z"
   }
