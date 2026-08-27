@@ -40,6 +40,24 @@
     "updated_at": "2026-08-25T23:15:56.601465Z"
   },
   {
+    "content_sha256": "829b0c9a711b60720ceb4ae92e13f4df7a23e095401fa06756cc7a1dcd66a07c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-08-26T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-08-26T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-08-27T08:15:29.890194Z",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-08-27T08:15:29.890194Z"
+  },
+  {
     "content_sha256": "c04077630a067a7ea7c1657a003dcc1b6108a68b2f770fc55c893d738c2e39f0",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "reply-repair:recent-discussion-v1:tg:tawg:3380",
