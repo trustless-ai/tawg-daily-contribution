@@ -75,8 +75,9 @@ def outer_route() -> dict:
         "num_turns": 1,
         "total_cost_usd": 0.01,
         "structured_output": {
-            "schema_version": "tawg.route-result.v1",
+            "schema_version": "tawg.route-result.v2",
             "route": "knowledge_question",
+            "context_scope": "erc",
         },
     }
 
@@ -103,8 +104,9 @@ async def test_route_job_uses_the_strict_toolless_classifier_contract(
     )
 
     assert result == {
-        "schema_version": "tawg.route-result.v1",
+        "schema_version": "tawg.route-result.v2",
         "route": "knowledge_question",
+        "context_scope": "erc",
     }
     assert runner.argv[runner.argv.index("--tools") + 1] == ""
     assert runner.argv[runner.argv.index("--disallowedTools") + 1] == "mcp__*"
@@ -118,6 +120,11 @@ async def test_route_job_uses_the_strict_toolless_classifier_contract(
         "coordination",
         "refuse",
         "ignore",
+    ]
+    assert schema["properties"]["context_scope"]["enum"] == [
+        "conversation",
+        "knowledge",
+        "erc",
     ]
     assert "Classify exactly one current Telegram trigger" in runner.policy
 
