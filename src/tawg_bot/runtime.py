@@ -45,10 +45,12 @@ from tawg_bot.knowledge_refresh import KnowledgeRefresh, RefreshResult
 from tawg_bot.live_evidence import EvidencePack, LiveEvidenceService
 from tawg_bot.models import JobStatus, PendingBotJob
 from tawg_bot.persistence_guard import PersistenceRejected
-from tawg_bot.scheduler import Scheduler
+from tawg_bot.repository_session import RepositoryConflict
+from tawg_bot.scheduler import IntakePolicy, Scheduler
 from tawg_bot.source_registry import SourceRegistry
 from tawg_bot.telegram_api import TelegramApi
-from tawg_bot.telegram_intake import TelegramIntake
+from tawg_bot.telegram_intake import TelegramIntake, WebhookIntakeResult, ingest_envelopes
+from tawg_bot.telegram_webhook import TelegramWebhookEnvelope
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 from tawg_bot.vault import VaultLinter
 
@@ -66,6 +68,7 @@ _DAILY_TIMEOUT_SECONDS = 600
 _REPLY_TIMEOUT_SECONDS = 300
 _REPLY_PHASE_BUDGET_SECONDS = 360
 _MAX_REPLIES_PER_TICK = 10
+_TELEGRAM_GROUP_SLUG = "tawg"
 _DAILY_REJECTION_CODES = {
     "invalid Daily model output": "daily_model_output_invalid",
     "Daily output changed the fixed UTC window": "daily_window_invalid",
@@ -145,6 +148,8 @@ class ScriptCheckpoint(DeliveryCheckpoint):
         )
         stdout, stderr = await process.communicate()
         del stdout, stderr
+        if process.returncode == 75:
+            raise RepositoryConflict
         if process.returncode != 0:
             raise RuntimeFailure("repository checkpoint failed")
 
@@ -159,16 +164,68 @@ class ProductionRuntime:
         return cls(root, checkpoint=ScriptCheckpoint(root / "scripts/commit_operation.sh"))
 
     async def tick(self, now: datetime, *, observe_only: bool) -> None:
+        await self._scheduled_tick(
+            now,
+            observe_only=observe_only,
+            intake_policy=IntakePolicy.POLL,
+        )
+
+    async def maintenance_tick(self, now: datetime, *, observe_only: bool) -> None:
+        await self._scheduled_tick(
+            now,
+            observe_only=observe_only,
+            intake_policy=IntakePolicy.SKIP,
+        )
+
+    async def ingest_webhook_envelope(
+        self,
+        envelope: TelegramWebhookEnvelope,
+        *,
+        now: datetime,
+    ) -> WebhookIntakeResult:
+        _require_utc(now, "webhook ingestion time")
+        bot_username = _configured_bot_username()
+        async with httpx.AsyncClient(timeout=30) as client:
+            pipeline = _LivePipeline(
+                self.root,
+                client=client,
+                checkpoint=self.checkpoint,
+                now=now,
+            )
+            result = ingest_envelopes(
+                root=self.root,
+                group_slug=_TELEGRAM_GROUP_SLUG,
+                bot_username=bot_username,
+                envelopes=(envelope,),
+                now=now,
+            )
+            pipeline.telegram_synced_at = now
+            await self.checkpoint.publish(f"telegram-webhook:{envelope.update_id}", self.root)
+            await pipeline.publish_repository()
+            await pipeline.telegram_delivery()
+        return result
+
+    async def _scheduled_tick(
+        self,
+        now: datetime,
+        *,
+        observe_only: bool,
+        intake_policy: IntakePolicy,
+    ) -> None:
         async with httpx.AsyncClient(timeout=30) as client:
             pipeline = _LivePipeline(self.root, client=client, checkpoint=self.checkpoint, now=now)
             result = await Scheduler(self.root, pipeline=pipeline).tick(
-                now, observe_only=observe_only
+                now,
+                observe_only=observe_only,
+                intake_policy=intake_policy,
             )
         try:
             await self.checkpoint.publish(
                 f"layer-success:{result.layer.name.casefold()}:{int(now.timestamp())}",
                 self.root,
             )
+        except RepositoryConflict:
+            raise
         except Exception:
             _safe_log("final_checkpoint", "final_checkpoint_failed")
 
@@ -292,6 +349,8 @@ class _LivePipeline:
                     f"source-check:erc-{erc_number}:{int(now.timestamp())}",
                     self.root,
                 )
+            except RepositoryConflict:
+                raise
             except Exception:
                 incomplete = True
                 _safe_log("source_check", "source_check_failed", erc=erc_number)
@@ -364,6 +423,8 @@ class _LivePipeline:
                 erc_numbers=frozenset({erc_number}),
                 dry_run=False,
             )
+        except RepositoryConflict:
+            raise
         except Exception:
             try:
                 uow = RepositoryUnitOfWork(
@@ -384,6 +445,8 @@ class _LivePipeline:
                     f"knowledge-deferred:erc-{erc_number}:{int(cutoff.timestamp())}",
                     self.root,
                 )
+            except RepositoryConflict:
+                raise
             except Exception:
                 _safe_log("knowledge_refresh", "knowledge_deferral_failed", erc=erc_number)
                 raise RuntimeFailure("knowledge deferral incomplete") from None
@@ -394,6 +457,8 @@ class _LivePipeline:
                 f"knowledge-refresh:erc-{erc_number}:{int(cutoff.timestamp())}",
                 self.root,
             )
+        except RepositoryConflict:
+            raise
         except Exception:
             _safe_log("knowledge_refresh", "knowledge_checkpoint_failed", erc=erc_number)
             raise RuntimeFailure("knowledge checkpoint incomplete") from None
@@ -459,6 +524,8 @@ class _LivePipeline:
             await self.checkpoint.publish(
                 f"daily-prepared:{int(window.end.timestamp())}", self.root
             )
+        except RepositoryConflict:
+            raise
         except Exception:
             self.prepared_daily = None
             _safe_log("daily_prepare", "daily_checkpoint_failed")
@@ -628,6 +695,13 @@ class _LivePipeline:
 def _require_utc(value: datetime, label: str) -> None:
     if value.tzinfo is None or value.utcoffset() != UTC.utcoffset(value):
         raise ValueError(f"{label} must use UTC")
+
+
+def _configured_bot_username() -> str:
+    username = os.environ.get("TAWG_TELEGRAM_BOT_USERNAME")
+    if not username:
+        raise RuntimeFailure("TAWG_TELEGRAM_BOT_USERNAME is not configured")
+    return username
 
 
 def _safe_log(phase: str, code: str, *, erc: int | None = None) -> None:

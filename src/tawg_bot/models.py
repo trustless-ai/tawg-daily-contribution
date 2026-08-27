@@ -6,7 +6,7 @@ import hashlib
 import unicodedata
 from datetime import UTC, datetime
 from enum import StrEnum
-from typing import Any
+from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
@@ -177,6 +177,18 @@ class SourceCursors(StrictModel):
     @classmethod
     def knowledge_timestamp_is_utc(cls, value: datetime | None) -> datetime | None:
         return None if value is None else _require_utc(value)
+
+
+class TelegramWebhookReceipts(StrictModel):
+    schema_version: Literal["tawg.telegram-webhook-receipts.v1"]
+    update_ids: list[Annotated[int, Field(strict=True, ge=0)]] = Field(
+        default_factory=list
+    )
+
+    @field_validator("update_ids")
+    @classmethod
+    def retain_highest_distinct_update_ids(cls, value: list[int]) -> list[int]:
+        return sorted(set(value))[-2048:]
 
 
 class LayerSuccess(StrictModel):

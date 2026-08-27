@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Awaitable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from enum import IntEnum
+from enum import IntEnum, StrEnum
 from pathlib import Path
 from typing import Protocol
 
@@ -13,6 +13,7 @@ from pydantic import ValidationError
 
 from tawg_bot.daily import DailyWindow
 from tawg_bot.models import LayerSuccess
+from tawg_bot.repository_session import RepositoryConflict
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
 
@@ -21,6 +22,11 @@ class Layer(IntEnum):
     L2 = 2
     L3 = 3
     L4 = 4
+
+
+class IntakePolicy(StrEnum):
+    POLL = "poll"
+    SKIP = "skip"
 
 
 class LayerPipeline(Protocol):
@@ -65,12 +71,25 @@ class Scheduler:
             return Layer.L3
         return Layer.L1
 
-    async def tick(self, now: datetime, *, observe_only: bool = False) -> TickResult:
+    async def tick(
+        self,
+        now: datetime,
+        *,
+        observe_only: bool = False,
+        intake_policy: IntakePolicy = IntakePolicy.POLL,
+    ) -> TickResult:
         self._require_utc(now)
         layer = self.due_layer(now)
         window = DailyWindow.for_due_run(now) if layer is Layer.L4 else None
 
-        telegram_ok = await self._phase("telegram_intake", self.pipeline.telegram_intake(now))
+        if intake_policy is IntakePolicy.POLL:
+            telegram_ok = await self._phase(
+                "telegram_intake", self.pipeline.telegram_intake(now)
+            )
+        elif intake_policy is IntakePolicy.SKIP:
+            telegram_ok = True
+        else:
+            raise ValueError("unsupported scheduler intake policy")
         phase_ok = True
         validation_ok = True
         if layer is Layer.L2:
@@ -151,6 +170,8 @@ class Scheduler:
     async def _phase(name: str, operation: Awaitable[None]) -> bool:
         try:
             await operation
+        except RepositoryConflict:
+            raise
         except Exception:
             print(
                 f"tawg_event=phase_failed phase={name} code={name}_failed",

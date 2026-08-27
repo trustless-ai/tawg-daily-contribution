@@ -78,8 +78,7 @@ class BotRouter:
     )
     _KNOWLEDGE_CORRECTION = re.compile(
         r"\b(correction|correct the|page is wrong|should say|old (?:rule|fact)|"
-        r"update (?:the )?knowledge|add [^\n]{1,80} to (?:your|the) knowledge|"
-        r"record [^\n]{1,80} (?:in|into) (?:your|the) knowledge)\b|"
+        r"update (?:the )?knowledge|add [^\n]{1,80} to (?:your|the) knowledge)\b|"
         r"更正|纠正|知识库.{0,10}错|应该是",
         re.IGNORECASE,
     )
@@ -151,47 +150,18 @@ class BotRouter:
         return self._RECENT_DISCUSSION_QUESTION.fullmatch(cleaned) is not None
 
 
-@dataclass(frozen=True, slots=True)
-class _ReplyRepairSpec:
-    trigger_id: str
-    trigger_sha256: str
-    refusal_sha256: str
-    policy_version: str
-    reason_code: str
-    route: BotRoute
-    recent_discussion: bool = False
-
-
 class ReplyRepairReconciler:
-    """Create auditable correction jobs for refusals invalidated by routing policy."""
+    """Create one auditable correction job for a refusal invalidated by routing policy."""
 
+    _POLICY_VERSION = "recent-discussion-v1"
+    _REASON_CODE = "recent_discussion_route_updated"
     _STATE_PATH = "data/state/pending-bot-jobs.json"
-    _LEGACY_REPAIRS: Mapping[str, _ReplyRepairSpec] = {
-        "reply:tg:tawg:3380": _ReplyRepairSpec(
-            trigger_id="tg:tawg:3380",
-            trigger_sha256=(
-                "dc6114743926cd5f4f9577807beb9211598fcff2c43b3244f2a1aa8a70660d5d"
-            ),
-            refusal_sha256=(
-                "c88b75647067456eeb21dc284da1e93b36df61f1afc102ad6a913f19a6fde50e"
-            ),
-            policy_version="recent-discussion-v1",
-            reason_code="recent_discussion_route_updated",
-            route=BotRoute.KNOWLEDGE_QUESTION,
-            recent_discussion=True,
-        ),
-        "reply:tg:tawg:3446": _ReplyRepairSpec(
-            trigger_id="tg:tawg:3446",
-            trigger_sha256=(
-                "531b2cced7b3abfef0d043fe8a56fe6b4b4db8d2224946e56ab44d22d64700b9"
-            ),
-            refusal_sha256=(
-                "c88b75647067456eeb21dc284da1e93b36df61f1afc102ad6a913f19a6fde50e"
-            ),
-            policy_version="knowledge-correction-v1",
-            reason_code="knowledge_correction_route_updated",
-            route=BotRoute.KNOWLEDGE_CORRECTION,
-        ),
+    _LEGACY_REPAIRS: Mapping[str, tuple[str, str, str]] = {
+        "reply:tg:tawg:3380": (
+            "tg:tawg:3380",
+            "dc6114743926cd5f4f9577807beb9211598fcff2c43b3244f2a1aa8a70660d5d",
+            "c88b75647067456eeb21dc284da1e93b36df61f1afc102ad6a913f19a6fde50e",
+        )
     }
 
     def __init__(self, root: Path, *, bot_username: str) -> None:
@@ -210,23 +180,20 @@ class ReplyRepairReconciler:
             repair_spec = self._LEGACY_REPAIRS.get(original.job_id)
             if repair_spec is None:
                 continue
-            trigger = records.get(repair_spec.trigger_id)
+            trigger_id, trigger_sha256, refusal_sha256 = repair_spec
+            trigger = records.get(trigger_id)
             prepared_text = original.prepared_reply_text
             if (
-                original.trigger_record_id != repair_spec.trigger_id
+                original.trigger_record_id != trigger_id
                 or trigger is None
-                or trigger.content_sha256 != repair_spec.trigger_sha256
+                or trigger.content_sha256 != trigger_sha256
                 or prepared_text is None
                 or hashlib.sha256(prepared_text.encode("utf-8")).hexdigest()
-                != repair_spec.refusal_sha256
-                or self.router.classify(trigger.text_original) is not repair_spec.route
-                or (
-                    repair_spec.recent_discussion
-                    and not self.router.is_recent_discussion_question(trigger.text_original)
-                )
+                != refusal_sha256
+                or not self.router.is_recent_discussion_question(trigger.text_original)
             ):
                 continue
-            repair_id = f"reply-repair:{repair_spec.policy_version}:{trigger.record_id}"
+            repair_id = f"reply-repair:{self._POLICY_VERSION}:{trigger.record_id}"
             if repair_id in jobs:
                 continue
             jobs[repair_id] = PendingBotJob(
@@ -235,7 +202,7 @@ class ReplyRepairReconciler:
                 reply_to_message_id=original.reply_to_message_id,
                 message_thread_id=original.message_thread_id,
                 repair_of_job_id=original.job_id,
-                repair_reason_code=repair_spec.reason_code,
+                repair_reason_code=self._REASON_CODE,
                 created_at=now,
                 updated_at=now,
             )
