@@ -1,6 +1,6 @@
 [
   {
-    "attempts": 2,
+    "attempts": 3,
     "classified_route": "knowledge_correction",
     "created_at": "2026-08-27T17:28:48.776597Z",
     "job_id": "reply-repair:correction-followup-v1:tg:tawg:3470",
@@ -21,10 +21,10 @@
     "status": "pending",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3470",
-    "updated_at": "2026-08-27T17:49:16.200579Z"
+    "updated_at": "2026-08-27T21:23:07.286493Z"
   },
   {
-    "attempts": 6,
+    "attempts": 7,
     "classified_route": "knowledge_correction",
     "created_at": "2026-08-27T14:29:40.281306Z",
     "job_id": "reply-repair:knowledge-correction-v1:tg:tawg:3446",
@@ -45,7 +45,7 @@
     "status": "pending",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3446",
-    "updated_at": "2026-08-27T17:49:16.200579Z"
+    "updated_at": "2026-08-27T21:23:07.286493Z"
   },
   {
     "attempts": 4,
@@ -460,8 +460,8 @@
     "updated_at": "2026-08-27T17:49:16.200579Z"
   },
   {
-    "attempts": 0,
-    "classified_route": null,
+    "attempts": 1,
+    "classified_route": "ignore",
     "created_at": "2026-08-27T21:23:07.286493Z",
     "job_id": "reply:tg:tawg:3484",
     "message_thread_id": 16,
@@ -472,13 +472,13 @@
     "repair_of_job_id": null,
     "repair_reason_code": null,
     "reply_to_message_id": 3484,
-    "routed_at": null,
-    "router_context_scope": null,
-    "router_context_sha256": null,
-    "router_version": null,
+    "routed_at": "2026-08-27T21:23:07.286493Z",
+    "router_context_scope": "conversation",
+    "router_context_sha256": "d4545ed0cf9f8403bced2b4564b2c1d197648aeea798691a0e0ccd725f21e26f",
+    "router_version": "contextual-ai-v4",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3484",
     "updated_at": "2026-08-27T21:23:07.286493Z"
