@@ -1,0 +1,23 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trustless-ai.example/schemas/route-result.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "route"],
+  "properties": {
+    "schema_version": {
+      "const": "tawg.route-result.v1"
+    },
+    "route": {
+      "type": "string",
+      "enum": [
+        "knowledge_question",
+        "identity_correction",
+        "knowledge_correction",
+        "source_suggestion",
+        "coordination",
+        "refuse"
+      ]
+    }
+  }
+}

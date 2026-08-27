@@ -16,6 +16,7 @@ from tawg_bot.aliases import AliasRegistry
 from tawg_bot.ids import telegram_id
 from tawg_bot.models import (
     AttachmentMetadata,
+    JobStatus,
     PendingBotJob,
     Relation,
     SourceCursors,
@@ -124,10 +125,19 @@ class TelegramIntake:
             if record is None:
                 rejected += 1
                 continue
+            previous_record = records_by_id.get(record.record_id)
             records_by_id[record.record_id] = record
-            if self._triggers_reply(message):
-                job_id = f"reply:{record.record_id}"
-                existing = jobs_by_id.get(job_id)
+            job_id = f"reply:{record.record_id}"
+            existing = jobs_by_id.get(job_id)
+            triggers_reply = self._triggers_reply(message)
+            if (
+                edited
+                and not triggers_reply
+                and existing is not None
+                and existing.status is not JobStatus.DELIVERED
+            ):
+                del jobs_by_id[job_id]
+            elif triggers_reply:
                 message_thread_id = self._message_thread_id(message)
                 if existing is None:
                     jobs_by_id[job_id] = PendingBotJob(
@@ -137,6 +147,36 @@ class TelegramIntake:
                         message_thread_id=message_thread_id,
                         created_at=now,
                         updated_at=now,
+                    )
+                elif (
+                    existing.status is not JobStatus.DELIVERED
+                    and (
+                        edited
+                        or (
+                            previous_record is not None
+                            and (
+                                previous_record.content_sha256 != record.content_sha256
+                                or previous_record.source_payload.get("message_thread_id")
+                                != record.source_payload.get("message_thread_id")
+                            )
+                        )
+                    )
+                ):
+                    jobs_by_id[job_id] = existing.model_copy(
+                        update={
+                            "message_thread_id": message_thread_id,
+                            "status": JobStatus.PENDING,
+                            "prepared_reply_text": None,
+                            "prepared_citations": [],
+                            "prepared_language": None,
+                            "refusal": False,
+                            "safe_error_code": None,
+                            "classified_route": None,
+                            "router_context_sha256": None,
+                            "router_version": None,
+                            "routed_at": None,
+                            "updated_at": now,
+                        }
                     )
                 elif existing.message_thread_id is None and message_thread_id is not None:
                     jobs_by_id[job_id] = existing.model_copy(
@@ -228,7 +268,11 @@ class TelegramIntake:
             relations=relations,
             attachment_metadata=self._attachment_metadata(message, bool(text)),
             ingested_at=ingested_at,
-            source_payload={"message_kind": "group_message", "edited": edited},
+            source_payload={
+                "message_kind": "group_message",
+                "edited": edited,
+                "message_thread_id": self._message_thread_id(message),
+            },
         )
 
     def _load_jobs(self) -> dict[str, PendingBotJob]:

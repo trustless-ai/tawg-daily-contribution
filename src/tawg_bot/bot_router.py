@@ -8,20 +8,26 @@ import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from enum import StrEnum
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
+from time import monotonic
 from typing import Any, Literal, Protocol
 
 import yaml
 from pydantic import ValidationError
 
+from tawg_bot.ai_router import AiRouteRejected, ContextualAiRouter
 from tawg_bot.claude_cli import ClaudeCliError
 from tawg_bot.context import ContextInputs, ContextPackBuilder, ContextRejected
+from tawg_bot.conversation_context import (
+    ConversationContextBuilder,
+    ConversationContextRejected,
+)
 from tawg_bot.corrections import CorrectionService
 from tawg_bot.erc_query import ErcIntent, ErcQuery, ErcQueryPlanner
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.live_evidence import EvidencePack
-from tawg_bot.models import JobStatus, PendingBotJob, SourceRecord, StrictModel
+from tawg_bot.models import BotRoute, JobStatus, PendingBotJob, SourceRecord, StrictModel
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 from tawg_bot.query import SourceQuery
 from tawg_bot.retrieval import VaultRetriever
@@ -42,15 +48,6 @@ _INLINE_CITATION = re.compile(
 )
 _LOCAL_CITATION = re.compile(r"\[((?:[A-Za-z0-9_.-]+:){2,}[A-Za-z0-9_.:/@-]+)\]")
 _URL_CITATION = re.compile(r"https?://[^\s<>()\[\]]+", re.IGNORECASE)
-
-
-class BotRoute(StrEnum):
-    KNOWLEDGE_QUESTION = "knowledge_question"
-    IDENTITY_CORRECTION = "identity_correction"
-    KNOWLEDGE_CORRECTION = "knowledge_correction"
-    SOURCE_SUGGESTION = "source_suggestion"
-    COORDINATION = "coordination"
-    REFUSE = "refuse"
 
 
 class ReplyRejected(ValueError):
@@ -111,15 +108,24 @@ class BotRouter:
         r"(?:online|here|back|ready|present))?)\s*[^\w]*$",
         re.IGNORECASE,
     )
+    _MUTATION_AUTHORIZATION = re.compile(
+        r"^\s*(?:(?:please|kindly)\s+)?(?:add|record|save|store|remember|correct|"
+        r"update|create|suggest)\b|"
+        r"^\s*(?:can|could|would|will)\s+you\s+(?:please\s+)?(?:add|record|save|"
+        r"store|remember|correct|update|create|suggest)\b|"
+        r"^\s*(?:correction|source suggestion|suggested source)\b|"
+        r"^\s*I\s+(?:suggest|recommend)\b|"
+        r"\b(?:page|knowledge|fact|rule)\s+is\s+wrong\b|\bshould say\b|"
+        r"^\s*(?:请)?(?:添加|记录|保存|记住|更正|纠正|更新|创建|建议)",
+        re.IGNORECASE,
+    )
 
     def __init__(self, bot_username: str) -> None:
         self.bot_username = bot_username.casefold().lstrip("@")
         self._erc_planner = ErcQueryPlanner()
 
     def classify(self, text: str) -> BotRoute:
-        cleaned = re.sub(
-            rf"@{re.escape(self.bot_username)}\b", "", text, flags=re.IGNORECASE
-        ).strip()
+        cleaned = self._clean(text)
         if self._FORBIDDEN.search(cleaned):
             return BotRoute.REFUSE
         if self._IDENTITY.search(cleaned):
@@ -136,6 +142,20 @@ class BotRouter:
             return BotRoute.COORDINATION
         return BotRoute.REFUSE
 
+    def authorize_ai_route(self, text: str, route: BotRoute) -> BotRoute:
+        """Clamp an AI decision to the controller's non-negotiable authority boundary."""
+        cleaned = self._clean(text)
+        if self._FORBIDDEN.search(cleaned):
+            return BotRoute.REFUSE
+        if route is BotRoute.IDENTITY_CORRECTION and not self._IDENTITY.search(cleaned):
+            return BotRoute.REFUSE
+        if route in {
+            BotRoute.KNOWLEDGE_CORRECTION,
+            BotRoute.SOURCE_SUGGESTION,
+        } and not self._MUTATION_AUTHORIZATION.search(cleaned):
+            return BotRoute.REFUSE
+        return route
+
     def erc_query(self, text: str) -> ErcQuery | None:
         if self.classify(text) not in {
             BotRoute.KNOWLEDGE_QUESTION,
@@ -145,10 +165,13 @@ class BotRouter:
         return self._erc_planner.plan(text)
 
     def is_recent_discussion_question(self, text: str) -> bool:
-        cleaned = re.sub(
+        cleaned = self._clean(text)
+        return self._RECENT_DISCUSSION_QUESTION.fullmatch(cleaned) is not None
+
+    def _clean(self, text: str) -> str:
+        return re.sub(
             rf"@{re.escape(self.bot_username)}\b", "", text, flags=re.IGNORECASE
         ).strip()
-        return self._RECENT_DISCUSSION_QUESTION.fullmatch(cleaned) is not None
 
 
 @dataclass(frozen=True, slots=True)
@@ -278,7 +301,7 @@ class ReplyAi(Protocol):
     async def run(
         self,
         *,
-        job_type: Literal["reply"],
+        job_type: Literal["reply", "route"],
         context_pack: str,
         operation_id: str,
         max_budget_usd: str,
@@ -329,6 +352,11 @@ class _LocalErcContext:
 
 
 class BotReplyService:
+    _ROUTER_VERSION = "contextual-ai-v1"
+    _ROUTE_TIMEOUT_SECONDS = 60.0
+    _ROUTE_CONTEXT_MAX_CHARS = 64_000
+    _ROUTE_CONTEXT_MAX_PRIOR_RECORDS = 100
+
     def __init__(
         self,
         root: Path,
@@ -338,6 +366,7 @@ class BotReplyService:
         live_evidence: LiveEvidenceProvider | None = None,
         knowledge_state: KnowledgeStateStore | None = None,
         max_budget_usd: str = "1.00",
+        route_max_budget_usd: str = "0.10",
         timeout_seconds: float = 300,
     ) -> None:
         self.root = root.resolve()
@@ -346,11 +375,16 @@ class BotReplyService:
         self.live_evidence = live_evidence
         self.knowledge_state = knowledge_state
         self.max_budget_usd = max_budget_usd
+        self.route_max_budget_usd = self._bounded_route_budget(
+            max_budget_usd,
+            route_max_budget_usd,
+        )
         self.timeout_seconds = timeout_seconds
         self.privacy = PrivacyFilter.from_yaml(self.root / "config/privacy.yml")
 
     async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply:
         self._require_utc(now)
+        model_deadline = monotonic() + self.timeout_seconds
         jobs = self._load_jobs()
         job = jobs.get(job_id)
         if job is None:
@@ -361,27 +395,6 @@ class BotReplyService:
         trigger = records.get(job.trigger_record_id)
         if trigger is None:
             raise ReplyRejected("reply trigger evidence is missing")
-        route = self.router.classify(trigger.text_original)
-        if route is BotRoute.REFUSE:
-            text = (
-                "I can help with TAWG knowledge, local identity corrections, evidence-backed "
-                "knowledge corrections, and relevant source suggestions. I can't take that action."
-            )
-            ready = job.model_copy(
-                update={
-                    "status": JobStatus.READY,
-                    "prepared_reply_text": text,
-                    "prepared_language": "en",
-                    "prepared_citations": [],
-                    "refusal": True,
-                    "updated_at": now,
-                    "safe_error_code": None,
-                }
-            )
-            jobs[job_id] = ready
-            self._publish_jobs(jobs, f"{job_id}:refused")
-            return self._prepared(ready)
-
         processing = job.model_copy(
             update={
                 "status": JobStatus.PROCESSING,
@@ -393,8 +406,82 @@ class BotReplyService:
         jobs[job_id] = processing
         self._publish_jobs(jobs, f"{job_id}:processing")
         evidence_pack: EvidencePack | None = None
-        failure_code = "reply_context_failed"
+        failure_code = "reply_route_context_failed"
         try:
+            route_context = ConversationContextBuilder(self.privacy).build(
+                trigger=trigger,
+                records=records.values(),
+                message_thread_id=processing.message_thread_id,
+                max_chars=self._ROUTE_CONTEXT_MAX_CHARS,
+                max_prior_records=self._ROUTE_CONTEXT_MAX_PRIOR_RECORDS,
+            )
+            routing_is_current = (
+                processing.classified_route is not None
+                and processing.router_context_sha256 == route_context.sha256
+                and processing.router_version == self._ROUTER_VERSION
+            )
+            if not routing_is_current:
+                if processing.classified_route is not None:
+                    processing = processing.model_copy(
+                        update={
+                            "classified_route": None,
+                            "router_context_sha256": None,
+                            "router_version": None,
+                            "routed_at": None,
+                        }
+                    )
+                    jobs[job_id] = processing
+                    self._publish_jobs(jobs, f"{job_id}:rerouting")
+                failure_code = "reply_route_model_failed"
+                decision = await ContextualAiRouter(self.ai).classify(
+                    route_context,
+                    operation_id=f"{job_id}:route",
+                    max_budget_usd=self.route_max_budget_usd,
+                    timeout_seconds=min(
+                        self._ROUTE_TIMEOUT_SECONDS,
+                        self._remaining_model_time(model_deadline),
+                    ),
+                )
+                route = self.router.authorize_ai_route(
+                    trigger.text_original,
+                    decision.route,
+                )
+                processing = processing.model_copy(
+                    update={
+                        "classified_route": route,
+                        "router_context_sha256": decision.context_sha256,
+                        "router_version": self._ROUTER_VERSION,
+                        "routed_at": now,
+                    }
+                )
+                jobs[job_id] = processing
+                self._publish_jobs(jobs, f"{job_id}:routed")
+            else:
+                assert processing.classified_route is not None
+                route = processing.classified_route
+
+            if route is BotRoute.REFUSE:
+                text = (
+                    "I can help with TAWG knowledge, local identity corrections, evidence-backed "
+                    "knowledge corrections, and relevant source suggestions. I can't take that "
+                    "action."
+                )
+                ready = processing.model_copy(
+                    update={
+                        "status": JobStatus.READY,
+                        "prepared_reply_text": text,
+                        "prepared_language": "en",
+                        "prepared_citations": [],
+                        "refusal": True,
+                        "updated_at": now,
+                        "safe_error_code": None,
+                    }
+                )
+                jobs[job_id] = ready
+                self._publish_jobs(jobs, f"{job_id}:refused")
+                return self._prepared(ready)
+
+            failure_code = "reply_context_failed"
             erc_query = self.router.erc_query(trigger.text_original)
             local_erc_context: _LocalErcContext | None = None
             if erc_query is not None:
@@ -429,7 +516,7 @@ class BotReplyService:
                 context_pack=context.text,
                 operation_id=job_id,
                 max_budget_usd=self.max_budget_usd,
-                timeout_seconds=self.timeout_seconds,
+                timeout_seconds=self._remaining_model_time(model_deadline),
             )
             failure_code = "reply_validation_failed"
             result = self._validate_result(
@@ -532,6 +619,25 @@ class BotReplyService:
 
     @staticmethod
     def _safe_failure_code(stage_code: str, error: Exception) -> str:
+        if stage_code == "reply_route_context_failed" and isinstance(
+            error, ConversationContextRejected
+        ):
+            return "reply_route_context_invalid"
+        if stage_code == "reply_route_model_failed":
+            if isinstance(error, AiRouteRejected):
+                return "reply_route_model_schema_invalid"
+            if isinstance(error, ClaudeCliError):
+                message = str(error)
+                if message == "Claude Code exceeded its time limit":
+                    return "reply_route_model_timeout"
+                if message == "Claude Code structured output failed schema validation":
+                    return "reply_route_model_schema_invalid"
+                if message == "Claude Code could not be started" or message.startswith(
+                    "Claude Code failed with exit status"
+                ):
+                    return "reply_route_model_process_failed"
+                return "reply_route_model_contract_invalid"
+            return stage_code
         if stage_code == "reply_validation_failed" and isinstance(error, ReplyRejected):
             return {
                 "invalid reply model output": "reply_model_output_invalid",
@@ -572,6 +678,29 @@ class BotReplyService:
         }:
             return "reply_model_contract_invalid"
         return stage_code
+
+    @staticmethod
+    def _remaining_model_time(deadline: float) -> float:
+        remaining = deadline - monotonic()
+        if remaining <= 0:
+            raise ClaudeCliError("Claude Code exceeded its time limit")
+        return remaining
+
+    @staticmethod
+    def _bounded_route_budget(overall: str, route: str) -> str:
+        try:
+            overall_budget = Decimal(overall)
+            route_budget = Decimal(route)
+        except InvalidOperation:
+            raise ValueError("model budgets must be decimals") from None
+        if (
+            not overall_budget.is_finite()
+            or not route_budget.is_finite()
+            or overall_budget <= 0
+            or route_budget <= 0
+        ):
+            raise ValueError("model budgets must be positive finite decimals")
+        return format(min(overall_budget, route_budget), "f")
 
     def _context(
         self,

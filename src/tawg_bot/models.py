@@ -135,6 +135,15 @@ class JobStatus(StrEnum):
     DELIVERED = "delivered"
 
 
+class BotRoute(StrEnum):
+    KNOWLEDGE_QUESTION = "knowledge_question"
+    IDENTITY_CORRECTION = "identity_correction"
+    KNOWLEDGE_CORRECTION = "knowledge_correction"
+    SOURCE_SUGGESTION = "source_suggestion"
+    COORDINATION = "coordination"
+    REFUSE = "refuse"
+
+
 class PendingBotJob(StrictModel):
     schema_version: str = "tawg.pending-bot-job.v1"
     job_id: str
@@ -148,6 +157,12 @@ class PendingBotJob(StrictModel):
     prepared_language: str | None = Field(default=None, max_length=32)
     refusal: bool = False
     safe_error_code: str | None = Field(default=None, max_length=64)
+    classified_route: BotRoute | None = None
+    router_context_sha256: str | None = Field(
+        default=None, pattern=r"^[a-f0-9]{64}$"
+    )
+    router_version: str | None = Field(default=None, max_length=64)
+    routed_at: datetime | None = None
     repair_of_job_id: str | None = Field(default=None, max_length=128)
     repair_reason_code: str | None = Field(default=None, max_length=64)
     created_at: datetime
@@ -155,6 +170,9 @@ class PendingBotJob(StrictModel):
 
     _created_at_utc = field_validator("created_at")(_require_utc)
     _updated_at_utc = field_validator("updated_at")(_require_utc)
+    _routed_at_utc = field_validator("routed_at")(
+        lambda value: None if value is None else _require_utc(value)
+    )
 
     @model_validator(mode="after")
     def repair_metadata_is_complete(self) -> PendingBotJob:
@@ -162,6 +180,16 @@ class PendingBotJob(StrictModel):
             raise ValueError("reply repair metadata must be complete")
         if self.repair_of_job_id == self.job_id:
             raise ValueError("reply repair cannot supersede itself")
+        routing = (
+            self.classified_route,
+            self.router_context_sha256,
+            self.router_version,
+            self.routed_at,
+        )
+        if any(value is not None for value in routing) and any(
+            value is None for value in routing
+        ):
+            raise ValueError("reply routing metadata must be complete")
         return self
 
 
