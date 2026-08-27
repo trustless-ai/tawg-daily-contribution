@@ -13,7 +13,7 @@ import pytest
 import tawg_bot.runtime as runtime_module
 from tawg_bot.bot_router import PreparedReply, ReplyRejected
 from tawg_bot.claude_cli import ClaudeCli as RealClaudeCli
-from tawg_bot.claude_cli import CompletedProcess
+from tawg_bot.claude_cli import ClaudeCliError, CompletedProcess
 from tawg_bot.daily import DailyRejected, DailyWindow, PreparedDaily
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import RefreshResult
@@ -125,7 +125,7 @@ async def test_live_pipeline_checks_sources_without_external_body_mirrors(
 
         class Daily:
             def __init__(self, root: Path, *, ai: Any, timeout_seconds: float) -> None:
-                assert timeout_seconds == 360
+                assert timeout_seconds == 600
                 del root, ai
 
             async def prepare(
@@ -513,6 +513,31 @@ async def test_scheduled_daily_logs_bounded_validation_code_without_raw_error(
     captured = capsys.readouterr().out
     assert f"code={safe_code}" in captured
     assert sensitive_fragment not in captured
+
+
+@pytest.mark.asyncio
+async def test_scheduled_daily_logs_model_timeout_without_provider_error_text(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    scaffold(tmp_path)
+    window = DailyWindow.for_due_run(NOW)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+
+        async def prepare_daily(selected: DailyWindow, *, dry_run: bool) -> PreparedDaily:
+            assert selected == window
+            assert not dry_run
+            raise ClaudeCliError("Claude Code exceeded its time limit")
+
+        monkeypatch.setattr(pipeline, "prepare_daily", prepare_daily)
+        with pytest.raises(RuntimeFailure, match="Daily model failed"):
+            await pipeline.daily_prepare(window.window_id)
+
+    captured = capsys.readouterr().out
+    assert "code=daily_model_timeout" in captured
+    assert "Claude Code" not in captured
 
 
 @pytest.mark.asyncio

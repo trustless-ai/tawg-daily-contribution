@@ -19,7 +19,7 @@ from tawg_bot.bot_router import (
     ReplyRejected,
     ReplyRepairReconciler,
 )
-from tawg_bot.claude_cli import ClaudeCli
+from tawg_bot.claude_cli import ClaudeCli, ClaudeCliError
 from tawg_bot.daily import (
     DailyReadiness,
     DailyRejected,
@@ -62,7 +62,7 @@ _MAX_SCHEDULED_SOURCE_ERCS = 2
 _SOURCE_ERC_TIMEOUT_SECONDS = 60
 _KNOWLEDGE_TIMEOUT_SECONDS = 180
 _DAILY_EVIDENCE_TIMEOUT_SECONDS = 60
-_DAILY_TIMEOUT_SECONDS = 360
+_DAILY_TIMEOUT_SECONDS = 600
 _REPLY_TIMEOUT_SECONDS = 300
 _REPLY_PHASE_BUDGET_SECONDS = 360
 _MAX_REPLIES_PER_TICK = 10
@@ -441,6 +441,15 @@ class _LivePipeline:
             self.prepared_daily = None
             _safe_log("daily_validation", _daily_rejection_code(error))
             raise RuntimeFailure("Daily validation failed") from None
+        except ClaudeCliError as error:
+            self.prepared_daily = None
+            code = (
+                "daily_model_timeout"
+                if str(error) == "Claude Code exceeded its time limit"
+                else "daily_model_failed"
+            )
+            _safe_log("daily_model", code)
+            raise RuntimeFailure("Daily model failed") from None
         except Exception:
             self.prepared_daily = None
             raise
