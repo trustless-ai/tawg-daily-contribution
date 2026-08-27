@@ -3,7 +3,14 @@ from datetime import UTC, datetime
 import pytest
 from pydantic import ValidationError
 
-from tawg_bot.models import SourceRecord, SourceType
+from tawg_bot.models import (
+    BotRoute,
+    JobStatus,
+    PendingBotJob,
+    SourceRecord,
+    SourceType,
+    TriggerKind,
+)
 
 
 def test_source_record_computes_content_hash_from_normalized_text() -> None:
@@ -36,4 +43,23 @@ def test_source_record_rejects_naive_timestamp() -> None:
             updated_at=datetime(2026, 8, 22, 23),
             text_original="text",
             ingested_at=datetime(2026, 8, 23, tzinfo=UTC),
+        )
+
+
+def test_only_a_greeting_candidate_can_have_ignored_reply_state() -> None:
+    now = datetime(2026, 8, 23, tzinfo=UTC)
+
+    with pytest.raises(ValidationError, match="greeting candidate"):
+        PendingBotJob(
+            job_id="reply:tg:tawg:42",
+            trigger_record_id="tg:tawg:42",
+            reply_to_message_id=42,
+            trigger_kind=TriggerKind.REPLY_TO_BOT,
+            status=JobStatus.IGNORED,
+            classified_route=BotRoute.IGNORE,
+            router_context_sha256="a" * 64,
+            router_version="contextual-ai-v2",
+            routed_at=now,
+            created_at=now,
+            updated_at=now,
         )
