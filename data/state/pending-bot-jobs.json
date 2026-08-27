@@ -18,6 +18,7 @@
     "safe_error_code": "reply_persistence_failed",
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "pending",
+    "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3446",
     "updated_at": "2026-08-27T16:00:07.367669Z"
   },
@@ -44,6 +45,7 @@
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "delivered",
+    "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3380",
     "updated_at": "2026-08-26T11:51:21.004539Z"
   },
@@ -66,6 +68,7 @@
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "delivered",
+    "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3369",
     "updated_at": "2026-08-26T02:10:57.226837Z"
   },
@@ -94,6 +97,7 @@
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "delivered",
+    "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3372",
     "updated_at": "2026-08-26T09:05:26.624815Z"
   },
@@ -116,6 +120,7 @@
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "delivered",
+    "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3380",
     "updated_at": "2026-08-26T04:19:43.287631Z"
   },
@@ -142,6 +147,7 @@
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "delivered",
+    "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3387",
     "updated_at": "2026-08-26T08:11:31.117465Z"
   },
@@ -164,6 +170,7 @@
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "delivered",
+    "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3398",
     "updated_at": "2026-08-26T10:42:04.774207Z"
   },
@@ -189,6 +196,7 @@
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "delivered",
+    "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3401",
     "updated_at": "2026-08-26T13:41:34.703946Z"
   },
@@ -211,6 +219,7 @@
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "delivered",
+    "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3436",
     "updated_at": "2026-08-26T16:04:46.036497Z"
   },
@@ -233,6 +242,7 @@
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "delivered",
+    "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3446",
     "updated_at": "2026-08-27T08:40:07.230785Z"
   },
@@ -257,6 +267,7 @@
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "delivered",
+    "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3466",
     "updated_at": "2026-08-27T14:29:40.281306Z"
   },
@@ -279,8 +290,32 @@
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "delivered",
+    "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3468",
     "updated_at": "2026-08-27T15:00:52.868096Z"
+  },
+  {
+    "attempts": 0,
+    "classified_route": null,
+    "created_at": "2026-08-27T16:20:28.634348Z",
+    "job_id": "reply:tg:tawg:3470",
+    "message_thread_id": 16,
+    "prepared_citations": [],
+    "prepared_language": null,
+    "prepared_reply_text": null,
+    "refusal": false,
+    "repair_of_job_id": null,
+    "repair_reason_code": null,
+    "reply_to_message_id": 3470,
+    "routed_at": null,
+    "router_context_sha256": null,
+    "router_version": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.pending-bot-job.v1",
+    "status": "pending",
+    "trigger_kind": "reply_to_bot",
+    "trigger_record_id": "tg:tawg:3470",
+    "updated_at": "2026-08-27T16:20:28.634348Z"
   },
   {
     "attempts": 1,
@@ -305,6 +340,7 @@
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "delivered",
+    "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3473",
     "updated_at": "2026-08-27T16:00:07.367669Z"
   }
