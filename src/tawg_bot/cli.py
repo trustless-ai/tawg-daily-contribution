@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import json
+import sys
 from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
@@ -12,12 +14,19 @@ from uuid import uuid4
 
 from tawg_bot.daily import PreparedDaily
 from tawg_bot.telegram_export import TelegramDesktopImporter
+from tawg_bot.telegram_webhook import MAX_BODY_BYTES, TelegramWebhookEnvelope
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 from tawg_bot.vault import VaultLinter
 
 
 class OperationalRuntime(Protocol):
     async def tick(self, now: datetime, *, observe_only: bool) -> None: ...
+
+    async def maintenance_tick(self, now: datetime, *, observe_only: bool) -> None: ...
+
+    async def ingest_webhook_envelope(
+        self, envelope: TelegramWebhookEnvelope, *, now: datetime
+    ) -> object: ...
 
     async def check_sources(self, erc: int | None, *, observe_only: bool) -> object: ...
 
@@ -36,6 +45,12 @@ def _parser() -> argparse.ArgumentParser:
     tick = commands.add_parser("tick")
     tick.add_argument("--now", type=_utc_timestamp)
     tick.add_argument("--observe-only", action="store_true")
+    maintenance = commands.add_parser("maintenance-tick")
+    maintenance.add_argument("--now", type=_utc_timestamp)
+    maintenance.add_argument("--observe-only", action="store_true")
+    webhook = commands.add_parser("ingest-webhook-envelope")
+    webhook.add_argument("--input", required=True)
+    webhook.add_argument("--now", type=_utc_timestamp)
     sources = commands.add_parser("check-sources")
     sources.add_argument("--erc", type=_erc_number)
     sources.add_argument("--observe-only", action="store_true")
@@ -54,7 +69,8 @@ def main(
     runtime: OperationalRuntime | None = None,
     clock: Callable[[], datetime] | None = None,
 ) -> int:
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
     root = Path.cwd()
     if args.command == "import-telegram-history":
         importer = TelegramDesktopImporter.for_repository(root)
@@ -78,6 +94,24 @@ def main(
     if args.command == "tick":
         now = args.now or (clock or (lambda: datetime.now(UTC)))()
         asyncio.run(operational.tick(now, observe_only=args.observe_only))
+        return 0
+    if args.command == "maintenance-tick":
+        now = args.now or (clock or (lambda: datetime.now(UTC)))()
+        asyncio.run(operational.maintenance_tick(now, observe_only=args.observe_only))
+        return 0
+    if args.command == "ingest-webhook-envelope":
+        try:
+            envelope = _read_webhook_envelope(args.input, root=root)
+        except (OSError, UnicodeError, ValueError):
+            parser.error("webhook envelope input is invalid")
+        now = args.now or (clock or (lambda: datetime.now(UTC)))()
+        result = asyncio.run(operational.ingest_webhook_envelope(envelope, now=now))
+        print(
+            f"received={getattr(result, 'received', 0)} "
+            f"persisted={getattr(result, 'persisted', 0)} "
+            f"replayed={getattr(result, 'replayed', 0)} "
+            f"jobs_created={getattr(result, 'jobs_created', 0)}"
+        )
         return 0
     if args.command == "check-sources":
         summary = asyncio.run(operational.check_sources(args.erc, observe_only=args.observe_only))
@@ -126,6 +160,24 @@ def _erc_number(value: str) -> int:
     if not 1 <= number <= 99_999:
         raise argparse.ArgumentTypeError("ERC number must be between 1 and 99999")
     return number
+
+
+def _read_webhook_envelope(value: str, *, root: Path) -> TelegramWebhookEnvelope:
+    if value == "-":
+        raw = sys.stdin.read(MAX_BODY_BYTES + 1)
+    else:
+        path = (root / value).resolve()
+        if not path.is_relative_to(root.resolve()) or not path.is_file():
+            raise ValueError("webhook envelope path is invalid")
+        if path.stat().st_size > MAX_BODY_BYTES:
+            raise ValueError("webhook envelope input is too large")
+        raw = path.read_text(encoding="utf-8")
+    if len(raw.encode("utf-8")) > MAX_BODY_BYTES:
+        raise ValueError("webhook envelope input is too large")
+    payload = json.loads(raw)
+    if not isinstance(payload, dict):
+        raise ValueError("webhook envelope input must contain one object")
+    return TelegramWebhookEnvelope.model_validate(payload)
 
 
 def _production_runtime(root: Path) -> OperationalRuntime:

@@ -1,11 +1,24 @@
+import os
+import re
+import subprocess
 from pathlib import Path
 
+import pytest
 import yaml
 
 ROOT = Path(__file__).parents[2]
+ACTION_PINS = {
+    "actions/checkout": "11bd71901bbe5b1630ceea73d27597364c9af683",
+    "actions/setup-python": "a26af69be951a213d495a4c3e4e4022e16d87065",
+    "actions/setup-node": "1e60f620b9541d64bece96c5465dc8ee9832be0b",
+}
 
 
 def workflow() -> dict:
+    return load_workflow("tawg-knowledge.yml")
+
+
+def load_workflow(name: str) -> dict:
     class Loader(yaml.SafeLoader):
         pass
 
@@ -14,7 +27,7 @@ def workflow() -> dict:
         for key, value in yaml.SafeLoader.yaml_implicit_resolvers.items()
     }
     return yaml.load(
-        (ROOT / ".github/workflows/tawg-knowledge.yml").read_text(), Loader=Loader
+        (ROOT / ".github/workflows" / name).read_text(), Loader=Loader
     )
 
 
@@ -23,12 +36,20 @@ def test_workflow_is_single_non_overlapping_five_minute_writer() -> None:
 
     assert value["on"]["schedule"] == [{"cron": "*/5 * * * *"}]
     inputs = value["on"]["workflow_dispatch"]["inputs"]
-    assert set(inputs) == {"observe_only", "daily_dry_run"}
+    assert set(inputs) == {"runtime_mode", "daily_dry_run"}
+    assert inputs["runtime_mode"] == {
+        "description": "Runtime mode for this manual operation",
+        "type": "choice",
+        "options": ["inherit", "observe", "poll", "webhook"],
+        "default": "observe",
+    }
     assert value["permissions"] == {"contents": "write"}
     assert value["concurrency"] == {
         "group": "tawg-knowledge-writer",
         "cancel-in-progress": "false",
     }
+    assert set(value["jobs"]) == {"knowledge-bot"}
+    assert value["jobs"]["knowledge-bot"]["if"] == "github.ref == 'refs/heads/main'"
 
 
 def test_workflow_pins_runtime_and_hardens_claude_environment() -> None:
@@ -36,18 +57,193 @@ def test_workflow_pins_runtime_and_hardens_claude_environment() -> None:
     job = value["jobs"]["knowledge-bot"]
     rendered = (ROOT / ".github/workflows/tawg-knowledge.yml").read_text()
 
+    assert "env" not in value
     setup = next(
         step
         for step in job["steps"]
         if step.get("uses", "").startswith("actions/setup-python")
     )
+    checkout = next(
+        step
+        for step in job["steps"]
+        if step.get("uses", "").startswith("actions/checkout")
+    )
+    assert checkout["with"]["persist-credentials"] == "false"
     assert setup["with"]["python-version"] == "3.12"
-    assert "@anthropic-ai/claude-code@2.1.240" in rendered
-    assert job["env"]["DISABLE_AUTOUPDATER"] == "1"
-    assert job["env"]["CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC"] == "1"
-    assert job["env"]["CLAUDE_CODE_SKIP_PROMPT_HISTORY"] == "1"
+    assert "env" not in job
+    install_claude = next(
+        step for step in job["steps"] if step["name"] == "Install locked Claude runtime"
+    )
+    assert install_claude["working-directory"] == "deploy/claude-runtime"
+    assert install_claude["run"] == "npm ci --omit=dev --ignore-scripts"
+    assert "npm install --global" not in rendered
     assert "echo $" not in rendered
     assert "git-auto-commit" not in rendered
+
+
+def test_workflow_selects_safe_core_commands_for_authoritative_runtime_modes() -> None:
+    value = workflow()
+    job = value["jobs"]["knowledge-bot"]
+    rendered = (ROOT / ".github/workflows/tawg-knowledge.yml").read_text()
+
+    operation_step = next(
+        step
+        for step in job["steps"]
+        if step["name"] == "Run bot with ordered repository checkpoints"
+    )
+    run_bot = operation_step["run"]
+    operation_env = operation_step["env"]
+    assert set(operation_env) == {
+        "PYTHONUNBUFFERED",
+        "DISABLE_AUTOUPDATER",
+        "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC",
+        "CLAUDE_CODE_SKIP_PROMPT_HISTORY",
+        "GITHUB_TOKEN",
+        "TELEGRAM_BOT_TOKEN",
+        "ANTHROPIC_AUTH_TOKEN",
+        "TAWG_TELEGRAM_CHAT_ID",
+        "TAWG_TELEGRAM_BOT_USERNAME",
+        "ANTHROPIC_BASE_URL",
+        "ANTHROPIC_MODEL",
+        "ANTHROPIC_DEFAULT_OPUS_MODEL",
+        "ANTHROPIC_DEFAULT_SONNET_MODEL",
+        "ANTHROPIC_DEFAULT_HAIKU_MODEL",
+        "CLAUDE_CODE_SUBAGENT_MODEL",
+        "CLAUDE_CODE_EFFORT_LEVEL",
+        "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
+        "TAWG_DELIVERY_ENABLED",
+        "TAWG_RUNTIME_MODE",
+    }
+    assert operation_env["GITHUB_TOKEN"] == "${{ github.token }}"
+    assert operation_env["TELEGRAM_BOT_TOKEN"] == "${{ secrets.TELEGRAM_BOT_TOKEN }}"
+    assert operation_env["ANTHROPIC_AUTH_TOKEN"] == "${{ secrets.ANTHROPIC_AUTH_TOKEN }}"
+    assert operation_env["TAWG_RUNTIME_MODE"] == "${{ vars.TAWG_RUNTIME_MODE }}"
+    for step in job["steps"]:
+        if step is operation_step:
+            continue
+        assert "${{ secrets." not in str(step)
+        assert "${{ github.token }}" not in str(step)
+    assert 'authoritative_mode="${TAWG_RUNTIME_MODE:-poll}"' in run_bot
+    assert '[[ "$authoritative_mode" == "webhook" ]]' in run_bot
+    assert '"${{ inputs.runtime_mode }}" == "poll"' in run_bot
+    assert "operation=(tick)" in run_bot
+    assert "operation=(maintenance-tick)" in run_bot
+    assert "operation=(maintenance-tick --observe-only)" in run_bot
+    assert "operation=(tick --observe-only)" in run_bot
+    assert 'python -m tawg_bot.cli "${operation[@]}"' in run_bot
+    assert '"$TAWG_DELIVERY_ENABLED" != "true"' in run_bot
+    assert "operation+=(--observe-only)" in run_bot
+    assert (
+        'export PATH="$GITHUB_WORKSPACE/deploy/claude-runtime/node_modules/.bin:$PATH"'
+        in run_bot
+    )
+    assert 'export GIT_CONFIG_COUNT="1"' in run_bot
+    assert 'export GIT_CONFIG_KEY_0="http.https://github.com/.extraheader"' in run_bot
+    assert 'export GIT_CONFIG_VALUE_0="AUTHORIZATION: basic $git_authorization"' in run_bot
+    assert 'git_credential="x-access-token:$GITHUB_TOKEN"' in run_bot
+    assert "printf '%s' \"$git_credential\" | base64" in run_bot
+    assert 'base64 <<<"x-access-token:$GITHUB_TOKEN"' not in run_bot
+    assert 'printf "x-access-token:%s" "$GITHUB_TOKEN"' not in run_bot
+    assert "git config" not in run_bot
+    assert "trap clear_runtime_credentials EXIT" in run_bot
+    assert "unset git_credential git_authorization" in run_bot
+    assert "unset GITHUB_TOKEN GIT_CONFIG_COUNT GIT_CONFIG_KEY_0 GIT_CONFIG_VALUE_0" in run_bot
+    for unsafe_command in ("set -x", "set -o xtrace", "printenv"):
+        assert unsafe_command not in run_bot
+    assert all(not line.strip().startswith("env") for line in run_bot.splitlines())
+    assert "getUpdates" not in rendered
+
+
+def test_workflows_pin_third_party_actions_to_reviewed_commits() -> None:
+    expected_versions = {
+        "actions/checkout": "v4.2.2",
+        "actions/setup-python": "v5.6.0",
+        "actions/setup-node": "v4",
+    }
+
+    for name in ("tawg-knowledge.yml", "modal-deploy.yml"):
+        value = load_workflow(name)
+        rendered = (ROOT / ".github/workflows" / name).read_text()
+        for job in value["jobs"].values():
+            for step in job["steps"]:
+                uses = step.get("uses")
+                if uses is None:
+                    continue
+                action, commit = uses.rsplit("@", 1)
+                assert re.fullmatch(r"[0-9a-f]{40}", commit)
+                assert commit == ACTION_PINS[action]
+                assert f"uses: {action}@{commit} # {expected_versions[action]}" in rendered
+
+
+def test_modal_deploy_workflow_verifies_before_pinned_least_privilege_deploy() -> None:
+    value = load_workflow("modal-deploy.yml")
+    job = value["jobs"]["deploy"]
+    rendered = (ROOT / ".github/workflows/modal-deploy.yml").read_text()
+
+    assert set(value["on"]) == {"workflow_dispatch"}
+    assert value["permissions"] == {"contents": "read"}
+    assert value["concurrency"] == {
+        "group": "tawg-modal-deploy",
+        "cancel-in-progress": "false",
+    }
+    assert job["if"] == "github.ref == 'refs/heads/main'"
+    assert job["environment"] == "tawg-production"
+    setup = next(
+        step
+        for step in job["steps"]
+        if step.get("uses", "").startswith("actions/setup-python")
+    )
+    checkout = next(
+        step
+        for step in job["steps"]
+        if step.get("uses", "").startswith("actions/checkout")
+    )
+    assert checkout["with"]["persist-credentials"] == "false"
+    assert checkout["with"]["ref"] == "${{ github.sha }}"
+    assert setup["with"]["python-version"] == "3.12"
+    assert "python -m pip install --require-hashes -r requirements-dev.lock" in rendered
+    assert "python -m pip install --no-deps ." in rendered
+    assert "python -m pip install --require-hashes -r requirements-modal-deploy.lock" in rendered
+    assert "python -m pip install modal==1.5.4" not in rendered
+    assert "modal deploy deploy/modal_app.py" in rendered
+    deploy_index = rendered.index("modal deploy deploy/modal_app.py")
+    revision_check = next(
+        step["run"] for step in job["steps"] if step["name"] == "Verify checked out revision"
+    )
+    assert 'actual_sha="$(git rev-parse HEAD)"' in revision_check
+    assert '[[ "$actual_sha" != "$GITHUB_SHA" ]]' in revision_check
+    assert rendered.index("git rev-parse HEAD") < rendered.index(
+        "python -m ruff check src tests deploy"
+    )
+    for verification_command in (
+        "python -m ruff check src tests deploy",
+        "python -m mypy src/tawg_bot",
+        "python -m pytest -q",
+        "python -m tawg_bot.cli vault-lint",
+    ):
+        assert verification_command in rendered
+        assert rendered.index(verification_command) < deploy_index
+    deploy_step = next(step for step in job["steps"] if "modal deploy" in step.get("run", ""))
+    assert deploy_step["env"] == {
+        "MODAL_TOKEN_ID": "${{ secrets.MODAL_TOKEN_ID }}",
+        "MODAL_TOKEN_SECRET": "${{ secrets.MODAL_TOKEN_SECRET }}",
+    }
+    run_bodies = [step["run"] for step in job["steps"] if "run" in step]
+    assert all("${{ secrets." not in run for run in run_bodies)
+    for unsafe_command in ("set -x", "set -o xtrace", "printenv", "env |", "echo $"):
+        assert all(unsafe_command not in run for run in run_bodies)
+    assert all(
+        all(not line.strip().startswith("env") for line in run.splitlines())
+        for run in run_bodies
+    )
+    deployment_lock = (ROOT / "requirements-modal-deploy.lock").read_text()
+    deployment_input = (ROOT / "requirements-modal-deploy.in").read_text()
+    assert "-c requirements-dev.lock" in deployment_input
+    assert "modal==1.5.4" in deployment_lock
+    assert "fastapi==0.141.1" in deployment_lock
+    assert "pydantic==2.11.7" in deployment_lock
+    assert "--hash=sha256:" in deployment_lock
+    assert "setWebhook" not in rendered
 
 
 def test_checkpoint_script_restricts_paths_and_rejects_non_fast_forward_push() -> None:
@@ -62,3 +258,78 @@ def test_checkpoint_script_restricts_paths_and_rejects_non_fast_forward_push() -
     assert "git pull" not in script
     assert "tawg_bot.cli vault-lint" in script
     assert "git add -- data knowledge .vault-meta" not in script
+
+
+def run_checkpoint_with_push_failure(
+    tmp_path: Path,
+    *,
+    push_output: str,
+) -> subprocess.CompletedProcess[bytes]:
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    temporary_dir = tmp_path / "tmp"
+    temporary_dir.mkdir()
+    fake_git = bin_dir / "git"
+    fake_git.write_text(
+        "#!/usr/bin/env bash\n"
+        "if [[ \"$1\" == diff && \"$*\" == *--quiet* ]]; then exit 1; fi\n"
+        "if [[ \"$1\" == push ]]; then\n"
+        "  [[ \"${LC_ALL:-}\" == C ]] || exit 91\n"
+        "  [[ \"$*\" == *--porcelain* ]] || exit 92\n"
+        "  printf '%s\\n' \"$FAKE_PUSH_OUTPUT\" >&2\n"
+        "  exit 1\n"
+        "fi\n"
+        "exit 0\n",
+        encoding="utf-8",
+    )
+    fake_git.chmod(0o755)
+    fake_python = bin_dir / "python"
+    fake_python.write_text("#!/usr/bin/env bash\nexit 0\n", encoding="utf-8")
+    fake_python.chmod(0o755)
+    environment = {
+        **os.environ,
+        "FAKE_PUSH_OUTPUT": push_output,
+        "GITHUB_REF_NAME": "main",
+        "PATH": f"{bin_dir}{os.pathsep}{os.environ['PATH']}",
+        "TMPDIR": str(temporary_dir),
+    }
+
+    completed = subprocess.run(
+        ["bash", str(ROOT / "scripts/commit_operation.sh"), "test:conflict"],
+        cwd=tmp_path,
+        env=environment,
+        capture_output=True,
+        check=False,
+    )
+    assert list(temporary_dir.iterdir()) == []
+    return completed
+
+
+@pytest.mark.parametrize("reason", ["non-fast-forward", "fetch first"])
+def test_checkpoint_script_classifies_non_fast_forward_push_as_conflict(
+    tmp_path: Path, reason: str
+) -> None:
+    completed = run_checkpoint_with_push_failure(
+        tmp_path,
+        push_output=(
+            f"!\tHEAD:refs/heads/main\t[rejected] ({reason})\n"
+            "secret https://credential@example.invalid/repository.git"
+        ),
+    )
+
+    assert completed.returncode == 75
+    assert completed.stdout == b""
+    assert completed.stderr == b""
+
+
+def test_checkpoint_script_keeps_generic_push_failure_non_conflict_and_private(
+    tmp_path: Path,
+) -> None:
+    completed = run_checkpoint_with_push_failure(
+        tmp_path,
+        push_output="fatal: Authentication failed for 'https://secret@example.invalid/repo'",
+    )
+
+    assert completed.returncode not in {0, 75}
+    assert completed.stdout == b""
+    assert completed.stderr == b""

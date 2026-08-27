@@ -372,21 +372,24 @@ Emoji are used sparingly as navigation and energy, not decoration. Recognition c
 The normal structure is:
 
 ```text
-Daily title and exact UTC window
-Warm, specific opening
+Bold Daily title and separate exact UTC window
+Highlights
+  One to four cited collaboration outcomes
 What moved
   Directions ordered implicitly by impact and importance
   One uncited high-level synthesis sentence per direction
   Cited concrete contribution-and-value items
 Next up
   Ideas and discussions worth carrying forward
-  Open threads or help wanted
-Friendly, actionable close
+  TODOs and open threads
+Trusty's take
+  One established collaboration event
+  One playful team-wide encouragement
 ```
 
 There is no independent Appreciation section. Each concrete factual item cites the most specific source; only a direction's high-level synthesis sentence may be uncited, and it introduces no names, actions, artifacts, numbers, links, or other source-dependent details. Telegram citations point to committed repository source records when a stable public Telegram message URL is unavailable. Long days may use at most two Telegram messages.
 
-A quiet day still produces a warm update. It states that no source-backed progress landed, carries forward open threads, and invites a useful next step without fabricating momentum.
+A quiet day still produces a warm update. It states that no source-backed highlight or progress landed, carries forward open threads, and closes with a playful but grounded Trusty observation without fabricating momentum.
 
 ## 16. Failure Handling and Delivery Semantics
 

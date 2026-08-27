@@ -174,7 +174,14 @@ async def test_active_daily_is_grounded_warm_english_and_excludes_post_cutoff(
     assert prepared is not None
     assert prepared.citations == ("tg:tawg:1",)
     assert len(prepared.messages) <= 2
-    assert "What moved" in prepared.telegram_text
+    assert prepared.telegram_text.startswith("🗓 **TAWG Daily Catch-up**\n_")
+    assert "## ⚡ **Highlights**" in prepared.telegram_text
+    assert "## 🤝 **What moved**" in prepared.telegram_text
+    assert "\n### agent-sdk\n" in prepared.telegram_text
+    assert "\n- Alice — **Clarified**" in prepared.telegram_text
+    assert "### ✅ **TODOs**" in prepared.telegram_text
+    assert "## 🤖 **Trusty's take**" in prepared.telegram_text
+    assert "**Today's spark:**" in prepared.telegram_text
     assert "post-cutoff" not in ai.calls[0]["context_pack"]
     assert "tg:tawg:1" in ai.calls[0]["context_pack"]
 
@@ -186,7 +193,7 @@ async def test_daily_retries_one_rejected_model_draft_within_the_same_run(
     _seed(tmp_path)
     rejected = _fixture("daily-active")
     rejected["telegram_text"] = rejected["telegram_text"].replace(
-        "TAWG Daily Catch-up", "Wrong Daily title", 1
+        "🗓 **TAWG Daily Catch-up**", "🗓 **Wrong Daily title**", 1
     )
     accepted = _fixture("daily-active")
     ai = SequenceAi([rejected, accepted])
@@ -205,7 +212,7 @@ async def test_daily_stops_after_two_rejected_model_drafts(tmp_path: Path) -> No
     _seed(tmp_path)
     rejected = _fixture("daily-active")
     rejected["telegram_text"] = rejected["telegram_text"].replace(
-        "TAWG Daily Catch-up", "Wrong Daily title", 1
+        "🗓 **TAWG Daily Catch-up**", "🗓 **Wrong Daily title**", 1
     )
     ai = SequenceAi([rejected, rejected])
 
@@ -224,7 +231,7 @@ async def test_daily_retry_shares_the_original_model_timeout(
     _seed(tmp_path)
     rejected = _fixture("daily-active")
     rejected["telegram_text"] = rejected["telegram_text"].replace(
-        "TAWG Daily Catch-up", "Wrong Daily title", 1
+        "🗓 **TAWG Daily Catch-up**", "🗓 **Wrong Daily title**", 1
     )
     ai = SequenceAi([rejected, _fixture("daily-active")])
     times = iter((100.0, 111.0))
@@ -247,7 +254,7 @@ async def test_daily_uses_confirmed_telegram_mention_for_mapped_contributor(
     _confirm_alice_telegram_handle(tmp_path)
     output = _fixture("daily-active")
     output["telegram_text"] = output["telegram_text"].replace(
-        "• Alice clarified", "• Alice (@alice_tg) clarified"
+        "- Alice — **Clarified**", "- Alice (@alice_tg) — **Clarified**"
     )
     ai = FakeAi(output)
 
@@ -259,7 +266,7 @@ async def test_daily_uses_confirmed_telegram_mention_for_mapped_contributor(
     context = json.loads(ai.calls[0]["context_pack"])
     item = context["trigger"]["window_evidence"][0]
     assert item.get("contributor_label") == "Alice (@alice_tg)"
-    assert "Alice (@alice_tg) clarified" in prepared.telegram_text
+    assert "Alice (@alice_tg) — **Clarified**" in prepared.telegram_text
 
 
 @pytest.mark.asyncio
@@ -309,7 +316,7 @@ async def test_daily_rejects_missing_or_unknown_mapped_contributor_mention(
     _confirm_alice_telegram_handle(tmp_path)
     output = _fixture("daily-active")
     output["telegram_text"] = output["telegram_text"].replace(
-        "• Alice clarified", f"• {contributor} clarified"
+        "- Alice — **Clarified**", f"- {contributor} — **Clarified**"
     )
 
     with pytest.raises(DailyRejected, match="Telegram mention"):
@@ -338,11 +345,11 @@ async def test_daily_rejects_borrowing_a_confirmed_handle_for_unmapped_evidence(
     )
     output = _fixture("daily-active")
     output["telegram_text"] = output["telegram_text"].replace(
-        "• Alice clarified", "• Alice (@alice_tg) clarified"
+        "- Alice — **Clarified**", "- Alice (@alice_tg) — **Clarified**"
     ).replace(
-        "\n\n🚀 Next up",
-        "\n• Bob (@alice_tg) reviewed the validation edge cases, helping the group "
-        "find integration risks earlier. [tg:tawg:2]\n\n🚀 Next up",
+        "\n\n## 🚀 **Next up**",
+        "\n- Bob (@alice_tg) — **Reviewed** the validation edge cases, helping the "
+        "group find integration risks earlier. [tg:tawg:2]\n\n## 🚀 **Next up**",
     )
     output["citations"].append("tg:tawg:2")
 
@@ -360,10 +367,10 @@ async def test_daily_rejects_a_confirmed_mention_outside_what_moved(
     _confirm_alice_telegram_handle(tmp_path)
     output = _fixture("daily-active")
     output["telegram_text"] = output["telegram_text"].replace(
-        "• Alice clarified", "• Alice (@alice_tg) clarified"
+        "- Alice — **Clarified**", "- Alice (@alice_tg) — **Clarified**"
     ).replace(
-        "Pick one edge case and share it with the group. 🤝",
-        "Alice (@alice_tg), pick one edge case and share it with the group. 🤝",
+        "That's one less fog bank for the builders.",
+        "Alice (@alice_tg), that's one less fog bank for the builders.",
     )
 
     with pytest.raises(DailyRejected, match="Telegram mention"):
@@ -492,7 +499,7 @@ async def test_daily_requires_fresh_success_from_every_required_layer(tmp_path: 
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "**agent-sdk**", "**agent-sdk — priority 1**"
+                    "### agent-sdk", "### agent-sdk — priority 1"
                 )
             ),
             "ranking",
@@ -500,7 +507,7 @@ async def test_daily_requires_fresh_success_from_every_required_layer(tmp_path: 
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "**agent-sdk**", "**Tier 1 winner: agent-sdk**"
+                    "### agent-sdk", "### Tier 1 winner: agent-sdk"
                 )
             ),
             "ranking",
@@ -508,7 +515,7 @@ async def test_daily_requires_fresh_success_from_every_required_layer(tmp_path: 
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "**agent-sdk**", "**agent-sdk — Priority: 1**"
+                    "### agent-sdk", "### agent-sdk — Priority: 1"
                 )
             ),
             "ranking",
@@ -535,14 +542,18 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
     [
         (
             lambda value: value.update(
-                telegram_text=value["telegram_text"].replace("UTC\n", "UTC — extra commentary\n", 1)
+                telegram_text=value["telegram_text"].replace(
+                    "_2026-08-22 23:00 → 2026-08-23 23:00 UTC_",
+                    "_2026-08-22 23:00 → 2026-08-23 23:00 UTC — extra commentary_",
+                    1,
+                )
             ),
-            "title",
+            "window",
         ),
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "\n🤝 What moved\n", "\nToday, What moved matters.\n"
+                    "\n## 🤝 **What moved**\n", "\nToday, What moved matters.\n"
                 )
             ),
             "section",
@@ -550,7 +561,8 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "\n🚀 Next up\n", "\n🤝 What moved\n\n🚀 Next up\n"
+                    "\n## 🚀 **Next up**\n",
+                    "\n## 🤝 **What moved**\n\n## 🚀 **Next up**\n",
                 )
             ),
             "section",
@@ -558,8 +570,8 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "integration. [tg:tawg:1]",
-                    "integration. [tg:tawg:1] trailing text",
+                    "Trustless AI integration. [tg:tawg:1]",
+                    "Trustless AI integration. [tg:tawg:1] trailing text",
                     1,
                 )
             ),
@@ -568,8 +580,8 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "integration. [tg:tawg:1]",
-                    "integration. [tg:tawg:1] [tg:tawg:1]",
+                    "Trustless AI integration. [tg:tawg:1]",
+                    "Trustless AI integration. [tg:tawg:1] [tg:tawg:1]",
                     1,
                 )
             ),
@@ -578,8 +590,8 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "• Alice clarified ERC-8004",
-                    "• Alice [made-up:next] clarified ERC-8004",
+                    "- Alice — **Clarified** ERC-8004",
+                    "- Alice [made-up:next] — **Clarified** ERC-8004",
                 )
             ),
             "citation",
@@ -587,8 +599,8 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "• Alice clarified ERC-8004",
-                    "• Alice [tg:tawg:1] clarified ERC-8004",
+                    "- Alice — **Clarified** ERC-8004",
+                    "- Alice [tg:tawg:1] — **Clarified** ERC-8004",
                 )
             ),
             "citation",
@@ -596,8 +608,8 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "integration. [tg:tawg:1]",
-                    "integration [made-up:999]. [tg:tawg:1]",
+                    "Trustless AI integration. [tg:tawg:1]",
+                    "Trustless AI integration [made-up:999]. [tg:tawg:1]",
                     1,
                 )
             ),
@@ -606,10 +618,10 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "• Alice clarified ERC-8004 validation behavior, advancing the next "
+                    "- Alice — **Clarified** ERC-8004 validation behavior, advancing the next "
                     "implementation pass and giving the group a clearer path toward verifiable "
                     "Trustless AI integration. [tg:tawg:1]",
-                    "- Alice clarified ERC-8004 validation behavior without a citation.",
+                    "• Alice clarified ERC-8004 validation behavior without a citation.",
                 )
             ),
             "bullet",
@@ -617,8 +629,9 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "\n🚀 Next up\n",
-                    "\n🙏 Appreciation\nThanks to everyone who contributed.\n\n🚀 Next up\n",
+                    "\n## 🚀 **Next up**\n",
+                    "\n## 🙏 **Appreciation**\n\nThanks to everyone who contributed."
+                    "\n\n## 🚀 **Next up**\n",
                 )
             ),
             "Appreciation",
@@ -626,9 +639,11 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "The validation direction became clearer and easier to build on this window.\n",
-                    "The validation direction became clearer and easier to build on this window.\n"
-                    "Alice merged PR 42 and resolved the blocker without a citation.\n",
+                    "_The validation direction became clearer and easier to build "
+                    "on this window._\n",
+                    "_The validation direction became clearer and easier to build "
+                    "on this window._\n"
+                    "\nAlice merged PR 42 and resolved the blocker without a citation.\n",
                 )
             ),
             "structure",
@@ -636,8 +651,8 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "The validation direction became clearer and easier to build on this window.",
-                    "The implementation details are at https://example.com/change.",
+                    "_The validation direction became clearer and easier to build on this window._",
+                    "_The implementation details are at https://example.com/change._",
                 )
             ),
             "synthesis",
@@ -645,8 +660,9 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "\n🚀 Next up\n",
-                    "\n🙏 Shout-outs\nThanks to everyone who contributed.\n\n🚀 Next up\n",
+                    "\n## 🚀 **Next up**\n",
+                    "\n## 🙏 **Shout-outs**\n\nThanks to everyone who contributed."
+                    "\n\n## 🚀 **Next up**\n",
                 )
             ),
             "section",
@@ -654,12 +670,55 @@ async def test_daily_rejects_language_persona_and_evidence_policy_violations(
         (
             lambda value: value.update(
                 telegram_text=value["telegram_text"].replace(
-                    "\nPick one edge case and share it with the group. 🤝",
+                    "\n## 🤖 **Trusty's take**\n",
                     "\n**Shout-outs**\nThanks to everyone who contributed."
-                    "\n\nPick one edge case and share it with the group. 🤝",
+                    "\n\n## 🤖 **Trusty's take**\n",
                 )
             ),
             "section",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "### ✅ **TODOs**", "### ✅ **Act**"
+                )
+            ),
+            "section",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "> **Validation path clarified** — The next implementation pass has a "
+                    "clearer direction. [tg:tawg:1]",
+                    "> **Validation path clarified** — The next implementation pass has a "
+                    "clearer direction.",
+                )
+            ),
+            "highlight",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "> That's one less fog bank for the builders.",
+                    "> Alice (@alice_tg), that's one less fog bank for the builders.",
+                )
+            ),
+            "Telegram mention",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace(
+                    "> That's one less fog bank for the builders.",
+                    "> That's one less fog bank for the builders. [tg:tawg:1]",
+                )
+            ),
+            "Trusty",
+        ),
+        (
+            lambda value: value.update(
+                telegram_text=value["telegram_text"].replace("\n>\n", "\n", 1)
+            ),
+            "Trusty",
         ),
     ],
 )

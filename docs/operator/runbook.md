@@ -41,7 +41,35 @@ python3.12 -m tawg_bot.cli daily-dry-run --window-end 2026-08-23T23:00:00Z
 
 `tick --observe-only` is not a no-write local preview: normal runtime checkpoints may commit and publish safe repository state. Reserve it for the staged Actions rollout or replace its checkpoint in a controlled test harness.
 
-Run real Actions and enter secrets only through the GitHub UI. Keep Telegram privacy mode disabled, webhook unset, and exactly one `getUpdates` consumer.
+Run real Actions and enter secrets only through the GitHub or Modal UI. Keep Telegram privacy mode disabled. In polling mode, keep the webhook unset and exactly one `getUpdates` consumer. In webhook mode, keep the verified webhook set, run no `getUpdates` consumer, and use only `maintenance-tick` for scheduled maintenance. See [`modal.md`](modal.md) for the authorized transition order.
+
+During Modal shadow, `TAWG_MODAL_MAINTENANCE_ENABLED` is exactly `false`; GitHub polling remains
+the only scheduler and Telegram consumer.
+
+## Runtime-mode incident boundary
+
+`TAWG_RUNTIME_MODE` is authoritative. `poll` invokes `tick`; `webhook` invokes
+`maintenance-tick`; `observe` uses the corresponding command without delivery. Never switch to
+polling while `getWebhookInfo.result.url` is non-empty. A deployment does not authorize
+`setWebhook`, `deleteWebhook`, or a runtime-mode change.
+
+After production webhook registration, disable the scheduled Actions workflow and confirm no run
+is active. Only after Actions is disabled and idle may you set
+`TAWG_MODAL_MAINTENANCE_ENABLED` to exact lowercase `true` and redeploy the exact reviewed commit
+currently on `main`; only then send the acceptance mention. `maintenance-tick` skips `getUpdates`
+but still processes replies, so running it beside the Modal worker would create two reply workers.
+Retain the workflow definition for manual fallback; re-enable it only after the no-drop rollback
+sequence. The full authoritative order is [`modal.md`](modal.md#webhook-cutover).
+
+For webhook failure, preserve queued updates. First set `TAWG_MODAL_MAINTENANCE_ENABLED` to exact
+`false` and redeploy the exact reviewed `main`. A pre-delete drain is useful but cannot replace the
+mandatory post-delete drain. Then call `deleteWebhook` with `drop_pending_updates=false` and verify
+`getWebhookInfo.result.url` is empty. After the URL is empty, require that all retries are exhausted
+and zero active, queued, or retrying `repository_worker` calls remain. Only afterward restore
+`TAWG_RUNTIME_MODE=poll` and the single scheduled Actions polling consumer. Reconcile canonical
+pending jobs and delivery state; do not delete receipts/cursors or automatically resend
+`ambiguous` deliveries. The complete authoritative procedure is in
+[`modal.md`](modal.md#rollback-without-dropping-updates).
 
 ## Persistence audit
 
