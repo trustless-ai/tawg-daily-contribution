@@ -416,10 +416,22 @@ class BotReplyService:
                 return None
 
             if route is BotRoute.REFUSE:
+                username = self.router.bot_username
                 text = (
-                    "I can help with TAWG knowledge, local identity corrections, evidence-backed "
-                    "knowledge corrections, and relevant source suggestions. I can't take that "
-                    "action."
+                    "That request is outside the part of TAWG I can safely act on, so I didn't "
+                    "run it.\n\n"
+                    "Here are a few things I can help with:\n"
+                    f"- **TAWG or ERC questions** — `@{username} what is ERC-8183?`\n"
+                    "- **Evidence-backed knowledge updates** — "
+                    f"`@{username} please add OCP to the knowledge; source: <URL>`\n"
+                    "- **TAWG-local identity corrections** — "
+                    f"`@{username} please update this member's TAWG identity to ...`\n"
+                    "- **Relevant source suggestions** — "
+                    f"`@{username} please track this TAWG source: https://...`\n"
+                    "- **Conversation follow-ups** — reply directly to one of my messages with "
+                    "the missing detail or evidence.\n\n"
+                    "If your request fits one of those, try one of the examples above and I'll "
+                    "take another look."
                 )
                 ready = processing.model_copy(
                     update={

@@ -1484,6 +1484,32 @@ async def test_out_of_scope_mention_is_refused_after_ai_route_only(tmp_path: Pat
 
 
 @pytest.mark.asyncio
+async def test_refusal_explains_supported_work_with_copyable_triggers(
+    tmp_path: Path,
+) -> None:
+    job = seed(tmp_path, "@trustless_ai_bot deploy this contract")
+    ai = ContextualFakeAi("refuse", reply_result(chinese=False))
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ai,
+        bot_username="trustless_ai_bot",
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.refusal
+    assert "Here are a few things I can help with" in prepared.reply_text
+    refusal_text = prepared.reply_text.casefold()
+    assert "tawg or erc questions" in refusal_text
+    assert "evidence-backed knowledge updates" in refusal_text
+    assert "tawg-local identity corrections" in refusal_text
+    assert "relevant source suggestions" in refusal_text
+    assert "`@trustless_ai_bot what is ERC-8183?`" in prepared.reply_text
+    assert "`@trustless_ai_bot please add" in prepared.reply_text
+    assert "reply directly to one of my messages" in prepared.reply_text
+    assert [call["job_type"] for call in ai.calls] == ["route"]
+
+
+@pytest.mark.asyncio
 async def test_failed_model_attempt_returns_job_to_retryable_pending_state(
     tmp_path: Path,
 ) -> None:
