@@ -160,6 +160,41 @@ def test_rejects_hash_mismatch_unknown_or_missing_citations_and_private_data(
             engine.inspect(change)
 
 
+def test_new_frontmatter_provenance_must_be_declared_by_the_transaction(
+    tmp_path: Path,
+) -> None:
+    seed_project(tmp_path)
+    timestamp = datetime(2026, 8, 22, 23, 1, tzinfo=UTC)
+    extra = SourceRecord.from_text(
+        record_id="tg:tawg:2",
+        source_type=SourceType.TELEGRAM_MESSAGE,
+        source_locator="repo:data/telegram/2026/08/messages.jsonl#tg:tawg:2",
+        author_person_id="mallory",
+        author_source_handle="Mallory",
+        created_at=timestamp,
+        updated_at=timestamp,
+        text_original="Unrelated but globally known evidence.",
+        ingested_at=timestamp,
+    )
+    source_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    source_path.write_bytes(
+        JsonlCollection(source_path, SourceRecord).merged_bytes([extra])
+    )
+    content = page("New", "Supported.").replace(
+        '  - "tg:tawg:1"\n',
+        '  - "tg:tawg:1"\n  - "tg:tawg:2"\n',
+    )
+    change = transaction(
+        "knowledge/new.md",
+        None,
+        content,
+        citations=["tg:tawg:1"],
+    )
+
+    with pytest.raises(TransactionRejected, match="undeclared provenance"):
+        VaultTransactionEngine(tmp_path).inspect(change)
+
+
 def test_rejects_broken_wikilinks_case_collisions_and_symlink_escape(tmp_path: Path) -> None:
     seed_project(tmp_path)
     engine = VaultTransactionEngine(tmp_path)

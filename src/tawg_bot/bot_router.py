@@ -9,7 +9,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from time import monotonic
 from typing import Any, Literal, Protocol
 
@@ -34,6 +34,7 @@ from tawg_bot.models import (
     JobStatus,
     PendingBotJob,
     Relation,
+    RouteContextScope,
     SourceRecord,
     SourceType,
     StrictModel,
@@ -71,92 +72,12 @@ class ReplyRejected(ValueError):
 
 
 class BotRouter:
-    _FORBIDDEN = re.compile(
-        r"\b(shell|terminal|command|python code|javascript code|change (?:your )?policy|"
-        r"ignore (?:prior|previous)|another (?:telegram )?group|destination|"
-        r"external (?:post|comment|action)|across every community|cross[- ]tawg|"
-        r"execute .{0,30}(?:workflow|on-chain)|"
-        r"deploy|sign transaction|private key|credential|model endpoint|write .{0,30} code|"
-        r"执行命令|修改策略|换群|私钥|链上执行)\b",
-        re.IGNORECASE,
-    )
-    _IDENTITY = re.compile(
-        r"\b(identity correction|merge (?:my )?identity|same person|"
-        r"my (?:handle|username)|I am @)\b|身份更正|身份纠正|这是我的账号",
-        re.IGNORECASE,
-    )
-    _KNOWLEDGE_CORRECTION = re.compile(
-        r"\b(correction|correct the|page is wrong|should say|old (?:rule|fact)|"
-        r"update (?:the )?knowledge|add [^\n]{1,80} to (?:your|the) knowledge|"
-        r"record [^\n]{1,80} (?:in|into) (?:your|the) knowledge)\b|"
-        r"更正|纠正|知识库.{0,10}错|应该是",
-        re.IGNORECASE,
-    )
-    _SOURCE = re.compile(
-        r"\b(source suggestion|suggested source|add (?:this )?(?:source|link))\b|"
-        r"资料建议|来源建议|这个链接|这个帖子|https?://",
-        re.IGNORECASE,
-    )
-    _TAWG = re.compile(
-        r"\b(TAWG|trustless[- ]ai|ERC[- ]?\d+|agent[- ]ercs|validation|settlement|"
-        r"ethereum magicians|repository|repo|working group)\b",
-        re.IGNORECASE,
-    )
-    _QUESTION = re.compile(
-        r"[?\uFF1F]|\b(what|why|when|where|who|how|which|status|explain|summarize)\b",
-        re.I,
-    )
-    _RECENT_DISCUSSION_QUESTION = re.compile(
-        r"^\s*(?:what (?:did we discuss|we discussed)(?: (?:just now|recently))?|"
-        r"(?:please )?summari[sz]e (?:what we discussed|the (?:recent|latest) discussion))"
-        r"\s*[?!.]*$",
-        re.IGNORECASE,
-    )
-    _BOT_SOCIAL = re.compile(
-        r"^\s*(?:(?:looks?|sounds?) good(?:[!,. ]+(?:you(?:'re| are|\u2019re) )?"
-        r"(?:online|here|back|ready|present))?|(?:you(?:'re| are|\u2019re) )?"
-        r"(?:online|here|back|ready|present)|(?:hi|hello|hey|thanks|thank you|welcome|"
-        r"good (?:morning|afternoon|evening))(?:[!,. ]+(?:you(?:'re| are|\u2019re) )?"
-        r"(?:online|here|back|ready|present))?)\s*[^\w]*$",
-        re.IGNORECASE,
-    )
-    _MUTATION_AUTHORIZATION = re.compile(
-        r"^\s*(?:(?:please|kindly)\s+)?(?:add|record|save|store|remember|correct|"
-        r"update|create|suggest)\b|"
-        r"^\s*(?:can|could|would|will)\s+you\s+(?:please\s+)?(?:add|record|save|"
-        r"store|remember|correct|update|create|suggest)\b|"
-        r"^\s*(?:correction|source suggestion|suggested source)\b|"
-        r"^\s*I\s+(?:suggest|recommend)\b|"
-        r"\b(?:page|knowledge|fact|rule)\s+is\s+wrong\b|\bshould say\b|"
-        r"^\s*(?:请)?(?:添加|记录|保存|记住|更正|纠正|更新|创建|建议)",
-        re.IGNORECASE,
-    )
-
     def __init__(self, bot_username: str) -> None:
         self.bot_username = bot_username.casefold().lstrip("@")
         self._erc_planner = ErcQueryPlanner()
 
-    def classify(self, text: str) -> BotRoute:
-        cleaned = self._clean(text)
-        if self._FORBIDDEN.search(cleaned):
-            return BotRoute.REFUSE
-        if self._IDENTITY.search(cleaned):
-            return BotRoute.IDENTITY_CORRECTION
-        if self._KNOWLEDGE_CORRECTION.search(cleaned):
-            return BotRoute.KNOWLEDGE_CORRECTION
-        if self._SOURCE.search(cleaned):
-            return BotRoute.SOURCE_SUGGESTION
-        if self._TAWG.search(cleaned) and self._QUESTION.search(cleaned):
-            return BotRoute.KNOWLEDGE_QUESTION
-        if self._RECENT_DISCUSSION_QUESTION.fullmatch(cleaned):
-            return BotRoute.KNOWLEDGE_QUESTION
-        if self._BOT_SOCIAL.fullmatch(cleaned):
-            return BotRoute.COORDINATION
-        return BotRoute.REFUSE
-
     def authorize_ai_route(
         self,
-        text: str,
         route: BotRoute,
         trigger_kind: TriggerKind = TriggerKind.MENTION,
     ) -> BotRoute:
@@ -168,34 +89,10 @@ class BotRouter:
             return BotRoute.IGNORE
         if route is BotRoute.IGNORE:
             return BotRoute.REFUSE
-        cleaned = self._clean(text)
-        if self._FORBIDDEN.search(cleaned):
-            return BotRoute.REFUSE
-        if route is BotRoute.IDENTITY_CORRECTION and not self._IDENTITY.search(cleaned):
-            return BotRoute.REFUSE
-        if route in {
-            BotRoute.KNOWLEDGE_CORRECTION,
-            BotRoute.SOURCE_SUGGESTION,
-        } and not self._MUTATION_AUTHORIZATION.search(cleaned):
-            return BotRoute.REFUSE
         return route
 
     def erc_query(self, text: str) -> ErcQuery | None:
-        if self.classify(text) not in {
-            BotRoute.KNOWLEDGE_QUESTION,
-            BotRoute.KNOWLEDGE_CORRECTION,
-        }:
-            return None
         return self._erc_planner.plan(text)
-
-    def is_recent_discussion_question(self, text: str) -> bool:
-        cleaned = self._clean(text)
-        return self._RECENT_DISCUSSION_QUESTION.fullmatch(cleaned) is not None
-
-    def _clean(self, text: str) -> str:
-        return re.sub(
-            rf"@{re.escape(self.bot_username)}\b", "", text, flags=re.IGNORECASE
-        ).strip()
 
 
 @dataclass(frozen=True, slots=True)
@@ -205,8 +102,6 @@ class _ReplyRepairSpec:
     refusal_sha256: str
     policy_version: str
     reason_code: str
-    route: BotRoute
-    recent_discussion: bool = False
 
 
 class ReplyRepairReconciler:
@@ -224,8 +119,6 @@ class ReplyRepairReconciler:
             ),
             policy_version="recent-discussion-v1",
             reason_code="recent_discussion_route_updated",
-            route=BotRoute.KNOWLEDGE_QUESTION,
-            recent_discussion=True,
         ),
         "reply:tg:tawg:3446": _ReplyRepairSpec(
             trigger_id="tg:tawg:3446",
@@ -237,7 +130,17 @@ class ReplyRepairReconciler:
             ),
             policy_version="knowledge-correction-v1",
             reason_code="knowledge_correction_route_updated",
-            route=BotRoute.KNOWLEDGE_CORRECTION,
+        ),
+        "reply:tg:tawg:3470": _ReplyRepairSpec(
+            trigger_id="tg:tawg:3470",
+            trigger_sha256=(
+                "2110c0c18a6ce873a957d9b18cbf577b85fe7c2d2bc18cfe874db14231c06e70"
+            ),
+            refusal_sha256=(
+                "c88b75647067456eeb21dc284da1e93b36df61f1afc102ad6a913f19a6fde50e"
+            ),
+            policy_version="correction-followup-v1",
+            reason_code="correction_followup_route_updated",
         ),
     }
 
@@ -266,11 +169,6 @@ class ReplyRepairReconciler:
                 or prepared_text is None
                 or hashlib.sha256(prepared_text.encode("utf-8")).hexdigest()
                 != repair_spec.refusal_sha256
-                or self.router.classify(trigger.text_original) is not repair_spec.route
-                or (
-                    repair_spec.recent_discussion
-                    and not self.router.is_recent_discussion_question(trigger.text_original)
-                )
             ):
                 continue
             repair_id = f"reply-repair:{repair_spec.policy_version}:{trigger.record_id}"
@@ -281,6 +179,7 @@ class ReplyRepairReconciler:
                 trigger_record_id=original.trigger_record_id,
                 reply_to_message_id=original.reply_to_message_id,
                 message_thread_id=original.message_thread_id,
+                trigger_kind=original.trigger_kind,
                 repair_of_job_id=original.job_id,
                 repair_reason_code=repair_spec.reason_code,
                 created_at=now,
@@ -376,7 +275,7 @@ class _LocalErcContext:
 
 
 class BotReplyService:
-    _ROUTER_VERSION = "contextual-ai-v2"
+    _ROUTER_VERSION = "contextual-ai-v4"
     _ROUTE_TIMEOUT_SECONDS = 60.0
     _ROUTE_CONTEXT_MAX_CHARS = 64_000
     _ROUTE_CONTEXT_MAX_PRIOR_RECORDS = 100
@@ -451,6 +350,7 @@ class BotReplyService:
             )
             routing_is_current = (
                 processing.classified_route is not None
+                and processing.router_context_scope is not None
                 and processing.router_context_sha256 == route_context.sha256
                 and processing.router_version == self._ROUTER_VERSION
             )
@@ -459,6 +359,7 @@ class BotReplyService:
                     processing = processing.model_copy(
                         update={
                             "classified_route": None,
+                            "router_context_scope": None,
                             "router_context_sha256": None,
                             "router_version": None,
                             "routed_at": None,
@@ -477,13 +378,14 @@ class BotReplyService:
                     ),
                 )
                 route = self.router.authorize_ai_route(
-                    trigger.text_original,
                     decision.route,
                     processing.trigger_kind,
                 )
+                context_scope = decision.context_scope
                 processing = processing.model_copy(
                     update={
                         "classified_route": route,
+                        "router_context_scope": context_scope,
                         "router_context_sha256": decision.context_sha256,
                         "router_version": self._ROUTER_VERSION,
                         "routed_at": now,
@@ -493,7 +395,9 @@ class BotReplyService:
                 self._publish_jobs(jobs, f"{job_id}:routed")
             else:
                 assert processing.classified_route is not None
+                assert processing.router_context_scope is not None
                 route = processing.classified_route
+                context_scope = processing.router_context_scope
 
             if route is BotRoute.IGNORE:
                 ignored = processing.model_copy(
@@ -533,7 +437,11 @@ class BotReplyService:
                 return self._prepared(ready)
 
             failure_code = "reply_context_failed"
-            erc_query = self.router.erc_query(trigger.text_original)
+            erc_query = (
+                self.router.erc_query(trigger.text_original)
+                if context_scope is RouteContextScope.ERC
+                else None
+            )
             local_erc_context: _LocalErcContext | None = None
             if erc_query is not None:
                 local_erc_context = self._local_erc_context(
@@ -558,6 +466,7 @@ class BotReplyService:
                 records,
                 processing,
                 route,
+                context_scope,
                 evidence_pack=evidence_pack,
                 local_erc_context=local_erc_context,
             )
@@ -574,6 +483,9 @@ class BotReplyService:
                 raw,
                 trigger,
                 route,
+                context_scope,
+                processing.trigger_kind,
+                self._has_audited_bot_parent(trigger, records),
                 context.allowed_citations,
                 context.evidence_pack,
                 job_id,
@@ -759,6 +671,7 @@ class BotReplyService:
         records: Mapping[str, SourceRecord],
         job: PendingBotJob,
         route: BotRoute,
+        context_scope: RouteContextScope,
         *,
         evidence_pack: EvidencePack | None,
         local_erc_context: _LocalErcContext | None = None,
@@ -785,24 +698,18 @@ class BotReplyService:
             record
             for record in records.values()
             if abs(record.created_at - trigger.created_at) <= timedelta(minutes=30)
+            and record.created_at <= trigger.created_at
             and record.record_id not in seen
         ]
-        recent_discussion = self.router.is_recent_discussion_question(
-            trigger.text_original
-        )
-        if recent_discussion:
-            nearby = [
-                record for record in nearby if record.created_at <= trigger.created_at
-            ]
         nearby.sort(key=lambda record: (record.created_at, record.record_id))
         retrieved_items = (
             []
-            if recent_discussion
+            if context_scope is RouteContextScope.CONVERSATION
             else VaultRetriever(self.root).query(trigger.text_original, top_k=16)
         )
         retrieved: list[dict[str, Any]] = (
             list(local_erc_context.pages)
-            if local_erc_context is not None and not recent_discussion
+            if local_erc_context is not None
             else []
         )
         local_erc_paths = (
@@ -833,22 +740,36 @@ class BotReplyService:
             for record in records.values()
             if record.source_payload.get("message_kind") == "audited_bot_delivery"
         }
-        if recent_discussion:
+        if route is BotRoute.KNOWLEDGE_QUESTION:
             local_ids.discard(trigger.record_id)
-            local_ids = {
-                record_id
-                for record_id in local_ids
-                if record_id in records
-                and records[record_id].created_at <= trigger.created_at
-            }
         allowed_citations: frozenset[str]
         citation_entries: list[dict[str, str]]
         if route is BotRoute.COORDINATION:
             allowed_citations = frozenset()
             citation_entries = []
         elif evidence_pack is not None:
-            allowed_citations = frozenset(evidence_pack.citation_allowlist)
-            citation_entries = [{"url": url} for url in evidence_pack.citation_allowlist]
+            correction_local_ids = (
+                ({trigger.record_id} | {record.record_id for record in chain})
+                & local_ids
+                if route is BotRoute.KNOWLEDGE_CORRECTION
+                else set()
+            )
+            allowed_citations = frozenset(
+                correction_local_ids | set(evidence_pack.citation_allowlist)
+            )
+            citation_entries = [
+                {
+                    "record_id": record.record_id,
+                    "source_locator": record.source_locator,
+                }
+                for record in sorted(
+                    (records[record_id] for record_id in correction_local_ids),
+                    key=lambda item: (item.created_at, item.record_id),
+                )
+            ]
+            citation_entries.extend(
+                {"url": url} for url in evidence_pack.citation_allowlist
+            )
         else:
             local_erc_citations = (
                 local_erc_context.citations if local_erc_context is not None else ()
@@ -867,6 +788,7 @@ class BotReplyService:
             citation_entries.extend({"url": url} for url in local_erc_citations)
         trigger_context: dict[str, Any] = {
             "route": route.value,
+            "context_scope": context_scope.value,
             "record": trigger.model_dump(mode="json"),
         }
         if evidence_pack is not None:
@@ -996,6 +918,24 @@ class BotReplyService:
             },
         )
         return augmented
+
+    @staticmethod
+    def _has_audited_bot_parent(
+        trigger: SourceRecord,
+        records: Mapping[str, SourceRecord],
+    ) -> bool:
+        parent_ids = [
+            relation.target_record_id
+            for relation in trigger.relations
+            if relation.relation_type == "reply_to"
+        ]
+        if len(parent_ids) != 1:
+            return False
+        parent = records.get(parent_ids[0])
+        return (
+            parent is not None
+            and parent.source_payload.get("message_kind") == "audited_bot_delivery"
+        )
 
     def _audited_delivery_text(
         self,
@@ -1139,6 +1079,9 @@ class BotReplyService:
         raw: Mapping[str, Any],
         trigger: SourceRecord,
         route: BotRoute,
+        context_scope: RouteContextScope,
+        trigger_kind: TriggerKind,
+        has_audited_bot_parent: bool,
         allowed_citations: frozenset[str],
         evidence_pack: EvidencePack | None,
         job_id: str,
@@ -1237,6 +1180,34 @@ class BotReplyService:
         ):
             raise ReplyRejected("reply attempted an unauthorized correction")
         if result.correction_transaction is not None:
+            new_writes = [
+                write
+                for write in result.correction_transaction.writes
+                if write.expected_sha256 is None
+            ]
+            if new_writes:
+                write = new_writes[0]
+                path = PurePosixPath(write.path)
+                approved_content_path = (
+                    not path.is_absolute()
+                    and len(path.parts) >= 3
+                    and path.parts[:2]
+                    in {("knowledge", "topics"), ("knowledge", "repos")}
+                    and path.suffix.casefold() == ".md"
+                    and ".." not in path.parts
+                    and path.name.casefold() not in {"index.md", "hot.md"}
+                )
+                if (
+                    route is not BotRoute.KNOWLEDGE_CORRECTION
+                    or context_scope is not RouteContextScope.CONVERSATION
+                    or trigger_kind is not TriggerKind.REPLY_TO_BOT
+                    or not has_audited_bot_parent
+                    or len(result.correction_transaction.writes) != 1
+                    or len(new_writes) != 1
+                    or not approved_content_path
+                    or trigger.record_id not in write.citations
+                ):
+                    raise ReplyRejected("reply attempted an unauthorized page creation")
             allowed_transaction_citations = allowed_citations | correction_source_keys
             if any(
                 not set(write.citations).issubset(allowed_transaction_citations)

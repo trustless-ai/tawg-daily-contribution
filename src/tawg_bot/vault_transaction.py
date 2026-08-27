@@ -98,7 +98,7 @@ class VaultTransactionEngine:
             except PrivacyViolation as error:
                 raise TransactionRejected(f"privacy rejection: {error}") from None
             if target.suffix.casefold() == ".md":
-                self._validate_citations(write, known_sources)
+                self._validate_citations(write, known_sources, target)
             overrides[write.path] = payload
             if actual != hashlib.sha256(payload).hexdigest():
                 changed.append(write.path)
@@ -203,28 +203,66 @@ class VaultTransactionEngine:
             resolved.append((write, target))
         return resolved
 
-    def _validate_citations(self, write: VaultWrite, known_sources: Mapping[str, object]) -> None:
+    def _validate_citations(
+        self,
+        write: VaultWrite,
+        known_sources: Mapping[str, object],
+        target: Path,
+    ) -> None:
         if self.citation_scope is not None:
             self._validate_scoped_citations(write, known_sources)
-            return
-        if not write.citations:
-            raise TransactionRejected(f"Markdown write has no citations: {write.path}")
-        unknown = [source_id for source_id in write.citations if source_id not in known_sources]
-        if unknown:
-            raise TransactionRejected(f"unknown citation: {unknown[0]}")
+        else:
+            if not write.citations:
+                raise TransactionRejected(f"Markdown write has no citations: {write.path}")
+            unknown = [source_id for source_id in write.citations if source_id not in known_sources]
+            if unknown:
+                raise TransactionRejected(f"unknown citation: {unknown[0]}")
+            frontmatter, _ = parse_frontmatter(write.content)
+            source_ids = frontmatter.get("source_ids") if frontmatter is not None else None
+            if (
+                not isinstance(source_ids, list)
+                or not all(isinstance(source_id, str) for source_id in source_ids)
+                or not set(write.citations).issubset(source_ids)
+            ):
+                raise TransactionRejected(f"Markdown frontmatter omits citations: {write.path}")
+            unknown_frontmatter = [
+                source_id for source_id in source_ids if source_id not in known_sources
+            ]
+            if unknown_frontmatter:
+                raise TransactionRejected(f"unknown citation: {unknown_frontmatter[0]}")
+        self._validate_provenance_expansion(write, target)
+
+    @staticmethod
+    def _validate_provenance_expansion(write: VaultWrite, target: Path) -> None:
         frontmatter, _ = parse_frontmatter(write.content)
-        source_ids = frontmatter.get("source_ids") if frontmatter is not None else None
-        if (
-            not isinstance(source_ids, list)
-            or not all(isinstance(source_id, str) for source_id in source_ids)
-            or not set(write.citations).issubset(source_ids)
-        ):
-            raise TransactionRejected(f"Markdown frontmatter omits citations: {write.path}")
-        unknown_frontmatter = [
-            source_id for source_id in source_ids if source_id not in known_sources
-        ]
-        if unknown_frontmatter:
-            raise TransactionRejected(f"unknown citation: {unknown_frontmatter[0]}")
+        if frontmatter is None:
+            return
+        current_frontmatter: dict[str, object] = {}
+        if target.exists():
+            try:
+                parsed, _ = parse_frontmatter(target.read_text(encoding="utf-8"))
+            except UnicodeError:
+                raise TransactionRejected(
+                    f"existing Markdown is not valid UTF-8: {write.path}"
+                ) from None
+            current_frontmatter = parsed or {}
+        for key in ("source_ids", "telegram_record_ids"):
+            proposed = frontmatter.get(key, [])
+            current = current_frontmatter.get(key, [])
+            if not isinstance(proposed, list) or not all(
+                isinstance(value, str) for value in proposed
+            ):
+                continue
+            current_values = (
+                {value for value in current if isinstance(value, str)}
+                if isinstance(current, list)
+                else set()
+            )
+            added = set(proposed) - current_values
+            if not added.issubset(write.citations):
+                raise TransactionRejected(
+                    f"undeclared provenance in Markdown frontmatter: {write.path}"
+                )
 
     def _validate_scoped_citations(
         self, write: VaultWrite, known_sources: Mapping[str, object]

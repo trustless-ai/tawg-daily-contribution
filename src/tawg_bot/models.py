@@ -152,6 +152,12 @@ class BotRoute(StrEnum):
     IGNORE = "ignore"
 
 
+class RouteContextScope(StrEnum):
+    CONVERSATION = "conversation"
+    KNOWLEDGE = "knowledge"
+    ERC = "erc"
+
+
 class PendingBotJob(StrictModel):
     schema_version: str = "tawg.pending-bot-job.v1"
     job_id: str
@@ -167,6 +173,7 @@ class PendingBotJob(StrictModel):
     refusal: bool = False
     safe_error_code: str | None = Field(default=None, max_length=64)
     classified_route: BotRoute | None = None
+    router_context_scope: RouteContextScope | None = None
     router_context_sha256: str | None = Field(
         default=None, pattern=r"^[a-f0-9]{64}$"
     )

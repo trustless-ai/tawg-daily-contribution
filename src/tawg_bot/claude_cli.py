@@ -85,7 +85,7 @@ class ClaudeCli:
         "knowledge": "v2",
         "reply": "v2",
         "daily": "v1",
-        "route": "v1",
+        "route": "v2",
     }
     _BACKEND_ENV = frozenset(
         {
