@@ -1,6 +1,6 @@
 [
   {
-    "attempts": 2,
+    "attempts": 3,
     "classified_route": "knowledge_correction",
     "created_at": "2026-08-27T14:29:40.281306Z",
     "job_id": "reply-repair:knowledge-correction-v1:tg:tawg:3446",
@@ -19,7 +19,7 @@
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "pending",
     "trigger_record_id": "tg:tawg:3446",
-    "updated_at": "2026-08-27T15:00:52.868096Z"
+    "updated_at": "2026-08-27T16:00:07.367669Z"
   },
   {
     "attempts": 4,
@@ -283,24 +283,28 @@
     "updated_at": "2026-08-27T15:00:52.868096Z"
   },
   {
-    "attempts": 0,
-    "classified_route": null,
+    "attempts": 1,
+    "classified_route": "knowledge_question",
     "created_at": "2026-08-27T16:00:07.367669Z",
     "job_id": "reply:tg:tawg:3473",
     "message_thread_id": 16,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "tg:tawg:3127",
+      "tg:tawg:3022",
+      "tg:tawg:2049"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "Hey Jimmy! Today's thread is just warming up — the only visible activity so far is a test message and your question. Here's the freshest substantive work from recent TAWG progress:\n\n**Context provenance on verdict proofs** — /review's verdict proof now carries a `context_provenance` label: `caller_asserted_unverified` (the honest default for every current call, since context is free text with no binding) or `bound_to_verified_decision_ref` (when a related proof event is supplied and independently re-verified). It names what was already true but unlabeled — 5 new tests deployed. [tg:tawg:3127]\n\n**On-chain integration path** — Active discussion on what wiring /review to on-chain actually requires: full on-chain signature verification would need a new proof format not currently available, while the relayer pattern is much closer to what's already deployed. Worth flagging before implementation decisions are made. [tg:tawg:3022]\n\n**Precedence policy delta next step** — Planning for Δ(policy_version, request_class) to replace the current flat +60s, with a short-class/long-class pair and four negatives. Work hasn't started yet — depends on first working out what the real request classes should be and whether artifact_type and SLA-tier are the same axis or distinct. [tg:tawg:2049]",
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
     "reply_to_message_id": 3473,
-    "routed_at": null,
-    "router_context_sha256": null,
-    "router_version": null,
+    "routed_at": "2026-08-27T16:00:07.367669Z",
+    "router_context_sha256": "647e3c4fdfaad109e9a23f97291d4986903d59d53562d118ee8ec98ae490814b",
+    "router_version": "contextual-ai-v1",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_record_id": "tg:tawg:3473",
     "updated_at": "2026-08-27T16:00:07.367669Z"
   }
