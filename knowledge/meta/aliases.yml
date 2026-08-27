@@ -19,6 +19,12 @@ people:
     handles:
       magicians:
       - damonzwicker
+  damon-zwicker-2:
+    display_names:
+    - Damon Zwicker
+    handles:
+      telegram:
+      - damonzwicker
   j:
     display_names:
     - J
