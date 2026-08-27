@@ -54,7 +54,11 @@ async def test_supported_correction_replaces_current_fact_without_touching_sourc
         "refusal": False,
     }
 
-    prepared = await BotReplyService(tmp_path, ai=FakeAi(result), bot_username="bot").prepare(
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(result, route="knowledge_correction"),
+        bot_username="bot",
+    ).prepare(
         job.job_id, now=NOW + timedelta(minutes=2)
     )
 
@@ -85,7 +89,11 @@ async def test_ambiguous_correction_asks_for_evidence_without_writing(tmp_path: 
         if path.is_file()
     }
 
-    await BotReplyService(tmp_path, ai=FakeAi(result), bot_username="bot").prepare(
+    await BotReplyService(
+        tmp_path,
+        ai=FakeAi(result, route="knowledge_correction"),
+        bot_username="bot",
+    ).prepare(
         job.job_id, now=NOW + timedelta(minutes=2)
     )
 

@@ -34,8 +34,9 @@ def _context() -> ConversationContext:
 async def test_contextual_router_returns_one_closed_route() -> None:
     ai = FakeRouteAi(
         {
-            "schema_version": "tawg.route-result.v1",
+            "schema_version": "tawg.route-result.v2",
             "route": "knowledge_correction",
+            "context_scope": "conversation",
         }
     )
 
@@ -47,6 +48,7 @@ async def test_contextual_router_returns_one_closed_route() -> None:
     )
 
     assert decision.route is BotRoute.KNOWLEDGE_CORRECTION
+    assert decision.context_scope.value == "conversation"
     assert decision.context_sha256 == "a" * 64
     assert ai.calls == [
         {
@@ -63,11 +65,26 @@ async def test_contextual_router_returns_one_closed_route() -> None:
 @pytest.mark.parametrize(
     "result",
     [
-        {"schema_version": "tawg.route-result.v1", "route": "shell"},
         {
-            "schema_version": "tawg.route-result.v1",
+            "schema_version": "tawg.route-result.v2",
+            "route": "shell",
+            "context_scope": "knowledge",
+        },
+        {
+            "schema_version": "tawg.route-result.v2",
             "route": "coordination",
+            "context_scope": "conversation",
             "reasoning": "hidden reasoning must not cross the boundary",
+        },
+        {
+            "schema_version": "tawg.route-result.v2",
+            "route": "knowledge_question",
+            "context_scope": "open_web",
+        },
+        {
+            "schema_version": "tawg.route-result.v2",
+            "route": "coordination",
+            "context_scope": "erc",
         },
     ],
 )
