@@ -549,8 +549,11 @@ class DailyService:
     def _mention_labels(self, evidence: tuple[DailyEvidence, ...]) -> dict[str, str]:
         try:
             aliases = AliasRegistry.from_yaml(self.root / "knowledge/meta/aliases.yml")
-            bindings: dict[str, tuple[str | None, str | None]] = {}
-            for item in evidence:
+        except AliasError:
+            raise DailyRejected("invalid TAWG alias registry") from None
+        bindings: dict[str, tuple[str | None, str | None]] = {}
+        for item in evidence:
+            try:
                 label = (
                     aliases.telegram_mention_label(
                         source=item.source_kind,
@@ -559,20 +562,20 @@ class DailyService:
                     if item.author_person_id is not None
                     else None
                 )
-                binding = (item.author_person_id, label)
-                existing = bindings.get(item.citation)
-                if existing is not None and existing != binding:
-                    raise DailyRejected(
-                        "Daily citation has conflicting contributor mappings"
-                    )
-                bindings[item.citation] = binding
-            return {
-                citation: label
-                for citation, (_, label) in bindings.items()
-                if label is not None
-            }
-        except AliasError:
-            raise DailyRejected("invalid TAWG alias registry") from None
+            except AliasError:
+                if item.source_kind not in {"github", "magicians"}:
+                    raise DailyRejected("invalid TAWG alias registry") from None
+                label = None
+            binding = (item.author_person_id, label)
+            existing = bindings.get(item.citation)
+            if existing is not None and existing != binding:
+                raise DailyRejected("Daily citation has conflicting contributor mappings")
+            bindings[item.citation] = binding
+        return {
+            citation: label
+            for citation, (_, label) in bindings.items()
+            if label is not None
+        }
 
     def _validate_next_up(self, lines: list[str]) -> None:
         content = [line.strip() for line in lines if line.strip()]

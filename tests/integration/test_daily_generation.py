@@ -263,6 +263,40 @@ async def test_daily_uses_confirmed_telegram_mention_for_mapped_contributor(
 
 
 @pytest.mark.asyncio
+async def test_daily_keeps_external_evidence_with_an_unmappable_author(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    evidence = (
+        *_evidence(tmp_path),
+        DailyEvidence(
+            evidence_id="gh:tawg:commit:1",
+            source_kind="github",
+            source_url="https://github.com/trustless-ai/tawg-daily-contribution/commit/1",
+            created_at=datetime(2026, 8, 23, 14, tzinfo=UTC),
+            updated_at=datetime(2026, 8, 23, 14, tzinfo=UTC),
+            author_person_id="tawg knowledge bot",
+            text="The bot checkpointed its repository state.",
+        ),
+    )
+    ai = FakeAi(_fixture("daily-active"))
+
+    prepared = await DailyService(tmp_path, ai=ai).prepare(
+        WINDOW, readiness=_ready(), evidence=evidence
+    )
+
+    assert prepared is not None
+    context = json.loads(ai.calls[0]["context_pack"])
+    external = next(
+        item
+        for item in context["trigger"]["window_evidence"]
+        if item["source_kind"] == "github"
+    )
+    assert external["author_person_id"] == "tawg knowledge bot"
+    assert "contributor_label" not in external
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "contributor",
     ["Alice", "Alice (@not_alice)", "FakeAlice (@alice_tg)"],
