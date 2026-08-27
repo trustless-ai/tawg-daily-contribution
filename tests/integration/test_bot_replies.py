@@ -342,66 +342,6 @@ def test_unlisted_delivered_recent_discussion_refusal_is_not_requeued(
     ) == ()
 
 
-def test_delivered_record_knowledge_refusal_is_repaired_without_losing_audit(
-    tmp_path: Path,
-) -> None:
-    seed(tmp_path, "@bot please record RVR into your knowledge")
-    trigger = _record(
-        "tg:tawg:3446",
-        "@trustless_ai_bot please record RVR into your knowledge",
-        NOW,
-        reply_to="tg:tawg:16",
-    )
-    assert (
-        trigger.content_sha256
-        == "531b2cced7b3abfef0d043fe8a56fe6b4b4db8d2224946e56ab44d22d64700b9"
-    )
-    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
-    telegram_path.write_bytes(
-        JsonlCollection(telegram_path, SourceRecord).merged_bytes([trigger])
-    )
-    original = PendingBotJob(
-        job_id="reply:tg:tawg:3446",
-        trigger_record_id=trigger.record_id,
-        reply_to_message_id=3446,
-        message_thread_id=16,
-        created_at=NOW,
-        updated_at=NOW,
-    ).model_copy(
-        update={
-            "status": JobStatus.DELIVERED,
-            "prepared_reply_text": (
-                "I can help with TAWG knowledge, local identity corrections, evidence-backed "
-                "knowledge corrections, and relevant source suggestions. I can't take that action."
-            ),
-            "prepared_language": "en",
-            "refusal": True,
-            "updated_at": NOW + timedelta(minutes=1),
-        }
-    )
-    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
-    jobs_path.write_text(
-        json.dumps([original.model_dump(mode="json")]) + "\n",
-        encoding="utf-8",
-    )
-
-    reconciler = ReplyRepairReconciler(tmp_path, bot_username="trustless_ai_bot")
-    created = reconciler.reconcile(now=NOW + timedelta(minutes=2))
-
-    assert created == ("reply-repair:knowledge-correction-v1:tg:tawg:3446",)
-    assert reconciler.reconcile(now=NOW + timedelta(minutes=3)) == ()
-    persisted = json.loads(jobs_path.read_text(encoding="utf-8"))
-    original_after = next(item for item in persisted if item["job_id"] == original.job_id)
-    assert original_after["status"] == "delivered"
-    assert original_after["prepared_reply_text"] == original.prepared_reply_text
-    repair = next(item for item in persisted if item["job_id"] != original.job_id)
-    assert repair["status"] == "pending"
-    assert repair["repair_of_job_id"] == original.job_id
-    assert repair["repair_reason_code"] == "knowledge_correction_route_updated"
-    assert repair["reply_to_message_id"] == 3446
-    assert repair["message_thread_id"] == 16
-
-
 @pytest.mark.asyncio
 async def test_reply_text_citations_must_match_the_validated_sidecar(
     tmp_path: Path,

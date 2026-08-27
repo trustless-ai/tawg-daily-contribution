@@ -1,11 +1,13 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import shutil
+from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import httpx
 import pytest
@@ -19,8 +21,9 @@ from tawg_bot.daily_evidence import DailyEvidence
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import RefreshResult
 from tawg_bot.live_evidence import LiveEvidenceService
-from tawg_bot.models import PendingBotJob
+from tawg_bot.models import DeliveryStatus, PendingBotJob
 from tawg_bot.persistence_guard import PersistenceRejected
+from tawg_bot.repository_session import CommandResult, RepositoryConflict, RepositorySession
 from tawg_bot.runtime import (
     ProductionRuntime,
     RuntimeFailure,
@@ -28,7 +31,11 @@ from tawg_bot.runtime import (
     SourceCheckSummary,
     _LivePipeline,
 )
+from tawg_bot.scheduler import IntakePolicy
 from tawg_bot.source_registry import EvidenceKind, SourceRegistry
+from tawg_bot.telegram_api import SentMessage, TelegramApiError
+from tawg_bot.telegram_intake import ingest_envelopes
+from tawg_bot.telegram_webhook import TelegramWebhookEntity, TelegramWebhookEnvelope
 from tests.integration.test_live_knowledge_refresh import _pack
 
 ROOT = Path(__file__).parents[2]
@@ -68,6 +75,32 @@ def scaffold(root: Path) -> None:
     for source in (ROOT / "data/state").iterdir():
         if source.is_file():
             (state / source.name).write_bytes(source.read_bytes())
+
+
+def webhook_envelope(
+    *, update_id: int, message_id: int, message_thread_id: int
+) -> TelegramWebhookEnvelope:
+    value = TelegramWebhookEnvelope(
+        update_id=update_id,
+        source_id=f"tg:tawg:{message_id}",
+        message_id=message_id,
+        timestamp=int(NOW.timestamp()),
+        edited=False,
+        text="@tawg_bot status?",
+        public_username="alice_tawg",
+        display_name="Alice",
+        message_thread_id=message_thread_id,
+        entities=(
+            TelegramWebhookEntity(entity_type="mention", offset=0, length=9, value="@tawg_bot"),
+        ),
+        triggers_reply=True,
+        integrity_digest="0" * 64,
+    )
+    payload = value.model_dump(exclude={"integrity_digest"}, mode="json")
+    digest = hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    return value.model_copy(update={"integrity_digest": digest})
 
 
 @pytest.mark.asyncio
@@ -301,6 +334,39 @@ async def test_telegram_intake_checkpoints_before_model_work(
         await pipeline.telegram_intake(NOW)
 
     assert checkpoint.operations == [f"telegram-intake:{int(NOW.timestamp())}"]
+
+
+@pytest.mark.asyncio
+async def test_explicit_polling_intake_calls_get_updates(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    cursor_path = tmp_path / "data/state/source-cursors.json"
+    cursors = json.loads(cursor_path.read_text())
+    cursors["telegram_offset"] = 73
+    cursor_path.write_text(json.dumps(cursors) + "\n", encoding="utf-8")
+    calls: list[tuple[int, int]] = []
+
+    class Api:
+        @classmethod
+        def from_env(cls, *, client: Any) -> Api:
+            del client
+            return cls()
+
+        async def get_all_updates(self, offset: int, limit: int = 100) -> list[Any]:
+            calls.append((offset, limit))
+            return []
+
+    monkeypatch.setattr(runtime_module, "TelegramApi", Api)
+    monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
+    monkeypatch.setenv("TAWG_TELEGRAM_CHAT_ID", "-100123")
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(
+            tmp_path, client=client, checkpoint=Checkpoint(), now=NOW
+        )
+        await pipeline.telegram_intake(NOW)
+
+    assert calls == [(73, 100)]
 
 
 @pytest.mark.asyncio
@@ -1065,6 +1131,377 @@ async def test_script_checkpoint_reports_only_safe_failure(
 
 
 @pytest.mark.asyncio
+async def test_script_checkpoint_classifies_push_conflict(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    class Process:
+        returncode = 75
+
+        async def communicate(self) -> tuple[bytes, bytes]:
+            return b"secret stdout", b"secret stderr"
+
+    async def create(*args: Any, **kwargs: Any) -> Process:
+        del args, kwargs
+        return Process()
+
+    monkeypatch.setattr(runtime_module.asyncio, "create_subprocess_exec", create)
+
+    with pytest.raises(RepositoryConflict) as captured:
+        await ScriptCheckpoint(tmp_path / "script.sh").publish("operation", tmp_path)
+    assert "secret" not in str(captured.value)
+
+
+@pytest.mark.asyncio
+async def test_final_runtime_checkpoint_conflict_retries_in_a_fresh_repository_session(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    operation_roots: list[Path] = []
+    checkpoint_roots: list[Path] = []
+
+    class Runner:
+        async def run(self, *, argv: Sequence[str], cwd: Path) -> CommandResult:
+            del cwd
+            if tuple(argv[:2]) == ("git", "clone"):
+                Path(argv[-1]).mkdir()
+            return CommandResult(returncode=0)
+
+    class Client:
+        async def __aenter__(self) -> object:
+            return object()
+
+        async def __aexit__(self, *args: object) -> None:
+            del args
+
+    class Pipeline:
+        def __init__(self, root: Path, **kwargs: object) -> None:
+            del root, kwargs
+
+    class Scheduler:
+        def __init__(self, root: Path, *, pipeline: object) -> None:
+            del root, pipeline
+
+        async def tick(self, *args: object, **kwargs: object) -> object:
+            del args, kwargs
+            return type("Result", (), {"layer": type("Layer", (), {"name": "L1"})()})()
+
+    class Process:
+        def __init__(self, returncode: int) -> None:
+            self.returncode = returncode
+
+        async def communicate(self) -> tuple[bytes, bytes]:
+            return b"private stdout", b"private stderr"
+
+    async def create_checkpoint_process(*args: object, **kwargs: object) -> Process:
+        assert args[0] == "bash"
+        assert str(args[2]).startswith("layer-success:l1:")
+        checkpoint_roots.append(Path(str(kwargs["cwd"])))
+        return Process(75 if len(checkpoint_roots) == 1 else 0)
+
+    monkeypatch.setattr(runtime_module.httpx, "AsyncClient", lambda **kwargs: Client())
+    monkeypatch.setattr(runtime_module, "_LivePipeline", Pipeline)
+    monkeypatch.setattr(runtime_module, "Scheduler", Scheduler)
+    monkeypatch.setattr(
+        runtime_module.asyncio,
+        "create_subprocess_exec",
+        create_checkpoint_process,
+    )
+    checkpoint = ScriptCheckpoint(Path("/safe/test-checkpoint.sh"))
+
+    async def operation(root: Path) -> None:
+        if operation_roots:
+            assert not operation_roots[0].exists()
+        operation_roots.append(root)
+        await ProductionRuntime(root, checkpoint=checkpoint).maintenance_tick(
+            NOW,
+            observe_only=True,
+        )
+
+    await RepositorySession(
+        remote="https://example.invalid/tawg/repository.git",
+        branch="main",
+        runner=Runner(),
+    ).run(operation_id="maintenance:retry", operation=operation)
+
+    assert len(operation_roots) == 2
+    assert operation_roots[0] != operation_roots[1]
+    assert all(not root.exists() for root in operation_roots)
+    assert checkpoint_roots == [root.resolve() for root in operation_roots]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("phase", ["source", "knowledge", "knowledge_deferral", "daily"])
+async def test_internal_checkpoint_conflict_retries_phase_in_a_fresh_repository_session(
+    phase: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    operation_roots: list[Path] = []
+    checkpoint_roots: list[Path] = []
+
+    class Runner:
+        async def run(self, *, argv: Sequence[str], cwd: Path) -> CommandResult:
+            del cwd
+            if tuple(argv[:2]) == ("git", "clone"):
+                Path(argv[-1]).mkdir()
+            return CommandResult(returncode=0)
+
+    class Process:
+        def __init__(self, returncode: int) -> None:
+            self.returncode = returncode
+
+        async def communicate(self) -> tuple[bytes, bytes]:
+            return b"private stdout", b"private stderr"
+
+    async def create_checkpoint_process(*args: object, **kwargs: object) -> Process:
+        assert args[0] == "bash"
+        checkpoint_roots.append(Path(str(kwargs["cwd"])))
+        return Process(75 if len(checkpoint_roots) == 1 else 0)
+
+    monkeypatch.setattr(
+        runtime_module.asyncio,
+        "create_subprocess_exec",
+        create_checkpoint_process,
+    )
+    checkpoint = ScriptCheckpoint(Path("/safe/test-checkpoint.sh"))
+
+    async def operation(root: Path) -> None:
+        if operation_roots:
+            assert not operation_roots[0].exists()
+        operation_roots.append(root)
+        scaffold(root)
+        async with httpx.AsyncClient() as client:
+            if phase == "source":
+                class SourcePipeline(_LivePipeline):
+                    async def check_sources(
+                        self,
+                        now: datetime,
+                        **kwargs: object,
+                    ) -> SourceCheckSummary:
+                        del now, kwargs
+                        return SourceCheckSummary(1, 0, 0, 0, False)
+
+                pipeline = SourcePipeline(root, client=client, checkpoint=checkpoint, now=NOW)
+                pipeline.registry = type(
+                    "Registry",
+                    (),
+                    {"due_erc_numbers": lambda *args, **kwargs: (8183,)},
+                )()
+                await pipeline.source_check(NOW)
+            elif phase in {"knowledge", "knowledge_deferral"}:
+                class Refresh:
+                    def __init__(self, *args: object, **kwargs: object) -> None:
+                        del args, kwargs
+
+                    async def run(self, **kwargs: object) -> None:
+                        del kwargs
+                        if phase == "knowledge_deferral" and len(operation_roots) == 1:
+                            raise RuntimeError("model failed before deferral checkpoint")
+
+                class State:
+                    def eligible_refresh_erc_numbers(self, cutoff: datetime) -> tuple[int, ...]:
+                        del cutoff
+                        return (8183,)
+
+                    def defer_refresh_erc(self, *args: object, **kwargs: object) -> None:
+                        del args, kwargs
+
+                monkeypatch.setattr(runtime_module, "KnowledgeRefresh", Refresh)
+                pipeline = _LivePipeline(root, client=client, checkpoint=checkpoint, now=NOW)
+                pipeline.knowledge_state = State()  # type: ignore[assignment]
+                await pipeline.knowledge_refresh(NOW)
+            else:
+                class DailyPipeline(_LivePipeline):
+                    async def prepare_daily(
+                        self,
+                        window: DailyWindow,
+                        *,
+                        dry_run: bool,
+                    ) -> PreparedDaily:
+                        assert not dry_run
+                        return PreparedDaily(
+                            window_id=window.window_id,
+                            telegram_text="daily",
+                            messages=("daily",),
+                            citations=(),
+                            quiet_day=False,
+                        )
+
+                pipeline = DailyPipeline(root, client=client, checkpoint=checkpoint, now=NOW)
+                await pipeline.daily_prepare(DailyWindow.for_due_run(NOW).window_id)
+
+    await RepositorySession(
+        remote="https://example.invalid/tawg/repository.git",
+        branch="main",
+        runner=Runner(),
+    ).run(operation_id=f"{phase}:retry", operation=operation)
+
+    assert len(operation_roots) == 2
+    assert operation_roots[0] != operation_roots[1]
+    assert all(not root.exists() for root in operation_roots)
+    assert checkpoint_roots == [root.resolve() for root in operation_roots]
+
+
+@pytest.mark.asyncio
+async def test_webhook_runtime_checkpoints_before_bounded_threaded_delivery(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    seeded = tuple(
+        webhook_envelope(
+            update_id=index,
+            message_id=99 + index,
+            message_thread_id=199 + index,
+        )
+        for index in range(1, 11)
+    )
+    ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=seeded,
+        now=NOW,
+    )
+    incoming = webhook_envelope(update_id=11, message_id=110, message_thread_id=210)
+    events: list[str] = []
+
+    class IntakeCheckpoint(Checkpoint):
+        async def publish(self, operation_id: str, root: Path) -> None:
+            if operation_id == "telegram-webhook:11":
+                receipts = json.loads(
+                    (root / "data/state/telegram-webhook-receipts.json").read_text()
+                )
+                assert receipts["update_ids"][-1] == 11
+                events.append("intake-checkpoint")
+            await super().publish(operation_id, root)
+
+    checkpoint = IntakeCheckpoint()
+
+    class ReplyService:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            assert events == ["intake-checkpoint"]
+            assert kwargs["bot_username"] == "tawg_bot"
+            self.root = root
+
+        async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply:
+            assert now == NOW
+            jobs = json.loads((self.root / "data/state/pending-bot-jobs.json").read_text())
+            job = next(item for item in jobs if item["job_id"] == job_id)
+            return PreparedReply(
+                job_id,
+                job["reply_to_message_id"],
+                job["message_thread_id"],
+                "reply",
+                (),
+                "en",
+                False,
+            )
+
+    class Api:
+        calls: ClassVar[list[tuple[int, int | None, int | None]]] = []
+
+        @classmethod
+        def from_env(cls, *, client: Any) -> Api:
+            del client
+            return cls()
+
+        async def get_all_updates(self, *args: Any, **kwargs: Any) -> list[Any]:
+            del args, kwargs
+            raise AssertionError("webhook runtime must never poll getUpdates")
+
+        async def send_message(
+            self,
+            chat_id: int,
+            text: str,
+            reply_to_message_id: int | None = None,
+            message_thread_id: int | None = None,
+        ) -> SentMessage:
+            assert text == "reply"
+            self.calls.append((chat_id, reply_to_message_id, message_thread_id))
+            return SentMessage(message_id=1000 + len(self.calls), chat_id=chat_id)
+
+    monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
+    monkeypatch.setattr(runtime_module, "TelegramApi", Api)
+    monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
+    monkeypatch.setenv("TAWG_TELEGRAM_CHAT_ID", "-100123")
+
+    result = await ProductionRuntime(tmp_path, checkpoint=checkpoint).ingest_webhook_envelope(
+        incoming, now=NOW
+    )
+
+    assert result.persisted == 1
+    assert len(Api.calls) == 10
+    assert Api.calls == [
+        (-100123, message_id, thread_id)
+        for message_id, thread_id in zip(range(100, 110), range(200, 210), strict=True)
+    ]
+    jobs = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())
+    assert (
+        next(item for item in jobs if item["job_id"] == "reply:tg:tawg:110")["status"] == "pending"
+    )
+
+
+@pytest.mark.asyncio
+async def test_duplicate_webhook_replays_explicitly_failed_delivery_safely(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text("[]\n", encoding="utf-8")
+    incoming = webhook_envelope(update_id=50, message_id=500, message_thread_id=77)
+    checkpoint = Checkpoint()
+
+    class ReplyService:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            del kwargs
+            self.root = root
+
+        async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply:
+            assert now == NOW
+            jobs = json.loads((self.root / "data/state/pending-bot-jobs.json").read_text())
+            job = next(item for item in jobs if item["job_id"] == job_id)
+            return PreparedReply(job_id, 500, job["message_thread_id"], "reply", (), "en", False)
+
+    class Api:
+        calls: ClassVar[list[tuple[int | None, int | None]]] = []
+
+        @classmethod
+        def from_env(cls, *, client: Any) -> Api:
+            del client
+            return cls()
+
+        async def get_all_updates(self, *args: Any, **kwargs: Any) -> list[Any]:
+            del args, kwargs
+            raise AssertionError("webhook runtime must never poll getUpdates")
+
+        async def send_message(
+            self,
+            chat_id: int,
+            text: str,
+            reply_to_message_id: int | None = None,
+            message_thread_id: int | None = None,
+        ) -> SentMessage:
+            del text
+            self.calls.append((reply_to_message_id, message_thread_id))
+            if len(self.calls) == 1:
+                raise TelegramApiError("explicit test rejection")
+            return SentMessage(message_id=1234, chat_id=chat_id)
+
+    monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
+    monkeypatch.setattr(runtime_module, "TelegramApi", Api)
+    monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
+    monkeypatch.setenv("TAWG_TELEGRAM_CHAT_ID", "-100123")
+    runtime = ProductionRuntime(tmp_path, checkpoint=checkpoint)
+
+    first = await runtime.ingest_webhook_envelope(incoming, now=NOW)
+    second = await runtime.ingest_webhook_envelope(incoming, now=NOW)
+
+    assert first.persisted == 1
+    assert second.replayed == 1
+    assert Api.calls == [(500, 77), (500, 77)]
+    attempts = json.loads((tmp_path / "data/state/delivery-state.json").read_text())
+    attempt = next(item for item in attempts if item["job_id"] == "reply:tg:tawg:500")
+    assert attempt["status"] == DeliveryStatus.DELIVERED.value
+
+
+@pytest.mark.asyncio
 async def test_production_runtime_dispatches_new_manual_commands_and_dry_run(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1100,12 +1537,21 @@ async def test_production_runtime_dispatches_new_manual_commands_and_dry_run(
             assert dry_run
             events.append(window.window_id)
 
+    intake_policies: list[IntakePolicy] = []
+
     class Scheduler:
         def __init__(self, root: Path, *, pipeline: Any) -> None:
             del root, pipeline
 
-        async def tick(self, now: datetime, *, observe_only: bool) -> Any:
+        async def tick(
+            self,
+            now: datetime,
+            *,
+            observe_only: bool,
+            intake_policy: IntakePolicy = IntakePolicy.POLL,
+        ) -> Any:
             assert observe_only
+            intake_policies.append(intake_policy)
             return type("Result", (), {"layer": type("Layer", (), {"name": "L1"})()})()
 
     monkeypatch.setattr(runtime_module.httpx, "AsyncClient", lambda **kwargs: Client())
@@ -1116,6 +1562,7 @@ async def test_production_runtime_dispatches_new_manual_commands_and_dry_run(
     runtime = ProductionRuntime(tmp_path, checkpoint=checkpoint)
 
     await runtime.tick(NOW, observe_only=True)
+    await runtime.maintenance_tick(NOW, observe_only=True)
     await runtime.check_sources(8004, observe_only=True)
     await runtime.refresh_knowledge(8183, dry_run=True)
     await runtime.daily_dry_run(DailyWindow.for_due_run(NOW).end)
@@ -1123,6 +1570,7 @@ async def test_production_runtime_dispatches_new_manual_commands_and_dry_run(
     assert "check:(8004,):True" in events
     assert "refresh:frozenset({8183}):True" in events
     assert "repository" not in events
+    assert intake_policies == [IntakePolicy.POLL, IntakePolicy.SKIP]
     assert any(item.startswith("layer-success:l1") for item in checkpoint.operations)
 
 

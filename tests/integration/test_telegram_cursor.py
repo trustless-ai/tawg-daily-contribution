@@ -87,6 +87,7 @@ async def test_intake_persists_all_target_messages_jobs_and_cursor_atomically(
         "tg:tawg:506",
     ]
     assert records[0]["text_original"] == "Parser and tests shipped"
+    assert records[0]["source_payload"]["update_id"] == 103
     assert records[1]["relations"][0]["target_record_id"] == "tg:tawg:501"
     serialized = json.dumps(records)
     assert "11001" not in serialized
@@ -98,6 +99,7 @@ async def test_intake_persists_all_target_messages_jobs_and_cursor_atomically(
     assert jobs[1]["message_thread_id"] is None
     cursors = json.loads((tmp_path / "data/state/source-cursors.json").read_text())
     assert cursors["telegram_offset"] == 107
+    assert not (tmp_path / "data/state/telegram-webhook-receipts.json").exists()
 
 
 @pytest.mark.asyncio

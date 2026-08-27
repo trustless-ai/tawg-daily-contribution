@@ -8,7 +8,8 @@ import pytest
 from tawg_bot.cli import _parser, main
 from tawg_bot.daily import PreparedDaily
 from tawg_bot.models import LayerSuccess
-from tawg_bot.scheduler import Layer, Scheduler
+from tawg_bot.repository_session import RepositoryConflict
+from tawg_bot.scheduler import IntakePolicy, Layer, Scheduler
 
 NOW = datetime(2026, 8, 24, 1, 17, tzinfo=UTC)
 
@@ -132,6 +133,29 @@ async def test_failed_source_is_logged_safely_and_later_work_continues(
 
 
 @pytest.mark.asyncio
+async def test_repository_conflict_escapes_scheduler_phase_for_outer_retry(
+    tmp_path: Path,
+) -> None:
+    class ConflictPipeline(Pipeline):
+        async def publish_repository(self) -> None:
+            self.events.append("repo_publish")
+            raise RepositoryConflict
+
+    old = NOW - timedelta(days=2)
+    pipeline = ConflictPipeline()
+    service = scheduler(
+        tmp_path,
+        pipeline,
+        LayerSuccess(l1=old, l2=NOW, l3=NOW, l4=NOW),
+    )
+
+    with pytest.raises(RepositoryConflict):
+        await service.tick(NOW)
+
+    assert pipeline.events == ["telegram", "repo_publish"]
+
+
+@pytest.mark.asyncio
 async def test_failed_daily_stays_retryable_but_replies_can_still_deliver(
     tmp_path: Path,
 ) -> None:
@@ -178,6 +202,57 @@ async def test_observe_only_keeps_daily_window_retryable(tmp_path: Path) -> None
 
     assert "delivery" not in pipeline.events
     assert service.load_success().l4 == old
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("success", "expected_events"),
+    [
+        (
+            LayerSuccess(l1=NOW, l2=NOW, l3=NOW, l4=NOW),
+            ["repo_publish", "delivery"],
+        ),
+        (
+            LayerSuccess(
+                l1=NOW,
+                l2=NOW - timedelta(minutes=31),
+                l3=NOW,
+                l4=NOW,
+            ),
+            ["source_check", "repo_publish", "delivery"],
+        ),
+        (
+            LayerSuccess(
+                l1=NOW,
+                l2=NOW,
+                l3=NOW - timedelta(hours=2, seconds=1),
+                l4=NOW,
+            ),
+            ["knowledge", "validate", "repo_publish", "delivery"],
+        ),
+        (
+            LayerSuccess(
+                l1=NOW,
+                l2=NOW,
+                l3=NOW,
+                l4=datetime(2026, 8, 22, 23, tzinfo=UTC),
+            ),
+            ["validate", "daily", "repo_publish", "delivery"],
+        ),
+    ],
+)
+async def test_maintenance_tick_skips_polling_but_retains_due_work(
+    tmp_path: Path,
+    success: LayerSuccess,
+    expected_events: list[str],
+) -> None:
+    pipeline = Pipeline()
+    service = scheduler(tmp_path, pipeline, success)
+
+    await service.tick(NOW, intake_policy=IntakePolicy.SKIP)
+
+    assert pipeline.events == expected_events
+    assert service.load_success().l1 == NOW
 
 
 def test_cli_exposes_scheduled_and_manual_operator_commands() -> None:

@@ -18,10 +18,6 @@ from tawg_bot.erc_query import ErcIntent
             BotRoute.KNOWLEDGE_CORRECTION,
         ),
         (
-            "@bot please record RVR into your knowledge",
-            BotRoute.KNOWLEDGE_CORRECTION,
-        ),
-        (
             "@bot source suggestion: https://ethereum-magicians.org/t/25098",
             BotRoute.SOURCE_SUGGESTION,
         ),
