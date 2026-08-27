@@ -507,6 +507,13 @@ class _LivePipeline:
         uow.register_external_evidence(
             item.text for item in evidence if item.source_kind != "telegram"
         )
+        cited_external_locators = tuple(
+            item.citation
+            for item in evidence
+            if item.source_kind != "telegram" and item.citation in prepared.citations
+        )
+        if cited_external_locators:
+            uow.register_trusted_source_locators(cited_external_locators)
         uow.stage_json("data/state/prepared-daily.json", artifact)
         uow.publish()
         self.prepared_daily = prepared

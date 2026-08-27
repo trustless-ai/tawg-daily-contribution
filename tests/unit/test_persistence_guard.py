@@ -373,6 +373,55 @@ def test_allows_only_a_short_supported_quote_in_generated_output() -> None:
     )
 
 
+def test_allows_an_exact_trusted_locator_only_in_prepared_daily_citations() -> None:
+    locator = "https://github.com/trustless-ai/recompute-kit/pull/15"
+    external = "Related review: https://github.com/trustless-ai/recompute-kit/issues/99"
+    guard = PersistenceGuard.from_external_texts(
+        (external,), trusted_source_locators=(locator,)
+    )
+    relative_path = "data/state/prepared-daily.json"
+
+    guard.inspect_staged(
+        {
+            relative_path: json.dumps(
+                {"telegram_text": "Daily", "citations": [locator]}
+            ).encode()
+        },
+        {relative_path: PersistenceProvenance.PREPARED_TELEGRAM},
+    )
+
+    with pytest.raises(PersistenceRejected, match="persistence policy rejection"):
+        guard.inspect_staged(
+            {
+                relative_path: json.dumps(
+                    {
+                        "telegram_text": "Daily",
+                        "citations": [],
+                        "safe_error_code": locator,
+                    }
+                ).encode()
+            },
+            {relative_path: PersistenceProvenance.PREPARED_TELEGRAM},
+        )
+
+
+def test_rejects_an_unregistered_locator_in_prepared_daily_citations() -> None:
+    locator = "https://github.com/trustless-ai/recompute-kit/pull/15"
+    external = "Related review: https://github.com/trustless-ai/recompute-kit/issues/99"
+    guard = PersistenceGuard.from_external_texts((external,))
+    relative_path = "data/state/prepared-daily.json"
+
+    with pytest.raises(PersistenceRejected, match="persistence policy rejection"):
+        guard.inspect_staged(
+            {
+                relative_path: json.dumps(
+                    {"telegram_text": "Daily", "citations": [locator]}
+                ).encode()
+            },
+            {relative_path: PersistenceProvenance.PREPARED_TELEGRAM},
+        )
+
+
 @pytest.mark.parametrize(
     ("relative_path", "provenance"),
     [

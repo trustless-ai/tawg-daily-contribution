@@ -60,6 +60,7 @@ class RepositoryUnitOfWork:
         self.transaction_dir = self.root / ".local" / "transactions" / operation_id
         self._writes: dict[str, _StagedWrite] = {}
         self._external_evidence: list[str] | None = None
+        self._trusted_source_locators: list[str] = []
 
     def stage_records(self, relative_path: str, records: Iterable[SourceRecord]) -> None:
         stable_records = tuple(records)
@@ -125,6 +126,14 @@ class RepositoryUnitOfWork:
         if self._external_evidence is None:
             self._external_evidence = []
         self._external_evidence.extend(texts)
+        try:
+            self._inspect_staged()
+        except PersistenceRejected:
+            self._cleanup()
+            raise
+
+    def register_trusted_source_locators(self, values: Iterable[str]) -> None:
+        self._trusted_source_locators.extend(values)
         try:
             self._inspect_staged()
         except PersistenceRejected:
@@ -200,6 +209,7 @@ class RepositoryUnitOfWork:
         return PersistenceGuard.from_external_texts(
             self._external_evidence or (),
             source_registry_baseline=registry_baseline,
+            trusted_source_locators=self._trusted_source_locators,
         )
 
     def _inspect_staged(self) -> None:

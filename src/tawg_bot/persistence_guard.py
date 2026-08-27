@@ -8,6 +8,7 @@ from collections.abc import Iterable, Mapping
 from enum import StrEnum
 from pathlib import PurePosixPath
 from typing import Any
+from urllib.parse import urlparse
 
 import yaml
 
@@ -64,9 +65,13 @@ class PersistenceGuard:
         external_texts: tuple[str, ...] = (),
         *,
         source_registry_baseline: str | None = None,
+        trusted_source_locators: Iterable[str] = (),
     ) -> None:
         self._external_texts = tuple(
             normalized for value in external_texts if (normalized := _normalize(value))
+        )
+        self._trusted_source_locators = frozenset(
+            _trusted_source_locator(value) for value in trusted_source_locators
         )
         if source_registry_baseline is None:
             self._source_registry_baseline: SourceRegistry | None = None
@@ -84,8 +89,13 @@ class PersistenceGuard:
         values: Iterable[str],
         *,
         source_registry_baseline: str | None = None,
+        trusted_source_locators: Iterable[str] = (),
     ) -> PersistenceGuard:
-        return cls(tuple(values), source_registry_baseline=source_registry_baseline)
+        return cls(
+            tuple(values),
+            source_registry_baseline=source_registry_baseline,
+            trusted_source_locators=trusted_source_locators,
+        )
 
     @staticmethod
     def provenance_for_path(relative_path: str) -> PersistenceProvenance:
@@ -127,6 +137,7 @@ class PersistenceGuard:
                 text,
                 expected,
                 source_registry_baseline=self._source_registry_baseline,
+                trusted_source_locators=self._trusted_source_locators,
             ):
                 if self._contains_external_excerpt(value, allow_short_quote):
                     raise PersistenceRejected
@@ -149,6 +160,20 @@ class PersistenceGuard:
 
 def _normalize(value: str) -> str:
     return unicodedata.normalize("NFC", value).replace("\r\n", "\n").replace("\r", "\n")
+
+
+def _trusted_source_locator(value: str) -> str:
+    normalized = _normalize(value)
+    parsed = urlparse(normalized)
+    if (
+        parsed.scheme != "https"
+        or not parsed.netloc
+        or parsed.username is not None
+        or parsed.password is not None
+        or parsed.query
+    ):
+        raise PersistenceRejected
+    return normalized
 
 
 def _confined_path(relative_path: str) -> PurePosixPath:
@@ -175,6 +200,7 @@ def _semantic_strings(
     provenance: PersistenceProvenance,
     *,
     source_registry_baseline: SourceRegistry | None,
+    trusted_source_locators: frozenset[str],
 ) -> tuple[tuple[str, bool], ...]:
     path = PurePosixPath(relative_path)
     if provenance is PersistenceProvenance.GENERATED_KNOWLEDGE:
@@ -210,7 +236,40 @@ def _semantic_strings(
         )
     if relative_path == _REFRESH_STATE_PATH and source_registry_baseline is not None:
         return tuple(_walk_refresh_job_strings(value, source_registry_baseline))
+    if relative_path == "data/state/prepared-daily.json":
+        return tuple(
+            _walk_prepared_daily_strings(
+                value,
+                trusted_source_locators=trusted_source_locators,
+            )
+        )
     return tuple(_walk_strings(value, allowed_key=allowed_key))
+
+
+def _walk_prepared_daily_strings(
+    value: Any,
+    *,
+    trusted_source_locators: frozenset[str],
+) -> Iterable[tuple[str, bool]]:
+    if not isinstance(value, Mapping):
+        yield from _walk_strings(value, allowed_key="telegram_text")
+        return
+    for key, child in value.items():
+        normalized_key = _normalize(str(key))
+        yield (normalized_key, False)
+        if normalized_key == "citations" and isinstance(child, list):
+            for citation in child:
+                if (
+                    isinstance(citation, str)
+                    and _normalize(citation) in trusted_source_locators
+                ):
+                    continue
+                yield from _walk_strings(citation, allowed_key=None)
+            continue
+        if isinstance(child, str):
+            yield (_normalize(child), normalized_key == "telegram_text")
+        else:
+            yield from _walk_strings(child, allowed_key="telegram_text")
 
 
 def _walk_refresh_job_strings(

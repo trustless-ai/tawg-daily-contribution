@@ -15,6 +15,7 @@ from tawg_bot.bot_router import PreparedReply, ReplyRejected
 from tawg_bot.claude_cli import ClaudeCli as RealClaudeCli
 from tawg_bot.claude_cli import ClaudeCliError, CompletedProcess
 from tawg_bot.daily import DailyRejected, DailyWindow, PreparedDaily
+from tawg_bot.daily_evidence import DailyEvidence
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import RefreshResult
 from tawg_bot.live_evidence import LiveEvidenceService
@@ -455,6 +456,58 @@ async def test_prepare_daily_does_not_expose_output_before_artifact_persists(
             await pipeline.prepare_daily(window, dry_run=False)
 
     assert pipeline.prepared_daily is None
+
+
+@pytest.mark.asyncio
+async def test_prepare_daily_persists_an_exact_validated_external_citation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    window = DailyWindow.for_due_run(NOW)
+    locator = (
+        "https://github.com/trustless-ai/recompute-kit/pull/15#issuecomment-5425745065"
+    )
+    evidence = DailyEvidence(
+        evidence_id="gh:recompute-kit:comment:5425745065",
+        source_kind="github",
+        source_url=locator,
+        created_at=window.start + timedelta(hours=1),
+        updated_at=window.start + timedelta(hours=1),
+        author_person_id="zexoverz",
+        text=(
+            "Related review: "
+            "https://github.com/trustless-ai/recompute-kit/issues/99"
+        ),
+    )
+    prepared = PreparedDaily(window.window_id, "Daily", ("Daily",), (locator,), False)
+
+    class Daily:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            del root, kwargs
+
+        async def prepare(self, *args: Any, **kwargs: Any) -> PreparedDaily:
+            del args, kwargs
+            return prepared
+
+    class Collector:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            del root, kwargs
+
+        async def collect(self, *args: Any, **kwargs: Any) -> tuple[DailyEvidence, ...]:
+            del args, kwargs
+            return (evidence,)
+
+    monkeypatch.setattr(runtime_module, "DailyService", Daily)
+    monkeypatch.setattr(runtime_module, "DailyEvidenceCollector", Collector)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        result = await pipeline.prepare_daily(window, dry_run=False)
+
+    assert result == prepared
+    artifact = json.loads(
+        (tmp_path / "data/state/prepared-daily.json").read_text(encoding="utf-8")
+    )
+    assert artifact["citations"] == [locator]
 
 
 @pytest.mark.asyncio
