@@ -74,9 +74,14 @@ Telegram 前置条件：
 
 - bot 是目标群管理员。
 - BotFather 中关闭 Privacy Mode。
-- 没有配置 webhook。
-- 不要同时运行第二个 getUpdates 消费者。
+- 测试 polling 时没有配置 webhook；测试 webhook 时不运行任何 getUpdates 消费者。
+- 任一时刻只有一个 Telegram consumer。不要同时运行第二个 getUpdates 消费者。
 - 测试期间不要同时运行 GitHub Action。
+
+当前模式由 `TAWG_RUNTIME_MODE` 决定：`poll` 使用 `tick`，`webhook` 只使用
+`maintenance-tick`，`observe` 使用对应路径但不发送。Modal 只是调用包装，核心逻辑与
+Actions/CLI 共用；完整 shadow、cutover 和 rollback 步骤见
+[`Modal webhook operations`](modal.md)。
 
 ## 3. 先验证 DeepSeek
 
@@ -242,17 +247,53 @@ test ! -d data/github
 test ! -d data/magicians
 ```
 
+## Modal webhook 验收
+
+不要把 token、webhook secret、真实 chat/user ID 或完整 Bot API URL 粘贴到聊天、日志或
+仓库。部署本身不会配置 Telegram webhook；`setWebhook`/`deleteWebhook` 都需要单独授权。
+
+1. 先执行 [`modal.md` 的 deterministic fixture gate](modal.md#1-deterministic-fixture-gate)。
+   该测试只用 fake IDs/fakes，不调用 Modal、Telegram、GitHub 或付费模型。
+2. shadow 阶段保留 GitHub polling，且 `getWebhookInfo.result.url` 必须为空。只检查部署
+   metadata，不向已部署 endpoint 发送 synthetic update。当前生产 ingestion 会顺带处理
+   所有 actionable reply；因此只有本地 fake 测试可以声称不调用付费模型。此时
+   `TAWG_MODAL_MAINTENANCE_ENABLED` 必须精确为 `false`。
+3. cutover 时使用 `drop_pending_updates=false`，验证 webhook URL 后立即把
+   `TAWG_RUNTIME_MODE` 设为 `webhook`，禁用 scheduled Actions workflow，并确认没有 Action
+   run 仍在执行。只有 Actions 已禁用且 idle 后，才把
+   `TAWG_MODAL_MAINTENANCE_ENABLED` 改为精确小写 `true`，并从当前 `main` 的精确已审核
+   commit 重新部署。然后才发送一条真实普通消息和一条真实 @bot 消息；这是已部署
+   endpoint 的第一次验收，@bot 消息会正常使用生产模型和 delivery。完整顺序以
+   [`modal.md`](modal.md#webhook-cutover) 为准，不得按本节省略步骤。
+4. 在 GitHub `main` 中确认两条 sanitized source record；确认 @bot job 的 delivery 为
+   `delivered`、`reply_to_message_id` 等于原消息，且 `message_thread_id` 与原 topic/thread
+   一致。再人工确认 Telegram 中的可见回复位于同一消息/thread。
+5. 验收期间及通过后都保持 scheduled Actions workflow 禁用；保留 workflow 文件。
+
+失败时不要直接启动 polling。按 [`modal.md`](modal.md#rollback-without-dropping-updates)
+先把 maintenance flag 设为精确 `false` 并从精确已审核 `main` 重新部署。pre-delete drain
+有助于降低重叠风险，但不能替代强制的 post-delete drain。再执行
+`deleteWebhook(drop_pending_updates=false)` 并确认 `getWebhookInfo.result.url` 为空。URL 为空后，
+必须确认所有重试均已耗尽，并且 active、queued、retrying 状态的 `repository_worker` call 全部为零。
+只有完成这个 post-delete drain，才恢复 `TAWG_RUNTIME_MODE=poll` 和唯一的 scheduled Actions
+polling consumer，最后按仓库状态 reconcile pending/ready/ambiguous work。
+
 ## 出错时
 
 - 如果 Telegram delivery 状态是 `ambiguous`，不要直接重跑发送；先人工查看群里是否已经收到。
-- 如果 getUpdates 报错，检查 webhook 和是否存在另一个 polling 进程。
+- 如果 getUpdates 报错，检查 webhook、`TAWG_RUNTIME_MODE` 和是否存在另一个 polling 进程；webhook 非空时不要重试 polling。
 - 如果模型输出被 schema、privacy 或 citation validator 拒绝，不要绕过校验。
 - 如果 cursor 已前进但仓库状态没有成功推送，先修复分支推送问题，不要手动修改 cursor。
 
 ## Workflow 运行提醒
 
-workflow 已位于默认分支 `main`，包含每 5 分钟一次的 cron。人工测试期间必须确保没有另一个 `getUpdates` 消费者同时运行；需要在另一台机器测试时，应先暂停定时 workflow，测试结束后再恢复。
+workflow 已位于默认分支 `main`，包含每 5 分钟一次的 cron。在 `poll` 模式它消费
+Telegram；`webhook` 模式只保留为人工 fallback guard，完成 Modal cutover 后 scheduled
+Actions 必须禁用，不能与 Modal maintenance 并行。人工测试期间必须确保没有另一个
+`getUpdates` 消费者同时运行；需要在另一台机器测试 polling 时，应先暂停定时 workflow，
+测试结束后再恢复。完成 Modal cutover 和真实 threaded delivery 验收后，应禁用 GitHub
+polling schedule，让 Modal 成为唯一生产 scheduler。
 
-手动验证 Actions 时，先使用 `workflow_dispatch` 且保持 `observe_only=true`。检查提交的脱敏消息、知识页面和状态后，再开启真实 delivery。
+手动验证 Actions 时，先使用 `workflow_dispatch` input `runtime_mode=observe`。检查提交的脱敏消息、知识页面和状态后，再开启真实 delivery。
 
 [GitHub 手动运行说明](https://docs.github.com/en/actions/how-tos/manage-workflow-runs/manually-run-a-workflow)、[事件触发规则](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)
