@@ -11,7 +11,7 @@ from typing import Any
 
 import pytest
 
-from tawg_bot.bot_router import BotReplyService, ReplyRejected
+from tawg_bot.bot_router import BotReplyService, BotRouter, ReplyRejected
 from tawg_bot.erc_query import ErcIntent, ErcQuery
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.live_evidence import (
@@ -42,6 +42,12 @@ class FakeAi:
 
     async def run(self, **kwargs: Any) -> dict[str, Any]:
         self.calls.append(kwargs)
+        if kwargs["job_type"] == "route":
+            trigger = json.loads(kwargs["context_pack"])["trigger"]
+            return {
+                "schema_version": "tawg.route-result.v1",
+                "route": BotRouter("bot").classify(trigger["text_original"]).value,
+            }
         return deepcopy(self.result)
 
 
@@ -230,7 +236,7 @@ async def test_ordinary_erc_reply_reuses_local_knowledge_without_live_fetch(
         job.job_id, now=NOW + timedelta(minutes=1)
     )
 
-    context = ai.calls[0]["context_pack"]
+    context = ai.calls[1]["context_pack"]
     decoded = json.loads(context)
     assert '"schema_version":"tawg.evidence-pack.v1"' not in context
     assert decoded["trigger"]["erc_evidence_mode"] == "local_synthesis"
@@ -262,7 +268,7 @@ async def test_local_erc_correction_context_exposes_exact_current_page_revision(
         job.job_id, now=NOW + timedelta(minutes=1)
     )
 
-    context = json.loads(ai.calls[0]["context_pack"])
+    context = json.loads(ai.calls[1]["context_pack"])
     retrieved = context["retrieved"][0]
     assert retrieved["path"] == "knowledge/ercs/erc-8281.md"
     assert retrieved["expected_sha256"] == hashlib.sha256(current.encode()).hexdigest()
@@ -332,7 +338,7 @@ async def test_erc_reply_fetches_live_when_local_knowledge_is_missing(tmp_path: 
         job.job_id, now=NOW + timedelta(minutes=1)
     )
 
-    context = ai.calls[0]["context_pack"]
+    context = ai.calls[1]["context_pack"]
     assert '"schema_version":"tawg.evidence-pack.v1"' in context
     assert "normative interface" in context
     assert prepared.citations == (CANONICAL, IMPLEMENTATION)

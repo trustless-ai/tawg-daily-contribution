@@ -88,6 +88,8 @@ async def test_intake_persists_all_target_messages_jobs_and_cursor_atomically(
     ]
     assert records[0]["text_original"] == "Parser and tests shipped"
     assert records[1]["relations"][0]["target_record_id"] == "tg:tawg:501"
+    assert records[1]["source_payload"]["message_thread_id"] == 700
+    assert records[2]["source_payload"]["message_thread_id"] is None
     serialized = json.dumps(records)
     assert "11001" not in serialized
     assert "-100424242" not in serialized
@@ -133,6 +135,104 @@ async def test_replayed_batch_after_source_only_checkpoint_is_idempotent(tmp_pat
     assert len(records) == 5
     assert len(jobs) == 2
     assert jobs[0]["message_thread_id"] == 700
+
+
+@pytest.mark.asyncio
+async def test_edited_pending_trigger_clears_stale_route_and_prepared_reply(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    first_updates = [fixture_updates()[2]]
+    await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi(first_updates),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs = json.loads(jobs_path.read_text(encoding="utf-8"))
+    jobs[0].update(
+        {
+            "status": "ready",
+            "prepared_reply_text": "Stale prepared reply",
+            "prepared_language": "en",
+            "classified_route": "knowledge_question",
+            "router_context_sha256": "a" * 64,
+            "router_version": "contextual-ai-v1",
+            "routed_at": NOW.isoformat().replace("+00:00", "Z"),
+        }
+    )
+    jobs_path.write_text(json.dumps(jobs), encoding="utf-8")
+
+    edited = fixture_updates()[2]
+    edited = {
+        "update_id": 107,
+        "edited_message": {
+            **edited["message"],
+            "edit_date": edited["message"]["date"] + 60,
+            "text": "@tawg_helper correction: ERC-8004 changed",
+        },
+    }
+    await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi([edited]),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+
+    refreshed = json.loads(jobs_path.read_text(encoding="utf-8"))[0]
+    assert refreshed["status"] == "pending"
+    assert refreshed["classified_route"] is None
+    assert refreshed["router_context_sha256"] is None
+    assert refreshed["router_version"] is None
+    assert refreshed["routed_at"] is None
+    assert refreshed["prepared_reply_text"] is None
+    assert refreshed["prepared_language"] is None
+
+
+@pytest.mark.asyncio
+async def test_edit_that_removes_mention_withdraws_an_undelivered_job(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    first = fixture_updates()[2]
+    await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi([first]),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs = json.loads(jobs_path.read_text(encoding="utf-8"))
+    jobs[0].update(
+        {
+            "status": "ready",
+            "prepared_reply_text": "This reply must be withdrawn",
+            "prepared_language": "en",
+        }
+    )
+    jobs_path.write_text(json.dumps(jobs), encoding="utf-8")
+
+    edited_message = {
+        **first["message"],
+        "edit_date": first["message"]["date"] + 60,
+        "text": "I withdrew the bot request.",
+        "entities": [],
+    }
+    await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi(
+            [{"update_id": 107, "edited_message": edited_message}]
+        ),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+
+    assert json.loads(jobs_path.read_text(encoding="utf-8")) == []
 
 
 @pytest.mark.asyncio
