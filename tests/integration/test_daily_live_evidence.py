@@ -192,14 +192,14 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
     assert "Future Magicians activity" not in context
     trigger = json.loads(context)["trigger"]
     assert json.loads(context)["recent_telegram"] == []
-    assert trigger["required_title"] == (
-        "TAWG Daily Catch-up — 2026-08-22 23:00 UTC → 2026-08-23 23:00 UTC"
+    assert trigger["required_heading"] == "TAWG Daily Catch-up"
+    assert trigger["required_window_label"] == (
+        "2026-08-22 23:00 → 2026-08-23 23:00 UTC"
     )
     assert trigger["output_contract"] == {
         "citation_rule": (
-            "Each direction may have one uncited synthesis sentence; every concrete What moved "
-            "bullet starts with •, contains no other citation, and ends with exactly one exact "
-            "allowlisted citation."
+            "Every active Highlight quote and every concrete What moved list item contains no "
+            "other citation and ends with exactly one exact allowlisted citation."
         ),
         "forbidden_terms": [
             "score",
@@ -229,9 +229,20 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
             "that anyone is ranked or scored."
         ),
         "required_sections": [
+            "Highlights",
             "What moved",
             "Next up",
+            "Trusty's take",
         ],
+        "highlight_rule": (
+            "Select one to four event-centric outcomes on active days, render each as a separate "
+            "Rich Markdown quote, and never frame a contributor as a winner."
+        ),
+        "rich_markdown_rule": (
+            "Use the exact bold title and italic UTC window, level-two section headings, "
+            "level-three direction/subsection headings, quote blocks for Highlights and "
+            "Trusty's take, and '- ' list items for What moved and Next up."
+        ),
         "synthesis_rule": (
             "Each direction's first synthesis sentence may be uncited because its concrete "
             "supporting bullets immediately below are cited. It must not contain a URL or "
@@ -246,9 +257,14 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
             "Appreciation section."
         ),
         "telegram_mention_rule": (
-            "When window evidence supplies contributor_label, begin every concrete bullet "
-            "citing the evidence with that exact Public Name (@telegram_handle) label. Never "
-            "invent or infer a Telegram handle."
+            "When window evidence supplies contributor_label, begin every concrete '- ' list "
+            "item citing the evidence with that exact Public Name (@telegram_handle) label. "
+            "Never invent or infer a Telegram handle."
+        ),
+        "trustys_take_rule": (
+            "From Trusty's observer perspective, synthesize one already-established "
+            "collaboration event and end with a playful team-wide encouragement. Add no names, "
+            "mentions, URLs, citations, rankings, or new source-dependent facts."
         ),
     }
     assert {
