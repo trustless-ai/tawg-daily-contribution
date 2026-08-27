@@ -67,6 +67,60 @@ def outer_daily() -> dict:
     }
 
 
+def outer_route() -> dict:
+    return {
+        "type": "result",
+        "subtype": "success",
+        "is_error": False,
+        "num_turns": 1,
+        "total_cost_usd": 0.01,
+        "structured_output": {
+            "schema_version": "tawg.route-result.v1",
+            "route": "knowledge_question",
+        },
+    }
+
+
+@pytest.mark.asyncio
+async def test_route_job_uses_the_strict_toolless_classifier_contract(
+    tmp_path: Path,
+) -> None:
+    runner = CapturingRunner(outer_route())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+
+    result = await cli.run(
+        job_type="route",
+        context_pack='{"context_schema":"tawg.route-context.v1"}',
+        operation_id="reply:tg:tawg:101:route",
+        max_budget_usd="0.20",
+        timeout_seconds=45,
+    )
+
+    assert result == {
+        "schema_version": "tawg.route-result.v1",
+        "route": "knowledge_question",
+    }
+    assert runner.argv[runner.argv.index("--tools") + 1] == ""
+    assert runner.argv[runner.argv.index("--disallowedTools") + 1] == "mcp__*"
+    assert runner.argv[runner.argv.index("--max-turns") + 1] == "1"
+    schema = json.loads(runner.argv[runner.argv.index("--json-schema") + 1])
+    assert schema["properties"]["route"]["enum"] == [
+        "knowledge_question",
+        "identity_correction",
+        "knowledge_correction",
+        "source_suggestion",
+        "coordination",
+        "refuse",
+    ]
+    assert "Classify exactly one current Telegram mention" in runner.policy
+
+
 @pytest.mark.asyncio
 async def test_daily_uses_bounded_configurable_effort(tmp_path: Path) -> None:
     runner = CapturingRunner(outer_daily())
