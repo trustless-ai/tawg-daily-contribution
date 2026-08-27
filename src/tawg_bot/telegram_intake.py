@@ -1,16 +1,18 @@
-"""Durable L1 ingestion of all supported messages from one Telegram group."""
+"""Durable L1 ingestion of Telegram polling updates and webhook envelopes."""
 
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import os
 import re
 from collections import defaultdict
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, ClassVar, Protocol
+from typing import Any, Protocol
 from uuid import uuid4
 
 from tawg_bot.aliases import AliasRegistry
@@ -25,11 +27,16 @@ from tawg_bot.models import (
     SourceCursors,
     SourceRecord,
     SourceType,
+    TelegramWebhookReceipts,
     TriggerKind,
 )
 from tawg_bot.privacy import PrivacyFilter
-from tawg_bot.query import SourceQuery
+from tawg_bot.query import TelegramQuery
 from tawg_bot.storage import partition_stable_records
+from tawg_bot.telegram_webhook import (
+    TelegramWebhookEnvelope,
+    telegram_entities_trigger_reply,
+)
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
 
@@ -38,6 +45,13 @@ class TelegramUpdateApi(Protocol):
 
 
 UnitOfWorkFactory = Callable[[Path, str], RepositoryUnitOfWork]
+
+_LEGACY_DIRECT_REPLY_BACKFILLS: dict[str, tuple[str, str]] = {
+    "tg:tawg:3470": (
+        "2110c0c18a6ce873a957d9b18cbf577b85fe7c2d2bc18cfe874db14231c06e70",
+        "tg:tawg:3467",
+    )
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,17 +65,405 @@ class IntakeResult:
     changed_paths: tuple[str, ...]
 
 
+@dataclass(frozen=True, slots=True)
+class WebhookIntakeResult:
+    received: int
+    persisted: int
+    replayed: int
+    jobs_created: int
+    changed_paths: tuple[str, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class _TelegramMessage:
+    update_id: int
+    record_id: str
+    message_id: int
+    created_at: datetime
+    updated_at: datetime
+    text: str
+    public_username: str | None
+    display_name: str
+    reply_to_message_id: int | None
+    message_thread_id: int | None
+    attachments: tuple[AttachmentMetadata, ...]
+    edited: bool
+    trigger_kind: TriggerKind | None
+    author_is_bot: bool | None
+    persist_thread_metadata: bool
+
+
+@dataclass(frozen=True, slots=True)
+class _PersistenceResult:
+    persisted: int
+    jobs_created: int
+    changed_paths: tuple[str, ...]
+
+
 def _default_uow_factory(root: Path, operation_id: str) -> RepositoryUnitOfWork:
     return RepositoryUnitOfWork(root, operation_id=operation_id)
 
 
-class TelegramIntake:
-    _LEGACY_DIRECT_REPLY_BACKFILLS: ClassVar[dict[str, tuple[str, str]]] = {
-        "tg:tawg:3470": (
-            "2110c0c18a6ce873a957d9b18cbf577b85fe7c2d2bc18cfe874db14231c06e70",
-            "tg:tawg:3467",
+class _TelegramPersistence:
+    """Common stable-record and pending-job publication for all Telegram inputs."""
+
+    def __init__(
+        self,
+        *,
+        root: Path,
+        group_slug: str,
+        aliases: AliasRegistry,
+        uow_factory: UnitOfWorkFactory,
+        chat_id: int | None = None,
+    ) -> None:
+        self.root = root
+        self.group_slug = group_slug
+        self.aliases = aliases
+        self.uow_factory = uow_factory
+        self.chat_id = chat_id
+
+    def persist(
+        self,
+        messages: Iterable[_TelegramMessage],
+        *,
+        now: datetime,
+        cursors: SourceCursors | None = None,
+        receipts: TelegramWebhookReceipts | None = None,
+    ) -> _PersistenceResult:
+        all_messages = tuple(messages)
+        incoming_by_id: dict[str, _TelegramMessage] = {}
+        for message in all_messages:
+            current = incoming_by_id.get(message.record_id)
+            if current is None or _message_is_fresher(
+                updated_at=message.updated_at,
+                edited=message.edited,
+                update_id=message.update_id,
+                current_updated_at=current.updated_at,
+                current_edited=current.edited,
+                current_update_id=current.update_id,
+            ):
+                incoming_by_id[message.record_id] = message
+        persisted_by_id = {
+            record.record_id: record for record in TelegramQuery(self.root).records()
+        }
+        fresh_messages = tuple(
+            message
+            for message in incoming_by_id.values()
+            if _message_supersedes_record(message, persisted_by_id.get(message.record_id))
         )
-    }
+
+        records_by_id: dict[str, SourceRecord] = {}
+        jobs_by_id = self._load_jobs()
+        initial_job_ids = set(jobs_by_id)
+        for message in fresh_messages:
+            person_id = self.aliases.resolve_telegram_live(
+                public_username=message.public_username,
+                display_name=message.display_name,
+            )
+            month_path = f"data/telegram/{message.created_at:%Y/%m}/messages.jsonl"
+            relations = (
+                [
+                    Relation(
+                        relation_type="reply_to",
+                        target_record_id=telegram_id(
+                            self.group_slug, message.reply_to_message_id
+                        ),
+                    )
+                ]
+                if message.reply_to_message_id is not None
+                else []
+            )
+            source_payload: dict[str, Any] = {
+                "message_kind": "group_message",
+                "edited": message.edited,
+                "update_id": message.update_id,
+            }
+            if message.author_is_bot is not None:
+                source_payload["author_is_bot"] = message.author_is_bot
+            if message.persist_thread_metadata:
+                source_payload["message_thread_id"] = message.message_thread_id
+            record = SourceRecord.from_text(
+                record_id=message.record_id,
+                source_type=SourceType.TELEGRAM_MESSAGE,
+                source_locator=f"repo:{month_path}#{message.record_id}",
+                author_person_id=person_id,
+                author_source_handle=(
+                    f"@{message.public_username}"
+                    if message.public_username
+                    else message.display_name
+                ),
+                created_at=message.created_at,
+                updated_at=message.updated_at,
+                text_original=message.text,
+                relations=relations,
+                attachment_metadata=list(message.attachments),
+                ingested_at=now,
+                source_payload=source_payload,
+            )
+            records_by_id[record.record_id] = record
+            job_id = f"reply:{record.record_id}"
+            existing = jobs_by_id.get(job_id)
+            previous_record = persisted_by_id.get(record.record_id)
+            if (
+                message.edited
+                and message.trigger_kind is None
+                and existing is not None
+                and existing.status not in {JobStatus.DELIVERED, JobStatus.IGNORED}
+            ):
+                del jobs_by_id[job_id]
+            elif message.trigger_kind is not None:
+                if existing is None:
+                    jobs_by_id[job_id] = PendingBotJob(
+                        job_id=job_id,
+                        trigger_record_id=record.record_id,
+                        reply_to_message_id=message.message_id,
+                        message_thread_id=message.message_thread_id,
+                        trigger_kind=message.trigger_kind,
+                        created_at=now,
+                        updated_at=now,
+                    )
+                elif (
+                    existing.status is not JobStatus.DELIVERED
+                    and (
+                        message.edited
+                        or (
+                            previous_record is not None
+                            and (
+                                previous_record.content_sha256 != record.content_sha256
+                                or existing.message_thread_id
+                                != message.message_thread_id
+                            )
+                        )
+                    )
+                ):
+                    jobs_by_id[job_id] = existing.model_copy(
+                        update={
+                            "message_thread_id": message.message_thread_id,
+                            "trigger_kind": message.trigger_kind,
+                            "status": JobStatus.PENDING,
+                            "prepared_reply_text": None,
+                            "prepared_citations": [],
+                            "prepared_language": None,
+                            "refusal": False,
+                            "safe_error_code": None,
+                            "classified_route": None,
+                            "router_context_sha256": None,
+                            "router_version": None,
+                            "routed_at": None,
+                            "updated_at": now,
+                        }
+                    )
+                elif (
+                    existing.message_thread_id is None
+                    and message.message_thread_id is not None
+                ):
+                    jobs_by_id[job_id] = existing.model_copy(
+                        update={
+                            "message_thread_id": message.message_thread_id,
+                            "updated_at": now,
+                        }
+                    )
+
+        for message in all_messages:
+            if message.trigger_kind is None or message.message_thread_id is None:
+                continue
+            job_id = f"reply:{message.record_id}"
+            existing = jobs_by_id.get(job_id)
+            if existing is not None and existing.message_thread_id is None:
+                jobs_by_id[job_id] = existing.model_copy(
+                    update={
+                        "message_thread_id": message.message_thread_id,
+                        "updated_at": now,
+                    }
+                )
+
+        self._reconcile_direct_replies(
+            records={**persisted_by_id, **records_by_id},
+            jobs=jobs_by_id,
+            now=now,
+        )
+
+        monthly: dict[str, list[SourceRecord]] = defaultdict(list)
+        for record in records_by_id.values():
+            monthly[f"data/telegram/{record.created_at:%Y/%m}/messages.jsonl"].append(
+                record
+            )
+
+        uow = self.uow_factory(self.root, f"telegram-{uuid4()}")
+        uow.register_external_evidence(())
+        for path, month_records in sorted(monthly.items()):
+            partitions = partition_stable_records(
+                self.root,
+                path,
+                month_records,
+                search_relative_root="data/telegram",
+            )
+            for target, stable_records in sorted(partitions.items()):
+                uow.stage_records(target, stable_records)
+        uow.stage_json(
+            "data/state/pending-bot-jobs.json",
+            [jobs_by_id[job_id].model_dump(mode="json") for job_id in sorted(jobs_by_id)],
+        )
+        if cursors is not None:
+            uow.stage_json("data/state/source-cursors.json", cursors.model_dump(mode="json"))
+        if receipts is not None:
+            uow.stage_json(
+                "data/state/telegram-webhook-receipts.json",
+                receipts.model_dump(mode="json"),
+            )
+        uow.stage_bytes("knowledge/meta/aliases.yml", self.aliases.to_yaml_bytes())
+        changed_paths = uow.publish().changed_paths
+        return _PersistenceResult(
+            persisted=len(records_by_id),
+            jobs_created=len(set(jobs_by_id) - initial_job_ids),
+            changed_paths=changed_paths,
+        )
+
+    def _load_jobs(self) -> dict[str, PendingBotJob]:
+        raw = json.loads(
+            (self.root / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+        )
+        jobs = [PendingBotJob.model_validate(item) for item in raw]
+        return {job.job_id: job for job in jobs}
+
+    def _reconcile_direct_replies(
+        self,
+        *,
+        records: dict[str, SourceRecord],
+        jobs: dict[str, PendingBotJob],
+        now: datetime,
+    ) -> None:
+        delivered_bot_message_ids = _delivered_bot_message_ids(
+            self.root, chat_id=self.chat_id
+        )
+        prefix = f"tg:{self.group_slug}:"
+        for record in records.values():
+            if not record.record_id.startswith(prefix):
+                continue
+            job_id = f"reply:{record.record_id}"
+            if job_id in jobs or record.source_payload.get("author_is_bot") is True:
+                continue
+            reply_targets = [
+                relation.target_record_id
+                for relation in record.relations
+                if relation.relation_type == "reply_to"
+            ]
+            if not reply_targets:
+                continue
+            target = reply_targets[0]
+            if not target.startswith(prefix):
+                continue
+            author_is_bot = record.source_payload.get("author_is_bot")
+            if author_is_bot is not False and not _authorized_legacy_backfill(
+                record, target
+            ):
+                continue
+            target_id = target.rsplit(":", 1)[-1]
+            message_id = record.record_id.removeprefix(prefix)
+            if (
+                not target_id.isdigit()
+                or int(target_id) not in delivered_bot_message_ids
+                or not message_id.isdigit()
+                or int(message_id) in delivered_bot_message_ids
+            ):
+                continue
+            thread_id = record.source_payload.get("message_thread_id")
+            jobs[job_id] = PendingBotJob(
+                job_id=job_id,
+                trigger_record_id=record.record_id,
+                reply_to_message_id=int(message_id),
+                message_thread_id=(
+                    thread_id
+                    if isinstance(thread_id, int) and not isinstance(thread_id, bool)
+                    else None
+                ),
+                trigger_kind=TriggerKind.REPLY_TO_BOT,
+                created_at=now,
+                updated_at=now,
+            )
+
+
+def ingest_envelopes(
+    *,
+    root: Path,
+    group_slug: str,
+    bot_username: str,
+    envelopes: Iterable[TelegramWebhookEnvelope],
+    now: datetime,
+    uow_factory: UnitOfWorkFactory = _default_uow_factory,
+    telegram_chat_id: int | None = None,
+) -> WebhookIntakeResult:
+    """Verify and atomically ingest sanitized webhook envelopes without polling."""
+    _require_utc(now, "ingestion time")
+    batch = tuple(envelopes)
+    for envelope in batch:
+        _verify_envelope(
+            envelope,
+            group_slug=group_slug,
+            bot_username=bot_username,
+        )
+
+    receipts_path = root / "data/state/telegram-webhook-receipts.json"
+    receipts = (
+        TelegramWebhookReceipts.model_validate_json(
+            receipts_path.read_text(encoding="utf-8")
+        )
+        if receipts_path.exists()
+        else TelegramWebhookReceipts(
+            schema_version="tawg.telegram-webhook-receipts.v1"
+        )
+    )
+    seen = set(receipts.update_ids)
+    unseen: list[TelegramWebhookEnvelope] = []
+    for envelope in batch:
+        if envelope.update_id in seen:
+            continue
+        seen.add(envelope.update_id)
+        unseen.append(envelope)
+    if not unseen:
+        return WebhookIntakeResult(
+            received=len(batch),
+            persisted=0,
+            replayed=len(batch),
+            jobs_created=0,
+            changed_paths=(),
+        )
+
+    updated_receipts = TelegramWebhookReceipts(
+        schema_version="tawg.telegram-webhook-receipts.v1",
+        update_ids=[*receipts.update_ids, *(item.update_id for item in unseen)]
+    )
+    aliases = AliasRegistry.from_yaml(root / "knowledge/meta/aliases.yml")
+    persistence = _TelegramPersistence(
+        root=root,
+        group_slug=group_slug,
+        aliases=aliases,
+        uow_factory=uow_factory,
+        chat_id=telegram_chat_id,
+    )
+    delivered_bot_message_ids = _delivered_bot_message_ids(
+        root, chat_id=telegram_chat_id
+    )
+    result = persistence.persist(
+        (
+            _message_from_envelope(
+                item, delivered_bot_message_ids=delivered_bot_message_ids
+            )
+            for item in unseen
+        ),
+        now=now,
+        receipts=updated_receipts,
+    )
+    return WebhookIntakeResult(
+        received=len(batch),
+        persisted=result.persisted,
+        replayed=len(batch) - len(unseen),
+        jobs_created=result.jobs_created,
+        changed_paths=result.changed_paths,
+    )
+
+
+class TelegramIntake:
     _ENGLISH_GREETING = re.compile(
         r"(?<!\w)(?:hello|hi|hey|yo|greetings|welcome|gm|gn|good\s+(?:morning|"
         r"afternoon|evening|night|day)|morning|afternoon|evening|how\s+are\s+you|"
@@ -127,8 +529,7 @@ class TelegramIntake:
         )
 
     async def collect(self, now: datetime) -> IntakeResult:
-        if now.tzinfo is None or now.utcoffset() != UTC.utcoffset(now):
-            raise ValueError("collection time must use UTC")
+        _require_utc(now, "collection time")
         cursors = SourceCursors.model_validate_json(
             (self.root / "data/state/source-cursors.json").read_text(encoding="utf-8")
         )
@@ -138,16 +539,10 @@ class TelegramIntake:
             if updates
             else cursors.telegram_offset
         )
-        records_by_id: dict[str, SourceRecord] = {}
-        existing_records = {
-            record.record_id: record
-            for record in SourceQuery(self.root).records()
-            if record.source_type is SourceType.TELEGRAM_MESSAGE
-            and record.record_id.startswith(f"tg:{self.group_slug}:")
-        }
-        jobs_by_id = self._load_jobs()
-        initial_job_ids = set(jobs_by_id)
-        delivered_bot_message_ids = self._delivered_bot_message_ids()
+        messages: list[_TelegramMessage] = []
+        delivered_bot_message_ids = _delivered_bot_message_ids(
+            self.root, chat_id=self.chat_id
+        )
         filtered = 0
         rejected = 0
         for update in updates:
@@ -159,119 +554,43 @@ class TelegramIntake:
             if not isinstance(chat, dict) or chat.get("id") != self.chat_id:
                 filtered += 1
                 continue
-            record = self._record_from_message(message, edited=edited, ingested_at=now)
-            if record is None:
+            converted = self._message_from_polling(
+                message,
+                edited=edited,
+                update_id=self._update_id(update),
+                delivered_bot_message_ids=delivered_bot_message_ids,
+            )
+            if converted is None:
                 rejected += 1
                 continue
-            previous_record = records_by_id.get(record.record_id) or existing_records.get(
-                record.record_id
-            )
-            records_by_id[record.record_id] = record
-            job_id = f"reply:{record.record_id}"
-            existing = jobs_by_id.get(job_id)
-            trigger_kind = self._trigger_kind(message, delivered_bot_message_ids)
-            triggers_reply = trigger_kind is not None
-            if (
-                edited
-                and not triggers_reply
-                and existing is not None
-                and existing.status not in {JobStatus.DELIVERED, JobStatus.IGNORED}
-            ):
-                del jobs_by_id[job_id]
-            elif triggers_reply:
-                message_thread_id = self._message_thread_id(message)
-                if existing is None:
-                    jobs_by_id[job_id] = PendingBotJob(
-                        job_id=job_id,
-                        trigger_record_id=record.record_id,
-                        reply_to_message_id=int(message["message_id"]),
-                        message_thread_id=message_thread_id,
-                        trigger_kind=trigger_kind,
-                        created_at=now,
-                        updated_at=now,
-                    )
-                elif (
-                    existing.status is not JobStatus.DELIVERED
-                    and (
-                        edited
-                        or (
-                            previous_record is not None
-                            and (
-                                previous_record.content_sha256 != record.content_sha256
-                                or previous_record.source_payload.get("message_thread_id")
-                                != record.source_payload.get("message_thread_id")
-                            )
-                        )
-                    )
-                ):
-                    jobs_by_id[job_id] = existing.model_copy(
-                        update={
-                            "message_thread_id": message_thread_id,
-                            "trigger_kind": trigger_kind,
-                            "status": JobStatus.PENDING,
-                            "prepared_reply_text": None,
-                            "prepared_citations": [],
-                            "prepared_language": None,
-                            "refusal": False,
-                            "safe_error_code": None,
-                            "classified_route": None,
-                            "router_context_sha256": None,
-                            "router_version": None,
-                            "routed_at": None,
-                            "updated_at": now,
-                        }
-                    )
-                elif existing.message_thread_id is None and message_thread_id is not None:
-                    jobs_by_id[job_id] = existing.model_copy(
-                        update={"message_thread_id": message_thread_id, "updated_at": now}
-                    )
-
-        self._reconcile_direct_replies(
-            records={**existing_records, **records_by_id},
-            jobs=jobs_by_id,
-            delivered_bot_message_ids=delivered_bot_message_ids,
-            now=now,
-        )
-
-        if not updates and set(jobs_by_id) == initial_job_ids:
-            return IntakeResult(0, 0, 0, 0, 0, cursors.telegram_offset, ())
-
-        monthly: dict[str, list[SourceRecord]] = defaultdict(list)
-        for record in records_by_id.values():
-            monthly[f"data/telegram/{record.created_at:%Y/%m}/messages.jsonl"].append(record)
+            messages.append(converted)
 
         cursors.telegram_offset = next_offset
-        uow = self.uow_factory(self.root, f"telegram-{uuid4()}")
-        uow.register_external_evidence(())
-        for path, month_records in sorted(monthly.items()):
-            partitions = partition_stable_records(
-                self.root,
-                path,
-                month_records,
-                search_relative_root="data/telegram",
-            )
-            for target, stable_records in sorted(partitions.items()):
-                uow.stage_records(target, stable_records)
-        uow.stage_json(
-            "data/state/pending-bot-jobs.json",
-            [jobs_by_id[job_id].model_dump(mode="json") for job_id in sorted(jobs_by_id)],
-        )
-        uow.stage_json("data/state/source-cursors.json", cursors.model_dump(mode="json"))
-        uow.stage_bytes("knowledge/meta/aliases.yml", self.aliases.to_yaml_bytes())
-        changed_paths = uow.publish().changed_paths
+        result = _TelegramPersistence(
+            root=self.root,
+            group_slug=self.group_slug,
+            aliases=self.aliases,
+            uow_factory=self.uow_factory,
+            chat_id=self.chat_id,
+        ).persist(messages, now=now, cursors=cursors)
         return IntakeResult(
             received=len(updates),
-            persisted=len(records_by_id),
+            persisted=result.persisted,
             filtered=filtered,
             rejected=rejected,
-            jobs_created=len(set(jobs_by_id) - initial_job_ids),
+            jobs_created=result.jobs_created,
             next_offset=next_offset,
-            changed_paths=changed_paths,
+            changed_paths=result.changed_paths,
         )
 
-    def _record_from_message(
-        self, message: dict[str, Any], *, edited: bool, ingested_at: datetime
-    ) -> SourceRecord | None:
+    def _message_from_polling(
+        self,
+        message: dict[str, Any],
+        *,
+        edited: bool,
+        update_id: int,
+        delivered_bot_message_ids: frozenset[int],
+    ) -> _TelegramMessage | None:
         message_id = message.get("message_id")
         created_timestamp = message.get("date")
         if not isinstance(message_id, int) or not isinstance(created_timestamp, int):
@@ -286,11 +605,6 @@ class TelegramIntake:
         author_mapping = author if isinstance(author, dict) else {}
         username = author_mapping.get("username")
         public_username = username if isinstance(username, str) else None
-        display_name = self._display_name(author_mapping)
-        person_id = self.aliases.resolve_telegram_live(
-            public_username=public_username,
-            display_name=display_name,
-        )
         created_at = datetime.fromtimestamp(created_timestamp, tz=UTC)
         edit_timestamp = message.get("edit_date")
         updated_at = (
@@ -298,43 +612,33 @@ class TelegramIntake:
             if isinstance(edit_timestamp, int)
             else created_at
         )
-        record_id = telegram_id(self.group_slug, message_id)
-        relations: list[Relation] = []
         reply = message.get("reply_to_message")
-        if isinstance(reply, dict) and isinstance(reply.get("message_id"), int):
-            relations.append(
-                Relation(
-                    relation_type="reply_to",
-                    target_record_id=telegram_id(self.group_slug, reply["message_id"]),
-                )
-            )
-        month_path = f"data/telegram/{created_at:%Y/%m}/messages.jsonl"
-        return SourceRecord.from_text(
-            record_id=record_id,
-            source_type=SourceType.TELEGRAM_MESSAGE,
-            source_locator=f"repo:{month_path}#{record_id}",
-            author_person_id=person_id,
-            author_source_handle=f"@{public_username}" if public_username else display_name,
+        reply_to_message_id = (
+            reply.get("message_id")
+            if isinstance(reply, dict) and isinstance(reply.get("message_id"), int)
+            else None
+        )
+        return _TelegramMessage(
+            update_id=update_id,
+            record_id=telegram_id(self.group_slug, message_id),
+            message_id=message_id,
             created_at=created_at,
             updated_at=updated_at,
-            text_original=inspected.sanitized_text,
-            relations=relations,
-            attachment_metadata=self._attachment_metadata(message, bool(text)),
-            ingested_at=ingested_at,
-            source_payload={
-                "message_kind": "group_message",
-                "edited": edited,
-                "message_thread_id": self._message_thread_id(message),
-                "author_is_bot": author_mapping.get("is_bot") is True,
-            },
+            text=inspected.sanitized_text,
+            public_username=public_username,
+            display_name=self._display_name(author_mapping),
+            reply_to_message_id=reply_to_message_id,
+            message_thread_id=self._message_thread_id(message),
+            attachments=tuple(self._attachment_metadata(message, bool(text))),
+            edited=edited,
+            trigger_kind=self._trigger_kind(message, delivered_bot_message_ids),
+            author_is_bot=(
+                author_mapping.get("is_bot")
+                if isinstance(author_mapping.get("is_bot"), bool)
+                else None
+            ),
+            persist_thread_metadata=True,
         )
-
-    def _load_jobs(self) -> dict[str, PendingBotJob]:
-        raw = json.loads(
-            (self.root / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
-        )
-        jobs = [PendingBotJob.model_validate(item) for item in raw]
-        return {job.job_id: job for job in jobs}
 
     def _trigger_kind(
         self,
@@ -384,84 +688,6 @@ class TelegramIntake:
             cls._ENGLISH_GREETING.search(text) is not None
             or cls._CJK_AND_OTHER_GREETING.search(text) is not None
         )
-
-    def _delivered_bot_message_ids(self) -> frozenset[int]:
-        path = self.root / "data/state/delivery-state.json"
-        if not path.exists():
-            return frozenset()
-        raw = json.loads(path.read_text(encoding="utf-8"))
-        if not isinstance(raw, list):
-            raise ValueError("invalid Telegram delivery state")
-        attempts = [DeliveryAttempt.model_validate(item) for item in raw]
-        return frozenset(
-            message_id
-            for attempt in attempts
-            if attempt.status is DeliveryStatus.DELIVERED
-            and attempt.telegram_chat_id == self.chat_id
-            for message_id in attempt.telegram_message_ids
-        )
-
-    def _reconcile_direct_replies(
-        self,
-        *,
-        records: dict[str, SourceRecord],
-        jobs: dict[str, PendingBotJob],
-        delivered_bot_message_ids: frozenset[int],
-        now: datetime,
-    ) -> None:
-        prefix = f"tg:{self.group_slug}:"
-        for record in records.values():
-            job_id = f"reply:{record.record_id}"
-            if (
-                job_id in jobs
-                or record.source_payload.get("author_is_bot") is True
-            ):
-                continue
-            reply_targets = [
-                relation.target_record_id
-                for relation in record.relations
-                if relation.relation_type == "reply_to"
-            ]
-            if not reply_targets:
-                continue
-            target = reply_targets[0]
-            author_is_bot = record.source_payload.get("author_is_bot")
-            if author_is_bot is not False and not self._authorized_legacy_backfill(
-                record, target
-            ):
-                continue
-            target_id = target.rsplit(":", 1)[-1]
-            message_id = record.record_id.removeprefix(prefix)
-            if (
-                not target_id.isdigit()
-                or int(target_id) not in delivered_bot_message_ids
-                or not message_id.isdigit()
-                or int(message_id) in delivered_bot_message_ids
-            ):
-                continue
-            thread_id = record.source_payload.get("message_thread_id")
-            jobs[job_id] = PendingBotJob(
-                job_id=job_id,
-                trigger_record_id=record.record_id,
-                reply_to_message_id=int(message_id),
-                message_thread_id=(
-                    thread_id
-                    if isinstance(thread_id, int) and not isinstance(thread_id, bool)
-                    else None
-                ),
-                trigger_kind=TriggerKind.REPLY_TO_BOT,
-                created_at=now,
-                updated_at=now,
-            )
-
-    @classmethod
-    def _authorized_legacy_backfill(
-        cls,
-        record: SourceRecord,
-        target_record_id: str,
-    ) -> bool:
-        expected = cls._LEGACY_DIRECT_REPLY_BACKFILLS.get(record.record_id)
-        return expected == (record.content_sha256, target_record_id)
 
     @staticmethod
     def _utf16_slice(text: str, offset: int, length: int) -> str:
@@ -515,3 +741,145 @@ class TelegramIntake:
             if field in message:
                 return [AttachmentMetadata(media_type=media_type, has_caption=has_caption)]
         return []
+
+
+def _verify_envelope(
+    envelope: TelegramWebhookEnvelope, *, group_slug: str, bot_username: str
+) -> None:
+    if envelope.schema_version != "tawg.telegram-webhook-envelope.v1":
+        raise ValueError("Telegram webhook envelope schema is invalid")
+    if envelope.source_id != telegram_id(group_slug, envelope.message_id):
+        raise ValueError("Telegram webhook envelope source identity is invalid")
+    if envelope.edited != (envelope.edited_timestamp is not None):
+        raise ValueError("Telegram webhook envelope edit metadata is invalid")
+    payload = envelope.model_dump(exclude={"integrity_digest"}, mode="json")
+    expected = hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+    if not hmac.compare_digest(envelope.integrity_digest, expected):
+        raise ValueError("Telegram webhook envelope integrity check failed")
+    expected_trigger = telegram_entities_trigger_reply(
+        envelope.entities,
+        bot_username=bot_username,
+    )
+    if envelope.triggers_reply is not expected_trigger:
+        raise ValueError("Telegram webhook envelope trigger metadata is invalid")
+
+
+def _message_from_envelope(
+    envelope: TelegramWebhookEnvelope,
+    *,
+    delivered_bot_message_ids: frozenset[int],
+) -> _TelegramMessage:
+    created_at = datetime.fromtimestamp(envelope.timestamp, tz=UTC)
+    updated_at = (
+        datetime.fromtimestamp(envelope.edited_timestamp, tz=UTC)
+        if envelope.edited_timestamp is not None
+        else created_at
+    )
+    trigger_kind: TriggerKind | None = None
+    if not envelope.author_is_bot:
+        if envelope.reply_to_message_id in delivered_bot_message_ids:
+            trigger_kind = TriggerKind.REPLY_TO_BOT
+        elif envelope.triggers_reply:
+            trigger_kind = TriggerKind.MENTION
+        elif TelegramIntake._is_greeting_candidate(envelope.text):
+            trigger_kind = TriggerKind.GREETING_CANDIDATE
+    return _TelegramMessage(
+        update_id=envelope.update_id,
+        record_id=envelope.source_id,
+        message_id=envelope.message_id,
+        created_at=created_at,
+        updated_at=updated_at,
+        text=envelope.text,
+        public_username=envelope.public_username,
+        display_name=envelope.display_name,
+        reply_to_message_id=envelope.reply_to_message_id,
+        message_thread_id=envelope.message_thread_id,
+        attachments=tuple(
+            AttachmentMetadata(
+                media_type=attachment.media_type,
+                has_caption=attachment.has_caption,
+            )
+            for attachment in envelope.attachments
+        ),
+        edited=envelope.edited,
+        trigger_kind=trigger_kind,
+        author_is_bot=envelope.author_is_bot,
+        persist_thread_metadata=False,
+    )
+
+
+def _delivered_bot_message_ids(
+    root: Path, *, chat_id: int | None = None
+) -> frozenset[int]:
+    if chat_id is None:
+        return frozenset()
+    path = root / "data/state/delivery-state.json"
+    if not path.exists():
+        return frozenset()
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(raw, list):
+        raise ValueError("invalid Telegram delivery state")
+    attempts = [DeliveryAttempt.model_validate(item) for item in raw]
+    return frozenset(
+        message_id
+        for attempt in attempts
+        if attempt.status is DeliveryStatus.DELIVERED
+        and attempt.telegram_chat_id == chat_id
+        for message_id in attempt.telegram_message_ids
+    )
+
+
+def _authorized_legacy_backfill(
+    record: SourceRecord,
+    target_record_id: str,
+) -> bool:
+    expected = _LEGACY_DIRECT_REPLY_BACKFILLS.get(record.record_id)
+    return expected == (record.content_sha256, target_record_id)
+
+
+def _message_supersedes_record(
+    message: _TelegramMessage,
+    record: SourceRecord | None,
+) -> bool:
+    if record is None:
+        return True
+    return _message_is_fresher(
+        updated_at=message.updated_at,
+        edited=message.edited,
+        update_id=message.update_id,
+        current_updated_at=record.updated_at,
+        current_edited=record.source_payload.get("edited") is True,
+        current_update_id=_record_update_id(record),
+    )
+
+
+def _message_is_fresher(
+    *,
+    updated_at: datetime,
+    edited: bool,
+    update_id: int,
+    current_updated_at: datetime,
+    current_edited: bool,
+    current_update_id: int | None,
+) -> bool:
+    if updated_at != current_updated_at:
+        return updated_at > current_updated_at
+    if edited != current_edited:
+        return edited
+    if current_update_id is None:
+        return False
+    return update_id > current_update_id
+
+
+def _record_update_id(record: SourceRecord) -> int | None:
+    value = record.source_payload.get("update_id")
+    if isinstance(value, int) and not isinstance(value, bool) and value >= 0:
+        return value
+    return None
+
+
+def _require_utc(value: datetime, label: str) -> None:
+    if value.tzinfo is None or value.utcoffset() != UTC.utcoffset(value):
+        raise ValueError(f"{label} must use UTC")
