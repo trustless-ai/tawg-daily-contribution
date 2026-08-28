@@ -19,3 +19,4 @@ telegram-export*.json
 # Python build artifacts
 build/
 *.egg-info/
+/deploy/claude-runtime/node_modules/

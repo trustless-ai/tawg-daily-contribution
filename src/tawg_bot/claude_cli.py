@@ -6,7 +6,9 @@ import asyncio
 import json
 import os
 import re
+import signal
 from collections.abc import Mapping, Sequence
+from contextlib import suppress
 from dataclasses import dataclass
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
@@ -60,6 +62,7 @@ class AsyncioProcessRunner:
                 stderr=asyncio.subprocess.PIPE,
                 env=dict(env),
                 cwd=cwd,
+                start_new_session=True,
             )
         except OSError:
             raise ClaudeCliError("Claude Code could not be started") from None
@@ -68,7 +71,11 @@ class AsyncioProcessRunner:
                 process.communicate(stdin), timeout=timeout_seconds
             )
         except TimeoutError:
-            process.kill()
+            with suppress(ProcessLookupError):
+                os.killpg(process.pid, signal.SIGTERM)
+            await asyncio.sleep(2)
+            with suppress(ProcessLookupError):
+                os.killpg(process.pid, signal.SIGKILL)
             await process.wait()
             raise ClaudeCliError("Claude Code exceeded its time limit") from None
         return CompletedProcess(process.returncode or 0, stdout, stderr)
@@ -155,7 +162,7 @@ class ClaudeCli:
         compact_schema = json.dumps(cli_schema, separators=(",", ":"), sort_keys=True)
         policy_path = self._write_policy(job_type, schema, operation_id)
         argv = [
-            self.executable,
+            *self._executable_argv(),
             "-p",
             "--safe-mode",
             "--disable-slash-commands",
@@ -229,6 +236,20 @@ class ClaudeCli:
         except ValidationError:
             raise ClaudeCliError("Claude Code structured output failed schema validation") from None
         return sanitized
+
+    def _executable_argv(self) -> list[str]:
+        if self.executable != "claude":
+            return [self.executable]
+        workspace = Path(self.source_environment.get("GITHUB_WORKSPACE", self.root)).resolve()
+        wrapper = (
+            workspace
+            / "deploy/claude-runtime/node_modules/@anthropic-ai/claude-code/cli-wrapper.cjs"
+        )
+        if wrapper.is_file() and not wrapper.is_symlink():
+            resolved = wrapper.resolve()
+            if resolved.is_relative_to(workspace):
+                return ["node", str(resolved)]
+        return [self.executable]
 
     def _sanitize_structured_output(
         self, value: Any, *, controller_operation_id: str

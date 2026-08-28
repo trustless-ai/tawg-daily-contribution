@@ -1,10 +1,13 @@
+import asyncio
 import json
+import signal
 from dataclasses import dataclass
 from pathlib import Path
 
 import pytest
 
 from tawg_bot.claude_cli import (
+    AsyncioProcessRunner,
     ClaudeCli,
     ClaudeCliError,
     CompletedProcess,
@@ -30,6 +33,59 @@ class CapturingRunner:
         policy_index = self.argv.index("--system-prompt-file") + 1
         self.policy = Path(self.argv[policy_index]).read_text()
         return CompletedProcess(0, json.dumps(self.output).encode(), b"")
+
+
+@pytest.mark.asyncio
+async def test_process_timeout_terminates_the_cli_process_group(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    started: dict[str, object] = {}
+    signals: list[tuple[int, signal.Signals]] = []
+    sleeps: list[float] = []
+
+    class Process:
+        pid = 4242
+        returncode = None
+
+        async def communicate(self, stdin: bytes) -> tuple[bytes, bytes]:
+            del stdin
+            await asyncio.Future()
+            raise AssertionError("unreachable")
+
+        async def wait(self) -> int:
+            self.returncode = -signal.SIGTERM
+            return self.returncode
+
+    async def create(*argv: str, **kwargs: object) -> Process:
+        started["argv"] = argv
+        started.update(kwargs)
+        return Process()
+
+    def killpg(process_group: int, sent_signal: signal.Signals) -> None:
+        signals.append((process_group, sent_signal))
+
+    async def sleep(seconds: float) -> None:
+        sleeps.append(seconds)
+
+    monkeypatch.setattr(asyncio, "create_subprocess_exec", create)
+    monkeypatch.setattr(asyncio, "sleep", sleep)
+    monkeypatch.setattr("tawg_bot.claude_cli.os.killpg", killpg)
+
+    with pytest.raises(ClaudeCliError, match="time limit"):
+        await AsyncioProcessRunner().run(
+            argv=("node", "wrapper.cjs"),
+            stdin=b"{}",
+            env={"PATH": "/usr/bin"},
+            cwd=tmp_path,
+            timeout_seconds=0.001,
+        )
+
+    assert started["start_new_session"] is True
+    assert sleeps == [2]
+    assert signals == [
+        (4242, signal.SIGTERM),
+        (4242, signal.SIGKILL),
+    ]
 
 
 def outer_reply(reply_text: str = "Here is the update.") -> dict:
@@ -172,6 +228,34 @@ async def test_daily_defaults_to_medium_effort(tmp_path: Path) -> None:
     )
 
     assert runner.argv[runner.argv.index("--effort") + 1] == "medium"
+
+
+@pytest.mark.asyncio
+async def test_default_cli_uses_the_locked_javascript_wrapper_without_postinstall(
+    tmp_path: Path,
+) -> None:
+    wrapper = (
+        tmp_path
+        / "deploy/claude-runtime/node_modules/@anthropic-ai/claude-code/cli-wrapper.cjs"
+    )
+    wrapper.parent.mkdir(parents=True)
+    wrapper.write_text("// locked Claude runtime wrapper\n", encoding="utf-8")
+    runner = CapturingRunner(outer_daily())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        source_environment={"PATH": "/usr/bin", "GITHUB_WORKSPACE": str(tmp_path)},
+        runtime_root=tmp_path / "runtime",
+    )
+
+    await cli.run(
+        job_type="daily",
+        context_pack="{}",
+        operation_id="daily-2026-08-24T23-00-00Z",
+        max_budget_usd="1.00",
+    )
+
+    assert runner.argv[:2] == ["node", str(wrapper)]
 
 
 @pytest.mark.asyncio

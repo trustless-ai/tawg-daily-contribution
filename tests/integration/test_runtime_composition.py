@@ -577,6 +577,278 @@ async def test_prepare_daily_persists_an_exact_validated_external_citation(
 
 
 @pytest.mark.asyncio
+async def test_operator_preview_generates_fresh_rich_daily_under_a_distinct_job(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    preview_now = datetime(2026, 8, 28, 1, 17, tzinfo=UTC)
+    window = DailyWindow.for_due_run(preview_now)
+    assert window.window_id == "daily:2026-08-27T23:00:00Z"
+    state = tmp_path / "data/state/delivery-state.json"
+    state.write_text(
+        json.dumps(
+            [
+                {
+                    "schema_version": "tawg.delivery-attempt.v1",
+                    "delivery_id": window.window_id,
+                    "job_id": window.window_id,
+                    "destination": "tawg",
+                    "status": "ambiguous",
+                    "content_sha256": (
+                        "78bb59915ac2873a30dedb7416e039ade"
+                        "46b80ba602c4e20e85e5d842e507262"
+                    ),
+                    "message_count": 1,
+                    "delivery_format": "rich_markdown_v1",
+                    "reply_to_message_id": None,
+                    "message_thread_id": None,
+                    "telegram_chat_id": None,
+                    "telegram_message_ids": [],
+                    "sent_at": None,
+                    "prepared_at": "2026-08-27T23:02:53.169597Z",
+                    "updated_at": "2026-08-28T01:56:56Z",
+                    "safe_error_code": "operator_superseded_no_delivery_evidence",
+                }
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    generated = PreparedDaily(
+        window.window_id,
+        "NEW CURRENT RICH DAILY",
+        ("NEW CURRENT RICH DAILY",),
+        (),
+        True,
+    )
+    calls: list[str] = []
+
+    class Daily:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            del root, kwargs
+
+        async def prepare(self, selected: DailyWindow, **kwargs: Any) -> PreparedDaily:
+            del kwargs
+            calls.append(selected.window_id)
+            return generated
+
+    class Collector:
+        def __init__(self, root: Path, **kwargs: Any) -> None:
+            del root, kwargs
+
+        async def collect(self, *args: Any, **kwargs: Any) -> tuple[Any, ...]:
+            del args, kwargs
+            return ()
+
+    monkeypatch.setattr(runtime_module, "DailyService", Daily)
+    monkeypatch.setattr(runtime_module, "DailyEvidenceCollector", Collector)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(
+            tmp_path, client=client, checkpoint=Checkpoint(), now=preview_now
+        )
+        result = await pipeline.prepare_daily(window, dry_run=False)
+
+    preview_id = "daily:preview-rich-v1:2026-08-27T23:00:00Z"
+    assert calls == [window.window_id]
+    assert result is not None
+    assert result.window_id == preview_id
+    assert result.telegram_text == "NEW CURRENT RICH DAILY"
+    artifact = json.loads(
+        (tmp_path / "data/state/prepared-daily.json").read_text(encoding="utf-8")
+    )
+    assert artifact["window_id"] == preview_id
+    assert artifact["telegram_text"] == "NEW CURRENT RICH DAILY"
+    old_attempt = json.loads(state.read_text(encoding="utf-8"))[0]
+    assert old_attempt["delivery_id"] == window.window_id
+    assert old_attempt["status"] == "ambiguous"
+
+
+@pytest.mark.parametrize("status", ["prepared", "failed"])
+def test_operator_preview_recovers_the_exact_persisted_artifact(
+    tmp_path: Path, status: str
+) -> None:
+    scaffold(tmp_path)
+    preview_id = "daily:preview-rich-v1:2026-08-27T23:00:00Z"
+    text = "RECOVERED CURRENT RICH DAILY"
+    content_sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        json.dumps(
+            [
+                {
+                    "schema_version": "tawg.delivery-attempt.v1",
+                    "delivery_id": preview_id,
+                    "job_id": preview_id,
+                    "status": status,
+                    "content_sha256": content_sha,
+                    "message_count": 1,
+                    "delivery_format": "rich_markdown_v1",
+                    "prepared_at": "2026-08-28T01:00:00Z",
+                    "updated_at": "2026-08-28T01:01:00Z",
+                }
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "data/state/prepared-daily.json").write_text(
+        json.dumps(
+            {
+                "schema": "tawg.prepared-daily.v1",
+                "window_id": preview_id,
+                "telegram_text": text,
+                "citations": ["tg:tawg:3454"],
+                "quiet_day": False,
+                "prepared_at": "2026-08-28T01:00:00Z",
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    recovered = runtime_module._recover_rich_daily_preview(
+        tmp_path, delivery_job_id=preview_id
+    )
+
+    assert recovered is not None
+    assert recovered.window_id == preview_id
+    assert recovered.telegram_text == text
+    assert recovered.citations == ("tg:tawg:3454",)
+
+
+def test_operator_preview_rejects_a_changed_persisted_artifact(tmp_path: Path) -> None:
+    scaffold(tmp_path)
+    preview_id = "daily:preview-rich-v1:2026-08-27T23:00:00Z"
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        json.dumps(
+            [
+                {
+                    "schema_version": "tawg.delivery-attempt.v1",
+                    "delivery_id": preview_id,
+                    "job_id": preview_id,
+                    "status": "prepared",
+                    "content_sha256": "0" * 64,
+                    "message_count": 1,
+                    "delivery_format": "rich_markdown_v1",
+                    "prepared_at": "2026-08-28T01:00:00Z",
+                    "updated_at": "2026-08-28T01:01:00Z",
+                }
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (tmp_path / "data/state/prepared-daily.json").write_text(
+        json.dumps(
+            {
+                "schema": "tawg.prepared-daily.v1",
+                "window_id": preview_id,
+                "telegram_text": "CHANGED",
+                "citations": [],
+                "quiet_day": True,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RuntimeFailure, match="failed delivery binding"):
+        runtime_module._recover_rich_daily_preview(
+            tmp_path, delivery_job_id=preview_id
+        )
+
+
+@pytest.mark.parametrize("status", ["sending", "ambiguous"])
+def test_operator_preview_never_retries_an_unknown_delivery(
+    tmp_path: Path, status: str
+) -> None:
+    scaffold(tmp_path)
+    preview_id = "daily:preview-rich-v1:2026-08-27T23:00:00Z"
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        json.dumps(
+            [
+                {
+                    "schema_version": "tawg.delivery-attempt.v1",
+                    "delivery_id": preview_id,
+                    "job_id": preview_id,
+                    "status": status,
+                    "content_sha256": "0" * 64,
+                    "message_count": 1,
+                    "delivery_format": "rich_markdown_v1",
+                    "prepared_at": "2026-08-28T01:00:00Z",
+                    "updated_at": "2026-08-28T01:01:00Z",
+                }
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RuntimeFailure, match="requires operator review"):
+        runtime_module._recover_rich_daily_preview(
+            tmp_path, delivery_job_id=preview_id
+        )
+
+
+@pytest.mark.asyncio
+async def test_operator_preview_delivered_state_is_a_model_free_noop(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    preview_now = datetime(2026, 8, 28, 1, 17, tzinfo=UTC)
+    window = DailyWindow.for_due_run(preview_now)
+    preview_id = "daily:preview-rich-v1:2026-08-27T23:00:00Z"
+    original_sha = (
+        "78bb59915ac2873a30dedb7416e039ade"
+        "46b80ba602c4e20e85e5d842e507262"
+    )
+    attempts = [
+        {
+            "schema_version": "tawg.delivery-attempt.v1",
+            "delivery_id": window.window_id,
+            "job_id": window.window_id,
+            "status": "ambiguous",
+            "content_sha256": original_sha,
+            "message_count": 1,
+            "delivery_format": "rich_markdown_v1",
+            "prepared_at": "2026-08-27T23:02:53Z",
+            "updated_at": "2026-08-28T01:56:56Z",
+            "safe_error_code": "operator_superseded_no_delivery_evidence",
+        },
+        {
+            "schema_version": "tawg.delivery-attempt.v1",
+            "delivery_id": preview_id,
+            "job_id": preview_id,
+            "status": "delivered",
+            "content_sha256": "1" * 64,
+            "message_count": 1,
+            "delivery_format": "rich_markdown_v1",
+            "telegram_message_ids": [5000],
+            "sent_at": "2026-08-28T02:00:00Z",
+            "prepared_at": "2026-08-28T01:59:00Z",
+            "updated_at": "2026-08-28T02:00:00Z",
+        },
+    ]
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        json.dumps(attempts) + "\n", encoding="utf-8"
+    )
+
+    class Daily:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+            raise AssertionError("delivered preview must not call the model")
+
+    monkeypatch.setattr(runtime_module, "DailyService", Daily)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(
+            tmp_path, client=client, checkpoint=Checkpoint(), now=preview_now
+        )
+        result = await pipeline.prepare_daily(window, dry_run=False)
+
+    assert result is None
+    assert pipeline.prepared_daily is None
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("rejection", "safe_code", "sensitive_fragment"),
     [
@@ -1214,6 +1486,50 @@ async def test_script_checkpoint_classifies_push_conflict(
 
 
 @pytest.mark.asyncio
+async def test_runtime_fails_after_final_checkpoint_when_a_phase_failed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    checkpoint = Checkpoint()
+
+    class Client:
+        async def __aenter__(self) -> object:
+            return object()
+
+        async def __aexit__(self, *args: object) -> None:
+            del args
+
+    class Pipeline:
+        def __init__(self, root: Path, **kwargs: object) -> None:
+            del root, kwargs
+
+    class Scheduler:
+        def __init__(self, root: Path, *, pipeline: object) -> None:
+            del root, pipeline
+
+        async def tick(self, *args: object, **kwargs: object) -> object:
+            del args, kwargs
+            return type(
+                "Result",
+                (),
+                {
+                    "layer": type("Layer", (), {"name": "L4"})(),
+                    "failed_phases": ("daily_prepare",),
+                },
+            )()
+
+    monkeypatch.setattr(runtime_module.httpx, "AsyncClient", lambda **kwargs: Client())
+    monkeypatch.setattr(runtime_module, "_LivePipeline", Pipeline)
+    monkeypatch.setattr(runtime_module, "Scheduler", Scheduler)
+
+    with pytest.raises(RuntimeFailure, match="scheduled tick completed with phase failures"):
+        await ProductionRuntime(tmp_path, checkpoint=checkpoint).tick(
+            NOW, observe_only=False
+        )
+
+    assert checkpoint.operations == [f"layer-success:l4:{int(NOW.timestamp())}"]
+
+
+@pytest.mark.asyncio
 async def test_final_runtime_checkpoint_conflict_retries_in_a_fresh_repository_session(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -1244,7 +1560,14 @@ async def test_final_runtime_checkpoint_conflict_retries_in_a_fresh_repository_s
 
         async def tick(self, *args: object, **kwargs: object) -> object:
             del args, kwargs
-            return type("Result", (), {"layer": type("Layer", (), {"name": "L1"})()})()
+            return type(
+                "Result",
+                (),
+                {
+                    "layer": type("Layer", (), {"name": "L1"})(),
+                    "failed_phases": (),
+                },
+            )()
 
     class Process:
         def __init__(self, returncode: int) -> None:
@@ -1614,7 +1937,14 @@ async def test_production_runtime_dispatches_new_manual_commands_and_dry_run(
         ) -> Any:
             assert observe_only
             intake_policies.append(intake_policy)
-            return type("Result", (), {"layer": type("Layer", (), {"name": "L1"})()})()
+            return type(
+                "Result",
+                (),
+                {
+                    "layer": type("Layer", (), {"name": "L1"})(),
+                    "failed_phases": (),
+                },
+            )()
 
     monkeypatch.setattr(runtime_module.httpx, "AsyncClient", lambda **kwargs: Client())
     monkeypatch.setattr(runtime_module, "_LivePipeline", Pipeline)

@@ -3,15 +3,17 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import monotonic
 
 import httpx
+from pydantic import ValidationError
 
 from tawg_bot.bot_router import (
     BotReplyService,
@@ -43,7 +45,7 @@ from tawg_bot.evidence_fetch import RestrictedEvidenceFetcher
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import KnowledgeRefresh, RefreshResult
 from tawg_bot.live_evidence import EvidencePack, LiveEvidenceService
-from tawg_bot.models import JobStatus, PendingBotJob
+from tawg_bot.models import DeliveryAttempt, DeliveryStatus, JobStatus, PendingBotJob
 from tawg_bot.persistence_guard import PersistenceRejected
 from tawg_bot.repository_session import RepositoryConflict
 from tawg_bot.scheduler import IntakePolicy, Scheduler
@@ -69,6 +71,11 @@ _REPLY_TIMEOUT_SECONDS = 300
 _REPLY_PHASE_BUDGET_SECONDS = 360
 _MAX_REPLIES_PER_TICK = 10
 _TELEGRAM_GROUP_SLUG = "tawg"
+_RICH_DAILY_PREVIEW_SOURCE_ID = "daily:2026-08-27T23:00:00Z"
+_RICH_DAILY_PREVIEW_SOURCE_SHA256 = (
+    "78bb59915ac2873a30dedb7416e039ade46b80ba602c4e20e85e5d842e507262"
+)
+_RICH_DAILY_PREVIEW_JOB_ID = "daily:preview-rich-v1:2026-08-27T23:00:00Z"
 _DAILY_REJECTION_CODES = {
     "invalid Daily model output": "daily_model_output_invalid",
     "Daily output changed the fixed UTC window": "daily_window_invalid",
@@ -246,6 +253,9 @@ class ProductionRuntime:
             raise
         except Exception:
             _safe_log("final_checkpoint", "final_checkpoint_failed")
+            raise RuntimeFailure("scheduled tick final checkpoint failed") from None
+        if result.failed_phases:
+            raise RuntimeFailure("scheduled tick completed with phase failures")
 
     async def check_sources(self, erc: int | None, *, observe_only: bool) -> SourceCheckSummary:
         now = datetime.now(UTC)
@@ -550,6 +560,32 @@ class _LivePipeline:
             raise RuntimeFailure("Daily checkpoint incomplete") from None
 
     async def prepare_daily(self, window: DailyWindow, *, dry_run: bool) -> PreparedDaily | None:
+        delivery_job_id = (
+            window.window_id
+            if dry_run
+            else _authorized_rich_daily_preview_job_id(self.root, window)
+        )
+        if delivery_job_id != window.window_id:
+            preview_attempt = next(
+                (
+                    attempt
+                    for attempt in _load_delivery_attempts(self.root)
+                    if attempt.delivery_id == delivery_job_id
+                ),
+                None,
+            )
+            if (
+                preview_attempt is not None
+                and preview_attempt.status is DeliveryStatus.DELIVERED
+            ):
+                self.prepared_daily = None
+                return None
+            recovered = _recover_rich_daily_preview(
+                self.root, delivery_job_id=delivery_job_id
+            )
+            if recovered is not None:
+                self.prepared_daily = recovered
+                return recovered
         ready_at = self.now
         evidence = await DailyEvidenceCollector(
             self.root,
@@ -575,6 +611,8 @@ class _LivePipeline:
         if prepared is None:
             self.prepared_daily = None
             return None
+        if delivery_job_id != window.window_id:
+            prepared = replace(prepared, window_id=delivery_job_id)
         if dry_run:
             self.prepared_daily = prepared
             return prepared
@@ -584,6 +622,7 @@ class _LivePipeline:
             "window_id": prepared.window_id,
             "telegram_text": prepared.telegram_text,
             "citations": list(prepared.citations),
+            "quiet_day": prepared.quiet_day,
             "prepared_at": self.now.isoformat().replace("+00:00", "Z"),
         }
         uow = RepositoryUnitOfWork(
@@ -727,6 +766,102 @@ def _configured_bot_username() -> str:
     if not username:
         raise RuntimeFailure("TAWG_TELEGRAM_BOT_USERNAME is not configured")
     return username
+
+
+def _authorized_rich_daily_preview_job_id(root: Path, window: DailyWindow) -> str:
+    if window.window_id != _RICH_DAILY_PREVIEW_SOURCE_ID:
+        return window.window_id
+    attempts = _load_delivery_attempts(root)
+    original = next(
+        (
+            attempt
+            for attempt in attempts
+            if attempt.delivery_id == _RICH_DAILY_PREVIEW_SOURCE_ID
+        ),
+        None,
+    )
+    if (
+        original is None
+        or original.job_id != _RICH_DAILY_PREVIEW_SOURCE_ID
+        or original.status is not DeliveryStatus.AMBIGUOUS
+        or original.content_sha256 != _RICH_DAILY_PREVIEW_SOURCE_SHA256
+        or original.telegram_message_ids
+        or original.sent_at is not None
+        or original.safe_error_code != "operator_superseded_no_delivery_evidence"
+    ):
+        return window.window_id
+    return _RICH_DAILY_PREVIEW_JOB_ID
+
+
+def _recover_rich_daily_preview(
+    root: Path, *, delivery_job_id: str
+) -> PreparedDaily | None:
+    attempts = _load_delivery_attempts(root)
+    existing = next(
+        (attempt for attempt in attempts if attempt.delivery_id == delivery_job_id),
+        None,
+    )
+    if existing is not None and existing.status is DeliveryStatus.DELIVERED:
+        return None
+    if existing is not None and existing.status in {
+        DeliveryStatus.SENDING,
+        DeliveryStatus.AMBIGUOUS,
+    }:
+        raise RuntimeFailure("Rich Daily preview delivery requires operator review")
+    path = root / "data/state/prepared-daily.json"
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        raise RuntimeFailure("invalid prepared Rich Daily preview state") from error
+    if not isinstance(raw, dict) or raw.get("window_id") != delivery_job_id:
+        return None
+    text = raw.get("telegram_text")
+    citations = raw.get("citations")
+    quiet_day = raw.get("quiet_day", False)
+    if (
+        raw.get("schema") != "tawg.prepared-daily.v1"
+        or not isinstance(text, str)
+        or not text.strip()
+        or not isinstance(citations, list)
+        or any(not isinstance(item, str) for item in citations)
+        or not isinstance(quiet_day, bool)
+    ):
+        raise RuntimeFailure("invalid prepared Rich Daily preview state")
+    if (
+        existing is not None
+        and existing.content_sha256
+        != hashlib.sha256(text.encode("utf-8")).hexdigest()
+    ):
+        raise RuntimeFailure("prepared Rich Daily preview failed delivery binding")
+    return PreparedDaily(
+        window_id=delivery_job_id,
+        telegram_text=text,
+        messages=(text,),
+        citations=tuple(citations),
+        quiet_day=quiet_day,
+    )
+
+
+def _load_delivery_attempts(root: Path) -> tuple[DeliveryAttempt, ...]:
+    path = root / "data/state/delivery-state.json"
+    try:
+        raw = json.loads(path.read_text(encoding="utf-8"))
+        if not isinstance(raw, list):
+            raise ValueError
+        attempts = tuple(DeliveryAttempt.model_validate(item) for item in raw)
+    except (
+        OSError,
+        UnicodeError,
+        ValueError,
+        ValidationError,
+        json.JSONDecodeError,
+    ) as error:
+        raise RuntimeFailure("invalid delivery state for Rich Daily preview") from error
+    if len({attempt.delivery_id for attempt in attempts}) != len(attempts):
+        raise RuntimeFailure("duplicate delivery state for Rich Daily preview")
+    return attempts
 
 
 def _safe_log(phase: str, code: str, *, erc: int | None = None) -> None:

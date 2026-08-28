@@ -120,7 +120,7 @@ async def test_failed_source_is_logged_safely_and_later_work_continues(
     pipeline = Pipeline(fail_at="source_check")
     service = scheduler(tmp_path, pipeline, initial)
 
-    await service.tick(NOW)
+    result = await service.tick(NOW)
 
     success = service.load_success()
     assert success.l1 == NOW
@@ -130,6 +130,7 @@ async def test_failed_source_is_logged_safely_and_later_work_continues(
     assert "phase=source_check" in captured
     assert "code=source_check_failed" in captured
     assert "failed: source_check" not in captured
+    assert result.failed_phases == ("source_check",)
 
 
 @pytest.mark.asyncio

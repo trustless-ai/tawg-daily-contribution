@@ -50,6 +50,7 @@ class TickResult:
     layer: Layer
     window_id: str | None
     delivered: bool
+    failed_phases: tuple[str, ...] = ()
 
 
 class Scheduler:
@@ -81,10 +82,11 @@ class Scheduler:
         self._require_utc(now)
         layer = self.due_layer(now)
         window = DailyWindow.for_due_run(now) if layer is Layer.L4 else None
+        failed_phases: list[str] = []
 
         if intake_policy is IntakePolicy.POLL:
             telegram_ok = await self._phase(
-                "telegram_intake", self.pipeline.telegram_intake(now)
+                "telegram_intake", self.pipeline.telegram_intake(now), failed_phases
             )
         elif intake_policy is IntakePolicy.SKIP:
             telegram_ok = True
@@ -93,30 +95,38 @@ class Scheduler:
         phase_ok = True
         validation_ok = True
         if layer is Layer.L2:
-            phase_ok = await self._phase("source_check", self.pipeline.source_check(now))
+            phase_ok = await self._phase(
+                "source_check", self.pipeline.source_check(now), failed_phases
+            )
         elif layer is Layer.L3:
             phase_ok = await self._phase(
-                "knowledge_refresh", self.pipeline.knowledge_refresh(now)
+                "knowledge_refresh", self.pipeline.knowledge_refresh(now), failed_phases
             )
-            validation_ok = await self._phase("validate", self.pipeline.validate())
+            validation_ok = await self._phase(
+                "validate", self.pipeline.validate(), failed_phases
+            )
         elif layer is Layer.L4:
-            validation_ok = await self._phase("validate", self.pipeline.validate())
+            validation_ok = await self._phase(
+                "validate", self.pipeline.validate(), failed_phases
+            )
         daily_ok = True
         if layer is Layer.L4:
             assert window is not None
             if validation_ok:
                 daily_ok = await self._phase(
-                    "daily_prepare", self.pipeline.daily_prepare(window.window_id)
+                    "daily_prepare",
+                    self.pipeline.daily_prepare(window.window_id),
+                    failed_phases,
                 )
             else:
                 daily_ok = False
         repository_ok = await self._phase(
-            "publish_repository", self.pipeline.publish_repository()
+            "publish_repository", self.pipeline.publish_repository(), failed_phases
         )
         delivery_ok = True
         if not observe_only:
             delivery_ok = await self._phase(
-                "telegram_delivery", self.pipeline.telegram_delivery()
+                "telegram_delivery", self.pipeline.telegram_delivery(), failed_phases
             )
 
         completed_layer: Layer | None = None
@@ -142,6 +152,7 @@ class Scheduler:
             layer=layer,
             window_id=window.window_id if window is not None else None,
             delivered=delivered,
+            failed_phases=tuple(failed_phases),
         )
 
     def load_success(self) -> LayerSuccess:
@@ -167,12 +178,15 @@ class Scheduler:
         uow.publish()
 
     @staticmethod
-    async def _phase(name: str, operation: Awaitable[None]) -> bool:
+    async def _phase(
+        name: str, operation: Awaitable[None], failed_phases: list[str]
+    ) -> bool:
         try:
             await operation
         except RepositoryConflict:
             raise
         except Exception:
+            failed_phases.append(name)
             print(
                 f"tawg_event=phase_failed phase={name} code={name}_failed",
                 flush=True,

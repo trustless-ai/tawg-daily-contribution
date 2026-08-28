@@ -69,13 +69,13 @@
     "message_thread_id": null,
     "prepared_at": "2026-08-27T23:02:53.169597Z",
     "reply_to_message_id": null,
-    "safe_error_code": null,
+    "safe_error_code": "operator_superseded_no_delivery_evidence",
     "schema_version": "tawg.delivery-attempt.v1",
     "sent_at": null,
-    "status": "sending",
+    "status": "ambiguous",
     "telegram_chat_id": null,
     "telegram_message_ids": [],
-    "updated_at": "2026-08-27T23:02:53.169597Z"
+    "updated_at": "2026-08-28T01:56:56Z"
   },
   {
     "content_sha256": "c04077630a067a7ea7c1657a003dcc1b6108a68b2f770fc55c893d738c2e39f0",

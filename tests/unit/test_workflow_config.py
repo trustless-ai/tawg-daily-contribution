@@ -81,6 +81,22 @@ def test_workflow_pins_runtime_and_hardens_claude_environment() -> None:
     assert "git-auto-commit" not in rendered
 
 
+def test_locked_claude_install_is_ignored_by_repository_checkpoints() -> None:
+    ignored = subprocess.run(
+        [
+            "git",
+            "check-ignore",
+            "--quiet",
+            "--no-index",
+            "deploy/claude-runtime/node_modules/@anthropic-ai/claude-code/cli-wrapper.cjs",
+        ],
+        cwd=ROOT,
+        check=False,
+    )
+
+    assert ignored.returncode == 0
+
+
 def test_workflow_selects_safe_core_commands_for_authoritative_runtime_modes() -> None:
     value = workflow()
     job = value["jobs"]["knowledge-bot"]
