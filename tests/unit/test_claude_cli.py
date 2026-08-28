@@ -259,6 +259,57 @@ async def test_default_cli_uses_the_locked_javascript_wrapper_without_postinstal
 
 
 @pytest.mark.asyncio
+async def test_explicit_executable_overrides_the_locked_javascript_wrapper(
+    tmp_path: Path,
+) -> None:
+    wrapper = (
+        tmp_path
+        / "deploy/claude-runtime/node_modules/@anthropic-ai/claude-code/cli-wrapper.cjs"
+    )
+    wrapper.parent.mkdir(parents=True)
+    wrapper.write_text("// locked Claude runtime wrapper\n", encoding="utf-8")
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin", "GITHUB_WORKSPACE": str(tmp_path)},
+        runtime_root=tmp_path / "runtime",
+    )
+
+    await cli.run(
+        job_type="reply",
+        context_pack="{}",
+        operation_id="reply-explicit-executable",
+        max_budget_usd="0.25",
+    )
+
+    assert runner.argv[:2] == ["claude", "-p"]
+
+
+@pytest.mark.asyncio
+async def test_default_cli_falls_back_to_claude_when_locked_wrapper_is_absent(
+    tmp_path: Path,
+) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        source_environment={"PATH": "/usr/bin", "GITHUB_WORKSPACE": str(tmp_path)},
+        runtime_root=tmp_path / "runtime",
+    )
+
+    await cli.run(
+        job_type="reply",
+        context_pack="{}",
+        operation_id="reply-default-fallback",
+        max_budget_usd="0.25",
+    )
+
+    assert runner.argv[:2] == ["claude", "-p"]
+
+
+@pytest.mark.asyncio
 async def test_cli_is_toolless_sessionless_and_does_not_expose_secrets(
     tmp_path: Path,
 ) -> None:

@@ -117,7 +117,7 @@ class ClaudeCli:
         *,
         root: Path,
         runner: ProcessRunner | None = None,
-        executable: str = "claude",
+        executable: str | None = None,
         source_environment: Mapping[str, str] | None = None,
         runtime_root: Path | None = None,
     ) -> None:
@@ -238,7 +238,7 @@ class ClaudeCli:
         return sanitized
 
     def _executable_argv(self) -> list[str]:
-        if self.executable != "claude":
+        if self.executable is not None:
             return [self.executable]
         workspace = Path(self.source_environment.get("GITHUB_WORKSPACE", self.root)).resolve()
         wrapper = (
@@ -249,7 +249,7 @@ class ClaudeCli:
             resolved = wrapper.resolve()
             if resolved.is_relative_to(workspace):
                 return ["node", str(resolved)]
-        return [self.executable]
+        return ["claude"]
 
     def _sanitize_structured_output(
         self, value: Any, *, controller_operation_id: str
