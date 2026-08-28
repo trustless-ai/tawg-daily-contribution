@@ -384,7 +384,8 @@ def test_modal_deploy_workflow_verifies_before_pinned_least_privilege_deploy() -
     job = value["jobs"]["deploy"]
     rendered = (ROOT / ".github/workflows/modal-deploy.yml").read_text()
 
-    assert set(value["on"]) == {"workflow_dispatch"}
+    assert set(value["on"]) == {"push", "workflow_dispatch"}
+    assert value["on"]["push"] == {"branches": ["main"]}
     assert value["permissions"] == {"contents": "read"}
     assert value["concurrency"] == {
         "group": "tawg-modal-deploy",
