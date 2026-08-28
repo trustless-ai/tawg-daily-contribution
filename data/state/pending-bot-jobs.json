@@ -1,6 +1,6 @@
 [
   {
-    "attempts": 6,
+    "attempts": 7,
     "classified_route": "knowledge_correction",
     "created_at": "2026-08-27T17:28:48.776597Z",
     "job_id": "reply-repair:correction-followup-v1:tg:tawg:3470",
@@ -21,10 +21,10 @@
     "status": "pending",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3470",
-    "updated_at": "2026-08-28T10:00:59.001807Z"
+    "updated_at": "2026-08-28T10:11:34.902880Z"
   },
   {
-    "attempts": 10,
+    "attempts": 11,
     "classified_route": "knowledge_correction",
     "created_at": "2026-08-27T14:29:40.281306Z",
     "job_id": "reply-repair:knowledge-correction-v1:tg:tawg:3446",
@@ -45,7 +45,7 @@
     "status": "pending",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3446",
-    "updated_at": "2026-08-28T10:00:59.001807Z"
+    "updated_at": "2026-08-28T10:11:34.902880Z"
   },
   {
     "attempts": 4,
@@ -631,25 +631,25 @@
     "updated_at": "2026-08-28T10:00:59.001807Z"
   },
   {
-    "attempts": 0,
-    "classified_route": null,
+    "attempts": 1,
+    "classified_route": "coordination",
     "created_at": "2026-08-28T10:11:34.902880Z",
     "job_id": "reply:tg:tawg:3551",
     "message_thread_id": null,
     "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_language": "en",
+    "prepared_reply_text": "Good morning, Merlini! 👋 Noted — I'll be here when the remaining confirmations come in. Happy to help finalize the authorline contribution ledger once everything is aligned. Just ping me!",
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
     "reply_to_message_id": 3551,
-    "routed_at": null,
-    "router_context_scope": null,
-    "router_context_sha256": null,
-    "router_version": null,
+    "routed_at": "2026-08-28T10:11:34.902880Z",
+    "router_context_scope": "conversation",
+    "router_context_sha256": "42a38ddf5bd1ed3ba0505098d1f751b6eed1917f118365c29f68efa86ea6c54b",
+    "router_version": "contextual-ai-v4",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3551",
     "updated_at": "2026-08-28T10:11:34.902880Z"
