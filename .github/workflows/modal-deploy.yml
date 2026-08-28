@@ -2,6 +2,9 @@ name: Deploy TAWG Modal app
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
 
 permissions:
   contents: read
