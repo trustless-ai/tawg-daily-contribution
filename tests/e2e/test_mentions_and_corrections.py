@@ -17,6 +17,7 @@ from tawg_bot.source_registry import (
     RegisteredSource,
     SourceRegistry,
 )
+from tawg_bot.vault import parse_frontmatter
 from tests.integration.test_bot_replies import NOW, FakeAi, reply_result, seed
 from tests.integration.test_live_erc_replies import (
     NOW as LIVE_NOW,
@@ -193,6 +194,49 @@ async def test_self_authored_general_knowledge_can_be_recorded_in_full(
 
     assert prepared.refusal is False
     assert (tmp_path / "knowledge/topics/garden-clock.md").is_file()
+
+
+@pytest.mark.asyncio
+async def test_controller_canonicalizes_new_page_provenance_before_persistence(
+    tmp_path: Path,
+) -> None:
+    job = seed(tmp_path, "@bot record our Garden Clock design in full")
+    result = _general_knowledge_result(
+        job.job_id,
+        job.trigger_record_id,
+        authorship="self_authored",
+        original_url=None,
+        body="The group's complete Garden Clock design and rationale.",
+    )
+    result["correction_transaction"]["writes"][0]["content"] = (
+        "---\n"
+        "title: Garden Clock\n"
+        "telegram_record_ids:\n"
+        f"- {job.trigger_record_id}\n"
+        "---\n\n"
+        "# Garden Clock\n\n"
+        "The group's complete Garden Clock design and rationale.\n"
+    )
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(result, route="knowledge_correction"),
+        bot_username="bot",
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.refusal is False
+    page = (tmp_path / "knowledge/topics/garden-clock.md").read_text(encoding="utf-8")
+    frontmatter, body = parse_frontmatter(page)
+    assert frontmatter == {
+        "title": "Garden Clock",
+        "type": "topic",
+        "created": "2026-08-23",
+        "updated": "2026-08-23",
+        "source_ids": [job.trigger_record_id],
+        "telegram_record_ids": [job.trigger_record_id],
+        "provenance_status": "verified",
+    }
+    assert "complete Garden Clock design" in body
 
 
 @pytest.mark.asyncio

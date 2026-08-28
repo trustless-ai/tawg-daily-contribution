@@ -4,8 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import ipaddress
+import json
 import re
+import unicodedata
 from collections.abc import Iterable
+from datetime import UTC, datetime
 from pathlib import Path, PurePosixPath
 from typing import Literal
 from urllib.parse import urlsplit
@@ -14,7 +17,7 @@ from pydantic import Field
 
 from tawg_bot.models import BotRoute, SourceRecord, StrictModel
 from tawg_bot.vault import frontmatter_is_mutation_evidence, parse_frontmatter
-from tawg_bot.vault_transaction import VaultTransaction
+from tawg_bot.vault_transaction import VaultTransaction, VaultWrite
 
 _CREATE_NAME = re.compile(r"^[a-z0-9][a-z0-9-]{0,127}\.md$")
 _MAX_REVISIONS = 3
@@ -57,10 +60,19 @@ def extract_public_https_urls(records: Iterable[SourceRecord]) -> tuple[str, ...
     urls: list[str] = []
     for record in records:
         for match in _HTTPS_URL.findall(record.text_original):
-            value = match.rstrip('.,;:!?)"]}')
+            value = _clean_url_suffix(match)
             if _is_public_https_url(value):
                 urls.append(value)
     return tuple(dict.fromkeys(urls))
+
+
+def _clean_url_suffix(value: str) -> str:
+    value = value.rstrip('.,;:!?)"]}')
+    while value and (
+        value[-1] == "\ufffd" or unicodedata.category(value[-1]) == "Cf"
+    ):
+        value = value[:-1]
+    return value.rstrip('.,;:!?)"]}')
 
 
 def _is_public_https_url(value: str) -> bool:
@@ -78,6 +90,10 @@ def _is_public_https_url(value: str) -> bool:
         or port not in {None, 443}
         or (parsed.path and not parsed.path.startswith("/"))
         or any(ord(character) < 32 for character in value)
+        or any(
+            character == "\ufffd" or unicodedata.category(character) == "Cf"
+            for character in value
+        )
     ):
         return False
     normalized_host = host.casefold().rstrip(".")
@@ -90,6 +106,72 @@ def _is_public_https_url(value: str) -> bool:
     except ValueError:
         return "." in normalized_host
     return address.is_global
+
+
+def canonicalize_new_knowledge_transaction(
+    transaction: VaultTransaction,
+    *,
+    now: datetime,
+    original_url: str | None,
+) -> VaultTransaction:
+    """Make new-page operational metadata controller-owned and deterministic."""
+
+    if now.tzinfo is None or now.utcoffset() != UTC.utcoffset(now):
+        raise KnowledgeMutationRejected("knowledge mutation time must use UTC")
+    writes: list[VaultWrite] = []
+    for write in transaction.writes:
+        if write.expected_sha256 is not None:
+            writes.append(write)
+            continue
+        relative = PurePosixPath(write.path)
+        if len(relative.parts) != 3:
+            raise KnowledgeMutationRejected("invalid new knowledge path")
+        page_type = {
+            "topics": "topic",
+            "repos": "repository",
+        }.get(relative.parts[1])
+        if page_type is None:
+            raise KnowledgeMutationRejected("invalid new knowledge root")
+        frontmatter, body = parse_frontmatter(write.content)
+        title = frontmatter.get("title") if frontmatter is not None else None
+        if not isinstance(title, str) or not title.strip():
+            heading = re.search(r"(?m)^#\s+(.+?)\s*$", body)
+            title = heading.group(1).strip() if heading is not None else None
+        if title is None or not title:
+            raise KnowledgeMutationRejected("new knowledge page requires a title")
+
+        local_citations = tuple(
+            citation for citation in write.citations if citation.startswith("tg:")
+        )
+        source_urls = tuple(
+            citation for citation in write.citations if citation.startswith("https://")
+        )
+        if original_url is not None and original_url not in source_urls:
+            raise KnowledgeMutationRejected("new knowledge page omits its original URL")
+        description = re.split(r"(?m)^##\s+Sources\s*$", body, maxsplit=1)[0].strip()
+        date = now.date().isoformat()
+        lines = [
+            "---",
+            f"title: {json.dumps(title, ensure_ascii=False)}",
+            f"type: {page_type}",
+            f"created: {json.dumps(date)}",
+            f"updated: {json.dumps(date)}",
+            "source_ids:",
+            *(f"- {json.dumps(value)}" for value in local_citations),
+            "telegram_record_ids:",
+            *(f"- {json.dumps(value)}" for value in local_citations),
+        ]
+        if source_urls:
+            lines.extend(
+                ["source_urls:", *(f"- {json.dumps(value)}" for value in source_urls)]
+            )
+        lines.extend(("provenance_status: verified", "---", "", description))
+        if source_urls:
+            lines.extend(("", "## Sources", ""))
+            lines.extend(f"- {value}" for value in source_urls)
+        content = "\n".join(lines).rstrip() + "\n"
+        writes.append(write.model_copy(update={"content": content}))
+    return transaction.model_copy(update={"writes": writes})
 
 
 def build_mutation_capability(

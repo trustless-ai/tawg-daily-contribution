@@ -27,9 +27,30 @@ from tawg_bot.models import (
 )
 from tawg_bot.query import SourceQuery
 from tawg_bot.storage import JsonlCollection
+from tawg_bot.vault import parse_frontmatter
 
 PROJECT = Path(__file__).parents[2]
 NOW = datetime(2026, 8, 23, 2, tzinfo=UTC)
+
+
+def assert_canonical_new_page(
+    path: Path,
+    *,
+    title: str,
+    trigger_record_id: str,
+    expected_body: str,
+) -> None:
+    frontmatter, body = parse_frontmatter(path.read_text(encoding="utf-8"))
+    assert frontmatter == {
+        "title": title,
+        "type": "topic",
+        "created": "2026-08-23",
+        "updated": "2026-08-23",
+        "source_ids": [trigger_record_id],
+        "telegram_record_ids": [trigger_record_id],
+        "provenance_status": "verified",
+    }
+    assert body.strip() == expected_body.strip()
 
 
 class FakeAi:
@@ -1182,9 +1203,13 @@ async def test_audited_correction_followup_can_create_one_content_page_when_ai_u
     assert reply_context["trigger"]["context_scope"] == "knowledge"
     assert "erc_evidence_mode" not in reply_context["trigger"]
     assert job.trigger_record_id in reply_context["citation_allowlist"]
-    assert (
-        tmp_path / "knowledge/topics/recomputable-verification-receipts.md"
-    ).read_text(encoding="utf-8") == rvr_page
+    _, expected_body = parse_frontmatter(rvr_page)
+    assert_canonical_new_page(
+        tmp_path / "knowledge/topics/recomputable-verification-receipts.md",
+        title="Recomputable Verification Receipts",
+        trigger_record_id=job.trigger_record_id,
+        expected_body=expected_body,
+    )
 
 
 @pytest.mark.asyncio
@@ -1246,7 +1271,13 @@ async def test_explicit_mention_can_create_one_content_page_in_any_context_scope
     ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
 
     assert prepared is not None and prepared.refusal is False
-    assert (tmp_path / "knowledge/topics/garden-clock.md").read_text() == page
+    _, expected_body = parse_frontmatter(page)
+    assert_canonical_new_page(
+        tmp_path / "knowledge/topics/garden-clock.md",
+        title="Garden Clock",
+        trigger_record_id=job.trigger_record_id,
+        expected_body=expected_body,
+    )
 
 
 @pytest.mark.asyncio

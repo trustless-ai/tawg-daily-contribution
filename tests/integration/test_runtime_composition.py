@@ -1161,7 +1161,7 @@ async def test_reply_preparation_continues_after_one_job_fails(
 
 
 @pytest.mark.asyncio
-async def test_reply_preparation_stops_before_the_reply_phase_budget_expires(
+async def test_reply_preparation_budget_covers_three_realistic_sequential_jobs(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     scaffold(tmp_path)
@@ -1179,7 +1179,7 @@ async def test_reply_preparation_stops_before_the_reply_phase_budget_expires(
         json.dumps([job.model_dump(mode="json") for job in jobs]) + "\n",
         encoding="utf-8",
     )
-    monotonic_values = iter((100.0, 160.0, 461.0))
+    monotonic_values = iter((100.0, 160.0, 461.0, 1001.0))
     attempted_ids: list[str] = []
     model_timeouts: list[float] = []
 
@@ -1201,8 +1201,12 @@ async def test_reply_preparation_stops_before_the_reply_phase_budget_expires(
         pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
         await pipeline._prepare_pending_replies()
 
-    assert attempted_ids == ["reply:tg:tawg:10"]
-    assert model_timeouts == [300]
+    assert attempted_ids == [
+        "reply:tg:tawg:10",
+        "reply:tg:tawg:11",
+        "reply:tg:tawg:12",
+    ]
+    assert model_timeouts == [300, 300, 299]
 
 
 @pytest.mark.asyncio
@@ -1395,6 +1399,51 @@ async def test_runtime_fails_after_final_checkpoint_when_a_phase_failed(
         )
 
     assert checkpoint.operations == [f"layer-success:l4:{int(NOW.timestamp())}"]
+
+
+@pytest.mark.asyncio
+async def test_runtime_fails_after_checkpoint_when_a_reply_job_failed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    checkpoint = Checkpoint()
+
+    class Client:
+        async def __aenter__(self) -> object:
+            return object()
+
+        async def __aexit__(self, *args: object) -> None:
+            del args
+
+    class Pipeline:
+        def __init__(self, root: Path, **kwargs: object) -> None:
+            del root, kwargs
+            self.reply_failures = ("reply:tg:tawg:10:reply_model_process_failed",)
+
+    class Scheduler:
+        def __init__(self, root: Path, *, pipeline: object) -> None:
+            del root, pipeline
+
+        async def tick(self, *args: object, **kwargs: object) -> object:
+            del args, kwargs
+            return type(
+                "Result",
+                (),
+                {
+                    "layer": type("Layer", (), {"name": "L1"})(),
+                    "failed_phases": (),
+                },
+            )()
+
+    monkeypatch.setattr(runtime_module.httpx, "AsyncClient", lambda **kwargs: Client())
+    monkeypatch.setattr(runtime_module, "_LivePipeline", Pipeline)
+    monkeypatch.setattr(runtime_module, "Scheduler", Scheduler)
+
+    with pytest.raises(RuntimeFailure, match="reply job failures"):
+        await ProductionRuntime(tmp_path, checkpoint=checkpoint).tick(
+            NOW, observe_only=False
+        )
+
+    assert checkpoint.operations == [f"layer-success:l1:{int(NOW.timestamp())}"]
 
 
 @pytest.mark.asyncio

@@ -71,7 +71,7 @@ _SOURCE_OPERATION_SECONDS = 45
 _DAILY_EVIDENCE_TIMEOUT_SECONDS = 60
 _DAILY_TIMEOUT_SECONDS = 900
 _REPLY_TIMEOUT_SECONDS = 300
-_REPLY_PHASE_BUDGET_SECONDS = 360
+_REPLY_PHASE_BUDGET_SECONDS = 1_200
 _MAX_REPLIES_PER_TICK = 10
 _TELEGRAM_GROUP_SLUG = "tawg"
 _RICH_DAILY_PREVIEW_SOURCE_ID = "daily:2026-08-27T23:00:00Z"
@@ -259,6 +259,8 @@ class ProductionRuntime:
             raise RuntimeFailure("scheduled tick final checkpoint failed") from None
         if result.failed_phases:
             raise RuntimeFailure("scheduled tick completed with phase failures")
+        if getattr(pipeline, "reply_failures", ()):
+            raise RuntimeFailure("scheduled tick completed with reply job failures")
 
     async def check_sources(self, erc: int | None, *, observe_only: bool) -> SourceCheckSummary:
         now = datetime.now(UTC)
@@ -372,6 +374,7 @@ class _LivePipeline:
         self.daily_attempted = False
         self.prepared_daily: PreparedDaily | None = None
         self.prepared_replies: list[PreparedReply] = []
+        self.reply_failures: list[str] = []
 
     async def telegram_intake(self, now: datetime) -> None:
         api = TelegramApi.from_env(client=self.client)
@@ -676,6 +679,7 @@ class _LivePipeline:
             raise RuntimeFailure("TAWG_TELEGRAM_BOT_USERNAME is not configured")
         reply_deadline = monotonic() + _REPLY_PHASE_BUDGET_SECONDS
         self.prepared_replies = []
+        self.reply_failures = []
         for job in actionable[:_MAX_REPLIES_PER_TICK]:
             remaining_seconds = reply_deadline - monotonic()
             if remaining_seconds <= 0:
@@ -699,6 +703,7 @@ class _LivePipeline:
                 if prepared is not None:
                     self.prepared_replies.append(prepared)
             except ReplyRejected as error:
+                self.reply_failures.append(f"{job.job_id}:{error.safe_code}")
                 _safe_log("reply_prepare", error.safe_code)
                 continue
 

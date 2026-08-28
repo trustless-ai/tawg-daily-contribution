@@ -134,6 +134,23 @@ def test_only_public_https_urls_are_exposed_as_mutation_evidence() -> None:
     )
 
 
+def test_telegram_transport_artifacts_are_removed_from_url_suffixes() -> None:
+    record = _record(
+        "tg:tawg:5000",
+        " ".join(
+            (
+                "https://github.com/example/project\u2060\ufffd",
+                "https://example.org/release\ufeff\ufffd.",
+            )
+        ),
+    )
+
+    assert extract_public_https_urls((record,)) == (
+        "https://github.com/example/project",
+        "https://example.org/release",
+    )
+
+
 def test_exact_revisions_stop_at_three_and_sixty_thousand_chars(tmp_path: Path) -> None:
     paths = tuple(f"knowledge/topics/topic-{index}.md" for index in range(4))
     for index, path in enumerate(paths):

@@ -30,6 +30,7 @@ from tawg_bot.knowledge_mutation import (
     KnowledgeMutationCapability,
     KnowledgeMutationRejected,
     build_mutation_capability,
+    canonicalize_new_knowledge_transaction,
     extract_public_https_urls,
     validate_knowledge_transaction,
 )
@@ -542,6 +543,7 @@ class BotReplyService:
                 ),
                 mutation_capability=context.mutation_capability,
                 mutation_source_urls=context.mutation_source_urls,
+                now=now,
             )
             reply_text = result.reply_text.strip()
             if result.scan_registration is not None:
@@ -1188,6 +1190,7 @@ class BotReplyService:
         correction_source_keys: frozenset[str],
         mutation_capability: KnowledgeMutationCapability,
         mutation_source_urls: frozenset[str],
+        now: datetime,
     ) -> _ReplyResult:
         try:
             result = _ReplyResult.model_validate(raw)
@@ -1302,25 +1305,38 @@ class BotReplyService:
             ):
                 raise ReplyRejected("scan registration is not grounded in the trigger")
         if result.correction_transaction is not None:
+            transaction = result.correction_transaction
             if route is BotRoute.KNOWLEDGE_CORRECTION:
                 creates_page = any(
                     write.expected_sha256 is None
-                    for write in result.correction_transaction.writes
+                    for write in transaction.writes
                 )
                 if creates_page and result.knowledge_write is None:
                     raise ReplyRejected("knowledge transaction omits authorship metadata")
                 try:
                     validate_knowledge_transaction(
                         self.root,
-                        result.correction_transaction,
+                        transaction,
                         mutation_capability,
                     )
                 except KnowledgeMutationRejected as error:
                     raise ReplyRejected(str(error)) from None
                 if result.knowledge_write is not None:
+                    knowledge_write = result.knowledge_write
+                    try:
+                        transaction = canonicalize_new_knowledge_transaction(
+                            transaction,
+                            now=now,
+                            original_url=knowledge_write.original_url,
+                        )
+                    except KnowledgeMutationRejected as error:
+                        raise ReplyRejected(str(error)) from None
+                    result = result.model_copy(
+                        update={"correction_transaction": transaction}
+                    )
                     self._validate_knowledge_write(
-                        result.knowledge_write,
-                        result.correction_transaction,
+                        knowledge_write,
+                        transaction,
                         mutation_capability=mutation_capability,
                         mutation_source_urls=mutation_source_urls,
                     )
@@ -1329,7 +1345,7 @@ class BotReplyService:
             allowed_transaction_citations = allowed_citations | correction_source_keys
             if any(
                 not set(write.citations).issubset(allowed_transaction_citations)
-                for write in result.correction_transaction.writes
+                for write in transaction.writes
             ):
                 raise ReplyRejected("correction cites evidence outside its context")
         if route is BotRoute.KNOWLEDGE_QUESTION and not result.refusal and not result.citations:
