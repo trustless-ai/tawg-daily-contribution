@@ -584,6 +584,7 @@ async def test_operator_preview_generates_fresh_rich_daily_under_a_distinct_job(
     preview_now = datetime(2026, 8, 28, 1, 17, tzinfo=UTC)
     window = DailyWindow.for_due_run(preview_now)
     assert window.window_id == "daily:2026-08-27T23:00:00Z"
+    (tmp_path / "data/state/prepared-daily.json").unlink(missing_ok=True)
     state = tmp_path / "data/state/delivery-state.json"
     state.write_text(
         json.dumps(
