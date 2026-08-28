@@ -141,6 +141,41 @@ def _pack(*, missing_normative: bool = False) -> EvidencePack:
     )
 
 
+def _pack_with_version_overlap() -> EvidencePack:
+    version = "source-version-visible-in-evidence"
+    pack = _pack()
+    evidence = [
+        item.model_copy(update={"version": version, "text": f"{item.text}; {version}"})
+        for item in pack.evidence
+    ]
+    evidence = [
+        item.model_copy(
+            update={
+                "content_sha256": hashlib.sha256(item.text.encode()).hexdigest(),
+                "source_byte_count": len(item.text),
+            }
+        )
+        for item in evidence
+    ]
+    return pack.model_copy(
+        update={
+            "evidence": evidence,
+            "source_changes": [
+                SourceChange(
+                    erc_number=item.erc_number,
+                    source_key=item.source_key,
+                    previous_version=None,
+                    observed_version=version,
+                    previous_sha256=None,
+                    observed_sha256=item.content_sha256,
+                    observed_at=NOW,
+                )
+                for item in evidence
+            ],
+        }
+    )
+
+
 def _result(
     *,
     citations: list[str],
@@ -352,6 +387,69 @@ async def test_erc_reply_fetches_live_when_local_knowledge_is_missing(tmp_path: 
     assert "normative interface" in context
     assert prepared.citations == (CANONICAL, IMPLEMENTATION)
     assert live.calls[0].intent is ErcIntent.IMPLEMENTATION
+
+
+@pytest.mark.asyncio
+async def test_failed_live_context_always_returns_job_to_pending(tmp_path: Path) -> None:
+    job = _seed(tmp_path, "@bot What is the latest discussion about ERC-8004?")
+    live = FakeLiveEvidence(_pack_with_version_overlap())
+
+    with pytest.raises(ReplyRejected, match="reply preparation failed safely"):
+        await _service(
+            tmp_path,
+            ai=FakeAi(_result(citations=["https://example.com/not-allowed"])),
+            live=live,
+        ).prepare(job.job_id, now=NOW + timedelta(minutes=1))
+
+    persisted = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )[0]
+    assert persisted["status"] == "pending"
+    assert persisted["safe_error_code"] == "reply_citation_not_allowed"
+
+
+@pytest.mark.asyncio
+async def test_reply_delivery_is_not_blocked_by_auxiliary_evidence_state(
+    tmp_path: Path,
+) -> None:
+    job = _seed(tmp_path, "@bot What is the latest discussion about ERC-8004?")
+    live = FakeLiveEvidence(_pack_with_version_overlap())
+
+    prepared = await _service(
+        tmp_path,
+        ai=FakeAi(_result(citations=[CANONICAL, IMPLEMENTATION])),
+        live=live,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=1))
+
+    persisted = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )[0]
+    assert prepared.citations == (CANONICAL, IMPLEMENTATION)
+    assert persisted["status"] == "ready"
+    assert persisted["safe_error_code"] is None
+
+
+@pytest.mark.asyncio
+async def test_live_erc_context_redacts_personal_data_before_model(tmp_path: Path) -> None:
+    job = _seed(tmp_path, "@bot What is the latest discussion about ERC-8004?")
+    pack = _pack()
+    evidence = [
+        item.model_copy(update={"text": f"{item.text}; contact alice@example.com"})
+        for item in pack.evidence
+    ]
+    live = FakeLiveEvidence(
+        pack.model_copy(update={"evidence": evidence, "source_changes": []})
+    )
+    ai = FakeAi(_result(citations=[CANONICAL, IMPLEMENTATION]))
+
+    prepared = await _service(tmp_path, ai=ai, live=live).prepare(
+        job.job_id, now=NOW + timedelta(minutes=1)
+    )
+
+    context = ai.calls[1]["context_pack"]
+    assert "alice@example.com" not in context
+    assert "[REDACTED_EMAIL]" in context
+    assert prepared.citations == (CANONICAL, IMPLEMENTATION)
 
 
 @pytest.mark.asyncio

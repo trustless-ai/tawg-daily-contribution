@@ -20,7 +20,7 @@ from tawg_bot.daily_evidence import DailyEvidence
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import RefreshResult
 from tawg_bot.live_evidence import LiveEvidenceService
-from tawg_bot.models import DeliveryStatus, PendingBotJob
+from tawg_bot.models import DeliveryStatus, JobStatus, PendingBotJob
 from tawg_bot.persistence_guard import PersistenceRejected
 from tawg_bot.repository_session import CommandResult, RepositoryConflict, RepositorySession
 from tawg_bot.runtime import (
@@ -997,6 +997,53 @@ async def test_reply_preparation_processes_at_most_ten_pending_jobs_per_tick(
         await pipeline._prepare_pending_replies()
 
     assert prepared_ids == [f"reply:tg:tawg:{message_id}" for message_id in range(10, 20)]
+
+
+@pytest.mark.asyncio
+async def test_reply_preparation_reclaims_only_expired_processing_jobs(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    jobs = [
+        PendingBotJob(
+            job_id="reply:tg:tawg:10",
+            trigger_record_id="tg:tawg:10",
+            reply_to_message_id=10,
+            status=JobStatus.PROCESSING,
+            created_at=NOW - timedelta(minutes=20),
+            updated_at=NOW - timedelta(minutes=11),
+        ),
+        PendingBotJob(
+            job_id="reply:tg:tawg:11",
+            trigger_record_id="tg:tawg:11",
+            reply_to_message_id=11,
+            status=JobStatus.PROCESSING,
+            created_at=NOW - timedelta(minutes=2),
+            updated_at=NOW - timedelta(minutes=1),
+        ),
+    ]
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps([job.model_dump(mode="json") for job in jobs]) + "\n",
+        encoding="utf-8",
+    )
+    prepared_ids: list[str] = []
+
+    class ReplyService:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+
+        async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply:
+            assert now == NOW
+            prepared_ids.append(job_id)
+            return PreparedReply(job_id, 10, None, "reply", (), "en", False)
+
+    monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
+    monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        await pipeline._prepare_pending_replies()
+
+    assert prepared_ids == ["reply:tg:tawg:10"]
 
 
 @pytest.mark.asyncio
