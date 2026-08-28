@@ -6,5 +6,13 @@
     "suggested_at": "2026-08-26T09:05:26.624815Z",
     "trigger_record_id": "tg:tawg:3372",
     "url": "https://github.com/trustless-ai/tawg-daily-contribution"
+  },
+  {
+    "candidate_key": "candidate:32eee4dbe177698b4597e7a8366535e9",
+    "last_suggested_at": "2026-08-28T18:17:16.692036Z",
+    "schema_version": "tawg.source-candidate.v1",
+    "suggested_at": "2026-08-28T18:17:16.692036Z",
+    "trigger_record_id": "tg:tawg:3625",
+    "url": "https://github.com/trustless-ai/agent-sdk"
   }
 ]
