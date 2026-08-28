@@ -85,6 +85,8 @@ image = (
     )
     .run_commands(
         f"npm ci --omit=dev --ignore-scripts --prefix {_CLAUDE_RUNTIME}",
+        "node "
+        f"{_CLAUDE_RUNTIME}/node_modules/@anthropic-ai/claude-code/install.cjs",
         "test -x "
         f"{_CLAUDE_RUNTIME}/node_modules/@anthropic-ai/claude-code/bin/claude.exe "
         "&& ln -s "

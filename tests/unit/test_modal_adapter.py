@@ -387,6 +387,10 @@ def test_image_and_secret_cover_the_complete_runtime_without_source_secrets(
     assert "/opt/tawg/requirements-modal-deploy.lock" in all_steps
     assert "npm ci --omit=dev --ignore-scripts" in all_steps
     assert (
+        "node /opt/tawg/claude-runtime/node_modules/"
+        "@anthropic-ai/claude-code/install.cjs"
+    ) in all_steps
+    assert (
         "/opt/tawg/claude-runtime/node_modules/"
         "@anthropic-ai/claude-code/bin/claude.exe"
     ) in all_steps
