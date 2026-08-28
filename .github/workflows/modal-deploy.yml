@@ -5,6 +5,14 @@ on:
   push:
     branches:
       - main
+    paths:
+      - .github/workflows/modal-deploy.yml
+      - config/privacy.yml
+      - deploy/**
+      - pyproject.toml
+      - requirements-modal-deploy.in
+      - requirements-modal-deploy.lock
+      - src/**
 
 permissions:
   contents: read
