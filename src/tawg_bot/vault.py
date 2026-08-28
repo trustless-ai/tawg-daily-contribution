@@ -60,6 +60,12 @@ def parse_frontmatter(text: str) -> tuple[dict[str, Any] | None, str]:
     return (raw if isinstance(raw, dict) else None), text[end + 5 :]
 
 
+def frontmatter_is_mutation_evidence(frontmatter: Mapping[str, Any]) -> bool:
+    """Return whether a page may authorize a later exact knowledge revision."""
+
+    return frontmatter.get("provenance_status") != "legacy_incomplete"
+
+
 class VaultLinter:
     _REQUIRED_FRONTMATTER = frozenset({"title", "type", "created", "updated"})
 
@@ -144,6 +150,17 @@ class VaultLinter:
                             path,
                             1,
                             "generated frontmatter must remain flat",
+                        )
+                    )
+                provenance_status = frontmatter.get("provenance_status")
+                if provenance_status not in {None, "verified", "legacy_incomplete"}:
+                    findings.append(
+                        LintFinding(
+                            "frontmatter",
+                            "error",
+                            path,
+                            1,
+                            "provenance_status must be verified or legacy_incomplete",
                         )
                     )
             scrubbed = _FENCED_CODE.sub("", text)

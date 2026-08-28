@@ -9,12 +9,12 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from time import monotonic
 from typing import Any, Literal, Protocol
 
 import yaml
-from pydantic import ValidationError
+from pydantic import Field, ValidationError, field_validator
 
 from tawg_bot.ai_router import AiRouteRejected, ContextualAiRouter
 from tawg_bot.claude_cli import ClaudeCliError
@@ -26,6 +26,13 @@ from tawg_bot.conversation_context import (
 from tawg_bot.corrections import CorrectionService
 from tawg_bot.erc_query import ErcIntent, ErcQuery, ErcQueryPlanner
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
+from tawg_bot.knowledge_mutation import (
+    KnowledgeMutationCapability,
+    KnowledgeMutationRejected,
+    build_mutation_capability,
+    extract_public_https_urls,
+    validate_knowledge_transaction,
+)
 from tawg_bot.live_evidence import EvidencePack
 from tawg_bot.models import (
     BotRoute,
@@ -43,6 +50,13 @@ from tawg_bot.models import (
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 from tawg_bot.query import SourceQuery
 from tawg_bot.retrieval import VaultRetriever
+from tawg_bot.scan_targets import (
+    ScanRegistrationProposal,
+    ScanTargetRegistry,
+    ScanTargetRejected,
+    ScanTargetStore,
+    ScanTargetVerifier,
+)
 from tawg_bot.source_registry import EvidenceKind
 from tawg_bot.telegram_text import TelegramTextSplitError, split_telegram_text
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
@@ -236,8 +250,21 @@ class LiveEvidenceProvider(Protocol):
     async def build(self, query: ErcQuery, *, now: datetime) -> EvidencePack: ...
 
 
+class _KnowledgeWriteDecision(StrictModel):
+    authorship: Literal["self_authored", "external"]
+    authorship_evidence: list[str] = Field(min_length=1, max_length=32)
+    original_url: str | None
+
+    @field_validator("authorship_evidence")
+    @classmethod
+    def evidence_is_unique(cls, value: list[str]) -> list[str]:
+        if len(value) != len(set(value)):
+            raise ValueError("authorship evidence must be unique")
+        return value
+
+
 class _ReplyResult(StrictModel):
-    schema_version: Literal["tawg.reply-result.v2"]
+    schema_version: Literal["tawg.reply-result.v3"]
     reply_text: str
     language: str
     english_recap: str | None
@@ -245,6 +272,8 @@ class _ReplyResult(StrictModel):
     evidence_status: Literal["verified", "partial", "not_verified"]
     verification_gaps: list[str]
     correction_transaction: VaultTransaction | None
+    knowledge_write: _KnowledgeWriteDecision | None = None
+    scan_registration: ScanRegistrationProposal | None = None
     refusal: bool
 
 
@@ -264,6 +293,8 @@ class _ReplyContext:
     text: str
     allowed_citations: frozenset[str]
     evidence_pack: EvidencePack | None
+    mutation_capability: KnowledgeMutationCapability
+    mutation_source_urls: frozenset[str]
 
 
 @dataclass(frozen=True, slots=True)
@@ -292,6 +323,7 @@ class BotReplyService:
         max_budget_usd: str = "1.00",
         route_max_budget_usd: str = "0.10",
         timeout_seconds: float = 300,
+        scan_target_verifier: ScanTargetVerifier | None = None,
     ) -> None:
         self.root = root.resolve()
         self.ai = ai
@@ -309,6 +341,7 @@ class BotReplyService:
             route_max_budget_usd,
         )
         self.timeout_seconds = timeout_seconds
+        self.scan_target_verifier = scan_target_verifier
         self.privacy = PrivacyFilter.from_yaml(self.root / "config/privacy.yml")
 
     async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply | None:
@@ -338,6 +371,8 @@ class BotReplyService:
         jobs[job_id] = processing
         self._publish_jobs(jobs, f"{job_id}:processing")
         evidence_pack: EvidencePack | None = None
+        scan_registry: ScanTargetRegistry | None = None
+        scan_registry_changed = False
         failure_code = "reply_route_context_failed"
         try:
             route_context = ConversationContextBuilder(self.privacy).build(
@@ -418,12 +453,14 @@ class BotReplyService:
             if route is BotRoute.REFUSE:
                 username = self.router.bot_username
                 text = (
-                    "That request is outside the part of TAWG I can safely act on, so I didn't "
-                    "run it.\n\n"
+                    "I can't safely perform that action, so I didn't run it. "
+                    "I can still help with the group's knowledge and coordination work.\n\n"
                     "Here are a few things I can help with:\n"
                     f"- **TAWG or ERC questions** — `@{username} what is ERC-8183?`\n"
-                    "- **Evidence-backed knowledge updates** — "
-                    f"`@{username} please add OCP to the knowledge; source: <URL>`\n"
+                    "- **Record a concept on any subject** — "
+                    f"`@{username} record our Garden Clock design in full`\n"
+                    "- **Record an external concept with its source** — "
+                    f"`@{username} record <concept>; original source: https://...`\n"
                     "- **TAWG-local identity corrections** — "
                     f"`@{username} please update this member's TAWG identity to ...`\n"
                     "- **Relevant source suggestions** — "
@@ -495,9 +532,6 @@ class BotReplyService:
                 raw,
                 trigger,
                 route,
-                context_scope,
-                processing.trigger_kind,
-                self._has_audited_bot_parent(trigger, records),
                 context.allowed_citations,
                 context.evidence_pack,
                 job_id,
@@ -506,8 +540,29 @@ class BotReplyService:
                     if local_erc_context is not None
                     else frozenset()
                 ),
+                mutation_capability=context.mutation_capability,
+                mutation_source_urls=context.mutation_source_urls,
             )
             reply_text = result.reply_text.strip()
+            if result.scan_registration is not None:
+                try:
+                    if self.scan_target_verifier is None:
+                        raise ScanTargetRejected("scan target verification is unavailable")
+                    target = await self.scan_target_verifier.verify(
+                        result.scan_registration,
+                        trigger_record_id=trigger.record_id,
+                        now=now,
+                    )
+                    scan_registry, scan_registry_changed = ScanTargetStore(
+                        self.root
+                    ).merged(target)
+                except ScanTargetRejected:
+                    scan_registry = None
+                    scan_registry_changed = False
+                    reply_text = (
+                        f"{reply_text.rstrip()}\n\n"
+                        f"{self._scan_registration_warning(trigger)}"
+                    )
             if result.english_recap is not None:
                 reply_text = f"{reply_text}\n\nEnglish recap: {result.english_recap.strip()}"
             failure_code = "reply_citation_binding_failed"
@@ -548,12 +603,31 @@ class BotReplyService:
                     raise ReplyRejected("source suggestion has no safe URL")
                 self.knowledge_state.add_candidates(uow, urls, trigger.record_id, now)
             if result.correction_transaction is not None:
+                uses_general_source_urls = self._transaction_has_source_urls(
+                    result.correction_transaction
+                )
+                scoped_urls = frozenset(
+                    (
+                        context.mutation_source_urls
+                        if uses_general_source_urls
+                        else frozenset()
+                    )
+                    | (
+                        frozenset(local_erc_context.citations)
+                        if local_erc_context is not None
+                        else frozenset()
+                    )
+                )
                 citation_scope = (
                     CitationScope(
-                        source_keys=frozenset(local_erc_context.source_keys),
-                        urls=frozenset(local_erc_context.citations),
+                        source_keys=(
+                            frozenset(local_erc_context.source_keys)
+                            if local_erc_context is not None
+                            else frozenset()
+                        ),
+                        urls=scoped_urls,
                     )
-                    if local_erc_context is not None
+                    if local_erc_context is not None or scoped_urls
                     else None
                 )
                 CorrectionService(
@@ -563,6 +637,8 @@ class BotReplyService:
                     operation_id=job_id,
                     uow=uow,
                 )
+            if scan_registry is not None and scan_registry_changed:
+                ScanTargetStore(self.root).stage(uow, scan_registry)
             self._stage_jobs(uow, jobs)
             uow.publish()
             return self._prepared(ready)
@@ -742,6 +818,22 @@ class BotReplyService:
                 if item.path not in local_erc_paths
             ]
         )
+        mutation_capability = build_mutation_capability(
+            self.root,
+            route=route,
+            trigger=trigger,
+            reply_chain=chain,
+            retrieved_paths=(
+                item["path"]
+                for item in retrieved
+                if isinstance(item.get("path"), str)
+            ),
+        )
+        mutation_source_urls = (
+            frozenset(extract_public_https_urls((trigger, *chain)))
+            if route is BotRoute.KNOWLEDGE_CORRECTION
+            else frozenset()
+        )
         local_ids: set[str] = (
             seen
             | {record.record_id for record in nearby[:50]}
@@ -767,7 +859,9 @@ class BotReplyService:
                 else set()
             )
             allowed_citations = frozenset(
-                correction_local_ids | set(evidence_pack.citation_allowlist)
+                correction_local_ids
+                | set(evidence_pack.citation_allowlist)
+                | set(mutation_source_urls)
             )
             citation_entries = [
                 {
@@ -782,11 +876,19 @@ class BotReplyService:
             citation_entries.extend(
                 {"url": url} for url in evidence_pack.citation_allowlist
             )
+            citation_entries.extend(
+                {"url": url}
+                for url in sorted(
+                    mutation_source_urls - set(evidence_pack.citation_allowlist)
+                )
+            )
         else:
             local_erc_citations = (
                 local_erc_context.citations if local_erc_context is not None else ()
             )
-            allowed_citations = frozenset(local_ids | set(local_erc_citations))
+            allowed_citations = frozenset(
+                local_ids | set(local_erc_citations) | set(mutation_source_urls)
+            )
             citation_entries = [
                 {
                     "record_id": record.record_id,
@@ -798,6 +900,10 @@ class BotReplyService:
                 )
             ]
             citation_entries.extend({"url": url} for url in local_erc_citations)
+            citation_entries.extend(
+                {"url": url}
+                for url in sorted(mutation_source_urls - set(local_erc_citations))
+            )
         trigger_context: dict[str, Any] = {
             "route": route.value,
             "context_scope": context_scope.value,
@@ -822,13 +928,14 @@ class BotReplyService:
                 else []
             ),
             output_schema=self._json_mapping(
-                self.root / "src/tawg_bot/schemas/reply-result.v2.json"
+                self.root / "src/tawg_bot/schemas/reply-result.v3.json"
             ),
             budgets={"max_output_chars": 8000, "max_citations": 16},
             evidence_pack=(
                 evidence_pack.model_dump(mode="json") if evidence_pack is not None else None
             ),
             citation_allowlist=list(allowed_citations),
+            mutation_capability=mutation_capability.model_dump(mode="json"),
         )
         try:
             packed = ContextPackBuilder(self.privacy).build(
@@ -838,6 +945,8 @@ class BotReplyService:
                 text=packed.text,
                 allowed_citations=allowed_citations,
                 evidence_pack=evidence_pack,
+                mutation_capability=mutation_capability,
+                mutation_source_urls=mutation_source_urls,
             )
         except ContextRejected as error:
             raise ReplyRejected(str(error)) from None
@@ -930,24 +1039,6 @@ class BotReplyService:
             },
         )
         return augmented
-
-    @staticmethod
-    def _has_audited_bot_parent(
-        trigger: SourceRecord,
-        records: Mapping[str, SourceRecord],
-    ) -> bool:
-        parent_ids = [
-            relation.target_record_id
-            for relation in trigger.relations
-            if relation.relation_type == "reply_to"
-        ]
-        if len(parent_ids) != 1:
-            return False
-        parent = records.get(parent_ids[0])
-        return (
-            parent is not None
-            and parent.source_payload.get("message_kind") == "audited_bot_delivery"
-        )
 
     def _audited_delivery_text(
         self,
@@ -1091,13 +1182,12 @@ class BotReplyService:
         raw: Mapping[str, Any],
         trigger: SourceRecord,
         route: BotRoute,
-        context_scope: RouteContextScope,
-        trigger_kind: TriggerKind,
-        has_audited_bot_parent: bool,
         allowed_citations: frozenset[str],
         evidence_pack: EvidencePack | None,
         job_id: str,
         correction_source_keys: frozenset[str],
+        mutation_capability: KnowledgeMutationCapability,
+        mutation_source_urls: frozenset[str],
     ) -> _ReplyResult:
         try:
             result = _ReplyResult.model_validate(raw)
@@ -1191,39 +1281,51 @@ class BotReplyService:
             not correction_route or result.correction_transaction.operation_id != job_id
         ):
             raise ReplyRejected("reply attempted an unauthorized correction")
+        if result.knowledge_write is not None and result.correction_transaction is None:
+            raise ReplyRejected("knowledge write metadata has no transaction")
+        if result.scan_registration is not None:
+            if route is not BotRoute.KNOWLEDGE_CORRECTION:
+                raise ReplyRejected("scan registration is outside the correction route")
+            registration_urls = {
+                result.scan_registration.magicians_topic_url,
+                *(
+                    [result.scan_registration.proposal_pr_url]
+                    if result.scan_registration.proposal_pr_url is not None
+                    else []
+                ),
+            }
+            if (
+                not registration_urls.issubset(mutation_source_urls)
+                or not registration_urls.issubset(result.citations)
+                or result.scan_registration.erc_number
+                not in self._explicit_erc_numbers(trigger.text_original)
+            ):
+                raise ReplyRejected("scan registration is not grounded in the trigger")
         if result.correction_transaction is not None:
-            new_writes = [
-                write
-                for write in result.correction_transaction.writes
-                if write.expected_sha256 is None
-            ]
-            if new_writes:
-                write = new_writes[0]
-                path = PurePosixPath(write.path)
-                approved_content_path = (
-                    not path.is_absolute()
-                    and len(path.parts) >= 3
-                    and path.parts[:2]
-                    in {("knowledge", "topics"), ("knowledge", "repos")}
-                    and path.suffix.casefold() == ".md"
-                    and ".." not in path.parts
-                    and path.name.casefold() not in {"index.md", "hot.md"}
+            if route is BotRoute.KNOWLEDGE_CORRECTION:
+                creates_page = any(
+                    write.expected_sha256 is None
+                    for write in result.correction_transaction.writes
                 )
-                if (
-                    route is not BotRoute.KNOWLEDGE_CORRECTION
-                    or context_scope
-                    not in {
-                        RouteContextScope.CONVERSATION,
-                        RouteContextScope.KNOWLEDGE,
-                    }
-                    or trigger_kind is not TriggerKind.REPLY_TO_BOT
-                    or not has_audited_bot_parent
-                    or len(result.correction_transaction.writes) != 1
-                    or len(new_writes) != 1
-                    or not approved_content_path
-                    or trigger.record_id not in write.citations
-                ):
-                    raise ReplyRejected("reply attempted an unauthorized page creation")
+                if creates_page and result.knowledge_write is None:
+                    raise ReplyRejected("knowledge transaction omits authorship metadata")
+                try:
+                    validate_knowledge_transaction(
+                        self.root,
+                        result.correction_transaction,
+                        mutation_capability,
+                    )
+                except KnowledgeMutationRejected as error:
+                    raise ReplyRejected(str(error)) from None
+                if result.knowledge_write is not None:
+                    self._validate_knowledge_write(
+                        result.knowledge_write,
+                        result.correction_transaction,
+                        mutation_capability=mutation_capability,
+                        mutation_source_urls=mutation_source_urls,
+                    )
+            elif result.knowledge_write is not None:
+                raise ReplyRejected("identity correction cannot write general knowledge")
             allowed_transaction_citations = allowed_citations | correction_source_keys
             if any(
                 not set(write.citations).issubset(allowed_transaction_citations)
@@ -1243,6 +1345,75 @@ class BotReplyService:
         except PrivacyViolation:
             raise ReplyRejected("reply output failed privacy validation") from None
         return result
+
+    @staticmethod
+    def _explicit_erc_numbers(text: str) -> frozenset[int]:
+        return frozenset(
+            int(value)
+            for value in re.findall(r"\b(?:ERC|EIP)[-\s]?#?([1-9][0-9]{0,4})\b", text, re.I)
+        )
+
+    @staticmethod
+    def _scan_registration_warning(trigger: SourceRecord) -> str:
+        if _NON_ENGLISH.search(trigger.text_original):
+            return (
+                "知识内容已处理, 但周期扫描没有注册; 请核对 ERC 编号和原始 "
+                "Magicians/提案 PR 链接后再发一次。"
+            )
+        return (
+            "The knowledge content was handled, but the recurring scan was not registered. "
+            "Please check the ERC number and original Magicians/proposal-PR links, then try "
+            "that registration again."
+        )
+
+    @staticmethod
+    def _validate_knowledge_write(
+        decision: _KnowledgeWriteDecision,
+        transaction: VaultTransaction,
+        *,
+        mutation_capability: KnowledgeMutationCapability,
+        mutation_source_urls: frozenset[str],
+    ) -> None:
+        evidence = set(decision.authorship_evidence)
+        if not evidence.issubset(mutation_capability.required_evidence):
+            raise ReplyRejected("authorship cites evidence outside the audited conversation")
+        if decision.authorship == "self_authored":
+            if decision.original_url is not None:
+                raise ReplyRejected("self-authored knowledge cannot claim an original URL")
+            return
+
+        original_url = decision.original_url
+        if original_url is None or original_url not in mutation_source_urls:
+            raise ReplyRejected("external knowledge requires its supplied original URL")
+        for write in transaction.writes:
+            if write.expected_sha256 is not None:
+                continue
+            frontmatter, body = parse_frontmatter(write.content)
+            source_urls = frontmatter.get("source_urls") if frontmatter is not None else None
+            if (
+                not isinstance(source_urls, list)
+                or original_url not in source_urls
+                or original_url not in write.citations
+                or original_url not in body
+            ):
+                raise ReplyRejected("external knowledge page omits its original source")
+            description = re.split(
+                r"(?m)^##\s+Sources\s*$",
+                body,
+                maxsplit=1,
+            )[0].strip()
+            if len(description) > 2_000:
+                raise ReplyRejected("external knowledge description exceeds 2000 characters")
+
+    @staticmethod
+    def _transaction_has_source_urls(transaction: VaultTransaction) -> bool:
+        for write in transaction.writes:
+            frontmatter, _ = parse_frontmatter(write.content)
+            if frontmatter is not None and isinstance(
+                frontmatter.get("source_urls"), list
+            ):
+                return True
+        return False
 
     @classmethod
     def _bind_reply_citations(cls, text: str, citations: list[str]) -> str:

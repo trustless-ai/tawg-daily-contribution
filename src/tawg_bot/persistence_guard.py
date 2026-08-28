@@ -44,6 +44,7 @@ _SOURCE_METADATA_NAMES = frozenset(
     {
         "aliases.yml",
         "claim-ledger.json",
+        "scan-targets.yml",
         "source-ledger.json",
         "sources.yml",
     }
@@ -216,6 +217,16 @@ def _semantic_strings(
         except RegistryRejected:
             raise PersistenceRejected from None
         return tuple((_normalize(version), False) for version in updated_versions)
+    if relative_path == "knowledge/meta/scan-targets.yml":
+        from tawg_bot.scan_targets import ScanTargetRegistry, ScanTargetRejected
+
+        try:
+            scan_registry = ScanTargetRegistry.from_yaml_text(text)
+            if text != _normalize(scan_registry.render_yaml()):
+                raise ScanTargetRejected("scan target registry is not canonically rendered")
+        except ScanTargetRejected:
+            raise PersistenceRejected from None
+        return ()
     try:
         if path.suffix == ".json":
             value = json.loads(text)
