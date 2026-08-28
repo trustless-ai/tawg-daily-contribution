@@ -6,6 +6,10 @@ updated: '2026-08-23'
 source_ids:
 - tg:tawg:3141
 - tg:tawg:3139
+telegram_record_ids:
+- tg:tawg:3141
+- tg:tawg:3139
+provenance_status: legacy_incomplete
 ---
 
 # Daily Contribution and Settlement TAWG

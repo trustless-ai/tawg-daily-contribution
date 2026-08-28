@@ -3,6 +3,9 @@ title: eip7702-rescue
 type: repository
 created: '2026-08-23'
 updated: '2026-08-23'
+source_urls:
+- https://github.com/trustless-ai/eip7702-rescue/blob/31133de1ca5428947580f53a486d97aae461e33e/README.md
+provenance_status: verified
 ---
 
 # eip7702-rescue

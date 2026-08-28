@@ -3,6 +3,9 @@ title: tawg-daily-contribution
 type: repository
 created: '2026-08-23'
 updated: '2026-08-23'
+source_urls:
+- https://github.com/trustless-ai/tawg-daily-contribution/blob/30a7013a07ba68bc1334049b761b64ab2e62c79e/README.md
+provenance_status: verified
 ---
 
 # tawg-daily-contribution

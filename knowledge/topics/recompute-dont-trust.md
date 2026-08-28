@@ -3,6 +3,7 @@ title: Recompute, Don't Trust
 type: topic
 created: '2026-08-23'
 updated: '2026-08-23'
+provenance_status: legacy_incomplete
 ---
 
 # Recompute, Don't Trust
