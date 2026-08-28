@@ -4,7 +4,7 @@
     "repo:agent-contracts-examples:metadata_sha256": "7314dde6f4129971c6e00c1f41772cae933da7dd4529f6acbb73f462346dbe61",
     "repo:agent-ercs:metadata_sha256": "2cb8b68f30a6748a1db0f7dfa94c094b4d369d3b1ab2749bc81cd7ff515e0d4d",
     "repo:agent-sdk:metadata_sha256": "fbd962eae4a9999384d6f56033062c7f9392fd2b9740d512d3e1201cb83439f0",
-    "repo:ccip-router:metadata_sha256": "5e0c95252594c34fb1508a6e7e3cf4deea780166ab6fa82228438e7717b25cc7",
+    "repo:ccip-router:metadata_sha256": "9ac2874b9a085411a98e86b24cc3e168aea750abbb4bfe9ec6d13d7a14c95383",
     "repo:collapsed-state-note:metadata_sha256": "974900faa9bff12fff5d8f423c73ac3716ebf3aeec9d4c4e5e9adc2c571ce8a1",
     "repo:composed-attestation-note:metadata_sha256": "60f7ba1d43361919172cb4941a991e1cda1927bd707578ad1bbaaa392e99d4b3",
     "repo:cross-reference-console:metadata_sha256": "8c15672a4e6afcffa2949ab132d51cc12c1741c3951e22ea434d72ad717cd90a",
@@ -13,7 +13,7 @@
     "repo:pq-agent-binding:metadata_sha256": "bb162c3af447014b189b38c1bd78fdfda65805b44e6fdeb42734fc24a1331588",
     "repo:recompute-kit:metadata_sha256": "0f3e6492157cf1f0b48545b68e121ca26713841deddb80e21899bed5110d6823",
     "repo:recompute-lens:metadata_sha256": "3ca70fe18e4e62e8ea690138da610229ebfa681c3a23d3ddbfe9cd9112091551",
-    "repo:tawg-daily-contribution:metadata_sha256": "14a7b158cac52cbabd774a59e6ef3cb426bef57b29d74f420523491133276273",
+    "repo:tawg-daily-contribution:metadata_sha256": "d482c80656afc49d049e87b3fcd547979c0ba2c6e95e9edddaab1a0bec87b20e",
     "repo:trustless-agent-substrate:metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
     "repo:trustless-ai-landing:metadata_sha256": "7a57b0fceec9cd7150d2b697d3ef577c7fdb3eb227916765de296850833c7421",
     "repo:zkIE:metadata_sha256": "801c74d01767bf4ac32728169271f06d47cef5095953dc2ac3704ba76de50fe3"
