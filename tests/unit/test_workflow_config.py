@@ -34,14 +34,19 @@ def load_workflow(name: str) -> dict:
 def test_workflow_is_single_non_overlapping_five_minute_writer() -> None:
     value = workflow()
 
-    assert value["on"]["schedule"] == [{"cron": "*/5 * * * *"}]
+    assert value["on"]["schedule"] == [{"cron": "2-59/5 * * * *"}]
     inputs = value["on"]["workflow_dispatch"]["inputs"]
-    assert set(inputs) == {"runtime_mode", "daily_dry_run"}
-    assert inputs["runtime_mode"] == {
-        "description": "Runtime mode for this manual operation",
+    assert set(inputs) == {"operation"}
+    assert inputs["operation"] == {
+        "description": "Choose an operation; each option states whether it can send",
         "type": "choice",
-        "options": ["inherit", "observe", "poll", "webhook"],
-        "default": "observe",
+        "options": [
+            "Run normally — process due work and send",
+            "Preview latest Daily — generate only, do not send",
+            "Check only — inspect without Telegram delivery",
+            "Poll now — process backlog and due Daily, then send",
+        ],
+        "default": "Run normally — process due work and send",
     }
     assert value["permissions"] == {"contents": "write"}
     assert value["concurrency"] == {
@@ -129,19 +134,33 @@ def test_workflow_selects_safe_core_commands_for_authoritative_runtime_modes() -
         "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
         "TAWG_DELIVERY_ENABLED",
         "TAWG_RUNTIME_MODE",
+        "MANUAL_OPERATION",
     }
     assert operation_env["GITHUB_TOKEN"] == "${{ github.token }}"
     assert operation_env["TELEGRAM_BOT_TOKEN"] == "${{ secrets.TELEGRAM_BOT_TOKEN }}"
     assert operation_env["ANTHROPIC_AUTH_TOKEN"] == "${{ secrets.ANTHROPIC_AUTH_TOKEN }}"
     assert operation_env["TAWG_RUNTIME_MODE"] == "${{ vars.TAWG_RUNTIME_MODE }}"
+    assert operation_env["MANUAL_OPERATION"] == (
+        "${{ inputs.operation || 'Run normally — process due work and send' }}"
+    )
     for step in job["steps"]:
         if step is operation_step:
             continue
         assert "${{ secrets." not in str(step)
         assert "${{ github.token }}" not in str(step)
     assert 'authoritative_mode="${TAWG_RUNTIME_MODE:-poll}"' in run_bot
+    assert 'manual_operation="$MANUAL_OPERATION"' in run_bot
+    assert "${{ inputs." not in run_bot
+    assert "Run normally — process due work and send" in run_bot
+    assert "Preview latest Daily — generate only, do not send" in run_bot
+    assert "Check only — inspect without Telegram delivery" in run_bot
+    assert "Poll now — process backlog and due Daily, then send" in run_bot
     assert '[[ "$authoritative_mode" == "webhook" ]]' in run_bot
-    assert '"${{ inputs.runtime_mode }}" == "poll"' in run_bot
+    assert (
+        "Manual backlog polling is disabled while the authoritative runtime mode is webhook"
+        in run_bot
+    )
+    assert "daily-dry-run --window-end" in run_bot
     assert "operation=(tick)" in run_bot
     assert "operation=(maintenance-tick)" in run_bot
     assert "operation=(maintenance-tick --observe-only)" in run_bot
@@ -168,6 +187,175 @@ def test_workflow_selects_safe_core_commands_for_authoritative_runtime_modes() -
         assert unsafe_command not in run_bot
     assert all(not line.strip().startswith("env") for line in run_bot.splitlines())
     assert "getUpdates" not in rendered
+
+
+def run_manual_operation(
+    tmp_path: Path,
+    *,
+    operation: str,
+    authoritative_mode: str,
+    delivery_enabled: bool,
+) -> tuple[subprocess.CompletedProcess[str], list[str]]:
+    value = workflow()
+    job = value["jobs"]["knowledge-bot"]
+    operation_step = next(
+        step
+        for step in job["steps"]
+        if step["name"] == "Run bot with ordered repository checkpoints"
+    )
+    bin_dir = tmp_path / "bin"
+    bin_dir.mkdir()
+    command_log = tmp_path / "commands.log"
+    fake_python = bin_dir / "python"
+    fake_python.write_text(
+        "#!/usr/bin/env bash\nprintf '%s\\n' \"$*\" >> \"$COMMAND_LOG\"\n",
+        encoding="utf-8",
+    )
+    fake_python.chmod(0o755)
+    fake_date = bin_dir / "date"
+    fake_date.write_text(
+        "#!/usr/bin/env bash\n"
+        "if [[ \"$*\" == '-u +%H' ]]; then printf '23\\n'; exit 0; fi\n"
+        "printf '2026-08-27T23:00:00Z\\n'\n",
+        encoding="utf-8",
+    )
+    fake_date.chmod(0o755)
+    environment = {
+        "COMMAND_LOG": str(command_log),
+        "GITHUB_TOKEN": "test-token",
+        "GITHUB_WORKSPACE": str(ROOT),
+        "LC_ALL": "C",
+        "MANUAL_OPERATION": operation,
+        "PATH": f"{bin_dir}{os.pathsep}/usr/bin{os.pathsep}/bin",
+        "TAWG_DELIVERY_ENABLED": "true" if delivery_enabled else "false",
+        "TAWG_RUNTIME_MODE": authoritative_mode,
+    }
+    completed = subprocess.run(
+        ["bash", "-c", operation_step["run"]],
+        cwd=ROOT,
+        env=environment,
+        capture_output=True,
+        check=False,
+        text=True,
+    )
+    commands = command_log.read_text().splitlines() if command_log.exists() else []
+    return completed, commands
+
+
+@pytest.mark.parametrize(
+    ("operation", "authoritative_mode", "delivery_enabled", "expected_command"),
+    [
+        ("Run normally — process due work and send", "poll", True, "-m tawg_bot.cli tick"),
+        (
+            "Run normally — process due work and send",
+            "poll",
+            False,
+            "-m tawg_bot.cli tick --observe-only",
+        ),
+        (
+            "Run normally — process due work and send",
+            "webhook",
+            True,
+            "-m tawg_bot.cli maintenance-tick",
+        ),
+        (
+            "Run normally — process due work and send",
+            "webhook",
+            False,
+            "-m tawg_bot.cli maintenance-tick --observe-only",
+        ),
+        (
+            "Run normally — process due work and send",
+            "observe",
+            True,
+            "-m tawg_bot.cli tick --observe-only",
+        ),
+        (
+            "Check only — inspect without Telegram delivery",
+            "poll",
+            True,
+            "-m tawg_bot.cli tick --observe-only",
+        ),
+        (
+            "Check only — inspect without Telegram delivery",
+            "webhook",
+            True,
+            "-m tawg_bot.cli maintenance-tick --observe-only",
+        ),
+        (
+            "Poll now — process backlog and due Daily, then send",
+            "poll",
+            True,
+            "-m tawg_bot.cli tick",
+        ),
+        (
+            "Poll now — process backlog and due Daily, then send",
+            "poll",
+            False,
+            "-m tawg_bot.cli tick --observe-only",
+        ),
+    ],
+)
+def test_manual_operation_routes_to_expected_command(
+    tmp_path: Path,
+    operation: str,
+    authoritative_mode: str,
+    delivery_enabled: bool,
+    expected_command: str,
+) -> None:
+    completed, commands = run_manual_operation(
+        tmp_path,
+        operation=operation,
+        authoritative_mode=authoritative_mode,
+        delivery_enabled=delivery_enabled,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert commands == [expected_command]
+
+
+def test_manual_daily_preview_only_generates_without_delivery(tmp_path: Path) -> None:
+    completed, commands = run_manual_operation(
+        tmp_path,
+        operation="Preview latest Daily — generate only, do not send",
+        authoritative_mode="poll",
+        delivery_enabled=True,
+    )
+
+    assert completed.returncode == 0, completed.stderr
+    assert len(commands) == 1
+    assert commands[0].startswith(
+        "-m tawg_bot.cli daily-dry-run --window-end "
+    )
+
+
+def test_manual_backlog_poll_is_rejected_in_webhook_mode(tmp_path: Path) -> None:
+    completed, commands = run_manual_operation(
+        tmp_path,
+        operation="Poll now — process backlog and due Daily, then send",
+        authoritative_mode="webhook",
+        delivery_enabled=True,
+    )
+
+    assert completed.returncode == 2
+    assert commands == []
+    assert "Manual backlog polling is disabled" in completed.stderr
+
+
+def test_manual_operation_rejects_untrusted_input_without_shell_execution(
+    tmp_path: Path,
+) -> None:
+    marker = tmp_path / "injected"
+    completed, commands = run_manual_operation(
+        tmp_path,
+        operation=f'Run normally"; touch {marker}; #',
+        authoritative_mode="poll",
+        delivery_enabled=True,
+    )
+
+    assert completed.returncode == 2
+    assert commands == []
+    assert not marker.exists()
 
 
 def test_workflows_pin_third_party_actions_to_reviewed_commits() -> None:
