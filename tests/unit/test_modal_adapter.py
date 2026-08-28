@@ -118,18 +118,34 @@ class FakeImage:
         return record
 
 
+class FakeSpawn:
+    def __init__(self, owner: FakeFunction) -> None:
+        self.owner = owner
+
+    def __call__(self, payload: dict[str, object] | None = None) -> object:
+        if self.owner.spawn_error is not None:
+            raise self.owner.spawn_error
+        self.owner.sync_spawned.append(payload)
+        self.owner.spawned.append(payload)
+        return object()
+
+    async def aio(self, payload: dict[str, object] | None = None) -> object:
+        if self.owner.spawn_error is not None:
+            raise self.owner.spawn_error
+        self.owner.async_spawned.append(payload)
+        self.owner.spawned.append(payload)
+        return object()
+
+
 class FakeFunction:
     def __init__(self, raw_f: Callable[..., Any], config: dict[str, Any]) -> None:
         self.raw_f = raw_f
         self.config = config
         self.spawned: list[dict[str, object] | None] = []
+        self.sync_spawned: list[dict[str, object] | None] = []
+        self.async_spawned: list[dict[str, object] | None] = []
         self.spawn_error: Exception | None = None
-
-    def spawn(self, payload: dict[str, object] | None = None) -> object:
-        if self.spawn_error is not None:
-            raise self.spawn_error
-        self.spawned.append(payload)
-        return object()
+        self.spawn = FakeSpawn(self)
 
 
 class FakeApp:
@@ -419,6 +435,8 @@ async def test_endpoint_spawns_only_the_sanitized_json_envelope(
     response = await modal_adapter.telegram_webhook.raw_f(request)
 
     assert response.status_code == 200
+    assert modal_adapter.repository_worker.sync_spawned == []
+    assert len(modal_adapter.repository_worker.async_spawned) == 1
     assert len(modal_adapter.repository_worker.spawned) == 1
     payload = modal_adapter.repository_worker.spawned[0]
     envelope = TelegramWebhookEnvelope.model_validate(payload)
@@ -752,6 +770,8 @@ async def test_scheduled_maintenance_spawns_shared_worker_only_when_exactly_true
 
     await modal_adapter.scheduled_maintenance.raw_f()
 
+    assert modal_adapter.repository_worker.sync_spawned == []
+    assert modal_adapter.repository_worker.async_spawned == [None]
     assert modal_adapter.repository_worker.spawned == [None]
 
 

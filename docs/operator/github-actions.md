@@ -8,8 +8,8 @@ Add these Actions secrets:
 
 - `TELEGRAM_BOT_TOKEN`
 - `ANTHROPIC_AUTH_TOKEN`
-- `MODAL_TOKEN_ID` — used only by the manual Modal deployment workflow
-- `MODAL_TOKEN_SECRET` — used only by the manual Modal deployment workflow
+- `MODAL_TOKEN_ID` — used only by the Modal deployment workflow
+- `MODAL_TOKEN_SECRET` — used only by the Modal deployment workflow
 
 Add these Actions variables (the chat ID may instead be a secret):
 
@@ -41,7 +41,7 @@ Create these Modal secret objects outside the repository, with no secret values 
 - `tawg-webhook` — `TAWG_TELEGRAM_WEBHOOK_SECRET`, `TAWG_TELEGRAM_CHAT_ID`, and `TAWG_TELEGRAM_BOT_USERNAME`
 - `tawg-worker` — `TELEGRAM_BOT_TOKEN`, the Telegram group variables, model configuration variables, and a repository-scoped `GITHUB_TOKEN` with only the required contents-write access
 
-The manual `Deploy TAWG Modal app` Actions workflow installs the complete hash-locked deployment dependencies (including `modal==1.5.4` and `fastapi==0.141.1`), then verifies Ruff, mypy, the full test suite, and vault lint before deploying `deploy/modal_app.py`. Its GitHub deploy credentials are the `MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET` secrets listed above; do not place their values in workflow files, logs, issue comments, or chat. During shadow deployment, it does not configure Telegram's webhook. Webhook registration is an explicit manual cutover action and is never performed by a workflow.
+The `Deploy TAWG Modal app` Actions workflow installs the complete hash-locked deployment dependencies (including `modal==1.5.4` and `fastapi==0.141.1`), then verifies Ruff, mypy, the full test suite, and vault lint before deploying `deploy/modal_app.py`. It supports manual dispatch and automatic deployment after a push to `main` changes Modal/runtime code or deployment configuration. The automatic path filter is intentionally limited to the workflow itself, `config/privacy.yml`, `deploy/**`, `src/**`, `pyproject.toml`, and the two Modal deployment requirement files. Bot-generated checkpoint, delivery, knowledge, and other state-only commits therefore do not redeploy the app. Its GitHub deploy credentials are the `MODAL_TOKEN_ID` and `MODAL_TOKEN_SECRET` secrets listed above; do not place their values in workflow files, logs, issue comments, or chat. During shadow deployment, it does not configure Telegram's webhook. Webhook registration is an explicit manual cutover action and is never performed by a workflow.
 
 Before using the deployment workflow, create a protected GitHub Environment named `tawg-production`. Restrict its deployment branches to `main` and require an operator approval through required reviewers. The workflow additionally refuses non-`main` refs, checks out the dispatched `${{ github.sha }}` exactly, and verifies the checked-out `HEAD` before any validation or deployment command runs.
 

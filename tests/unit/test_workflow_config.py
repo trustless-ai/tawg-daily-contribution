@@ -385,7 +385,18 @@ def test_modal_deploy_workflow_verifies_before_pinned_least_privilege_deploy() -
     rendered = (ROOT / ".github/workflows/modal-deploy.yml").read_text()
 
     assert set(value["on"]) == {"push", "workflow_dispatch"}
-    assert value["on"]["push"] == {"branches": ["main"]}
+    assert value["on"]["push"] == {
+        "branches": ["main"],
+        "paths": [
+            ".github/workflows/modal-deploy.yml",
+            "config/privacy.yml",
+            "deploy/**",
+            "pyproject.toml",
+            "requirements-modal-deploy.in",
+            "requirements-modal-deploy.lock",
+            "src/**",
+        ],
+    }
     assert value["permissions"] == {"contents": "read"}
     assert value["concurrency"] == {
         "group": "tawg-modal-deploy",

@@ -201,7 +201,7 @@ async def scheduled_maintenance() -> None:
     """Dispatch maintenance only after an explicit production enablement."""
     if os.environ.get("TAWG_MODAL_MAINTENANCE_ENABLED") != "true":
         return
-    repository_worker.spawn(None)
+    await repository_worker.spawn.aio(None)
 
 
 @app.function(
@@ -243,7 +243,7 @@ async def telegram_webhook(request: Request) -> Response:
     if decision.disposition is TelegramWebhookDisposition.REJECT or decision.envelope is None:
         return Response(status_code=400)
     try:
-        repository_worker.spawn(decision.envelope.model_dump(mode="json"))
+        await repository_worker.spawn.aio(decision.envelope.model_dump(mode="json"))
     except Exception:
         return Response(status_code=503)
     return Response(status_code=200)
