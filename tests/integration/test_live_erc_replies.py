@@ -545,6 +545,36 @@ async def test_repeated_declared_url_is_reduced_to_one_bound_citation(
 
 
 @pytest.mark.asyncio
+async def test_retrieved_source_url_can_be_persisted_as_a_prepared_citation(
+    tmp_path: Path,
+) -> None:
+    job = _seed(tmp_path, "@bot What is the current status of ERC-8004?")
+    pack = _pack()
+    canonical = pack.evidence[0]
+    canonical_text = f"Canonical source: {CANONICAL}"
+    canonical = canonical.model_copy(
+        update={
+            "text": canonical_text,
+            "content_sha256": hashlib.sha256(canonical_text.encode()).hexdigest(),
+            "source_byte_count": len(canonical_text),
+        }
+    )
+    pack = pack.model_copy(update={"evidence": [canonical, *pack.evidence[1:]]})
+
+    prepared = await _service(
+        tmp_path,
+        ai=FakeAi(_result(citations=[CANONICAL])),
+        live=FakeLiveEvidence(pack),
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=1))
+
+    assert prepared.citations == (CANONICAL,)
+    persisted = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )[0]
+    assert persisted["prepared_citations"] == [CANONICAL]
+
+
+@pytest.mark.asyncio
 async def test_markdown_link_label_cannot_hide_an_undeclared_local_citation(
     tmp_path: Path,
 ) -> None:

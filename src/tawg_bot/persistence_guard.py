@@ -254,6 +254,13 @@ def _semantic_strings(
                 trusted_source_locators=trusted_source_locators,
             )
         )
+    if relative_path == "data/state/pending-bot-jobs.json":
+        return tuple(
+            _walk_prepared_reply_job_strings(
+                value,
+                trusted_source_locators=trusted_source_locators,
+            )
+        )
     return tuple(_walk_strings(value, allowed_key=allowed_key))
 
 
@@ -281,6 +288,36 @@ def _walk_prepared_daily_strings(
             yield (_normalize(child), normalized_key == "telegram_text")
         else:
             yield from _walk_strings(child, allowed_key="telegram_text")
+
+
+def _walk_prepared_reply_job_strings(
+    value: Any,
+    *,
+    trusted_source_locators: frozenset[str],
+) -> Iterable[tuple[str, bool]]:
+    if not isinstance(value, list):
+        yield from _walk_strings(value, allowed_key="prepared_reply_text")
+        return
+    for item in value:
+        if not isinstance(item, Mapping):
+            yield from _walk_strings(item, allowed_key="prepared_reply_text")
+            continue
+        for key, child in item.items():
+            normalized_key = _normalize(str(key))
+            yield (normalized_key, False)
+            if normalized_key == "prepared_citations" and isinstance(child, list):
+                for citation in child:
+                    if (
+                        isinstance(citation, str)
+                        and _normalize(citation) in trusted_source_locators
+                    ):
+                        continue
+                    yield from _walk_strings(citation, allowed_key=None)
+                continue
+            if isinstance(child, str):
+                yield (_normalize(child), normalized_key == "prepared_reply_text")
+            else:
+                yield from _walk_strings(child, allowed_key="prepared_reply_text")
 
 
 def _walk_refresh_job_strings(

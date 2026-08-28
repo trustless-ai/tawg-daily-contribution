@@ -465,6 +465,45 @@ def test_pending_job_quote_allowance_is_limited_to_prepared_reply_text() -> None
         )
 
 
+def test_trusted_locator_allowance_is_limited_to_prepared_reply_citations() -> None:
+    locator = "https://eips.ethereum.org/EIPS/eip-8183"
+    external = f"Canonical source: {locator}"
+    relative_path = "data/state/pending-bot-jobs.json"
+    guard = PersistenceGuard.from_external_texts(
+        (external,), trusted_source_locators=(locator,)
+    )
+
+    guard.inspect_staged(
+        {
+            relative_path: json.dumps(
+                [
+                    {
+                        "prepared_reply_text": f"See {locator}",
+                        "prepared_citations": [locator],
+                    }
+                ]
+            ).encode()
+        },
+        {relative_path: PersistenceProvenance.PREPARED_TELEGRAM},
+    )
+
+    with pytest.raises(PersistenceRejected, match="persistence policy rejection"):
+        guard.inspect_staged(
+            {
+                relative_path: json.dumps(
+                    [
+                        {
+                            "prepared_reply_text": "See the source.",
+                            "prepared_citations": [],
+                            "safe_error_code": locator,
+                        }
+                    ]
+                ).encode()
+            },
+            {relative_path: PersistenceProvenance.PREPARED_TELEGRAM},
+        )
+
+
 @pytest.mark.parametrize(
     "relative_path",
     [
