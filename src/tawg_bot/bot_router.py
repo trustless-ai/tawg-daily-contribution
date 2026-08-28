@@ -550,14 +550,20 @@ class BotReplyService:
                 evidence_pack=evidence_pack,
                 local_erc_context=local_erc_context,
             )
-            failure_code = "reply_model_failed"
-            raw = await self.ai.run(
-                job_type="reply",
-                context_pack=context.text,
-                operation_id=job_id,
-                max_budget_usd=self.max_budget_usd,
-                timeout_seconds=self._remaining_model_time(model_deadline),
+            raw = self._already_satisfied_repair_result(
+                processing,
+                trigger,
+                context,
             )
+            if raw is None:
+                failure_code = "reply_model_failed"
+                raw = await self.ai.run(
+                    job_type="reply",
+                    context_pack=context.text,
+                    operation_id=job_id,
+                    max_budget_usd=self.max_budget_usd,
+                    timeout_seconds=self._remaining_model_time(model_deadline),
+                )
             failure_code = "reply_validation_failed"
             result = self._validate_result(
                 raw,
@@ -983,6 +989,70 @@ class BotReplyService:
             )
         except ContextRejected as error:
             raise ReplyRejected(str(error)) from None
+
+    @staticmethod
+    def _already_satisfied_repair_result(
+        job: PendingBotJob,
+        trigger: SourceRecord,
+        context: _ReplyContext,
+    ) -> dict[str, Any] | None:
+        if (
+            job.repair_reason_code != "stale_citation_context_repaired"
+            or job.classified_route is not BotRoute.KNOWLEDGE_CORRECTION
+        ):
+            return None
+        required_evidence = tuple(
+            record_id
+            for record_id in context.mutation_capability.required_evidence
+            if record_id != trigger.record_id
+            and record_id in context.allowed_citations
+        )
+        for revision in context.mutation_capability.exact_revisions:
+            frontmatter, _ = parse_frontmatter(revision.content)
+            if frontmatter is None:
+                continue
+            title = frontmatter.get("title")
+            source_ids = frontmatter.get("source_ids", [])
+            telegram_record_ids = frontmatter.get("telegram_record_ids", [])
+            if (
+                not isinstance(title, str)
+                or not title.strip()
+                or not isinstance(source_ids, list)
+                or not isinstance(telegram_record_ids, list)
+            ):
+                continue
+            recorded_evidence = {
+                value
+                for value in (*source_ids, *telegram_record_ids)
+                if isinstance(value, str)
+            }
+            citation = next(
+                (
+                    record_id
+                    for record_id in required_evidence
+                    if record_id in recorded_evidence
+                ),
+                None,
+            )
+            if citation is None:
+                continue
+            return {
+                "schema_version": "tawg.reply-result.v3",
+                "reply_text": (
+                    f"**{title.strip()}** is already recorded in the knowledge base and "
+                    f"anchored to [{citation}]. No additional knowledge write was needed."
+                ),
+                "language": "en",
+                "english_recap": None,
+                "citations": [citation],
+                "evidence_status": "verified",
+                "verification_gaps": [],
+                "correction_transaction": None,
+                "knowledge_write": None,
+                "scan_registration": None,
+                "refusal": False,
+            }
+        return None
 
     def _with_audited_bot_parent(
         self,

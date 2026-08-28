@@ -602,6 +602,153 @@ async def test_nested_direct_reply_recovers_original_evidence_and_existing_page(
 
 
 @pytest.mark.asyncio
+async def test_satisfied_stale_context_repair_skips_a_redundant_knowledge_write(
+    tmp_path: Path,
+) -> None:
+    original_job = seed(
+        tmp_path,
+        "Please record this",
+        trigger_kind=TriggerKind.REPLY_TO_BOT,
+        trigger_reply_to="tg:tawg:901",
+    )
+    repair_job = original_job.model_copy(
+        update={
+            "job_id": "reply-repair:stale-citation-context-v1:tg:tawg:12",
+            "repair_of_job_id": original_job.job_id,
+            "repair_reason_code": "stale_citation_context_repaired",
+        }
+    )
+    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    original = _record(
+        "tg:tawg:10",
+        "RVR means Recomputable Verification Receipts and binds recomputable evidence.",
+        NOW - timedelta(hours=2),
+    )
+    followup = _record(
+        "tg:tawg:11",
+        "Add it to the knowledge base.",
+        NOW - timedelta(hours=1),
+        reply_to="tg:tawg:900",
+    )
+    trigger = _record(
+        "tg:tawg:12",
+        "Please record this",
+        NOW,
+        reply_to="tg:tawg:901",
+    )
+    telegram_path.write_bytes(
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes(
+            [original, followup, trigger]
+        )
+    )
+    page_path = tmp_path / "knowledge/topics/recomputable-verification-receipts.md"
+    page_path.parent.mkdir(parents=True, exist_ok=True)
+    page_path.write_text(
+        "---\n"
+        "title: Recomputable Verification Receipts\n"
+        "type: topic\n"
+        "created: '2026-08-23'\n"
+        "updated: '2026-08-23'\n"
+        "source_ids:\n"
+        "  - tg:tawg:10\n"
+        "telegram_record_ids:\n"
+        "  - tg:tawg:10\n"
+        "provenance_status: verified\n"
+        "---\n\n"
+        "# Recomputable Verification Receipts\n\n"
+        "RVR means Recomputable Verification Receipts and binds recomputable evidence.\n",
+        encoding="utf-8",
+    )
+    first_bot_text = "Please provide the RVR evidence needed for the entry."
+    second_bot_text = "The original RVR evidence is not yet available to this request."
+    first_job = PendingBotJob(
+        job_id="reply:tg:tawg:10",
+        trigger_record_id="tg:tawg:10",
+        reply_to_message_id=10,
+        status=JobStatus.DELIVERED,
+        prepared_reply_text=first_bot_text,
+        prepared_language="en",
+        created_at=NOW - timedelta(hours=2),
+        updated_at=NOW - timedelta(minutes=90),
+    )
+    second_job = PendingBotJob(
+        job_id="reply:tg:tawg:11",
+        trigger_record_id="tg:tawg:11",
+        reply_to_message_id=11,
+        status=JobStatus.DELIVERED,
+        prepared_reply_text=second_bot_text,
+        prepared_language="en",
+        created_at=NOW - timedelta(hours=1),
+        updated_at=NOW - timedelta(minutes=30),
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs_path.write_text(
+        json.dumps(
+            [
+                repair_job.model_dump(mode="json"),
+                first_job.model_dump(mode="json"),
+                second_job.model_dump(mode="json"),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    attempts = [
+        DeliveryAttempt(
+            delivery_id=first_job.job_id,
+            job_id=first_job.job_id,
+            status=DeliveryStatus.DELIVERED,
+            content_sha256=hashlib.sha256(first_bot_text.encode()).hexdigest(),
+            message_count=1,
+            reply_to_message_id=10,
+            telegram_chat_id=-1001,
+            telegram_message_ids=[900],
+            sent_at=NOW - timedelta(minutes=90),
+            prepared_at=NOW - timedelta(minutes=90),
+            updated_at=NOW - timedelta(minutes=90),
+        ),
+        DeliveryAttempt(
+            delivery_id=second_job.job_id,
+            job_id=second_job.job_id,
+            status=DeliveryStatus.DELIVERED,
+            content_sha256=hashlib.sha256(second_bot_text.encode()).hexdigest(),
+            message_count=1,
+            reply_to_message_id=11,
+            telegram_chat_id=-1001,
+            telegram_message_ids=[901],
+            sent_at=NOW - timedelta(minutes=30),
+            prepared_at=NOW - timedelta(minutes=30),
+            updated_at=NOW - timedelta(minutes=30),
+        ),
+    ]
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        json.dumps([attempt.model_dump(mode="json") for attempt in attempts]) + "\n",
+        encoding="utf-8",
+    )
+    ai = ContextualFakeAi(
+        "knowledge_correction",
+        reply_result(chinese=False),
+        reply_error=AssertionError("satisfied repair must not invoke the reply model"),
+    )
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ai,
+        bot_username="bot",
+        chat_id=-1001,
+    ).prepare(repair_job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared is not None
+    assert prepared.reply_text == (
+        "**Recomputable Verification Receipts** is already recorded in the knowledge "
+        "base and anchored to [tg:tawg:10]. No additional knowledge write was needed."
+    )
+    assert prepared.citations == ("tg:tawg:10",)
+    assert [call["job_type"] for call in ai.calls] == ["route"]
+    assert page_path.read_text(encoding="utf-8").count("tg:tawg:10") == 2
+
+
+@pytest.mark.asyncio
 async def test_direct_reply_parent_audit_is_bound_to_the_configured_chat(
     tmp_path: Path,
 ) -> None:
