@@ -15,6 +15,10 @@ def builder() -> ContextPackBuilder:
 def inputs() -> ContextInputs:
     return ContextInputs(
         trigger={"record_id": "tg:tawg:50", "text": "TRIGGER: summarize ERC-8004"},
+        mutation_capability={
+            "can_create_page": True,
+            "required_evidence": ["MUTATION_CAPABILITY_REQUIRED"],
+        },
         reply_chain=[{"record_id": "tg:tawg:49", "text": "REPLY_CHAIN: prior question"}],
         recent_telegram=[
             {"record_id": f"tg:tawg:{index}", "text": f"RECENT_{index}"}
@@ -102,3 +106,15 @@ def test_context_keeps_live_evidence_when_generic_retrieval_is_pruned() -> None:
     assert "https://eips.ethereum.org/EIPS/eip-8004" in pack.text
     assert "RETRIEVED_11" not in pack.text
     assert pack.text.index('"evidence_pack"') < pack.text.index('"retrieved"')
+
+
+def test_context_never_prunes_mutation_capability() -> None:
+    safe = inputs()
+    safe.retrieved = [
+        {"chunk_id": f"chunk-{index}", "text": "x" * 1000}
+        for index in range(50)
+    ]
+
+    pack = builder().build(safe, max_chars=1800, max_recent_telegram=1)
+
+    assert "MUTATION_CAPABILITY_REQUIRED" in pack.text
