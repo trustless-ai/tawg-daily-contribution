@@ -175,6 +175,30 @@ class PrivacyFilter:
         sanitized = self._sanitize_mapping(payload, parent_key=None)
         return sanitized
 
+    def strip_internal_metadata(self, payload: Mapping[str, object]) -> dict[str, Any]:
+        """Remove configured internal identifiers without changing public text."""
+
+        return self._strip_internal_mapping(payload, parent_key=None)
+
+    def _strip_internal_mapping(
+        self, payload: Mapping[str, object], *, parent_key: str | None
+    ) -> dict[str, Any]:
+        result: dict[str, Any] = {}
+        for key, value in payload.items():
+            if key in self._drop_numeric_id_keys or key in self._drop_path_keys:
+                continue
+            if key == "id" and parent_key in self._IDENTITY_CONTAINERS and isinstance(value, int):
+                continue
+            result[key] = self._strip_internal_value(value, parent_key=key)
+        return result
+
+    def _strip_internal_value(self, value: object, *, parent_key: str) -> Any:
+        if isinstance(value, Mapping):
+            return self._strip_internal_mapping(value, parent_key=parent_key)
+        if isinstance(value, list):
+            return [self._strip_internal_value(item, parent_key=parent_key) for item in value]
+        return value
+
     def _sanitize_mapping(
         self, payload: Mapping[str, object], *, parent_key: str | None
     ) -> dict[str, Any]:

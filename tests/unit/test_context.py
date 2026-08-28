@@ -88,6 +88,28 @@ def test_context_accepts_stable_github_comment_record_ids() -> None:
     assert record_id in pack.text
 
 
+def test_context_sanitizes_internal_telegram_ids_before_reply_model() -> None:
+    safe = inputs()
+    safe.trigger = {
+        "record": {
+            "text_original": "Good morning!🌞 Catching up!",
+            "source_payload": {
+                "message_thread_id": None,
+                "update_id": 998_810_840,
+            },
+        }
+    }
+    safe.job_state["reply_to_message_id"] = 3513
+
+    pack = builder().build(safe, max_chars=6000)
+
+    assert "Good morning!🌞 Catching up!" in pack.text
+    assert "update_id" not in pack.text
+    assert "998810840" not in pack.text
+    assert "message_thread_id" not in pack.text
+    assert "reply_to_message_id" not in pack.text
+
+
 def test_context_keeps_live_evidence_when_generic_retrieval_is_pruned() -> None:
     safe = inputs()
     safe.evidence_pack = {

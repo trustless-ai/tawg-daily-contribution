@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -52,6 +53,35 @@ def test_payload_removes_numeric_user_ids_but_keeps_message_id(
         "text": "hello @alice",
     }
     assert "987654321" not in json.dumps(sanitized)
+
+
+def test_internal_metadata_stripping_recurses_lists_without_mutating_input(
+    redactor: PrivacyFilter,
+) -> None:
+    payload = {
+        "messages": [
+            {
+                "text_original": "Good morning!",
+                "source_payload": {
+                    "update_id": 998_810_840,
+                    "message_thread_id": None,
+                },
+            }
+        ]
+    }
+    original = deepcopy(payload)
+
+    stripped = redactor.strip_internal_metadata(payload)
+
+    assert stripped == {
+        "messages": [
+            {
+                "text_original": "Good morning!",
+                "source_payload": {},
+            }
+        ]
+    }
+    assert payload == original
 
 
 def test_private_chat_payload_fails_closed(redactor: PrivacyFilter) -> None:

@@ -6,6 +6,9 @@ drop_numeric_id_keys:
   - user_id
   - sender_id
   - actor_id
+  - update_id
+  - message_thread_id
+  - reply_to_message_id
 drop_path_keys:
   - file_path
   - local_path
