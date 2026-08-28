@@ -3,6 +3,9 @@ title: agent-contracts-examples
 type: repository
 created: '2026-08-23'
 updated: '2026-08-23'
+source_urls:
+- https://github.com/trustless-ai/agent-contracts-examples/blob/e34e4a38555b51613ecd38c9f8160108c6577bf3/README.md
+provenance_status: verified
 ---
 
 # agent-contracts-examples

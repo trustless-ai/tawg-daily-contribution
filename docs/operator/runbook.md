@@ -8,7 +8,7 @@ Inspect the relevant source cursor and latest stable record ID. Re-run the same 
 
 ## Required-source failure
 
-GitHub repository failures, required Magicians topic failures, canonical ERC/EIP failures, or Telegram intake failures block the affected heavier work and Daily delivery. Fix the credential/network/source issue and rerun. A missing normative source must remain an explicit `not verified` gap; never substitute a discussion post for it. The old layer-success time keeps the same work due.
+Scheduled discovery is intentionally limited to all public `trustless-ai` repositories (including archived repositories), each registered ERC's exact Magicians topic, and its optional exact `ethereum/ERCs` proposal PR. A failure records safe source labels and retains the last verified metadata for the failed source; it never falls back to scanning the full knowledge vault or the rest of `ethereum/ERCs`. Fix the credential/network/source issue and rerun. Explicit freshness-sensitive ERC answers still use their bounded live evidence path; a missing normative source must remain an explicit `not verified` gap and discussion never substitutes for it.
 
 ## Rejected model output
 
@@ -36,6 +36,17 @@ python3.12 -m tawg_bot.cli check-sources --erc 8004 --observe-only
 python3.12 -m tawg_bot.cli refresh-knowledge --erc 8004 --dry-run
 python3.12 -m tawg_bot.cli daily-dry-run --window-end 2026-08-23T23:00:00Z
 ```
+
+After deploying the open-knowledge rollout, run the versioned migration once in a clean checkout:
+
+```bash
+python3.12 -m tawg_bot.cli migrate-open-knowledge
+```
+
+It preserves Telegram records and knowledge bodies, archives the old refresh queue under
+`data/state/migrations/open-knowledge-v1.json`, and backfills provenance only where existing
+repository evidence is exact. A second run must be a no-op. A hash conflict is an incident to
+diagnose, not permission to delete the migration audit or rerun against changed inputs.
 
 `daily-dry-run` prints the prepared English message to stdout and keeps it out of repository state. Its window is exactly `[2026-08-22T23:00:00Z, 2026-08-23T23:00:00Z)` in this example, and the end must not be in the future. GitHub and Magicians content is collected live after the cutoff is known, used in memory, and discarded.
 
@@ -83,6 +94,30 @@ git diff --check
 git status --short
 ```
 
+The recurring scanner may write only `data/state/scoped-source-observations.json` and the GitHub/
+Magicians portions of `data/state/source-cursors.json`. The observations contain stable locators,
+timestamps, and metadata hashes—not post, issue, PR, comment, review, or repository-file bodies.
+
+## Interactive knowledge writes
+
+An explicit @bot request may record knowledge about any subject. Topic admission has no TAWG, ERC,
+noun, or verb whitelist, but the transaction remains path-, evidence-, privacy-, and SHA-bounded.
+
+- If the current audited conversation explicitly establishes that the requester or group authored
+  the concept, the bot may preserve the supplied description in full.
+- Otherwise it is external knowledge: require the original public HTTPS URL and store a neutral
+  description of at most 2,000 characters plus that link.
+- If authorship or the external original link is missing, the bot asks for the missing evidence and
+  closes the current attempt as a normal READY clarification; it must not enter an automatic retry
+  loop.
+
+A complete recurring ERC registration must include `ERC-<number>` and the exact corresponding
+Magicians topic URL; an exact `https://github.com/ethereum/ERCs/pull/<number>` proposal PR is
+optional. The controller resolves and verifies the topic and optional PR metadata before updating
+`knowledge/meta/scan-targets.yml`. A mismatch drops only the scan registration, so an independently
+valid knowledge write can still succeed. Repeating the same target is idempotent; conflicting links
+require an explicit reviewed correction.
+
 ## Source candidate promotion
 
 A URL suggested in Telegram is normalized into `data/state/source-candidates.json` but is not fetched or trusted during that reply. To promote it:
@@ -90,5 +125,8 @@ A URL suggested in Telegram is normalized into `data/state/source-candidates.jso
 1. Verify that it is public bounded text on an allowed HTTPS host/path and has no unsafe redirects.
 2. Verify its relationship to the named ERC or TAWG topic.
 3. Assign its evidence kind (`normative_spec`, `implementation`, `test`, `example`, or `discussion`) and authority (`canonical`, `official_org`, `maintainer`, or `community`).
-4. Add a reviewed entry and bounded fetch policy to `knowledge/meta/sources.yml`; do not add source text.
+4. Add a reviewed entry and bounded fetch policy to `knowledge/meta/sources.yml`; do not add source text. This makes the URL available to explicit evidence lookup only—it does not add a recurring scan target.
 5. Run `check-sources --observe-only`, review the result, then let a later operation use it. Never fetch a newly suggested arbitrary URL in the same conversation turn.
+
+Only a complete controller-verified ERC registration updates `knowledge/meta/scan-targets.yml`.
+Never copy an ordinary candidate URL into that recurring registry.

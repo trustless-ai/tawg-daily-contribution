@@ -5,6 +5,13 @@ invocation wrapper: normalization, ingestion, scheduling, reply processing, deli
 repository checkpoints remain in the platform-neutral `tawg_bot` package and are also callable
 from the CLI and GitHub Actions.
 
+The same separation applies to source discovery. Modal's five-minute wrapper invokes the shared
+maintenance pipeline; the wrapper contains no source-selection logic. The shared controller scans
+only every public `trustless-ai` repository (including archived repositories), the exact Magicians
+topics in `knowledge/meta/scan-targets.yml`, and each target's optional exact `ethereum/ERCs` PR.
+GitHub Actions fallback runs that identical core. Do not add Modal-only repository, forum, or
+knowledge-vault scanning.
+
 ## Safety invariants
 
 - GitHub `main` is the canonical knowledge, state, and audit store. Modal storage is not a source

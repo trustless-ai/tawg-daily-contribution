@@ -1,0 +1,24 @@
+schema: tawg.scan-targets.v1
+github_organization: trustless-ai
+include_public_archived_repositories: true
+ercs:
+- erc_number: 8004
+  magicians_topic_url: https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098
+  proposal_pr_url: null
+  registered_from_record_id: source:magicians-8004
+  registered_at: '2026-08-28T00:00:00Z'
+- erc_number: 8183
+  magicians_topic_url: https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902
+  proposal_pr_url: null
+  registered_from_record_id: source:magicians-8183
+  registered_at: '2026-08-28T00:00:00Z'
+- erc_number: 8312
+  magicians_topic_url: https://ethereum-magicians.org/t/erc-8312-bounded-agent-actions/28851
+  proposal_pr_url: null
+  registered_from_record_id: source:magicians-8312
+  registered_at: '2026-08-28T00:00:00Z'
+- erc_number: 8323
+  magicians_topic_url: https://ethereum-magicians.org/t/erc-8323-source-token-agent-binding-for-erc-8004/28920
+  proposal_pr_url: null
+  registered_from_record_id: source:magicians-8323
+  registered_at: '2026-08-28T00:00:00Z'

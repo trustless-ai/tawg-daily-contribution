@@ -3,6 +3,9 @@ title: cross-reference-console
 type: repository
 created: '2026-08-23'
 updated: '2026-08-23'
+source_urls:
+- https://github.com/trustless-ai/cross-reference-console/blob/e59f83ecdaa2faaee60a1fdcf98bdeee7f92ef67/README.md
+provenance_status: verified
 ---
 
 # cross-reference-console
