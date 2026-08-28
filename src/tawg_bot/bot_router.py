@@ -48,6 +48,7 @@ from tawg_bot.models import (
     StrictModel,
     TriggerKind,
 )
+from tawg_bot.persistence_guard import PersistenceRejected
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 from tawg_bot.query import SourceQuery
 from tawg_bot.retrieval import VaultRetriever
@@ -621,6 +622,13 @@ class BotReplyService:
             )
             jobs[job_id] = ready
             failure_code = "reply_persistence_failed"
+            if evidence_pack is not None:
+                assert self.knowledge_state is not None
+                self._persist_evidence_outcome(
+                    evidence_pack,
+                    now=now,
+                    operation_id=f"{job_id}:evidence",
+                )
             uow = RepositoryUnitOfWork(self.root, operation_id=job_id)
             external_texts = (
                 tuple(item.text for item in evidence_pack.evidence)
@@ -628,12 +636,7 @@ class BotReplyService:
                 else ()
             )
             uow.register_external_evidence(external_texts)
-            if evidence_pack is not None:
-                assert self.knowledge_state is not None
-                self.knowledge_state.stage_evidence_outcome(
-                    uow, evidence_pack.for_persistence(), now=now
-                )
-            elif route is BotRoute.SOURCE_SUGGESTION:
+            if evidence_pack is None and route is BotRoute.SOURCE_SUGGESTION:
                 if self.knowledge_state is None:
                     raise ReplyRejected("source candidate state is not configured")
                 urls = self._suggested_urls(trigger.text_original)
@@ -692,16 +695,15 @@ class BotReplyService:
                 }
             )
             failure_uow = RepositoryUnitOfWork(self.root, operation_id=f"{job_id}:failed")
-            if evidence_pack is not None:
-                failure_uow.register_external_evidence(item.text for item in evidence_pack.evidence)
-            else:
-                failure_uow.register_external_evidence(())
-            if evidence_pack is not None and self.knowledge_state is not None:
-                self.knowledge_state.stage_evidence_outcome(
-                    failure_uow, evidence_pack.for_persistence(), now=now
-                )
+            failure_uow.register_external_evidence(())
             self._stage_jobs(failure_uow, failed_jobs)
             failure_uow.publish()
+            if evidence_pack is not None and self.knowledge_state is not None:
+                self._persist_evidence_outcome(
+                    evidence_pack,
+                    now=now,
+                    operation_id=f"{job_id}:failed:evidence",
+                )
             raise ReplyRejected(
                 "reply preparation failed safely", safe_code=safe_error_code
             ) from None
@@ -971,7 +973,9 @@ class BotReplyService:
             ),
             budgets={"max_output_chars": 8000, "max_citations": 16},
             evidence_pack=(
-                evidence_pack.model_dump(mode="json") if evidence_pack is not None else None
+                self.privacy.sanitize_payload(evidence_pack.model_dump(mode="json"))
+                if evidence_pack is not None
+                else None
             ),
             citation_allowlist=list(allowed_citations),
             mutation_capability=mutation_capability.model_dump(mode="json"),
@@ -1676,6 +1680,24 @@ class BotReplyService:
         if len(by_id) != len(jobs):
             raise ReplyRejected("duplicate pending reply job")
         return by_id
+
+    def _persist_evidence_outcome(
+        self,
+        evidence_pack: EvidencePack,
+        *,
+        now: datetime,
+        operation_id: str,
+    ) -> None:
+        assert self.knowledge_state is not None
+        uow = RepositoryUnitOfWork(self.root, operation_id=operation_id)
+        uow.register_external_evidence(item.text for item in evidence_pack.evidence)
+        try:
+            self.knowledge_state.stage_evidence_outcome(
+                uow, evidence_pack.for_persistence(), now=now
+            )
+            uow.publish()
+        except PersistenceRejected:
+            pass
 
     def _publish_jobs(self, jobs: Mapping[str, PendingBotJob], operation_id: str) -> None:
         uow = RepositoryUnitOfWork(self.root, operation_id=operation_id)

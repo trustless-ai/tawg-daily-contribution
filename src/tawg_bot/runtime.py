@@ -72,6 +72,7 @@ _DAILY_EVIDENCE_TIMEOUT_SECONDS = 60
 _DAILY_TIMEOUT_SECONDS = 900
 _REPLY_TIMEOUT_SECONDS = 300
 _REPLY_PHASE_BUDGET_SECONDS = 1_200
+_PROCESSING_LEASE = timedelta(minutes=10)
 _MAX_REPLIES_PER_TICK = 10
 _TELEGRAM_GROUP_SLUG = "tawg"
 _RICH_DAILY_PREVIEW_SOURCE_ID = "daily:2026-08-27T23:00:00Z"
@@ -654,16 +655,26 @@ class _LivePipeline:
         if username:
             ReplyRepairReconciler(self.root, bot_username=username).reconcile(now=self.now)
         jobs = self._load_jobs()
-        actionable_statuses = (
-            {JobStatus.READY}
-            if (
-                self.knowledge_attempted
-                or self.daily_attempted
-                or self.prepared_daily is not None
-            )
-            else {JobStatus.PENDING, JobStatus.READY}
+        model_work_deferred = (
+            self.knowledge_attempted
+            or self.daily_attempted
+            or self.prepared_daily is not None
         )
-        actionable = [job for job in jobs if job.status in actionable_statuses]
+        actionable = [
+            job
+            for job in jobs
+            if job.status is JobStatus.READY
+            or (
+                not model_work_deferred
+                and (
+                    job.status is JobStatus.PENDING
+                    or (
+                        job.status is JobStatus.PROCESSING
+                        and job.updated_at <= self.now - _PROCESSING_LEASE
+                    )
+                )
+            )
+        ]
         actionable.sort(
             key=lambda job: (
                 job.status is not JobStatus.READY,
