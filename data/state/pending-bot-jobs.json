@@ -860,7 +860,7 @@
     "updated_at": "2026-08-28T16:21:18.818452Z"
   },
   {
-    "attempts": 4,
+    "attempts": 5,
     "classified_route": null,
     "created_at": "2026-08-28T17:54:28.312340Z",
     "job_id": "reply:tg:tawg:3610",
@@ -881,10 +881,10 @@
     "status": "pending",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3610",
-    "updated_at": "2026-08-28T17:55:29.114285Z"
+    "updated_at": "2026-08-28T17:57:44.539938Z"
   },
   {
-    "attempts": 0,
+    "attempts": 1,
     "classified_route": null,
     "created_at": "2026-08-28T17:57:44.539938Z",
     "job_id": "reply:tg:tawg:3611",
@@ -900,7 +900,7 @@
     "router_context_scope": null,
     "router_context_sha256": null,
     "router_version": null,
-    "safe_error_code": null,
+    "safe_error_code": "reply_route_model_process_failed",
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "pending",
     "trigger_kind": "greeting_candidate",
