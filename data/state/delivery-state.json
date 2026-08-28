@@ -78,6 +78,24 @@
     "updated_at": "2026-08-28T01:56:56Z"
   },
   {
+    "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-08-28T05:28:07.780897Z",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-08-28T05:28:07.780897Z"
+  },
+  {
     "content_sha256": "c04077630a067a7ea7c1657a003dcc1b6108a68b2f770fc55c893d738c2e39f0",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "reply-repair:recent-discussion-v1:tg:tawg:3380",
