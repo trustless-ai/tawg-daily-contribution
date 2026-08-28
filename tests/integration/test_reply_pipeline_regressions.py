@@ -50,7 +50,7 @@ class GreetingAi:
                 "context_scope": "conversation",
             }
         return {
-            "schema_version": "tawg.reply-result.v2",
+            "schema_version": "tawg.reply-result.v3",
             "reply_text": "Good morning — glad to see you both!",
             "language": "en",
             "english_recap": None,

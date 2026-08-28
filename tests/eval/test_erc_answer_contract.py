@@ -104,11 +104,12 @@ def test_job_prompts_narrow_each_output_contract() -> None:
     assert "citation_allowlist" in daily
 
 
-def test_shared_skill_scopes_reply_corrections_to_supplied_revisions() -> None:
+def test_shared_skill_scopes_interactive_writes_to_controller_capabilities() -> None:
     skill = (ROOT / "bot-skill/SKILL.md").read_text(encoding="utf-8")
 
-    assert "interactive reply correction" in skill
+    assert "interactive knowledge write" in skill
     assert "expected_sha256" in skill
+    assert "controller-supplied create roots" in skill
     assert "Do not add ledger writes" in skill
 
 

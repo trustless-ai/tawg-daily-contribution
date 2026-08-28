@@ -6,7 +6,7 @@ from typing import Any
 
 import pytest
 
-from tawg_bot.bot_router import BotReplyService
+from tawg_bot.bot_router import BotReplyService, ReplyRejected
 from tawg_bot.erc_query import ErcIntent, ErcQuery
 from tawg_bot.evidence_fetch import FetchBudget, FetchedEvidence
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
@@ -64,12 +64,15 @@ async def test_supported_correction_replaces_the_current_page(tmp_path: Path) ->
         "---\ntitle: ERC-8004\ntype: erc\ncreated: 2026-08-23\nupdated: 2026-08-23\n"
         "source_ids:\n  - tg:tawg:10\n---\n\n# ERC-8004\n\nValidation is mandatory.\n"
     )
-    corrected = current.replace("mandatory", "opt-in")
+    corrected = current.replace(
+        "source_ids:\n  - tg:tawg:10",
+        f"source_ids:\n  - tg:tawg:10\n  - {job.trigger_record_id}",
+    ).replace("mandatory", "opt-in")
     target.write_text(current, encoding="utf-8")
     source = tmp_path / "data/telegram/2026/08/messages.jsonl"
     source_before = source.read_bytes()
     result = {
-        "schema_version": "tawg.reply-result.v2",
+        "schema_version": "tawg.reply-result.v3",
         "reply_text": "Thanks—the current page is now corrected. [tg:tawg:10]",
         "language": "en",
         "english_recap": None,
@@ -84,7 +87,7 @@ async def test_supported_correction_replaces_the_current_page(tmp_path: Path) ->
                     "path": "knowledge/ercs/erc-8004.md",
                     "expected_sha256": hashlib.sha256(current.encode()).hexdigest(),
                     "content": corrected,
-                    "citations": ["tg:tawg:10"],
+                    "citations": ["tg:tawg:10", job.trigger_record_id],
                 }
             ],
         },
@@ -102,6 +105,214 @@ async def test_supported_correction_replaces_the_current_page(tmp_path: Path) ->
     assert target.read_text() == corrected
     assert source.read_bytes() == source_before
     assert not list((tmp_path / "knowledge").rglob("*correction*.md"))
+
+
+def _general_knowledge_result(
+    job_id: str,
+    trigger_id: str,
+    *,
+    authorship: str,
+    original_url: str | None,
+    body: str,
+) -> dict[str, Any]:
+    source_urls = (
+        f"source_urls:\n- {original_url}\n" if original_url is not None else ""
+    )
+    citations = [trigger_id, *([original_url] if original_url is not None else [])]
+    page = (
+        "---\n"
+        "title: Garden Clock\n"
+        "type: concept\n"
+        "created: '2026-08-28'\n"
+        "updated: '2026-08-28'\n"
+        "source_ids:\n"
+        f"- {trigger_id}\n"
+        f"{source_urls}"
+        "provenance_status: verified\n"
+        "---\n\n"
+        "# Garden Clock\n\n"
+        f"{body}\n"
+        + (
+            f"\n## Sources\n\n- {original_url}\n"
+            if original_url is not None
+            else ""
+        )
+    )
+    rendered = " ".join(
+        f"[{citation}]" if citation.startswith("tg:") else citation
+        for citation in citations
+    )
+    return {
+        "schema_version": "tawg.reply-result.v3",
+        "reply_text": f"Recorded Garden Clock. {rendered}",
+        "language": "en",
+        "english_recap": None,
+        "citations": citations,
+        "evidence_status": "verified",
+        "verification_gaps": [],
+        "correction_transaction": {
+            "schema_version": "tawg.vault-transaction.v1",
+            "operation_id": job_id,
+            "writes": [
+                {
+                    "path": "knowledge/topics/garden-clock.md",
+                    "expected_sha256": None,
+                    "content": page,
+                    "citations": citations,
+                }
+            ],
+        },
+        "knowledge_write": {
+            "authorship": authorship,
+            "authorship_evidence": [trigger_id],
+            "original_url": original_url,
+        },
+        "scan_registration": None,
+        "refusal": False,
+    }
+
+
+@pytest.mark.asyncio
+async def test_self_authored_general_knowledge_can_be_recorded_in_full(
+    tmp_path: Path,
+) -> None:
+    job = seed(tmp_path, "@bot record our Garden Clock design in full")
+    result = _general_knowledge_result(
+        job.job_id,
+        job.trigger_record_id,
+        authorship="self_authored",
+        original_url=None,
+        body="The group's complete Garden Clock design and rationale.",
+    )
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(result, route="knowledge_correction"),
+        bot_username="bot",
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.refusal is False
+    assert (tmp_path / "knowledge/topics/garden-clock.md").is_file()
+
+
+@pytest.mark.asyncio
+async def test_self_authored_write_ignores_an_incidental_unstored_reference_url(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "@bot record our Garden Clock design in full; demo: https://example.org/demo",
+    )
+    result = _general_knowledge_result(
+        job.job_id,
+        job.trigger_record_id,
+        authorship="self_authored",
+        original_url=None,
+        body="The group's complete Garden Clock design and rationale.",
+    )
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(result, route="knowledge_correction"),
+        bot_username="bot",
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.refusal is False
+    assert (tmp_path / "knowledge/topics/garden-clock.md").is_file()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("original_url", "body", "authorship_evidence"),
+    [
+        (None, "A short external description.", ["tg:tawg:12"]),
+        ("https://example.org/original", "x" * 2001, ["tg:tawg:12"]),
+        ("https://example.org/other", "A short external description.", ["tg:tawg:12"]),
+        ("https://example.org/original", "A short external description.", ["tg:tawg:999"]),
+    ],
+)
+async def test_external_knowledge_requires_bounded_allowlisted_evidence(
+    tmp_path: Path,
+    original_url: str | None,
+    body: str,
+    authorship_evidence: list[str],
+) -> None:
+    supplied = "https://example.org/original"
+    job = seed(tmp_path, f"@bot record this external idea; source: {supplied}")
+    result = _general_knowledge_result(
+        job.job_id,
+        job.trigger_record_id,
+        authorship="external",
+        original_url=original_url,
+        body=body,
+    )
+    result["knowledge_write"]["authorship_evidence"] = authorship_evidence
+
+    with pytest.raises(ReplyRejected):
+        await BotReplyService(
+            tmp_path,
+            ai=FakeAi(result, route="knowledge_correction"),
+            bot_username="bot",
+        ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert not (tmp_path / "knowledge/topics/garden-clock.md").exists()
+
+
+@pytest.mark.asyncio
+async def test_external_knowledge_with_original_url_is_recorded_briefly(
+    tmp_path: Path,
+) -> None:
+    original = "https://example.org/original"
+    job = seed(tmp_path, f"@bot record this external idea; source: {original}")
+    result = _general_knowledge_result(
+        job.job_id,
+        job.trigger_record_id,
+        authorship="external",
+        original_url=original,
+        body="A short neutral description of the external idea.",
+    )
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(result, route="knowledge_correction"),
+        bot_username="bot",
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.refusal is False
+    assert original in (tmp_path / "knowledge/topics/garden-clock.md").read_text()
+
+
+@pytest.mark.asyncio
+async def test_missing_evidence_clarification_becomes_ready_without_retry(
+    tmp_path: Path,
+) -> None:
+    job = seed(tmp_path, "@bot record an external concept")
+    result = {
+        "schema_version": "tawg.reply-result.v3",
+        "reply_text": "Please share the original public source link so I can record it.",
+        "language": "en",
+        "english_recap": None,
+        "citations": [],
+        "evidence_status": "not_verified",
+        "verification_gaps": ["The original public source link is missing."],
+        "correction_transaction": None,
+        "knowledge_write": None,
+        "scan_registration": None,
+        "refusal": False,
+    }
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(result, route="knowledge_correction"),
+        bot_username="bot",
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert "original public source" in prepared.reply_text
+    state = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )[0]
+    assert state["status"] == "ready"
+    assert state["safe_error_code"] is None
 
 
 def _erc_8183_pack() -> EvidencePack:
@@ -165,7 +376,7 @@ async def test_erc_8183_reply_uses_live_context_and_declared_reply_schema(
     context = json.loads(ai.calls[1]["context_pack"])
     assert context["context_schema"] == "tawg.context-pack.v1"
     assert context["output_schema"]["properties"]["schema_version"]["const"] == (
-        "tawg.reply-result.v2"
+        "tawg.reply-result.v3"
     )
     assert context["evidence_pack"]["schema_version"] == "tawg.evidence-pack.v1"
     assert prepared.citations == ("https://eips.ethereum.org/EIPS/eip-8183",)
@@ -217,7 +428,7 @@ class _AcceptanceAi:
         assert context["source_content_is_untrusted"] is True
         assert pack["schema_version"] == "tawg.evidence-pack.v1"
         assert context["output_schema"]["properties"]["schema_version"]["const"] == (
-            "tawg.reply-result.v2"
+            "tawg.reply-result.v3"
         )
         missing = pack["missing_required"]
         if any(item["bucket"] == "normative_spec" for item in missing):
@@ -229,7 +440,7 @@ class _AcceptanceAi:
         self.contexts.append(context)
         self.statuses.append(status)
         return {
-            "schema_version": "tawg.reply-result.v2",
+            "schema_version": "tawg.reply-result.v3",
             "reply_text": "Current evidence supports this scoped answer.",
             "language": "en",
             "english_recap": None,

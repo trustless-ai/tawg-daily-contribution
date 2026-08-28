@@ -149,7 +149,7 @@ def _result(
     language: str = "en",
 ) -> dict[str, Any]:
     return {
-        "schema_version": "tawg.reply-result.v2",
+        "schema_version": "tawg.reply-result.v3",
         "reply_text": "The current evidence supports this answer.",
         "language": language,
         "english_recap": None,
@@ -168,7 +168,7 @@ def _seed(root: Path, text: str) -> PendingBotJob:
         "knowledge/meta/sources.yml",
         "knowledge/meta/source-ledger.json",
         "knowledge/meta/claim-ledger.json",
-        "src/tawg_bot/schemas/reply-result.v2.json",
+        "src/tawg_bot/schemas/reply-result.v3.json",
     ):
         target = root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
