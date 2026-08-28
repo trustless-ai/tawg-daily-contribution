@@ -20,7 +20,7 @@ from tawg_bot.live_evidence import (
     MissingEvidence,
     SourceChange,
 )
-from tawg_bot.models import PendingBotJob, SourceRecord, SourceType
+from tawg_bot.models import JobStatus, PendingBotJob, SourceRecord, SourceType
 from tawg_bot.source_registry import EvidenceAuthority, EvidenceKind, SourceRegistry
 from tawg_bot.storage import JsonlCollection
 
@@ -559,7 +559,34 @@ async def test_retrieved_source_url_can_be_persisted_as_a_prepared_citation(
             "source_byte_count": len(canonical_text),
         }
     )
-    pack = pack.model_copy(update={"evidence": [canonical, *pack.evidence[1:]]})
+    implementation = pack.evidence[1]
+    implementation_text = f"Implementation source: {IMPLEMENTATION}"
+    implementation = implementation.model_copy(
+        update={
+            "text": implementation_text,
+            "content_sha256": hashlib.sha256(implementation_text.encode()).hexdigest(),
+            "source_byte_count": len(implementation_text),
+        }
+    )
+    pack = pack.model_copy(update={"evidence": [canonical, implementation]})
+    historical = job.model_copy(
+        update={
+            "job_id": "reply:tg:tawg:99",
+            "status": JobStatus.DELIVERED,
+            "attempts": 1,
+            "prepared_reply_text": f"Previous answer: {IMPLEMENTATION}",
+            "prepared_language": "en",
+            "prepared_citations": [IMPLEMENTATION],
+        }
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs_path.write_text(
+        json.dumps(
+            [historical.model_dump(mode="json"), job.model_dump(mode="json")]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
     prepared = await _service(
         tmp_path,
@@ -568,9 +595,11 @@ async def test_retrieved_source_url_can_be_persisted_as_a_prepared_citation(
     ).prepare(job.job_id, now=NOW + timedelta(minutes=1))
 
     assert prepared.citations == (CANONICAL,)
-    persisted = json.loads(
-        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
-    )[0]
+    persisted = next(
+        item
+        for item in json.loads(jobs_path.read_text(encoding="utf-8"))
+        if item["job_id"] == job.job_id
+    )
     assert persisted["prepared_citations"] == [CANONICAL]
 
 
