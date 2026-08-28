@@ -1116,14 +1116,16 @@
     "updated_at": "2026-08-28T18:17:16.692036Z"
   },
   {
-    "attempts": 1,
+    "attempts": 2,
     "classified_route": "knowledge_question",
     "created_at": "2026-08-28T20:45:06.594346Z",
     "job_id": "reply:tg:tawg:3633",
     "message_thread_id": 16,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "tg:tawg:3632"
+    ],
+    "prepared_language": "English",
+    "prepared_reply_text": "That scoping clarification is exactly the right thing to name before the matrix starts sequencing PRs. The request-time-computed vs. persisted-artifact distinction isn't obvious from the field names alone, and \"add the pointer\" reads very differently depending on which side of that line you're on.\n\nThe prospective framing settles the scope cleanly: no existing artifact is missing a pointer today, so BPS-5 is a forward-looking build constraint rather than a retroactive fix. That's a materially different workload and a different review surface [tg:tawg:3632].\n\nThe denominator separation you confirmed (`winRateBps` on decisive-only vs. `track_record.win_rate_pct` with breakevens in the denominator) is also worth keeping visible in the matrix row itself — it's the kind of detail that surfaces as a silent 1-value drift if it ever gets collapsed into a single field reference.\n\nBPS-0/BPS-1 first is the right sequencing. Once the convention and resolver are locked, BPS-5's scope will be unambiguous for whoever picks it up.\n\nBaby Blue Viper confirmed live system checks for BPS-5 (winRateBps=5000, hash 0x0501b75d…) and clarified that reputation_axis is request-time computed, not a persisted artifact — making BPS-5 prospective work rather than a backfill. The bot acknowledged this scoping distinction and the denominator separation between the two win-rate fields as important precision to preserve in the matrix.",
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1132,11 +1134,11 @@
     "router_context_scope": "knowledge",
     "router_context_sha256": "7c10f0c4583bfa6dec0f346557c86b2709a351f1d6eecf05b63321a30a04226f",
     "router_version": "contextual-ai-v5",
-    "safe_error_code": "reply_citation_not_allowed",
+    "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3633",
-    "updated_at": "2026-08-28T20:45:06.594346Z"
+    "updated_at": "2026-08-28T20:46:33.108169Z"
   }
 ]
