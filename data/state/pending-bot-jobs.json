@@ -860,7 +860,7 @@
     "updated_at": "2026-08-28T16:21:18.818452Z"
   },
   {
-    "attempts": 2,
+    "attempts": 3,
     "classified_route": null,
     "created_at": "2026-08-28T17:54:28.312340Z",
     "job_id": "reply:tg:tawg:3610",
@@ -881,6 +881,6 @@
     "status": "pending",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3610",
-    "updated_at": "2026-08-28T17:55:06.289310Z"
+    "updated_at": "2026-08-28T17:55:17.033405Z"
   }
 ]
