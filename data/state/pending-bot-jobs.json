@@ -860,7 +860,7 @@
     "updated_at": "2026-08-28T16:21:18.818452Z"
   },
   {
-    "attempts": 6,
+    "attempts": 7,
     "classified_route": null,
     "created_at": "2026-08-28T17:54:28.312340Z",
     "job_id": "reply:tg:tawg:3610",
@@ -881,10 +881,10 @@
     "status": "pending",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3610",
-    "updated_at": "2026-08-28T18:00:24.553599Z"
+    "updated_at": "2026-08-28T18:00:37.444563Z"
   },
   {
-    "attempts": 2,
+    "attempts": 3,
     "classified_route": null,
     "created_at": "2026-08-28T17:57:44.539938Z",
     "job_id": "reply:tg:tawg:3611",
@@ -905,6 +905,6 @@
     "status": "pending",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3611",
-    "updated_at": "2026-08-28T18:00:24.553599Z"
+    "updated_at": "2026-08-28T18:00:37.444563Z"
   }
 ]
