@@ -621,7 +621,7 @@ async def test_contextual_route_is_persisted_before_existing_reply_flow(
     assert persisted["classified_route"] == "knowledge_correction"
     assert persisted["router_context_sha256"]
     assert persisted["router_context_scope"] == "knowledge"
-    assert persisted["router_version"] == "contextual-ai-v4"
+    assert persisted["router_version"] == "contextual-ai-v5"
     assert persisted["routed_at"] == (NOW + timedelta(minutes=2)).isoformat().replace(
         "+00:00", "Z"
     )
@@ -677,7 +677,7 @@ async def test_invalid_ai_route_remains_pending_without_a_false_refusal(
         )
 
     assert failed.value.safe_code == "reply_route_model_schema_invalid"
-    assert [call["job_type"] for call in ai.calls] == ["route"]
+    assert [call["job_type"] for call in ai.calls] == ["route", "route"]
     persisted = json.loads(
         (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
     )[0]
@@ -685,6 +685,76 @@ async def test_invalid_ai_route_remains_pending_without_a_false_refusal(
     assert persisted["classified_route"] is None
     assert persisted["prepared_reply_text"] is None
     assert persisted["refusal"] is False
+
+
+@pytest.mark.asyncio
+async def test_route_schema_failure_is_retried_once_before_reply(
+    tmp_path: Path,
+) -> None:
+    job = seed(tmp_path, "@bot what proving systems should we benchmark?")
+
+    class RetryRouteAi:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        async def run(self, **kwargs: Any) -> dict[str, Any]:
+            self.calls.append(kwargs)
+            route_calls = sum(call["job_type"] == "route" for call in self.calls)
+            if kwargs["job_type"] == "route" and route_calls == 1:
+                raise ClaudeCliError(
+                    "Claude Code structured output failed schema validation"
+                )
+            if kwargs["job_type"] == "route":
+                return {
+                    "schema_version": "tawg.route-result.v2",
+                    "route": "knowledge_question",
+                    "context_scope": "conversation",
+                }
+            return reply_result(chinese=False)
+
+    ai = RetryRouteAi()
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is not None
+    assert [call["job_type"] for call in ai.calls] == ["route", "route", "reply"]
+
+
+@pytest.mark.asyncio
+async def test_v4_false_greeting_route_is_rerouted_by_the_new_policy(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "Good morning. Confirming my contributor line; no correction requested.",
+        trigger_kind=TriggerKind.GREETING_CANDIDATE,
+    )
+    first_ai = ContextualFakeAi(
+        "knowledge_correction",
+        reply_result(chinese=False),
+        reply_error=ClaudeCliError("Claude Code exceeded its time limit"),
+    )
+    with pytest.raises(ReplyRejected):
+        await BotReplyService(tmp_path, ai=first_ai, bot_username="bot").prepare(
+            job.job_id, now=NOW + timedelta(minutes=2)
+        )
+
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    persisted = json.loads(jobs_path.read_text(encoding="utf-8"))
+    persisted[0]["router_version"] = "contextual-ai-v4"
+    jobs_path.write_text(json.dumps(persisted), encoding="utf-8")
+
+    second_ai = ContextualFakeAi("ignore", reply_result(chinese=False))
+    prepared = await BotReplyService(
+        tmp_path, ai=second_ai, bot_username="bot"
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=3))
+
+    assert prepared is None
+    assert [call["job_type"] for call in second_ai.calls] == ["route"]
+    refreshed = json.loads(jobs_path.read_text(encoding="utf-8"))[0]
+    assert refreshed["status"] == "ignored"
+    assert refreshed["router_version"] == "contextual-ai-v5"
 
 
 @pytest.mark.asyncio
@@ -787,7 +857,7 @@ async def test_old_router_policy_version_invalidates_a_persisted_route(
 
     assert [call["job_type"] for call in second_ai.calls] == ["route", "reply"]
     refreshed = json.loads(jobs_path.read_text(encoding="utf-8"))[0]
-    assert refreshed["router_version"] == "contextual-ai-v4"
+    assert refreshed["router_version"] == "contextual-ai-v5"
     assert refreshed["classified_route"] == "knowledge_question"
 
 

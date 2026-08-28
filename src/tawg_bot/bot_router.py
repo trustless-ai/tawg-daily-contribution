@@ -307,7 +307,7 @@ class _LocalErcContext:
 
 
 class BotReplyService:
-    _ROUTER_VERSION = "contextual-ai-v4"
+    _ROUTER_VERSION = "contextual-ai-v5"
     _ROUTE_TIMEOUT_SECONDS = 60.0
     _ROUTE_CONTEXT_MAX_CHARS = 64_000
     _ROUTE_CONTEXT_MAX_PRIOR_RECORDS = 100
@@ -404,15 +404,30 @@ class BotReplyService:
                     jobs[job_id] = processing
                     self._publish_jobs(jobs, f"{job_id}:rerouting")
                 failure_code = "reply_route_model_failed"
-                decision = await ContextualAiRouter(self.ai).classify(
-                    route_context,
-                    operation_id=f"{job_id}:route",
-                    max_budget_usd=self.route_max_budget_usd,
-                    timeout_seconds=min(
-                        self._ROUTE_TIMEOUT_SECONDS,
-                        self._remaining_model_time(model_deadline),
-                    ),
-                )
+                decision = None
+                for route_attempt in range(2):
+                    try:
+                        decision = await ContextualAiRouter(self.ai).classify(
+                            route_context,
+                            operation_id=f"{job_id}:route",
+                            max_budget_usd=self.route_max_budget_usd,
+                            timeout_seconds=min(
+                                self._ROUTE_TIMEOUT_SECONDS,
+                                self._remaining_model_time(model_deadline),
+                            ),
+                        )
+                        break
+                    except AiRouteRejected:
+                        if route_attempt:
+                            raise
+                    except ClaudeCliError as error:
+                        if (
+                            route_attempt
+                            or str(error)
+                            != "Claude Code structured output failed schema validation"
+                        ):
+                            raise
+                assert decision is not None
                 route = self.router.authorize_ai_route(
                     decision.route,
                     processing.trigger_kind,

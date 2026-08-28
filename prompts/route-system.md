@@ -18,6 +18,12 @@ socially addressing the bot. When the greeting is genuine, classify the rest of 
 use `coordination` for a pure greeting. Never choose `ignore` for an explicit mention or direct reply
 to the bot.
 
+For a `greeting_candidate`, mentally remove the greeting phrase before classifying the remaining
+message. If the remainder is addressed to another named person, continues a human-to-human thread,
+or merely reports a contribution/update without requesting anything from this bot, choose `ignore`.
+Words such as "update", "correction", or "record" inside descriptive prose do not themselves request
+a repository mutation. Only choose a mutation route when the trigger actually asks this bot to write.
+
 Choose exactly one `context_scope` from the request's primary task, not from incidental terms:
 
 - `conversation`: the answer or write should be grounded primarily in the audited Telegram reply
