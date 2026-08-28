@@ -672,5 +672,23 @@
       3612
     ],
     "updated_at": "2026-08-28T18:05:10.504621Z"
+  },
+  {
+    "content_sha256": "ceb331de3eb62a8e6aaa5773dbd3eee5ec31e3361d933d6d5992849786f65ce2",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:3613",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:3613",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-08-28T18:07:41.453342Z",
+    "reply_to_message_id": 3613,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-08-28T18:07:41.453342Z"
   }
 ]
