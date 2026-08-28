@@ -1014,7 +1014,7 @@
     "updated_at": "2026-08-28T18:14:11.032723Z"
   },
   {
-    "attempts": 7,
+    "attempts": 8,
     "classified_route": "knowledge_question",
     "created_at": "2026-08-28T18:15:07.061814Z",
     "job_id": "reply:tg:tawg:3620",
@@ -1030,12 +1030,12 @@
     "router_context_scope": "erc",
     "router_context_sha256": "8fdce983b14b2afcafa507cf93e386917e63fd95a3410750848a94bfc6c1b0e5",
     "router_version": "contextual-ai-v5",
-    "safe_error_code": "reply_text_citation_duplicate",
+    "safe_error_code": "reply_persistence_failed",
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "pending",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3620",
-    "updated_at": "2026-08-28T23:37:58.895557Z"
+    "updated_at": "2026-08-28T23:40:50.107121Z"
   },
   {
     "attempts": 1,
