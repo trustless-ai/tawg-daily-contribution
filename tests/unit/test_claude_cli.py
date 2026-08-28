@@ -96,7 +96,7 @@ def outer_reply(reply_text: str = "Here is the update.") -> dict:
         "num_turns": 1,
         "total_cost_usd": 0.01,
         "structured_output": {
-            "schema_version": "tawg.reply-result.v2",
+            "schema_version": "tawg.reply-result.v3",
             "reply_text": reply_text,
             "language": "en",
             "english_recap": None,
@@ -104,6 +104,8 @@ def outer_reply(reply_text: str = "Here is the update.") -> dict:
             "evidence_status": "verified",
             "verification_gaps": [],
             "correction_transaction": None,
+            "knowledge_write": None,
+            "scan_registration": None,
             "refusal": False,
         },
     }
@@ -356,7 +358,7 @@ async def test_cli_is_toolless_sessionless_and_does_not_expose_secrets(
     cli_schema = json.loads(runner.argv[runner.argv.index("--json-schema") + 1])
     assert "$schema" not in cli_schema
     assert "$id" not in cli_schema
-    assert cli_schema["properties"]["schema_version"]["const"] == "tawg.reply-result.v2"
+    assert cli_schema["properties"]["schema_version"]["const"] == "tawg.reply-result.v3"
     forbidden = {"--continue", "--resume", "--dangerously-skip-permissions"}
     assert forbidden.isdisjoint(runner.argv)
     assert runner.env["ANTHROPIC_AUTH_TOKEN"] == secret
@@ -381,7 +383,7 @@ async def test_cli_rejects_missing_or_schema_invalid_structured_output(tmp_path:
         {
             **outer_reply(),
             "structured_output": {
-                "schema_version": "tawg.reply-result.v2",
+                "schema_version": "tawg.reply-result.v3",
                 "reply_text": "Missing required fields",
             },
         },
@@ -505,4 +507,4 @@ async def test_cli_accepts_provider_structured_output_handoff(tmp_path: Path) ->
         max_budget_usd="0.10",
     )
 
-    assert result["schema_version"] == "tawg.reply-result.v2"
+    assert result["schema_version"] == "tawg.reply-result.v3"

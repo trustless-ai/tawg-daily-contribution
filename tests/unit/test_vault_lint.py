@@ -4,7 +4,7 @@ from pathlib import Path
 
 import pytest
 
-from tawg_bot.vault import VaultLinter
+from tawg_bot.vault import VaultLinter, frontmatter_is_mutation_evidence
 
 
 def note(title: str, body: str) -> str:
@@ -132,6 +132,34 @@ def test_lint_accepts_v2_metadata_ledgers(tmp_path: Path) -> None:
     report = VaultLinter(tmp_path).lint(now=now)
 
     assert not [finding for finding in report.findings if finding.severity == "error"]
+
+
+def test_legacy_incomplete_page_is_navigation_but_not_mutation_evidence() -> None:
+    assert (
+        frontmatter_is_mutation_evidence(
+            {
+                "title": "Legacy topic",
+                "type": "concept",
+                "created": "2026-08-23",
+                "updated": "2026-08-23",
+                "provenance_status": "legacy_incomplete",
+            }
+        )
+        is False
+    )
+    assert (
+        frontmatter_is_mutation_evidence(
+            {
+                "title": "Verified topic",
+                "type": "concept",
+                "created": "2026-08-23",
+                "updated": "2026-08-23",
+                "provenance_status": "verified",
+                "source_urls": ["https://github.com/trustless-ai/example"],
+            }
+        )
+        is True
+    )
 
 
 @pytest.mark.parametrize("legacy_directory", ["people", "People", "PEOPLE"])

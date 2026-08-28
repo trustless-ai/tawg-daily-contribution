@@ -31,6 +31,7 @@ from tawg_bot.runtime import (
     _LivePipeline,
 )
 from tawg_bot.scheduler import IntakePolicy
+from tawg_bot.scoped_scanner import ScopedScanResult
 from tawg_bot.source_registry import EvidenceKind, SourceRegistry
 from tawg_bot.telegram_api import SentMessage, TelegramApiError
 from tawg_bot.telegram_intake import ingest_envelopes
@@ -269,27 +270,31 @@ async def test_consecutive_source_batches_retain_both_registry_observations(
 
 
 @pytest.mark.asyncio
-async def test_scheduled_source_check_skips_fresh_registered_sources(tmp_path: Path) -> None:
+async def test_scheduled_source_check_uses_scoped_scanner(tmp_path: Path) -> None:
     scaffold(tmp_path)
-    registry = SourceRegistry.from_yaml(tmp_path / "knowledge/meta/sources.yml")
-    observations = {
-        source.source_key: source.last_observed.model_copy(update={"checked_at": NOW})
-        for erc in registry.erc_numbers()
-        for source in registry.resolve(erc, frozenset(EvidenceKind))
-        if source.last_observed is not None
-    }
-    (tmp_path / "knowledge/meta/sources.yml").write_text(
-        registry.render_with_observations(observations),
-        encoding="utf-8",
-    )
+    calls: list[tuple[datetime, datetime]] = []
+
+    class Scanner:
+        async def scan(self, *, since: datetime, now: datetime) -> ScopedScanResult:
+            calls.append((since, now))
+            return ScopedScanResult(
+                observations=(),
+                github_cursors={},
+                magicians_cursors={},
+                failed_sources=(),
+            )
+
+        def stage(self, result: ScopedScanResult, uow: Any) -> None:
+            del result
+            uow.stage_json("data/state/scoped-source-observations.json", [])
+
     async with httpx.AsyncClient() as client:
         pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
-        live = LiveEvidence()
-        pipeline.live_evidence = live
+        pipeline.scoped_scanner = Scanner()  # type: ignore[assignment]
 
         await pipeline.source_check(NOW)
 
-    assert live.calls == []
+    assert calls == [(NOW - timedelta(hours=24), NOW)]
     assert pipeline.source_checked_at == NOW
 
 
@@ -359,14 +364,13 @@ async def test_explicit_polling_intake_calls_get_updates(
 
 
 @pytest.mark.asyncio
-async def test_scheduled_source_batches_checkpoint_success_and_skip_safe_failure(
+async def test_scheduled_source_scan_is_bounded_and_logs_safe_failure(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
     scaffold(tmp_path)
     checkpoint = Checkpoint()
-    calls: list[tuple[int, ...]] = []
     timeouts: list[float] = []
     original_wait_for = asyncio.wait_for
 
@@ -378,66 +382,44 @@ async def test_scheduled_source_batches_checkpoint_success_and_skip_safe_failure
 
     async with httpx.AsyncClient() as client:
         pipeline = _LivePipeline(tmp_path, client=client, checkpoint=checkpoint, now=NOW)
-        monkeypatch.setattr(
-            pipeline.registry,
-            "due_erc_numbers",
-            lambda now, max_age: (8004, 8183, 8263),
-        )
 
-        async def check_sources(
-            now: datetime, *, erc_numbers: tuple[int, ...], observe_only: bool
-        ) -> SourceCheckSummary:
-            assert now == NOW
-            assert not observe_only
-            calls.append(erc_numbers)
-            if erc_numbers == (8183,):
+        class Scanner:
+            async def scan(self, **kwargs: Any) -> ScopedScanResult:
+                del kwargs
                 raise RuntimeError("provider-secret-body")
-            return SourceCheckSummary(1, 2, 0, 1, True)
 
-        monkeypatch.setattr(pipeline, "check_sources", check_sources)
+        pipeline.scoped_scanner = Scanner()  # type: ignore[assignment]
         with pytest.raises(RuntimeFailure, match="source check incomplete"):
             await pipeline.source_check(NOW)
 
-    assert calls == [(8004,), (8183,)]
-    assert timeouts == [60, 60]
-    assert checkpoint.operations == [f"source-check:erc-8004:{int(NOW.timestamp())}"]
+    assert timeouts == [60]
+    assert checkpoint.operations == []
     captured = capsys.readouterr().out
-    assert "erc=8183" in captured
     assert "code=source_check_failed" in captured
     assert "provider-secret-body" not in captured
 
 
 @pytest.mark.asyncio
-async def test_scheduled_knowledge_refresh_uses_one_erc_and_bounded_timeout(
+async def test_scheduled_knowledge_refresh_is_a_model_free_compatibility_noop(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     scaffold(tmp_path)
-    checkpoint = Checkpoint()
-    calls: list[dict[str, Any]] = []
-
-    class State:
-        def eligible_refresh_erc_numbers(self, cutoff: datetime) -> tuple[int, ...]:
-            assert cutoff == NOW
-            return (8004, 8183)
-
     class Refresh:
-        def __init__(self, root: Path, **kwargs: Any) -> None:
-            assert root == tmp_path
-            assert kwargs["max_ercs_per_run"] == 1
-            assert kwargs["timeout_seconds"] == 180
-
-        async def run(self, **kwargs: Any) -> RefreshResult:
-            calls.append(kwargs)
-            return RefreshResult(("refresh:8004",), ("knowledge/ercs/erc-8004.md",), True)
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+            raise AssertionError("scheduled compatibility phase must not construct a model job")
 
     monkeypatch.setattr(runtime_module, "KnowledgeRefresh", Refresh)
     async with httpx.AsyncClient() as client:
-        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=checkpoint, now=NOW)
-        pipeline.knowledge_state = State()  # type: ignore[assignment]
+        pipeline = _LivePipeline(
+            tmp_path,
+            client=client,
+            checkpoint=Checkpoint(),
+            now=NOW,
+        )
         await pipeline.knowledge_refresh(NOW)
 
-    assert calls[0]["erc_numbers"] == frozenset({8004})
-    assert checkpoint.operations == [f"knowledge-refresh:erc-8004:{int(NOW.timestamp())}"]
+    assert pipeline.knowledge_refreshed_at == NOW
 
 
 @pytest.mark.asyncio
@@ -977,101 +959,6 @@ async def test_scheduled_daily_clears_prepared_output_after_persistence_rejectio
 
 
 @pytest.mark.asyncio
-async def test_scheduled_knowledge_failure_is_deferred_and_logged_without_raw_error(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    scaffold(tmp_path)
-    checkpoint = Checkpoint()
-    deferred: list[tuple[int, str]] = []
-
-    class State:
-        def eligible_refresh_erc_numbers(self, cutoff: datetime) -> tuple[int, ...]:
-            del cutoff
-            return (8004,)
-
-        def defer_refresh_erc(
-            self,
-            uow: Any,
-            erc_number: int,
-            *,
-            now: datetime,
-            safe_error_code: str,
-        ) -> None:
-            assert now == NOW
-            deferred.append((erc_number, safe_error_code))
-
-    class Refresh:
-        def __init__(self, root: Path, **kwargs: Any) -> None:
-            del root, kwargs
-
-        async def run(self, **kwargs: Any) -> RefreshResult:
-            del kwargs
-            raise RuntimeError("model-secret-output")
-
-    monkeypatch.setattr(runtime_module, "KnowledgeRefresh", Refresh)
-    async with httpx.AsyncClient() as client:
-        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=checkpoint, now=NOW)
-        pipeline.knowledge_state = State()  # type: ignore[assignment]
-        with pytest.raises(RuntimeFailure, match="knowledge refresh deferred"):
-            await pipeline.knowledge_refresh(NOW)
-
-    assert deferred == [(8004, "knowledge_refresh_failed")]
-    assert checkpoint.operations == [f"knowledge-deferred:erc-8004:{int(NOW.timestamp())}"]
-    captured = capsys.readouterr().out
-    assert "code=knowledge_refresh_failed" in captured
-    assert "model-secret-output" not in captured
-
-
-@pytest.mark.asyncio
-async def test_successful_knowledge_is_not_deferred_when_only_checkpoint_fails(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-    capsys: pytest.CaptureFixture[str],
-) -> None:
-    scaffold(tmp_path)
-
-    class CheckpointFailure:
-        async def publish(self, operation_id: str, root: Path) -> None:
-            del operation_id, root
-            raise RuntimeError("push-secret-output")
-
-    class State:
-        def eligible_refresh_erc_numbers(self, cutoff: datetime) -> tuple[int, ...]:
-            del cutoff
-            return (8004,)
-
-        def defer_refresh_erc(self, *args: Any, **kwargs: Any) -> None:
-            del args, kwargs
-            raise AssertionError("successful refresh must not be deferred")
-
-    class Refresh:
-        def __init__(self, root: Path, **kwargs: Any) -> None:
-            del root, kwargs
-
-        async def run(self, **kwargs: Any) -> RefreshResult:
-            del kwargs
-            return RefreshResult(("refresh:8004",), ("knowledge/ercs/erc-8004.md",), True)
-
-    monkeypatch.setattr(runtime_module, "KnowledgeRefresh", Refresh)
-    async with httpx.AsyncClient() as client:
-        pipeline = _LivePipeline(
-            tmp_path,
-            client=client,
-            checkpoint=CheckpointFailure(),
-            now=NOW,
-        )
-        pipeline.knowledge_state = State()  # type: ignore[assignment]
-        with pytest.raises(RuntimeFailure, match="knowledge checkpoint incomplete"):
-            await pipeline.knowledge_refresh(NOW)
-
-    captured = capsys.readouterr().out
-    assert "code=knowledge_checkpoint_failed" in captured
-    assert "push-secret-output" not in captured
-
-
-@pytest.mark.asyncio
 async def test_reply_preparation_processes_at_most_ten_pending_jobs_per_tick(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -1388,7 +1275,7 @@ async def test_failed_daily_attempt_defers_new_pending_reply_model_work(
 
 
 @pytest.mark.asyncio
-async def test_knowledge_run_defers_new_pending_reply_model_work(
+async def test_model_free_knowledge_phase_does_not_suppress_pending_replies(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     scaffold(tmp_path)
@@ -1404,32 +1291,23 @@ async def test_knowledge_run_defers_new_pending_reply_model_work(
         encoding="utf-8",
     )
 
-    class State:
-        def eligible_refresh_erc_numbers(self, cutoff: datetime) -> tuple[int, ...]:
-            del cutoff
-            return (8004,)
-
-    class Refresh:
-        def __init__(self, *args: Any, **kwargs: Any) -> None:
-            del args, kwargs
-
-        async def run(self, **kwargs: Any) -> RefreshResult:
-            del kwargs
-            return RefreshResult(("refresh:8004",), (), True)
-
+    prepared_calls: list[str] = []
     class ReplyService:
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             del args, kwargs
-            raise AssertionError("knowledge run must not start another model job")
 
-    monkeypatch.setattr(runtime_module, "KnowledgeRefresh", Refresh)
+        async def prepare(self, job_id: str, *, now: datetime) -> None:
+            assert now == NOW
+            prepared_calls.append(job_id)
+
     monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
+    monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "bot")
     async with httpx.AsyncClient() as client:
         pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
-        pipeline.knowledge_state = State()  # type: ignore[assignment]
         await pipeline.knowledge_refresh(NOW)
         await pipeline._prepare_pending_replies()
 
+    assert prepared_calls == [job.job_id]
     assert pipeline.prepared_replies == []
 
 
@@ -1604,7 +1482,7 @@ async def test_final_runtime_checkpoint_conflict_retries_in_a_fresh_repository_s
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("phase", ["source", "knowledge", "knowledge_deferral", "daily"])
+@pytest.mark.parametrize("phase", ["source", "daily"])
 async def test_internal_checkpoint_conflict_retries_phase_in_a_fresh_repository_session(
     phase: str,
     monkeypatch: pytest.MonkeyPatch,
@@ -1645,44 +1523,23 @@ async def test_internal_checkpoint_conflict_retries_phase_in_a_fresh_repository_
         scaffold(root)
         async with httpx.AsyncClient() as client:
             if phase == "source":
-                class SourcePipeline(_LivePipeline):
-                    async def check_sources(
-                        self,
-                        now: datetime,
-                        **kwargs: object,
-                    ) -> SourceCheckSummary:
-                        del now, kwargs
-                        return SourceCheckSummary(1, 0, 0, 0, False)
-
-                pipeline = SourcePipeline(root, client=client, checkpoint=checkpoint, now=NOW)
-                pipeline.registry = type(
-                    "Registry",
-                    (),
-                    {"due_erc_numbers": lambda *args, **kwargs: (8183,)},
-                )()
-                await pipeline.source_check(NOW)
-            elif phase in {"knowledge", "knowledge_deferral"}:
-                class Refresh:
-                    def __init__(self, *args: object, **kwargs: object) -> None:
-                        del args, kwargs
-
-                    async def run(self, **kwargs: object) -> None:
+                class Scanner:
+                    async def scan(self, **kwargs: object) -> ScopedScanResult:
                         del kwargs
-                        if phase == "knowledge_deferral" and len(operation_roots) == 1:
-                            raise RuntimeError("model failed before deferral checkpoint")
+                        return ScopedScanResult(
+                            observations=(),
+                            github_cursors={},
+                            magicians_cursors={},
+                            failed_sources=(),
+                        )
 
-                class State:
-                    def eligible_refresh_erc_numbers(self, cutoff: datetime) -> tuple[int, ...]:
-                        del cutoff
-                        return (8183,)
+                    def stage(self, result: ScopedScanResult, uow: Any) -> None:
+                        del result
+                        uow.stage_json("data/state/scoped-source-observations.json", [])
 
-                    def defer_refresh_erc(self, *args: object, **kwargs: object) -> None:
-                        del args, kwargs
-
-                monkeypatch.setattr(runtime_module, "KnowledgeRefresh", Refresh)
                 pipeline = _LivePipeline(root, client=client, checkpoint=checkpoint, now=NOW)
-                pipeline.knowledge_state = State()  # type: ignore[assignment]
-                await pipeline.knowledge_refresh(NOW)
+                pipeline.scoped_scanner = Scanner()  # type: ignore[assignment]
+                await pipeline.source_check(NOW)
             else:
                 class DailyPipeline(_LivePipeline):
                     async def prepare_daily(

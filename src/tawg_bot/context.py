@@ -29,6 +29,7 @@ class ContextInputs:
     budgets: dict[str, Any]
     evidence_pack: dict[str, Any] | None = None
     citation_allowlist: list[str] = field(default_factory=list)
+    mutation_capability: dict[str, Any] | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -65,6 +66,7 @@ class ContextPackBuilder:
             "trigger": self._canonical(
                 self.privacy.strip_internal_metadata(safe.trigger)
             ),
+            "mutation_capability": self._canonical(safe.mutation_capability),
             "reply_chain": self._canonical(
                 [self.privacy.strip_internal_metadata(item) for item in safe.reply_chain]
             ),

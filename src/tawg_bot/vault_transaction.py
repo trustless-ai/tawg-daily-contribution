@@ -279,6 +279,15 @@ class VaultTransactionEngine:
         frontmatter, _ = parse_frontmatter(write.content)
         if frontmatter is None:
             raise TransactionRejected(f"Markdown frontmatter omits citations: {write.path}")
+        if "source_urls" in frontmatter:
+            self._validate_general_scoped_citations(
+                write,
+                frontmatter,
+                citations=citations,
+                allowed_urls=allowed_urls,
+                known_sources=known_sources,
+            )
+            return
         page_source_keys = frontmatter.get("source_keys")
         telegram_ids = frontmatter.get("telegram_record_ids")
         verified_at = frontmatter.get("verified_at")
@@ -305,6 +314,48 @@ class VaultTransactionEngine:
             raise TransactionRejected(f"unapproved source link: {write.path}")
         if not (citations & allowed_urls).issubset(normalized_urls):
             raise TransactionRejected(f"cited source link is absent from page: {write.path}")
+
+    @staticmethod
+    def _validate_general_scoped_citations(
+        write: VaultWrite,
+        frontmatter: Mapping[str, object],
+        *,
+        citations: set[str],
+        allowed_urls: set[str],
+        known_sources: Mapping[str, object],
+    ) -> None:
+        source_urls = frontmatter.get("source_urls")
+        source_ids = frontmatter.get("source_ids")
+        if (
+            not isinstance(source_urls, list)
+            or not source_urls
+            or not all(isinstance(value, str) for value in source_urls)
+            or not isinstance(source_ids, list)
+            or not all(isinstance(value, str) for value in source_ids)
+        ):
+            raise TransactionRejected(
+                f"Markdown frontmatter omits general evidence: {write.path}"
+            )
+        page_urls = set(source_urls)
+        page_source_ids = set(source_ids)
+        if not page_urls.issubset(allowed_urls):
+            raise TransactionRejected(f"unapproved source link: {write.path}")
+        if not page_urls.issubset(citations):
+            raise TransactionRejected(f"undeclared source link: {write.path}")
+        if not page_source_ids.issubset(known_sources):
+            raise TransactionRejected(f"unknown citation: {write.path}")
+        if not (citations & allowed_urls).issubset(page_urls):
+            raise TransactionRejected(
+                f"Markdown frontmatter omits source URLs: {write.path}"
+            )
+        if not (citations & set(known_sources)).issubset(page_source_ids):
+            raise TransactionRejected(
+                f"Markdown frontmatter omits source IDs: {write.path}"
+            )
+        urls = set(re.findall(r"https://[^\s<>()\]]+", write.content))
+        normalized_urls = {value.rstrip('.,;:!?)"]}') for value in urls}
+        if not page_urls.issubset(normalized_urls):
+            raise TransactionRejected(f"source link is absent from page: {write.path}")
 
     @staticmethod
     def _path_hash(path: Path) -> str | None:

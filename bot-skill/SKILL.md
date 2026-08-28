@@ -7,7 +7,7 @@ description: Use when compiling, querying, correcting, or summarizing source-cit
 
 ## Contract
 
-Build current TAWG knowledge with provenance.
+Build current TAWG knowledge and user-requested general knowledge with provenance.
 
 ```yaml
 allowed_write_root: knowledge/
@@ -52,7 +52,9 @@ Brief greetings, thanks, and acknowledgements about the bot being online, presen
 
 For scheduled knowledge mutation, return one transaction with expected target hashes and create/replace writes below `knowledge/`. Keep generated pages current instead of appending periodic duplicates. Every full knowledge-refresh transaction includes both `knowledge/meta/source-ledger.json` and `knowledge/meta/claim-ledger.json`, even if one is unchanged. Couple page changes with affected index, hot cache, source ledger, and claim ledger entries. Store source keys, reliable URLs, versions, hashes, verification times, claims, and gaps—never copied external bodies or excerpts.
 
-For an interactive reply correction, modify only an exact supplied revision in `retrieved`. Preserve its complete frontmatter and unaffected content, use its `path` and `expected_sha256` verbatim, and add supporting allowlisted Telegram IDs to `telegram_record_ids`. Do not add ledger writes, index writes, or any path whose exact current revision was not supplied. If the exact revision or sufficient evidence is missing, return no correction transaction and ask for the missing input.
+For an interactive knowledge write, the subject need not be TAWG- or ERC-related. Modify only an exact supplied revision in `retrieved`, or create exactly one page under the controller-supplied create roots when no revision exists. Preserve complete existing frontmatter and unaffected content, use supplied `path` and `expected_sha256` values verbatim, and add supporting allowlisted Telegram IDs to provenance. Do not add ledger writes, index writes, or any path outside the supplied capability.
+
+Decide authorship only from explicit current-trigger or audited-reply-chain evidence. Record explicitly self-authored concepts in full with `knowledge_write.authorship: self_authored`. For external concepts, write only a neutral description of at most 2,000 characters and require the exact original public HTTPS URL supplied in that same audited evidence; preserve it in `original_url`, `source_urls`, the final `Sources` section, write citations, and reply citations. Never infer authorship or invent an original source. If authorship or source evidence is missing, return no transaction and ask naturally for the missing evidence; this is a successful clarification rather than a refusal or retryable failure.
 
 Use Obsidian Markdown with flat YAML frontmatter, stable paths, descriptive headings, and path-qualified wikilinks when basenames could collide. Represent public member contributions as acknowledgement pages at `knowledge/acknowledgements/<public-name>.md`, using the member's familiar public name or nickname and a `Related topics` section. Never use the legacy member-page directory. Keep internal TAWG-local person IDs for identity resolution and never infer or export cross-TAWG identity. A correction updates current canonical knowledge while preserving Telegram message history.
 

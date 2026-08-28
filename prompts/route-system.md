@@ -30,7 +30,8 @@ Choose exactly one `context_scope` from the request's primary task, not from inc
 
 - `knowledge_question`: a TAWG/ERC question or request to summarize preceding discussion.
 - `identity_correction`: an explicit request to correct an in-group identity or alias.
-- `knowledge_correction`: a request to create, record, add, correct, or update TAWG knowledge,
+- `knowledge_correction`: a request to create, record, add, correct, or update repository knowledge
+  about any subject,
   including a direct reply that supplies requested information for an audited bot clarification.
 - `source_suggestion`: an explicit request to record a relevant source or link.
 - `coordination`: a brief greeting, acknowledgement, or in-scope collaboration response.

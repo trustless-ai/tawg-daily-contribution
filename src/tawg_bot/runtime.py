@@ -42,13 +42,17 @@ from tawg_bot.delivery import (
 )
 from tawg_bot.erc_query import ErcIntent, ErcQuery
 from tawg_bot.evidence_fetch import RestrictedEvidenceFetcher
+from tawg_bot.github_source import GitHubHttpClient, GitHubSourceError
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import KnowledgeRefresh, RefreshResult
 from tawg_bot.live_evidence import EvidencePack, LiveEvidenceService
+from tawg_bot.magicians_source import MagiciansHttpClient
 from tawg_bot.models import DeliveryAttempt, DeliveryStatus, JobStatus, PendingBotJob
 from tawg_bot.persistence_guard import PersistenceRejected
 from tawg_bot.repository_session import RepositoryConflict
+from tawg_bot.scan_targets import ScanTargetStore, ScanTargetVerifier
 from tawg_bot.scheduler import IntakePolicy, Scheduler
+from tawg_bot.scoped_scanner import ScopedSourceScanner
 from tawg_bot.source_registry import SourceRegistry
 from tawg_bot.telegram_api import TelegramApi
 from tawg_bot.telegram_intake import TelegramIntake, WebhookIntakeResult, ingest_envelopes
@@ -62,10 +66,8 @@ class RuntimeFailure(RuntimeError):
 
 
 _SOURCE_RECHECK_INTERVAL = timedelta(hours=24)
-_MAX_SCHEDULED_SOURCE_ERCS = 2
 _SOURCE_ERC_TIMEOUT_SECONDS = 60
 _SOURCE_OPERATION_SECONDS = 45
-_KNOWLEDGE_TIMEOUT_SECONDS = 180
 _DAILY_EVIDENCE_TIMEOUT_SECONDS = 60
 _DAILY_TIMEOUT_SECONDS = 900
 _REPLY_TIMEOUT_SECONDS = 300
@@ -345,6 +347,23 @@ class _LivePipeline:
             operation_seconds=_SOURCE_OPERATION_SECONDS,
         )
         self.knowledge_state = KnowledgeStateStore(self.root, registry=self.registry)
+        try:
+            registration_github = GitHubHttpClient.from_env(client=client)
+        except GitHubSourceError:
+            registration_github = None
+        registration_topics = MagiciansHttpClient(
+            base_url="https://ethereum-magicians.org",
+            client=client,
+        )
+        self.scan_target_verifier = ScanTargetVerifier(
+            topic_client=registration_topics,
+            github_client=registration_github,
+        )
+        self.scoped_scanner = ScopedSourceScanner(
+            self.root,
+            github_client=registration_github,
+            topic_client=registration_topics,
+        )
         self.telegram_synced_at: datetime | None = None
         self.source_checked_at: datetime | None = None
         self.live_evidence_collected_at: datetime | None = None
@@ -362,30 +381,33 @@ class _LivePipeline:
         await self.checkpoint.publish(f"telegram-intake:{int(now.timestamp())}", self.root)
 
     async def source_check(self, now: datetime) -> None:
-        erc_numbers = self.registry.due_erc_numbers(
-            now,
-            max_age=_SOURCE_RECHECK_INTERVAL,
-        )[:_MAX_SCHEDULED_SOURCE_ERCS]
-        incomplete = False
-        for erc_number in erc_numbers:
-            try:
-                await asyncio.wait_for(
-                    self.check_sources(
-                        now, erc_numbers=(erc_number,), observe_only=False
-                    ),
-                    timeout=_SOURCE_ERC_TIMEOUT_SECONDS,
-                )
-                await self.checkpoint.publish(
-                    f"source-check:erc-{erc_number}:{int(now.timestamp())}",
-                    self.root,
-                )
-            except RepositoryConflict:
-                raise
-            except Exception:
-                incomplete = True
-                _safe_log("source_check", "source_check_failed", erc=erc_number)
+        try:
+            result = await asyncio.wait_for(
+                self.scoped_scanner.scan(
+                    since=now - _SOURCE_RECHECK_INTERVAL,
+                    now=now,
+                ),
+                timeout=_SOURCE_ERC_TIMEOUT_SECONDS,
+            )
+            uow = RepositoryUnitOfWork(
+                self.root,
+                operation_id=f"scoped-source-check:{int(now.timestamp())}",
+            )
+            uow.register_external_evidence(())
+            self.scoped_scanner.stage(result, uow)
+            uow.publish()
+            await self.checkpoint.publish(
+                f"scoped-source-check:{int(now.timestamp())}",
+                self.root,
+            )
+        except RepositoryConflict:
+            raise
+        except Exception:
+            _safe_log("source_check", "source_check_failed")
+            raise RuntimeFailure("source check incomplete") from None
         self.source_checked_at = now
-        if incomplete:
+        if result.failed_sources:
+            _safe_log("source_check", "source_check_failed")
             raise RuntimeFailure("source check incomplete")
 
     async def check_sources(
@@ -431,67 +453,7 @@ class _LivePipeline:
         )
 
     async def knowledge_refresh(self, cutoff: datetime) -> None:
-        erc_numbers = self.knowledge_state.eligible_refresh_erc_numbers(cutoff)
-        if not erc_numbers:
-            self.knowledge_refreshed_at = self.now
-            return
-        self.knowledge_attempted = True
-        erc_number = erc_numbers[0]
-        operation_id = f"knowledge-refresh-{cutoff.strftime('%Y%m%dt%H%M%Sz')}"
-        service = KnowledgeRefresh(
-            self.root,
-            ai=self.ai,
-            live_evidence=self.live_evidence,
-            registry=self.registry,
-            max_ercs_per_run=1,
-            timeout_seconds=_KNOWLEDGE_TIMEOUT_SECONDS,
-        )
-        try:
-            await service.run(
-                cutoff=cutoff,
-                operation_id=operation_id,
-                erc_numbers=frozenset({erc_number}),
-                dry_run=False,
-            )
-        except RepositoryConflict:
-            raise
-        except Exception:
-            try:
-                uow = RepositoryUnitOfWork(
-                    self.root,
-                    operation_id=(
-                        f"knowledge-deferred:erc-{erc_number}:{int(cutoff.timestamp())}"
-                    ),
-                )
-                uow.register_external_evidence(())
-                self.knowledge_state.defer_refresh_erc(
-                    uow,
-                    erc_number,
-                    now=cutoff,
-                    safe_error_code="knowledge_refresh_failed",
-                )
-                uow.publish()
-                await self.checkpoint.publish(
-                    f"knowledge-deferred:erc-{erc_number}:{int(cutoff.timestamp())}",
-                    self.root,
-                )
-            except RepositoryConflict:
-                raise
-            except Exception:
-                _safe_log("knowledge_refresh", "knowledge_deferral_failed", erc=erc_number)
-                raise RuntimeFailure("knowledge deferral incomplete") from None
-            _safe_log("knowledge_refresh", "knowledge_refresh_failed", erc=erc_number)
-            raise RuntimeFailure("knowledge refresh deferred") from None
-        try:
-            await self.checkpoint.publish(
-                f"knowledge-refresh:erc-{erc_number}:{int(cutoff.timestamp())}",
-                self.root,
-            )
-        except RepositoryConflict:
-            raise
-        except Exception:
-            _safe_log("knowledge_refresh", "knowledge_checkpoint_failed", erc=erc_number)
-            raise RuntimeFailure("knowledge checkpoint incomplete") from None
+        _require_utc(cutoff, "knowledge refresh cutoff")
         self.knowledge_refreshed_at = self.now
 
     async def refresh_knowledge(
@@ -591,9 +553,15 @@ class _LivePipeline:
         ready_at = self.now
         evidence = await DailyEvidenceCollector(
             self.root,
-            github=GitHubActivityRecords(self.root, client=self.client),
+            github=GitHubActivityRecords(
+                self.root,
+                client=self.client,
+                scan_registry=ScanTargetStore(self.root).load(),
+            ),
             magicians=MagiciansActivityRecords(
-                self.root, client=self.client, registry=self.registry
+                self.root,
+                client=self.client,
+                registry=ScanTargetStore(self.root).load(),
             ),
             timeout_seconds=_DAILY_EVIDENCE_TIMEOUT_SECONDS,
         ).collect(window, now=self.now)
@@ -724,6 +692,7 @@ class _LivePipeline:
                     else None
                 ),
                 timeout_seconds=min(_REPLY_TIMEOUT_SECONDS, remaining_seconds),
+                scan_target_verifier=self.scan_target_verifier,
             )
             try:
                 prepared = await service.prepare(job.job_id, now=self.now)

@@ -1,0 +1,379 @@
+"""Metadata-only recurring scans confined to controller-owned source targets."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any, Literal
+from urllib.parse import urlsplit
+
+from pydantic import Field, ValidationError, field_validator, model_validator
+
+from tawg_bot.models import SourceCursors, StrictModel
+from tawg_bot.scan_targets import (
+    ScanGitHubClient,
+    ScanTargetStore,
+    ScanTopicClient,
+    magicians_topic_id,
+    proposal_pr_number,
+)
+from tawg_bot.unit_of_work import RepositoryUnitOfWork
+
+_MAX_GITHUB_PAGES = 10
+
+
+class ScopedScanRejected(ValueError):
+    """Raised when scanner inputs or repository state violate the bounded contract."""
+
+
+class ScopedObservation(StrictModel):
+    source_key: str = Field(min_length=1, max_length=256)
+    source_kind: Literal[
+        "github_repository",
+        "magicians_topic",
+        "ethereum_ercs_pr",
+    ]
+    source_locator: str = Field(min_length=1, max_length=2048)
+    updated_at: datetime
+    metadata_sha256: str = Field(pattern=r"^[a-f0-9]{64}$")
+
+    @field_validator("updated_at")
+    @classmethod
+    def updated_at_is_utc(cls, value: datetime) -> datetime:
+        if value.tzinfo is None or value.utcoffset() != UTC.utcoffset(value):
+            raise ValueError("observation timestamp must use UTC")
+        return value.astimezone(UTC)
+
+
+class ScopedScanResult(StrictModel):
+    observations: tuple[ScopedObservation, ...]
+    github_cursors: dict[str, str | int | None]
+    magicians_cursors: dict[str, str | int | None]
+    failed_sources: tuple[str, ...]
+
+    @model_validator(mode="after")
+    def observation_keys_are_unique(self) -> ScopedScanResult:
+        keys = [
+            (observation.source_kind, observation.source_key)
+            for observation in self.observations
+        ]
+        if len(keys) != len(set(keys)):
+            raise ValueError("scoped observation keys must be unique")
+        return self
+
+
+class ScopedSourceScanner:
+    """Observe only all public Trustless-AI repos and explicitly registered ERC sources."""
+
+    OBSERVATIONS_PATH = "data/state/scoped-source-observations.json"
+    CURSORS_PATH = "data/state/source-cursors.json"
+
+    def __init__(
+        self,
+        root: Path,
+        *,
+        github_client: ScanGitHubClient | None,
+        topic_client: ScanTopicClient,
+    ) -> None:
+        self.root = root.resolve()
+        self.github_client = github_client
+        self.topic_client = topic_client
+
+    async def scan(self, *, since: datetime, now: datetime) -> ScopedScanResult:
+        self._require_utc(since)
+        self._require_utc(now)
+        if since > now:
+            raise ValueError("scoped scan cutoff cannot be in the future")
+        registry = ScanTargetStore(self.root).load()
+        observations: list[ScopedObservation] = []
+        github_cursors: dict[str, str | int | None] = {}
+        magicians_cursors: dict[str, str | int | None] = {}
+        failures: list[str] = []
+
+        if self.github_client is None:
+            failures.append("github:trustless-ai")
+        else:
+            try:
+                repositories = await self._github_pages(
+                    f"/orgs/{registry.github_organization}/repos",
+                    {"type": "public", "sort": "full_name", "direction": "asc"},
+                )
+                for repository in repositories:
+                    if repository.get("private") is True:
+                        continue
+                    observation = self._repository_observation(repository, now=now)
+                    observations.append(observation)
+                    github_cursors[
+                        f"repo:{observation.source_key}:metadata_sha256"
+                    ] = observation.metadata_sha256
+            except Exception:
+                failures.append("github:trustless-ai")
+
+        for target in registry.ercs:
+            topic_id = magicians_topic_id(target.magicians_topic_url)
+            try:
+                topic = await self.topic_client.get_json(f"/t/{topic_id}.json")
+                observation = self._topic_observation(
+                    topic,
+                    expected_topic_id=topic_id,
+                    source_locator=target.magicians_topic_url,
+                    now=now,
+                )
+                observations.append(observation)
+                magicians_cursors[
+                    f"topic:{topic_id}:metadata_sha256"
+                ] = observation.metadata_sha256
+            except Exception:
+                failures.append(f"magicians:{topic_id}")
+
+            if target.proposal_pr_url is None:
+                continue
+            pull_number = proposal_pr_number(target.proposal_pr_url)
+            if self.github_client is None:
+                failures.append(f"ethereum-ercs-pr:{pull_number}")
+                continue
+            try:
+                observation = await self._proposal_observation(
+                    pull_number,
+                    source_locator=target.proposal_pr_url,
+                    now=now,
+                )
+                observations.append(observation)
+                github_cursors[
+                    f"ethereum-ercs-pr:{pull_number}:metadata_sha256"
+                ] = observation.metadata_sha256
+            except Exception:
+                failures.append(f"ethereum-ercs-pr:{pull_number}")
+
+        ordered = tuple(
+            sorted(observations, key=lambda item: (item.source_kind, item.source_key))
+        )
+        return ScopedScanResult(
+            observations=ordered,
+            github_cursors=github_cursors,
+            magicians_cursors=magicians_cursors,
+            failed_sources=tuple(sorted(set(failures))),
+        )
+
+    def stage(self, result: ScopedScanResult, uow: RepositoryUnitOfWork) -> None:
+        if uow.root != self.root:
+            raise ScopedScanRejected("scanner and unit of work roots differ")
+        cursors = self._load_cursors()
+        cursors.github.update(result.github_cursors)
+        cursors.magicians.update(result.magicians_cursors)
+        uow.stage_json(
+            self.OBSERVATIONS_PATH,
+            [
+                item.model_dump(mode="json")
+                for item in self._merged_observations(result)
+            ],
+        )
+        uow.stage_json(self.CURSORS_PATH, cursors.model_dump(mode="json"))
+
+    async def _proposal_observation(
+        self,
+        pull_number: int,
+        *,
+        source_locator: str,
+        now: datetime,
+    ) -> ScopedObservation:
+        assert self.github_client is not None
+        pull = await self.github_client.get_json(
+            f"/repos/ethereum/ERCs/pulls/{pull_number}"
+        )
+        if not isinstance(pull, dict) or pull.get("number") != pull_number:
+            raise ScopedScanRejected("proposal PR metadata is invalid")
+        streams: dict[str, list[dict[str, Any]]] = {}
+        for name, path in (
+            ("issue_comments", f"/repos/ethereum/ERCs/issues/{pull_number}/comments"),
+            ("reviews", f"/repos/ethereum/ERCs/pulls/{pull_number}/reviews"),
+            ("review_comments", f"/repos/ethereum/ERCs/pulls/{pull_number}/comments"),
+        ):
+            streams[name] = await self._github_pages(path, {})
+        metadata = {
+            "id": pull.get("id"),
+            "number": pull.get("number"),
+            "state": pull.get("state"),
+            "title": pull.get("title"),
+            "updated_at": pull.get("updated_at"),
+            "streams": {
+                name: [self._activity_metadata(item) for item in items]
+                for name, items in streams.items()
+            },
+        }
+        return ScopedObservation(
+            source_key=f"ethereum-ercs-pr-{pull_number}",
+            source_kind="ethereum_ercs_pr",
+            source_locator=source_locator,
+            updated_at=self._timestamp_or_now(pull.get("updated_at"), now),
+            metadata_sha256=self._metadata_sha256(metadata),
+        )
+
+    async def _github_pages(
+        self,
+        path: str,
+        params: dict[str, object],
+    ) -> list[dict[str, Any]]:
+        assert self.github_client is not None
+        items: list[dict[str, Any]] = []
+        for page in range(1, _MAX_GITHUB_PAGES + 1):
+            payload = await self.github_client.get_json(
+                path,
+                {**params, "per_page": 100, "page": page},
+            )
+            if not isinstance(payload, list) or not all(
+                isinstance(item, dict) for item in payload
+            ):
+                raise ScopedScanRejected("GitHub metadata page is invalid")
+            items.extend(payload)
+            if len(payload) < 100:
+                return items
+        raise ScopedScanRejected("GitHub metadata pagination exceeded its budget")
+
+    @classmethod
+    def _repository_observation(
+        cls,
+        payload: dict[str, Any],
+        *,
+        now: datetime,
+    ) -> ScopedObservation:
+        name = payload.get("name")
+        full_name = payload.get("full_name")
+        default_branch = payload.get("default_branch")
+        if (
+            not isinstance(name, str)
+            or not isinstance(full_name, str)
+            or not full_name.startswith("trustless-ai/")
+            or not isinstance(default_branch, str)
+        ):
+            raise ScopedScanRejected("GitHub repository metadata is invalid")
+        metadata = {
+            "id": payload.get("id"),
+            "name": name,
+            "full_name": full_name,
+            "default_branch": default_branch,
+            "archived": payload.get("archived") is True,
+            "updated_at": payload.get("updated_at"),
+        }
+        return ScopedObservation(
+            source_key=name,
+            source_kind="github_repository",
+            source_locator=f"https://github.com/{full_name}",
+            updated_at=cls._timestamp_or_now(payload.get("updated_at"), now),
+            metadata_sha256=cls._metadata_sha256(metadata),
+        )
+
+    @classmethod
+    def _topic_observation(
+        cls,
+        payload: dict[str, Any],
+        *,
+        expected_topic_id: int,
+        source_locator: str,
+        now: datetime,
+    ) -> ScopedObservation:
+        expected_slug = urlsplit(source_locator).path.split("/")[2]
+        if payload.get("id") != expected_topic_id or payload.get("slug") != expected_slug:
+            raise ScopedScanRejected("Magicians topic metadata is invalid")
+        metadata = {
+            "id": payload.get("id"),
+            "slug": payload.get("slug"),
+            "title": payload.get("title"),
+            "posts_count": payload.get("posts_count"),
+            "highest_post_number": payload.get("highest_post_number"),
+            "last_posted_at": payload.get("last_posted_at"),
+        }
+        return ScopedObservation(
+            source_key=f"magicians-{expected_topic_id}",
+            source_kind="magicians_topic",
+            source_locator=source_locator,
+            updated_at=cls._timestamp_or_now(payload.get("last_posted_at"), now),
+            metadata_sha256=cls._metadata_sha256(metadata),
+        )
+
+    @staticmethod
+    def _activity_metadata(payload: dict[str, Any]) -> dict[str, object]:
+        user = payload.get("user")
+        return {
+            "id": payload.get("id"),
+            "state": payload.get("state"),
+            "submitted_at": payload.get("submitted_at"),
+            "updated_at": payload.get("updated_at"),
+            "user": user.get("login") if isinstance(user, dict) else None,
+        }
+
+    @staticmethod
+    def _metadata_sha256(payload: object) -> str:
+        canonical = json.dumps(
+            payload,
+            ensure_ascii=False,
+            separators=(",", ":"),
+            sort_keys=True,
+        ).encode("utf-8")
+        return hashlib.sha256(canonical).hexdigest()
+
+    @staticmethod
+    def _timestamp_or_now(value: object, now: datetime) -> datetime:
+        if not isinstance(value, str):
+            return now
+        try:
+            parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+        except ValueError:
+            return now
+        return parsed.astimezone(UTC) if parsed.tzinfo is not None else now
+
+    def _load_cursors(self) -> SourceCursors:
+        path = self.root / self.CURSORS_PATH
+        try:
+            if path.is_symlink() or not path.is_file():
+                raise OSError("source cursor state is not a regular file")
+            return SourceCursors.model_validate_json(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, ValidationError) as error:
+            raise ScopedScanRejected("source cursor state is invalid") from error
+
+    def _merged_observations(
+        self,
+        result: ScopedScanResult,
+    ) -> tuple[ScopedObservation, ...]:
+        path = self.root / self.OBSERVATIONS_PATH
+        if not path.exists():
+            existing: tuple[ScopedObservation, ...] = ()
+        else:
+            if path.is_symlink() or not path.is_file():
+                raise ScopedScanRejected("scoped observation state is invalid")
+            try:
+                raw = json.loads(path.read_text(encoding="utf-8"))
+                if not isinstance(raw, list):
+                    raise ValueError
+                existing = tuple(ScopedObservation.model_validate(item) for item in raw)
+            except (OSError, UnicodeError, ValueError, ValidationError, json.JSONDecodeError):
+                raise ScopedScanRejected("scoped observation state is invalid") from None
+        failures = set(result.failed_sources)
+        retained: dict[tuple[str, str], ScopedObservation] = {}
+        for item in existing:
+            keep = (
+                item.source_kind == "github_repository"
+                and "github:trustless-ai" in failures
+            ) or (
+                item.source_kind == "magicians_topic"
+                and f"magicians:{item.source_key.rsplit('-', 1)[-1]}" in failures
+            ) or (
+                item.source_kind == "ethereum_ercs_pr"
+                and f"ethereum-ercs-pr:{item.source_key.rsplit('-', 1)[-1]}"
+                in failures
+            )
+            if keep:
+                retained[(item.source_kind, item.source_key)] = item
+        for item in result.observations:
+            retained[(item.source_kind, item.source_key)] = item
+        return tuple(
+            retained[key]
+            for key in sorted(retained, key=lambda value: (value[0], value[1]))
+        )
+
+    @staticmethod
+    def _require_utc(value: datetime) -> None:
+        if value.tzinfo is None or value.utcoffset() != UTC.utcoffset(value):
+            raise ValueError("scoped scan timestamps must use UTC")

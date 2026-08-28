@@ -3,6 +3,9 @@ title: observation-conditions-note
 type: repository
 created: '2026-08-23'
 updated: '2026-08-23'
+source_urls:
+- https://github.com/trustless-ai/observation-conditions-note/blob/05e8fda42996ea138c6728df4c02931122dc7f98/README.md
+provenance_status: verified
 ---
 
 # observation-conditions-note

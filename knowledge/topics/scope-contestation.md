@@ -3,6 +3,7 @@ title: Scope Contestation
 type: topic
 created: '2026-08-23'
 updated: '2026-08-23'
+provenance_status: legacy_incomplete
 ---
 
 # Scope Contestation

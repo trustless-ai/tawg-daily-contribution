@@ -59,6 +59,8 @@ def _parser() -> argparse.ArgumentParser:
     refresh.add_argument("--dry-run", action="store_true")
     daily = commands.add_parser("daily-dry-run")
     daily.add_argument("--window-end", type=_utc_timestamp, required=True)
+    migration = commands.add_parser("migrate-open-knowledge")
+    migration.add_argument("--now", type=_utc_timestamp)
     commands.add_parser("vault-lint")
     return parser
 
@@ -90,6 +92,19 @@ def main(
         lint_report = VaultLinter(root).lint()
         print(f"errors={lint_report.error_count} warnings={lint_report.warning_count}")
         return 1 if lint_report.error_count else 0
+    if args.command == "migrate-open-knowledge":
+        from tawg_bot.open_knowledge_migration import OpenKnowledgeMigration
+
+        now = args.now or (clock or (lambda: datetime.now(UTC)))()
+        migration_summary = OpenKnowledgeMigration(root).run(now=now)
+        print(
+            f"archived_refresh_jobs={migration_summary.legacy_refresh_jobs_archived} "
+            f"provenance_backfilled={migration_summary.provenance_backfilled} "
+            f"provenance_incomplete={migration_summary.provenance_marked_incomplete} "
+            f"scan_targets_seeded={migration_summary.scan_targets_seeded} "
+            f"changed={migration_summary.changed}"
+        )
+        return 0
     operational = runtime or _production_runtime(root)
     if args.command == "tick":
         now = args.now or (clock or (lambda: datetime.now(UTC)))()

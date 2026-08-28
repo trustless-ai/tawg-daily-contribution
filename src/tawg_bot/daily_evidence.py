@@ -11,7 +11,8 @@ from urllib.parse import urlparse
 
 import httpx
 
-from tawg_bot.github_source import GitHubHttpClient, GitHubSource
+from tawg_bot.github_source import GitHubClient, GitHubHttpClient, GitHubSource
+from tawg_bot.ids import github_id
 from tawg_bot.magicians_source import (
     MagiciansHttpClient,
     MagiciansSource,
@@ -20,7 +21,11 @@ from tawg_bot.magicians_source import (
 from tawg_bot.models import SourceRecord, SourceType
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 from tawg_bot.query import SourceQuery
-from tawg_bot.source_registry import EvidenceKind, SourceRegistry
+from tawg_bot.scan_targets import (
+    ScanTargetRegistry,
+    magicians_topic_id,
+    proposal_pr_number,
+)
 
 
 class DailyEvidenceRejected(ValueError):
@@ -186,20 +191,153 @@ class DailyEvidenceCollector:
 
 
 class GitHubActivityRecords:
-    def __init__(self, root: Path, *, client: httpx.AsyncClient) -> None:
+    _MAX_PROPOSAL_PAGES = 3
+
+    def __init__(
+        self,
+        root: Path,
+        *,
+        client: httpx.AsyncClient,
+        scan_registry: ScanTargetRegistry | None = None,
+    ) -> None:
         self.root = root.resolve()
         self.client = client
+        self.scan_registry = scan_registry
 
     async def collect_records(self, *, since: datetime, now: datetime) -> tuple[SourceRecord, ...]:
+        github = GitHubHttpClient.from_env(client=self.client)
         source = GitHubSource.for_repository(
             root=self.root,
-            client=GitHubHttpClient.from_env(client=self.client),
+            client=github,
             now=lambda: now,
         )
         batch = await source.sync_activity_since(since)
         if not batch.successful:
             raise DailyEvidenceRejected("GitHub Daily activity collection failed")
-        return tuple(record for record in batch.records if record.updated_at <= now)
+        proposal_records = (
+            await self._proposal_records(github, since=since, now=now)
+            if self.scan_registry is not None
+            else ()
+        )
+        by_id = {
+            record.record_id: record
+            for record in (*batch.records, *proposal_records)
+            if record.updated_at <= now
+        }
+        return tuple(by_id[key] for key in sorted(by_id))
+
+    async def _proposal_records(
+        self,
+        client: GitHubClient,
+        *,
+        since: datetime,
+        now: datetime,
+    ) -> tuple[SourceRecord, ...]:
+        assert self.scan_registry is not None
+        records: list[SourceRecord] = []
+        for target in self.scan_registry.ercs:
+            if target.proposal_pr_url is None:
+                continue
+            number = proposal_pr_number(target.proposal_pr_url)
+            pull = await client.get_json(f"/repos/ethereum/ERCs/pulls/{number}")
+            if not isinstance(pull, dict) or pull.get("number") != number:
+                raise DailyEvidenceRejected("proposal PR Daily metadata is invalid")
+            record = self._github_record(
+                pull,
+                kind="pr",
+                source_type=SourceType.GITHUB_PULL_REQUEST,
+                fallback_url=target.proposal_pr_url,
+                fallback_created=now,
+            )
+            if record is not None and since <= record.updated_at <= now:
+                records.append(record)
+            for kind, source_type, path in (
+                (
+                    "issue-comment",
+                    SourceType.GITHUB_COMMENT,
+                    f"/repos/ethereum/ERCs/issues/{number}/comments",
+                ),
+                (
+                    "review",
+                    SourceType.GITHUB_REVIEW,
+                    f"/repos/ethereum/ERCs/pulls/{number}/reviews",
+                ),
+                (
+                    "review-comment",
+                    SourceType.GITHUB_REVIEW,
+                    f"/repos/ethereum/ERCs/pulls/{number}/comments",
+                ),
+            ):
+                for item in await self._bounded_pages(client, path):
+                    item_record = self._github_record(
+                        item,
+                        kind=kind,
+                        source_type=source_type,
+                        fallback_url=target.proposal_pr_url,
+                        fallback_created=record.created_at if record is not None else now,
+                    )
+                    if item_record is not None and since <= item_record.updated_at <= now:
+                        records.append(item_record)
+        return tuple(records)
+
+    async def _bounded_pages(
+        self,
+        client: GitHubClient,
+        path: str,
+    ) -> list[dict[str, object]]:
+        records: list[dict[str, object]] = []
+        for page in range(1, self._MAX_PROPOSAL_PAGES + 1):
+            payload = await client.get_json(path, {"per_page": 100, "page": page})
+            if not isinstance(payload, list) or not all(
+                isinstance(item, dict) for item in payload
+            ):
+                raise DailyEvidenceRejected("proposal PR Daily page is invalid")
+            records.extend(payload)
+            if len(payload) < 100:
+                return records
+        raise DailyEvidenceRejected("proposal PR Daily pagination exceeded its budget")
+
+    @staticmethod
+    def _github_record(
+        payload: dict[str, object],
+        *,
+        kind: str,
+        source_type: SourceType,
+        fallback_url: str,
+        fallback_created: datetime,
+    ) -> SourceRecord | None:
+        raw_id = payload.get("id")
+        if isinstance(raw_id, bool) or not isinstance(raw_id, int):
+            return None
+        created = _parse_github_timestamp(payload.get("created_at"), fallback_created)
+        updated = _parse_github_timestamp(
+            payload.get("updated_at") or payload.get("submitted_at"),
+            created,
+        )
+        title = payload.get("title")
+        body = payload.get("body")
+        text = "\n\n".join(
+            value.strip()
+            for value in (title, body)
+            if isinstance(value, str) and value.strip()
+        )
+        if not text:
+            return None
+        user = payload.get("user")
+        login = user.get("login") if isinstance(user, dict) else None
+        locator = payload.get("html_url")
+        return SourceRecord.from_text(
+            record_id=github_id("ethereum-ercs", kind, raw_id),
+            source_type=source_type,
+            source_locator=locator if isinstance(locator, str) else fallback_url,
+            author_person_id=None,
+            author_source_handle=login if isinstance(login, str) else None,
+            created_at=created,
+            updated_at=max(created, updated),
+            text_original=text,
+            ingested_at=updated,
+            source_payload={"pull_number": payload.get("number")},
+        )
 
 
 class MagiciansActivityRecords:
@@ -210,7 +348,7 @@ class MagiciansActivityRecords:
         root: Path,
         *,
         client: httpx.AsyncClient,
-        registry: SourceRegistry,
+        registry: ScanTargetRegistry,
     ) -> None:
         self.root = root.resolve()
         self.client = client
@@ -232,23 +370,30 @@ class MagiciansActivityRecords:
 
     def _seeds(self) -> tuple[TopicSeed, ...]:
         by_id: dict[int, TopicSeed] = {}
-        for erc_number in self.registry.erc_numbers():
-            for source in self.registry.resolve(erc_number, frozenset({EvidenceKind.DISCUSSION})):
-                parts = [part for part in urlparse(source.canonical_url).path.split("/") if part]
-                if len(parts) < 3 or parts[0] != "t":
-                    continue
-                try:
-                    topic_id = int(parts[1] if parts[1].isdigit() else parts[2])
-                except ValueError:
-                    continue
-                slug = "topic" if parts[1].isdigit() else parts[1]
-                by_id[topic_id] = TopicSeed(topic_id, slug, "source_registry")
+        for target in self.registry.ercs:
+            parts = [
+                part
+                for part in urlparse(target.magicians_topic_url).path.split("/")
+                if part
+            ]
+            topic_id = magicians_topic_id(target.magicians_topic_url)
+            by_id[topic_id] = TopicSeed(topic_id, parts[1], "scan_target_registry")
         return tuple(by_id[key] for key in sorted(by_id))
 
 
 def _require_utc(value: datetime, label: str) -> None:
     if value.tzinfo is None or value.utcoffset() != UTC.utcoffset(value):
         raise ValueError(f"{label} must use UTC")
+
+
+def _parse_github_timestamp(value: object, fallback: datetime) -> datetime:
+    if not isinstance(value, str):
+        return fallback
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return fallback
+    return parsed.astimezone(UTC) if parsed.tzinfo is not None else fallback
 
 
 def _log_source_failure(source: str, code: str) -> None:

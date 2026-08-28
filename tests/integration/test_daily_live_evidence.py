@@ -11,9 +11,10 @@ import pytest
 
 import tawg_bot.runtime as runtime_module
 from tawg_bot.daily import DailyReadiness, DailyService, DailyWindow
-from tawg_bot.daily_evidence import DailyEvidenceCollector
+from tawg_bot.daily_evidence import DailyEvidenceCollector, GitHubActivityRecords
 from tawg_bot.models import SourceRecord, SourceType
 from tawg_bot.runtime import _LivePipeline
+from tawg_bot.scan_targets import ScanTargetRegistry
 from tawg_bot.storage import JsonlCollection
 
 PROJECT = Path(__file__).parents[2]
@@ -31,6 +32,32 @@ class RecordsClient:
     async def collect_records(self, *, since: datetime, now: datetime) -> tuple[SourceRecord, ...]:
         self.calls.append((since, now))
         return self.records
+
+
+class ProposalClient:
+    async def get_json(self, path: str, params=None) -> list[Any] | dict[str, Any]:
+        del params
+        if path.endswith("/pulls/1081"):
+            return {
+                "id": 1081,
+                "number": 1081,
+                "title": "Add ERC-8183",
+                "body": "Proposal body",
+                "html_url": "https://github.com/ethereum/ERCs/pull/1081",
+                "created_at": "2026-08-23T03:00:00Z",
+                "updated_at": "2026-08-24T00:00:00Z",
+                "user": {"login": "author"},
+            }
+        return [
+            {
+                "id": 2000 + len(path),
+                "body": "Focused review activity",
+                "html_url": "https://github.com/ethereum/ERCs/pull/1081#discussion_r1",
+                "created_at": "2026-08-24T00:30:00Z",
+                "updated_at": "2026-08-24T00:30:00Z",
+                "user": {"login": "reviewer"},
+            }
+        ]
 
 
 class FakeAi:
@@ -122,10 +149,54 @@ def _readiness() -> DailyReadiness:
 
 
 @pytest.mark.asyncio
+async def test_registered_proposal_pr_activity_is_available_to_daily_without_persistence(
+    tmp_path: Path,
+) -> None:
+    registry = ScanTargetRegistry.model_validate(
+        {
+            "schema": "tawg.scan-targets.v1",
+            "github_organization": "trustless-ai",
+            "include_public_archived_repositories": True,
+            "ercs": [
+                {
+                    "erc_number": 8183,
+                    "magicians_topic_url": (
+                        "https://ethereum-magicians.org/t/"
+                        "erc-8183-agentic-commerce/27902"
+                    ),
+                    "proposal_pr_url": "https://github.com/ethereum/ERCs/pull/1081",
+                    "registered_from_record_id": "tg:tawg:6000",
+                    "registered_at": "2026-08-23T00:00:00Z",
+                }
+            ],
+        }
+    )
+    async with httpx.AsyncClient() as client:
+        collector = GitHubActivityRecords(
+            tmp_path,
+            client=client,
+            scan_registry=registry,
+        )
+        records = await collector._proposal_records(
+            ProposalClient(),
+            since=WINDOW.start,
+            now=NOW,
+        )
+
+    assert any(record.source_type is SourceType.GITHUB_PULL_REQUEST for record in records)
+    assert any("Focused review activity" in record.text_original for record in records)
+    assert not (tmp_path / "data/github").exists()
+
+
+@pytest.mark.asyncio
 async def test_daily_collects_current_window_live_text_without_persisting_bodies(
     tmp_path: Path,
 ) -> None:
     _seed(tmp_path)
+    scan_targets = tmp_path / "knowledge/meta/scan-targets.yml"
+    scan_targets.write_bytes(
+        (PROJECT / "knowledge/meta/scan-targets.yml").read_bytes()
+    )
     github = RecordsClient(
         (
             _record(
@@ -410,6 +481,10 @@ async def test_runtime_daily_composes_live_collectors_without_repository_writes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     _seed(tmp_path)
+    scan_targets = tmp_path / "knowledge/meta/scan-targets.yml"
+    scan_targets.write_bytes(
+        (PROJECT / "knowledge/meta/scan-targets.yml").read_bytes()
+    )
     github = RecordsClient(
         (
             _record(
@@ -436,7 +511,7 @@ async def test_runtime_daily_composes_live_collectors_without_repository_writes(
     monkeypatch.setattr(
         runtime_module,
         "GitHubActivityRecords",
-        lambda root, *, client: github,
+        lambda root, *, client, scan_registry: github,
     )
     monkeypatch.setattr(
         runtime_module,

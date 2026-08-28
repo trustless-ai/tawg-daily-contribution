@@ -90,7 +90,7 @@ class ClaudeCli:
     _EFFORT_LEVELS = frozenset({"low", "medium", "high", "max"})
     _SCHEMA_VERSION: ClassVar[dict[JobType, str]] = {
         "knowledge": "v2",
-        "reply": "v2",
+        "reply": "v3",
         "daily": "v1",
         "route": "v2",
     }

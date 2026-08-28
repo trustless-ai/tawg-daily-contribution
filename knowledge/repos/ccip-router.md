@@ -3,6 +3,9 @@ title: ccip-router
 type: repository
 created: '2026-08-23'
 updated: '2026-08-23'
+source_urls:
+- https://github.com/trustless-ai/ccip-router/blob/579e22994187de7c862ba40470250926135b6a06/README.md
+provenance_status: verified
 ---
 
 # ccip-router

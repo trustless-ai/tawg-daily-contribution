@@ -115,7 +115,7 @@ def seed(
 ) -> PendingBotJob:
     for relative in (
         "config/privacy.yml",
-        "src/tawg_bot/schemas/reply-result.v2.json",
+        "src/tawg_bot/schemas/reply-result.v3.json",
     ):
         target = root / relative
         target.parent.mkdir(parents=True, exist_ok=True)
@@ -210,7 +210,7 @@ def seed_delivered_bot_reply(
 
 def reply_result(*, chinese: bool) -> dict[str, Any]:
     return {
-        "schema_version": "tawg.reply-result.v2",
+        "schema_version": "tawg.reply-result.v3",
         "reply_text": (
             "目前重点是让验证路径可核验。 [tg:tawg:10]"
             if chinese
@@ -230,7 +230,7 @@ def reply_result(*, chinese: bool) -> dict[str, Any]:
 
 def coordination_result() -> dict[str, Any]:
     return {
-        "schema_version": "tawg.reply-result.v2",
+        "schema_version": "tawg.reply-result.v3",
         "reply_text": "Good morning — I'm here and ready to help.",
         "language": "en",
         "english_recap": None,
@@ -1133,7 +1133,7 @@ async def test_audited_correction_followup_can_create_one_content_page_when_ai_u
         "inputs and a pinned verification profile.\n"
     )
     result = {
-        "schema_version": "tawg.reply-result.v2",
+        "schema_version": "tawg.reply-result.v3",
         "reply_text": f"Added the supplied RVR entry. [{job.trigger_record_id}]",
         "language": "en",
         "english_recap": None,
@@ -1152,6 +1152,12 @@ async def test_audited_correction_followup_can_create_one_content_page_when_ai_u
                 }
             ],
         },
+        "knowledge_write": {
+            "authorship": "self_authored",
+            "authorship_evidence": [job.trigger_record_id],
+            "original_url": None,
+        },
+        "scan_registration": None,
         "refusal": False,
     }
     ai = ContextualFakeAi(
@@ -1182,14 +1188,73 @@ async def test_audited_correction_followup_can_create_one_content_page_when_ai_u
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("context_scope", ["conversation", "knowledge", "erc"])
+async def test_explicit_mention_can_create_one_content_page_in_any_context_scope(
+    tmp_path: Path,
+    context_scope: str,
+) -> None:
+    job = seed(tmp_path, "@bot record our Garden Clock concept")
+    page = (
+        "---\n"
+        "title: Garden Clock\n"
+        "type: topic\n"
+        "created: '2026-08-28'\n"
+        "updated: '2026-08-28'\n"
+        "source_ids:\n"
+        f"  - {job.trigger_record_id}\n"
+        "---\n\n"
+        "# Garden Clock\n\nA group-authored concept.\n"
+    )
+    result = {
+        "schema_version": "tawg.reply-result.v3",
+        "reply_text": f"Recorded Garden Clock. [{job.trigger_record_id}]",
+        "language": "en",
+        "english_recap": None,
+        "citations": [job.trigger_record_id],
+        "evidence_status": "verified",
+        "verification_gaps": [],
+        "correction_transaction": {
+            "schema_version": "tawg.vault-transaction.v1",
+            "operation_id": job.job_id,
+            "writes": [
+                {
+                    "path": "knowledge/topics/garden-clock.md",
+                    "expected_sha256": None,
+                    "content": page,
+                    "citations": [job.trigger_record_id],
+                }
+            ],
+        },
+        "knowledge_write": {
+            "authorship": "self_authored",
+            "authorship_evidence": [job.trigger_record_id],
+            "original_url": None,
+        },
+        "scan_registration": None,
+        "refusal": False,
+    }
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ContextualFakeAi(
+            "knowledge_correction",
+            result,
+            context_scope=context_scope,
+        ),
+        bot_username="bot",
+        chat_id=-1001,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared is not None and prepared.refusal is False
+    assert (tmp_path / "knowledge/topics/garden-clock.md").read_text() == page
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("trigger_kind", "context_scope", "paths"),
     [
-        (TriggerKind.MENTION, "knowledge", ["knowledge/topics/new-entry.md"]),
-        (TriggerKind.MENTION, "conversation", ["knowledge/topics/new-entry.md"]),
-        (TriggerKind.REPLY_TO_BOT, "erc", ["knowledge/topics/new-entry.md"]),
         (
-            TriggerKind.REPLY_TO_BOT,
+            TriggerKind.MENTION,
             "conversation",
             ["knowledge/topics/one.md", "knowledge/topics/two.md"],
         ),
@@ -1211,7 +1276,7 @@ async def test_audited_correction_followup_can_create_one_content_page_when_ai_u
         ),
     ],
 )
-async def test_new_page_creation_requires_one_audited_direct_reply_content_page(
+async def test_new_page_creation_rejects_multiple_or_unconfined_writes(
     tmp_path: Path,
     trigger_kind: TriggerKind,
     context_scope: str,
@@ -1255,7 +1320,7 @@ async def test_new_page_creation_requires_one_audited_direct_reply_content_page(
             }
         )
     result = {
-        "schema_version": "tawg.reply-result.v2",
+        "schema_version": "tawg.reply-result.v3",
         "reply_text": f"Added the entry. [{job.trigger_record_id}]",
         "language": "en",
         "english_recap": None,
@@ -1361,7 +1426,7 @@ async def test_bot_status_acknowledgement_gets_a_friendly_in_scope_reply(
     job = seed(tmp_path, "Looks good! @bot you\u2019re online 👍")
     ai = FakeAi(
         {
-            "schema_version": "tawg.reply-result.v2",
+            "schema_version": "tawg.reply-result.v3",
             "reply_text": (
                 "I\u2019m here and ready to help the group move Trustless AI work forward. 👍"
             ),
@@ -1390,7 +1455,7 @@ async def test_coordination_reply_rejects_citations(tmp_path: Path) -> None:
     job = seed(tmp_path, "@bot you\u2019re online")
     ai = FakeAi(
         {
-            "schema_version": "tawg.reply-result.v2",
+            "schema_version": "tawg.reply-result.v3",
             "reply_text": "I\u2019m here. [tg:tawg:10]",
             "language": "en",
             "english_recap": None,
@@ -1444,11 +1509,13 @@ async def test_refusal_explains_supported_work_with_copyable_triggers(
     assert "Here are a few things I can help with" in prepared.reply_text
     refusal_text = prepared.reply_text.casefold()
     assert "tawg or erc questions" in refusal_text
-    assert "evidence-backed knowledge updates" in refusal_text
+    assert "record a concept on any subject" in refusal_text
+    assert "record an external concept with its source" in refusal_text
     assert "tawg-local identity corrections" in refusal_text
     assert "relevant source suggestions" in refusal_text
     assert "`@trustless_ai_bot what is ERC-8183?`" in prepared.reply_text
-    assert "`@trustless_ai_bot please add" in prepared.reply_text
+    assert "`@trustless_ai_bot record our Garden Clock design in full`" in prepared.reply_text
+    assert "original source: https://..." in prepared.reply_text
     assert "reply directly to one of my messages" in prepared.reply_text
     assert [call["job_type"] for call in ai.calls] == ["route"]
 

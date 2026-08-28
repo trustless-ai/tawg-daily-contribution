@@ -27,12 +27,15 @@ async def test_supported_correction_replaces_current_fact_without_touching_sourc
         "---\ntitle: ERC-8004\ntype: erc\ncreated: 2026-08-23\nupdated: 2026-08-23\n"
         "source_ids:\n  - tg:tawg:10\n---\n\n# ERC-8004\n\nValidation is mandatory.\n"
     )
-    corrected = current.replace("mandatory", "opt-in")
+    corrected = current.replace(
+        "source_ids:\n  - tg:tawg:10",
+        f"source_ids:\n  - tg:tawg:10\n  - {job.trigger_record_id}",
+    ).replace("mandatory", "opt-in")
     page_path.write_text(current, encoding="utf-8")
     source_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
     source_before = source_path.read_bytes()
     result = {
-        "schema_version": "tawg.reply-result.v2",
+        "schema_version": "tawg.reply-result.v3",
         "reply_text": "Thanks—the cited discussion supports updating the current page.",
         "language": "en",
         "english_recap": None,
@@ -47,7 +50,7 @@ async def test_supported_correction_replaces_current_fact_without_touching_sourc
                     "path": "knowledge/ercs/erc-8004.md",
                     "expected_sha256": _sha(current),
                     "content": corrected,
-                    "citations": ["tg:tawg:10"],
+                    "citations": ["tg:tawg:10", job.trigger_record_id],
                 }
             ],
         },
@@ -73,7 +76,7 @@ async def test_supported_correction_replaces_current_fact_without_touching_sourc
 async def test_ambiguous_correction_asks_for_evidence_without_writing(tmp_path: Path) -> None:
     job = seed(tmp_path, "@bot correction: the page is wrong")
     result = {
-        "schema_version": "tawg.reply-result.v2",
+        "schema_version": "tawg.reply-result.v3",
         "reply_text": "Could you share the source and the exact sentence that should change?",
         "language": "en",
         "english_recap": None,

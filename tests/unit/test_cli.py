@@ -191,3 +191,27 @@ def test_cli_dispatches_maintenance_without_polling() -> None:
     )
 
     assert runtime.maintenance == [(NOW, True)]
+
+
+def test_cli_runs_open_knowledge_migration_without_constructing_runtime(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    state = tmp_path / "data/state"
+    state.mkdir(parents=True)
+    (state / "pending-knowledge-refresh.json").write_text("[]\n", encoding="utf-8")
+
+    assert (
+        main(
+            ["migrate-open-knowledge", "--now", "2026-08-24T01:17:00Z"],
+            runtime=None,
+        )
+        == 0
+    )
+
+    output = capsys.readouterr().out
+    assert "archived_refresh_jobs=0" in output
+    assert "changed=True" in output
+    assert (tmp_path / "data/state/migrations/open-knowledge-v1.json").is_file()
