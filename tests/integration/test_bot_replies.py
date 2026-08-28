@@ -459,6 +459,149 @@ async def test_direct_reply_can_continue_the_audited_knowledge_correction(
 
 
 @pytest.mark.asyncio
+async def test_nested_direct_reply_recovers_original_evidence_and_existing_page(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "Please record this",
+        trigger_kind=TriggerKind.REPLY_TO_BOT,
+        trigger_reply_to="tg:tawg:901",
+    )
+    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    original = _record(
+        "tg:tawg:10",
+        "RVR means Recomputable Verification Receipts and binds recomputable evidence.",
+        NOW - timedelta(hours=2),
+    )
+    followup = _record(
+        "tg:tawg:11",
+        "Add it to the knowledge base.",
+        NOW - timedelta(hours=1),
+        reply_to="tg:tawg:900",
+    )
+    trigger = _record(
+        "tg:tawg:12",
+        "Please record this",
+        NOW,
+        reply_to="tg:tawg:901",
+    )
+    telegram_path.write_bytes(
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes(
+            [original, followup, trigger]
+        )
+    )
+    page_path = tmp_path / "knowledge/topics/recomputable-verification-receipts.md"
+    page_path.parent.mkdir(parents=True, exist_ok=True)
+    page_path.write_text(
+        "---\n"
+        "title: Recomputable Verification Receipts\n"
+        "type: topic\n"
+        "created: '2026-08-23'\n"
+        "updated: '2026-08-23'\n"
+        "source_ids:\n"
+        "  - tg:tawg:10\n"
+        "---\n\n"
+        "# Recomputable Verification Receipts\n\n"
+        "RVR means Recomputable Verification Receipts and binds recomputable evidence.\n",
+        encoding="utf-8",
+    )
+    first_bot_text = "Please provide the RVR evidence needed for the entry."
+    second_bot_text = "The original RVR evidence is not yet available to this request."
+    first_job = PendingBotJob(
+        job_id="reply:tg:tawg:10",
+        trigger_record_id="tg:tawg:10",
+        reply_to_message_id=10,
+        status=JobStatus.DELIVERED,
+        prepared_reply_text=first_bot_text,
+        prepared_language="en",
+        created_at=NOW - timedelta(hours=2),
+        updated_at=NOW - timedelta(minutes=90),
+    )
+    second_job = PendingBotJob(
+        job_id="reply:tg:tawg:11",
+        trigger_record_id="tg:tawg:11",
+        reply_to_message_id=11,
+        status=JobStatus.DELIVERED,
+        prepared_reply_text=second_bot_text,
+        prepared_language="en",
+        created_at=NOW - timedelta(hours=1),
+        updated_at=NOW - timedelta(minutes=30),
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs_path.write_text(
+        json.dumps(
+            [
+                job.model_dump(mode="json"),
+                first_job.model_dump(mode="json"),
+                second_job.model_dump(mode="json"),
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    attempts = [
+        DeliveryAttempt(
+            delivery_id=first_job.job_id,
+            job_id=first_job.job_id,
+            status=DeliveryStatus.DELIVERED,
+            content_sha256=hashlib.sha256(first_bot_text.encode()).hexdigest(),
+            message_count=1,
+            reply_to_message_id=10,
+            telegram_chat_id=-1001,
+            telegram_message_ids=[900],
+            sent_at=NOW - timedelta(minutes=90),
+            prepared_at=NOW - timedelta(minutes=90),
+            updated_at=NOW - timedelta(minutes=90),
+        ),
+        DeliveryAttempt(
+            delivery_id=second_job.job_id,
+            job_id=second_job.job_id,
+            status=DeliveryStatus.DELIVERED,
+            content_sha256=hashlib.sha256(second_bot_text.encode()).hexdigest(),
+            message_count=1,
+            reply_to_message_id=11,
+            telegram_chat_id=-1001,
+            telegram_message_ids=[901],
+            sent_at=NOW - timedelta(minutes=30),
+            prepared_at=NOW - timedelta(minutes=30),
+            updated_at=NOW - timedelta(minutes=30),
+        ),
+    ]
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        json.dumps([attempt.model_dump(mode="json") for attempt in attempts]) + "\n",
+        encoding="utf-8",
+    )
+    output = reply_result(chinese=False)
+    output["reply_text"] = "RVR is already recorded. [tg:tawg:10]"
+    output["citations"] = ["tg:tawg:10"]
+    ai = ContextualFakeAi("knowledge_correction", output)
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ai,
+        bot_username="bot",
+        chat_id=-1001,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared is not None
+    reply_context = json.loads(ai.calls[1]["context_pack"])
+    assert [item["record_id"] for item in reply_context["reply_chain"]] == [
+        "tg:tawg:10",
+        "tg:tawg:900",
+        "tg:tawg:11",
+        "tg:tawg:901",
+    ]
+    assert "tg:tawg:10" in reply_context["citation_allowlist"]
+    assert "tg:tawg:900" not in reply_context["citation_allowlist"]
+    assert "tg:tawg:901" not in reply_context["citation_allowlist"]
+    assert any(
+        item["path"] == "knowledge/topics/recomputable-verification-receipts.md"
+        for item in reply_context["retrieved"]
+    )
+
+
+@pytest.mark.asyncio
 async def test_direct_reply_parent_audit_is_bound_to_the_configured_chat(
     tmp_path: Path,
 ) -> None:
@@ -1191,6 +1334,75 @@ def test_delivered_pavlo_followup_refusal_is_repaired_without_losing_audit(
     assert repair["repair_of_job_id"] == original.job_id
     assert repair["repair_reason_code"] == "correction_followup_route_updated"
     assert repair["reply_to_message_id"] == 3470
+    assert repair["message_thread_id"] == 16
+    assert repair["trigger_kind"] == "reply_to_bot"
+
+
+def test_delivered_stale_rvr_blocker_is_repaired_without_losing_audit(
+    tmp_path: Path,
+) -> None:
+    seed(tmp_path, "@bot placeholder")
+    trigger = next(
+        record
+        for record in SourceQuery(PROJECT).records()
+        if record.record_id == "tg:tawg:3560"
+    )
+    assert (
+        trigger.content_sha256
+        == "7e64cbc929d55e004b14c98062973eea9cea82e5e6b04fb97881c61379a65d42"
+    )
+    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    telegram_path.write_bytes(
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes([trigger])
+    )
+    stale_blocker = (
+        "Thanks for re-triggering, Jimmy — but the same blocker is still in place.\n\n"
+        "`tg:tawg:3470` (Pavlo's original RVR proposal) is still not in the citation "
+        "allowlist. That message holds the technical content the knowledge entry needs — "
+        "the two-axis model, Verification Profile structure, closure rule, six-field "
+        "receipt, and ERC-8281 boundary. Without it on the allowlist, any claims in the "
+        "entry would be unsupported and the write can't proceed.\n\n"
+        "Please add `tg:tawg:3470` to the citation allowlist and re-trigger, and the entry "
+        "will be created right away.\n\n"
+        "Same blocker as before: tg:tawg:3470 (Pavlo's RVR proposal) is still not in the "
+        "citation allowlist. The knowledge entry cannot be written until it is added."
+    )
+    assert hashlib.sha256(stale_blocker.encode()).hexdigest() == (
+        "063486ea61377f4791c005fc9786f4c8335032ab79373e372463cf765b705e10"
+    )
+    original = PendingBotJob(
+        job_id="reply:tg:tawg:3560",
+        trigger_record_id=trigger.record_id,
+        reply_to_message_id=3560,
+        message_thread_id=16,
+        trigger_kind=TriggerKind.REPLY_TO_BOT,
+        status=JobStatus.DELIVERED,
+        prepared_reply_text=stale_blocker,
+        prepared_language="en",
+        refusal=False,
+        created_at=NOW,
+        updated_at=NOW + timedelta(minutes=1),
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs_path.write_text(
+        json.dumps([original.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+
+    reconciler = ReplyRepairReconciler(tmp_path, bot_username="trustless_ai_bot")
+    created = reconciler.reconcile(now=NOW + timedelta(minutes=2))
+
+    assert created == ("reply-repair:stale-citation-context-v1:tg:tawg:3560",)
+    assert reconciler.reconcile(now=NOW + timedelta(minutes=3)) == ()
+    persisted = json.loads(jobs_path.read_text(encoding="utf-8"))
+    original_after = next(item for item in persisted if item["job_id"] == original.job_id)
+    assert original_after["status"] == "delivered"
+    assert original_after["prepared_reply_text"] == stale_blocker
+    repair = next(item for item in persisted if item["job_id"] != original.job_id)
+    assert repair["status"] == "pending"
+    assert repair["repair_of_job_id"] == original.job_id
+    assert repair["repair_reason_code"] == "stale_citation_context_repaired"
+    assert repair["reply_to_message_id"] == 3560
     assert repair["message_thread_id"] == 16
     assert repair["trigger_kind"] == "reply_to_bot"
 

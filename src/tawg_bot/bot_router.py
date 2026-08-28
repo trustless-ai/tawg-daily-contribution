@@ -114,13 +114,14 @@ class BotRouter:
 class _ReplyRepairSpec:
     trigger_id: str
     trigger_sha256: str
-    refusal_sha256: str
+    prepared_text_sha256: str
     policy_version: str
     reason_code: str
+    requires_refusal: bool = True
 
 
 class ReplyRepairReconciler:
-    """Create auditable correction jobs for refusals invalidated by routing policy."""
+    """Create auditable correction jobs for exact invalidated delivered replies."""
 
     _STATE_PATH = "data/state/pending-bot-jobs.json"
     _LEGACY_REPAIRS: Mapping[str, _ReplyRepairSpec] = {
@@ -129,7 +130,7 @@ class ReplyRepairReconciler:
             trigger_sha256=(
                 "dc6114743926cd5f4f9577807beb9211598fcff2c43b3244f2a1aa8a70660d5d"
             ),
-            refusal_sha256=(
+            prepared_text_sha256=(
                 "c88b75647067456eeb21dc284da1e93b36df61f1afc102ad6a913f19a6fde50e"
             ),
             policy_version="recent-discussion-v1",
@@ -140,7 +141,7 @@ class ReplyRepairReconciler:
             trigger_sha256=(
                 "531b2cced7b3abfef0d043fe8a56fe6b4b4db8d2224946e56ab44d22d64700b9"
             ),
-            refusal_sha256=(
+            prepared_text_sha256=(
                 "c88b75647067456eeb21dc284da1e93b36df61f1afc102ad6a913f19a6fde50e"
             ),
             policy_version="knowledge-correction-v1",
@@ -151,11 +152,23 @@ class ReplyRepairReconciler:
             trigger_sha256=(
                 "2110c0c18a6ce873a957d9b18cbf577b85fe7c2d2bc18cfe874db14231c06e70"
             ),
-            refusal_sha256=(
+            prepared_text_sha256=(
                 "c88b75647067456eeb21dc284da1e93b36df61f1afc102ad6a913f19a6fde50e"
             ),
             policy_version="correction-followup-v1",
             reason_code="correction_followup_route_updated",
+        ),
+        "reply:tg:tawg:3560": _ReplyRepairSpec(
+            trigger_id="tg:tawg:3560",
+            trigger_sha256=(
+                "7e64cbc929d55e004b14c98062973eea9cea82e5e6b04fb97881c61379a65d42"
+            ),
+            prepared_text_sha256=(
+                "063486ea61377f4791c005fc9786f4c8335032ab79373e372463cf765b705e10"
+            ),
+            policy_version="stale-citation-context-v1",
+            reason_code="stale_citation_context_repaired",
+            requires_refusal=False,
         ),
     }
 
@@ -170,10 +183,12 @@ class ReplyRepairReconciler:
         records = {record.record_id: record for record in SourceQuery(self.root).records()}
         created: list[str] = []
         for original in sorted(jobs.values(), key=lambda item: item.job_id):
-            if original.status is not JobStatus.DELIVERED or not original.refusal:
-                continue
             repair_spec = self._LEGACY_REPAIRS.get(original.job_id)
-            if repair_spec is None:
+            if (
+                repair_spec is None
+                or original.status is not JobStatus.DELIVERED
+                or (repair_spec.requires_refusal and not original.refusal)
+            ):
                 continue
             trigger = records.get(repair_spec.trigger_id)
             prepared_text = original.prepared_reply_text
@@ -183,7 +198,7 @@ class ReplyRepairReconciler:
                 or trigger.content_sha256 != repair_spec.trigger_sha256
                 or prepared_text is None
                 or hashlib.sha256(prepared_text.encode("utf-8")).hexdigest()
-                != repair_spec.refusal_sha256
+                != repair_spec.prepared_text_sha256
             ):
                 continue
             repair_id = f"reply-repair:{repair_spec.policy_version}:{trigger.record_id}"
@@ -807,10 +822,11 @@ class BotReplyService:
             and record.record_id not in seen
         ]
         nearby.sort(key=lambda record: (record.created_at, record.record_id))
+        retrieval_query = self._retrieval_query(trigger, chain)
         retrieved_items = (
             []
             if context_scope is RouteContextScope.CONVERSATION
-            else VaultRetriever(self.root).query(trigger.text_original, top_k=16)
+            else VaultRetriever(self.root).query(retrieval_query, top_k=16)
         )
         retrieved: list[dict[str, Any]] = (
             list(local_erc_context.pages)
@@ -980,34 +996,78 @@ class BotReplyService:
             return augmented
         if self.chat_id is None:
             raise ReplyRejected("direct reply preparation requires configured chat identity")
-        reply_targets = [
-            relation.target_record_id
-            for relation in trigger.relations
-            if relation.relation_type == "reply_to"
-        ]
-        if len(reply_targets) != 1:
-            return augmented
-        target_record_id = reply_targets[0]
-        augmented.pop(target_record_id, None)
+        attempts = self._load_delivery_attempts()
+        current = trigger
+        seen = {trigger.record_id}
+        conversation_scope = trigger.record_id.rsplit(":", 1)[0]
+        for depth in range(32):
+            reply_targets = [
+                relation.target_record_id
+                for relation in current.relations
+                if relation.relation_type == "reply_to"
+            ]
+            if len(reply_targets) != 1 or reply_targets[0] in seen:
+                break
+            target_record_id = reply_targets[0]
+            if target_record_id.rsplit(":", 1)[0] != conversation_scope:
+                raise ReplyRejected("direct reply target is outside Telegram scope")
+            target_message_id = target_record_id.rsplit(":", 1)[-1]
+            if depth == 0 and not target_message_id.isdigit():
+                raise ReplyRejected("direct reply target is invalid")
+            matching = (
+                [
+                    attempt
+                    for attempt in attempts
+                    if attempt.status is DeliveryStatus.DELIVERED
+                    and attempt.telegram_chat_id == self.chat_id
+                    and target_message_id.isdigit()
+                    and int(target_message_id) in attempt.telegram_message_ids
+                ]
+                if target_message_id.isdigit()
+                else []
+            )
+            if matching:
+                if len(matching) != 1:
+                    raise ReplyRejected("direct reply target lacks one audited bot delivery")
+                audited = self._audited_bot_record(
+                    target_record_id,
+                    matching[0],
+                    jobs,
+                    child_created_at=current.created_at,
+                    message_thread_id=job.message_thread_id,
+                )
+                if audited is None:
+                    break
+                augmented[target_record_id] = audited
+                current = audited
+                seen.add(target_record_id)
+                continue
+            if depth == 0:
+                raise ReplyRejected("direct reply target lacks one audited bot delivery")
+            parent = augmented.get(target_record_id)
+            if parent is None:
+                break
+            current = parent
+            seen.add(target_record_id)
+        return augmented
+
+    def _audited_bot_record(
+        self,
+        target_record_id: str,
+        attempt: DeliveryAttempt,
+        jobs: Mapping[str, PendingBotJob],
+        *,
+        child_created_at: datetime,
+        message_thread_id: int | None,
+    ) -> SourceRecord | None:
+        if attempt.message_thread_id != message_thread_id:
+            raise ReplyRejected("direct reply target failed thread audit binding")
         target_message_id = target_record_id.rsplit(":", 1)[-1]
         if not target_message_id.isdigit():
             raise ReplyRejected("direct reply target is invalid")
-        attempts = self._load_delivery_attempts()
-        matching = [
-            attempt
-            for attempt in attempts
-            if attempt.status is DeliveryStatus.DELIVERED
-            and attempt.telegram_chat_id == self.chat_id
-            and int(target_message_id) in attempt.telegram_message_ids
-        ]
-        if len(matching) != 1:
-            raise ReplyRejected("direct reply target lacks one audited bot delivery")
-        attempt = matching[0]
-        if attempt.message_thread_id != job.message_thread_id:
-            raise ReplyRejected("direct reply target failed thread audit binding")
         delivered_text = self._audited_delivery_text(attempt, jobs)
         if delivered_text is None:
-            return augmented
+            return None
         try:
             delivered_messages = split_telegram_text(
                 delivered_text,
@@ -1034,9 +1094,9 @@ class BotReplyService:
             else []
         )
         delivered_at = attempt.sent_at or attempt.updated_at
-        if delivered_at >= trigger.created_at:
+        if delivered_at >= child_created_at:
             raise ReplyRejected("direct reply target does not precede its trigger")
-        augmented[target_record_id] = SourceRecord.from_text(
+        return SourceRecord.from_text(
             record_id=target_record_id,
             source_type=SourceType.TELEGRAM_MESSAGE,
             source_locator=(
@@ -1055,7 +1115,23 @@ class BotReplyService:
                 "message_thread_id": attempt.message_thread_id,
             },
         )
-        return augmented
+
+    @staticmethod
+    def _retrieval_query(trigger: SourceRecord, chain: list[SourceRecord]) -> str:
+        human_chain = [
+            record
+            for record in chain
+            if record.source_payload.get("message_kind") != "audited_bot_delivery"
+        ]
+        retrieval_chain = human_chain or chain
+        text = "\n\n".join(
+            record.text_original
+            for record in (*retrieval_chain, trigger)
+            if record.text_original.strip()
+        )
+        if len(text) <= 8000:
+            return text
+        return f"{text[:3999]}\n{text[-4000:]}"
 
     def _audited_delivery_text(
         self,
