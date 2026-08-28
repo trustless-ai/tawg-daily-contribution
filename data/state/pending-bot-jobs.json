@@ -84,14 +84,16 @@
     "updated_at": "2026-08-26T11:51:21.004539Z"
   },
   {
-    "attempts": 1,
+    "attempts": 2,
     "classified_route": "knowledge_correction",
     "created_at": "2026-08-28T16:21:18.818452Z",
     "job_id": "reply-repair:stale-citation-context-v1:tg:tawg:3560",
     "message_thread_id": 16,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "tg:tawg:3470"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "**Recomputable Verification Receipts (RVR)** is already recorded in the knowledge base and anchored to [tg:tawg:3470]. No additional knowledge write was needed.",
     "refusal": false,
     "repair_of_job_id": "reply:tg:tawg:3560",
     "repair_reason_code": "stale_citation_context_repaired",
@@ -100,12 +102,12 @@
     "router_context_scope": "knowledge",
     "router_context_sha256": "4d41ef3df8e2ca68e9f11217b80595465b74f9c82a647ea5b4d4dcfea63eea8c",
     "router_version": "contextual-ai-v5",
-    "safe_error_code": "reply_persistence_failed",
+    "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3560",
-    "updated_at": "2026-08-28T16:21:18.818452Z"
+    "updated_at": "2026-08-28T17:31:36.189360Z"
   },
   {
     "attempts": 0,
