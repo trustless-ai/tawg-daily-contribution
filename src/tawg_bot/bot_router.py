@@ -77,6 +77,12 @@ _INLINE_CITATION = re.compile(
 )
 _LOCAL_CITATION = re.compile(r"\[((?:[A-Za-z0-9_.-]+:){2,}[A-Za-z0-9_.:/@-]+)\]")
 _URL_CITATION = re.compile(r"https?://[^\s<>()\[\]]+", re.IGNORECASE)
+_RENDERED_URL_CITATION = re.compile(
+    r"\[(?P<label>[^\]\n]+)\]\((?P<link>https?://[^\s<>()\[\]]+)\)"
+    r"|<(?P<autolink>https?://[^\s<>()\[\]]+)>"
+    r"|(?P<bare>https?://[^\s<>()\[\]]+)",
+    re.IGNORECASE,
+)
 
 
 class ReplyRejected(ValueError):
@@ -1400,7 +1406,7 @@ class BotReplyService:
         if not set(result.citations).issubset(allowed_citations):
             raise ReplyRejected("reply cites fabricated evidence")
         deduplicated_reply_text, deduplicated_english_recap = (
-            self._deduplicate_declared_local_citations(
+            self._deduplicate_declared_citations(
                 result.reply_text,
                 result.english_recap,
                 frozenset(result.citations),
@@ -1637,7 +1643,7 @@ class BotReplyService:
         return normalized
 
     @staticmethod
-    def _deduplicate_declared_local_citations(
+    def _deduplicate_declared_citations(
         reply_text: str,
         english_recap: str | None,
         declared_citations: frozenset[str],
@@ -1645,7 +1651,7 @@ class BotReplyService:
         seen: set[str] = set()
 
         def deduplicate(text: str) -> str:
-            def replace(match: re.Match[str]) -> str:
+            def replace_local(match: re.Match[str]) -> str:
                 citation = match.group(1)
                 if citation not in declared_citations:
                     return match.group(0)
@@ -1654,7 +1660,22 @@ class BotReplyService:
                 seen.add(citation)
                 return match.group(0)
 
-            return _LOCAL_CITATION.sub(replace, text)
+            without_duplicate_local = _LOCAL_CITATION.sub(replace_local, text)
+
+            def replace_url(match: re.Match[str]) -> str:
+                rendered = match.group(0)
+                raw_url = match.group("link") or match.group("autolink") or match.group("bare")
+                citation = raw_url.rstrip(".,;:!?")
+                if citation not in declared_citations:
+                    return rendered
+                if citation not in seen:
+                    seen.add(citation)
+                    return rendered
+                if match.group("label") is not None:
+                    return match.group("label")
+                return raw_url[len(citation) :]
+
+            return _RENDERED_URL_CITATION.sub(replace_url, without_duplicate_local)
 
         return (
             deduplicate(reply_text),

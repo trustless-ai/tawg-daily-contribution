@@ -522,6 +522,29 @@ async def test_registered_but_unfetched_url_is_rejected(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
+async def test_repeated_declared_url_is_reduced_to_one_bound_citation(
+    tmp_path: Path,
+) -> None:
+    job = _seed(tmp_path, "@bot What is the current status of ERC-8004?")
+    output = _result(citations=[CANONICAL, IMPLEMENTATION])
+    output["reply_text"] = (
+        f"The canonical proposal is current at {CANONICAL}. "
+        f"Use [the canonical proposal]({CANONICAL}) for the normative details. "
+        f"The implementation is at {IMPLEMENTATION}."
+    )
+
+    prepared = await _service(
+        tmp_path,
+        ai=FakeAi(output),
+        live=FakeLiveEvidence(_pack()),
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=1))
+
+    assert prepared.reply_text.count(CANONICAL) == 1
+    assert "Use the canonical proposal for the normative details." in prepared.reply_text
+    assert prepared.citations == (CANONICAL, IMPLEMENTATION)
+
+
+@pytest.mark.asyncio
 async def test_markdown_link_label_cannot_hide_an_undeclared_local_citation(
     tmp_path: Path,
 ) -> None:
