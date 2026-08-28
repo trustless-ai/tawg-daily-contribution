@@ -3,7 +3,6 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import json
-import shutil
 from collections.abc import Sequence
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -37,6 +36,7 @@ from tawg_bot.telegram_api import SentMessage, TelegramApiError
 from tawg_bot.telegram_intake import ingest_envelopes
 from tawg_bot.telegram_webhook import TelegramWebhookEntity, TelegramWebhookEnvelope
 from tests.integration.test_live_knowledge_refresh import _pack
+from tests.support.runtime_repository import copy_static_runtime_tree
 
 ROOT = Path(__file__).parents[2]
 NOW = datetime(2026, 8, 24, 1, 17, tzinfo=UTC)
@@ -62,19 +62,7 @@ class LiveEvidence:
 
 
 def scaffold(root: Path) -> None:
-    for relative in (
-        "config",
-        "knowledge",
-        "prompts",
-        "bot-skill",
-        "src/tawg_bot/schemas",
-    ):
-        shutil.copytree(ROOT / relative, root / relative)
-    state = root / "data/state"
-    state.mkdir(parents=True)
-    for source in (ROOT / "data/state").iterdir():
-        if source.is_file():
-            (state / source.name).write_bytes(source.read_bytes())
+    copy_static_runtime_tree(ROOT, root)
 
 
 def webhook_envelope(
@@ -112,6 +100,7 @@ async def test_live_pipeline_checks_sources_without_external_body_mirrors(
     async with httpx.AsyncClient() as client:
         pipeline = _LivePipeline(tmp_path, client=client, checkpoint=checkpoint, now=NOW)
         assert isinstance(pipeline.live_evidence, LiveEvidenceService)
+        assert pipeline.live_evidence.operation_seconds == 45
         assert isinstance(pipeline.knowledge_state, KnowledgeStateStore)
         assert {8004, 8183}.issubset(pipeline.registry.erc_numbers())
         pipeline.live_evidence = LiveEvidence()

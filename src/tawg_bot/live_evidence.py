@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Literal, Protocol
@@ -208,6 +209,8 @@ class LiveEvidenceService:
 
     async def build(self, query: ErcQuery, *, now: datetime) -> EvidencePack:
         _require_utc(now, "live evidence build time")
+        loop = asyncio.get_running_loop()
+        operation_deadline = loop.time() + self.operation_seconds
         budget = FetchBudget(
             max_sources=self.max_sources,
             max_total_bytes=self.max_total_bytes,
@@ -221,8 +224,16 @@ class LiveEvidenceService:
             sources = self.registry.resolve(erc_number, frozenset(EvidenceKind))
             sources_by_erc[erc_number] = sources
             for source in sources:
+                remaining_seconds = operation_deadline - loop.time()
+                if remaining_seconds <= 0:
+                    failures[source.source_key] = "operation_deadline"
+                    continue
                 try:
-                    fetched = await self.fetcher.fetch(source, now=now, budget=budget)
+                    async with asyncio.timeout(remaining_seconds):
+                        fetched = await self.fetcher.fetch(source, now=now, budget=budget)
+                except TimeoutError:
+                    failures[source.source_key] = "operation_deadline"
+                    continue
                 except EvidenceFetchRejected as error:
                     failures[source.source_key] = error.code
                     continue

@@ -64,6 +64,7 @@ class RuntimeFailure(RuntimeError):
 _SOURCE_RECHECK_INTERVAL = timedelta(hours=24)
 _MAX_SCHEDULED_SOURCE_ERCS = 2
 _SOURCE_ERC_TIMEOUT_SECONDS = 60
+_SOURCE_OPERATION_SECONDS = 45
 _KNOWLEDGE_TIMEOUT_SECONDS = 180
 _DAILY_EVIDENCE_TIMEOUT_SECONDS = 60
 _DAILY_TIMEOUT_SECONDS = 900
@@ -341,6 +342,7 @@ class _LivePipeline:
             root=self.root,
             registry=self.registry,
             fetcher=RestrictedEvidenceFetcher(client=client),
+            operation_seconds=_SOURCE_OPERATION_SECONDS,
         )
         self.knowledge_state = KnowledgeStateStore(self.root, registry=self.registry)
         self.telegram_synced_at: datetime | None = None

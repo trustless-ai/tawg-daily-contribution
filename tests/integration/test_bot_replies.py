@@ -1105,71 +1105,20 @@ def test_delivered_pavlo_followup_refusal_is_repaired_without_losing_audit(
 
 
 @pytest.mark.asyncio
-async def test_exact_pavlo_followup_prepares_the_rvr_entry_from_audited_conversation(
+async def test_audited_correction_followup_can_create_one_content_page_when_ai_uses_knowledge_scope(
     tmp_path: Path,
 ) -> None:
-    seed(tmp_path, "@bot placeholder")
-    production_records = {
-        record.record_id: record
-        for record in SourceQuery(PROJECT).records()
-        if record.record_id
-        in {
-            "tg:tawg:3466",
-            "tg:tawg:3468",
-            "tg:tawg:3469",
-            "tg:tawg:3470",
-        }
-    }
-    assert set(production_records) == {
-        "tg:tawg:3466",
-        "tg:tawg:3468",
-        "tg:tawg:3469",
-        "tg:tawg:3470",
-    }
-    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
-    telegram_path.write_bytes(
-        JsonlCollection(telegram_path, SourceRecord).merged_bytes(
-            production_records.values()
-        )
+    job = seed(
+        tmp_path,
+        "The supplied evidence defines RVR as recomputable verification receipts.",
+        trigger_kind=TriggerKind.REPLY_TO_BOT,
+        trigger_reply_to="tg:tawg:900",
     )
-
-    production_jobs = [
-        PendingBotJob.model_validate(item)
-        for item in json.loads(
-            (PROJECT / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
-        )
-    ]
-    required_jobs = [
-        item
-        for item in production_jobs
-        if item.job_id in {"reply:tg:tawg:3466", "reply:tg:tawg:3470"}
-    ]
-    assert {item.job_id for item in required_jobs} == {
-        "reply:tg:tawg:3466",
-        "reply:tg:tawg:3470",
-    }
-    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
-    jobs_path.write_text(
-        json.dumps([item.model_dump(mode="json") for item in required_jobs]) + "\n",
-        encoding="utf-8",
+    seed_delivered_bot_reply(
+        tmp_path,
+        telegram_message_id=900,
+        reply_text="Please reply with the evidence needed for the requested RVR entry.",
     )
-    production_attempts = [
-        DeliveryAttempt.model_validate(item)
-        for item in json.loads(
-            (PROJECT / "data/state/delivery-state.json").read_text(encoding="utf-8")
-        )
-    ]
-    parent_attempt = next(
-        item for item in production_attempts if item.job_id == "reply:tg:tawg:3466"
-    )
-    (tmp_path / "data/state/delivery-state.json").write_text(
-        json.dumps([parent_attempt.model_dump(mode="json")]) + "\n",
-        encoding="utf-8",
-    )
-
-    trigger = production_records["tg:tawg:3470"]
-    reconciler = ReplyRepairReconciler(tmp_path, bot_username="trustless_ai_bot")
-    repair_id = reconciler.reconcile(now=trigger.created_at + timedelta(minutes=2))[0]
     rvr_page = (
         "---\n"
         "title: Recomputable Verification Receipts\n"
@@ -1177,7 +1126,7 @@ async def test_exact_pavlo_followup_prepares_the_rvr_entry_from_audited_conversa
         "created: '2026-08-27'\n"
         "updated: '2026-08-27'\n"
         "source_ids:\n"
-        "  - tg:tawg:3470\n"
+        f"  - {job.trigger_record_id}\n"
         "---\n\n"
         "# Recomputable Verification Receipts\n\n"
         "RVR makes verification results independently recomputable from committed "
@@ -1185,21 +1134,21 @@ async def test_exact_pavlo_followup_prepares_the_rvr_entry_from_audited_conversa
     )
     result = {
         "schema_version": "tawg.reply-result.v2",
-        "reply_text": "Added the supplied RVR entry. [tg:tawg:3470]",
+        "reply_text": f"Added the supplied RVR entry. [{job.trigger_record_id}]",
         "language": "en",
         "english_recap": None,
-        "citations": ["tg:tawg:3470"],
+        "citations": [job.trigger_record_id],
         "evidence_status": "verified",
         "verification_gaps": [],
         "correction_transaction": {
             "schema_version": "tawg.vault-transaction.v1",
-            "operation_id": repair_id,
+            "operation_id": job.job_id,
             "writes": [
                 {
                     "path": "knowledge/topics/recomputable-verification-receipts.md",
                     "expected_sha256": None,
                     "content": rvr_page,
-                    "citations": ["tg:tawg:3470"],
+                    "citations": [job.trigger_record_id],
                 }
             ],
         },
@@ -1208,31 +1157,25 @@ async def test_exact_pavlo_followup_prepares_the_rvr_entry_from_audited_conversa
     ai = ContextualFakeAi(
         "knowledge_correction",
         result,
-        context_scope="conversation",
+        context_scope="knowledge",
     )
 
     prepared = await BotReplyService(
         tmp_path,
         ai=ai,
-        bot_username="trustless_ai_bot",
-        chat_id=parent_attempt.telegram_chat_id,
-    ).prepare(repair_id, now=trigger.created_at + timedelta(minutes=3))
+        bot_username="bot",
+        chat_id=-1001,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
 
     assert prepared is not None and prepared.refusal is False
     route_context = json.loads(ai.calls[0]["context_pack"])
     routed_ids = [item["record_id"] for item in route_context["prior_messages"]]
-    assert "tg:tawg:3466" in routed_ids
-    assert "tg:tawg:3467" in routed_ids
-    assert routed_ids.index("tg:tawg:3466") < routed_ids.index("tg:tawg:3467")
+    assert "tg:tawg:900" in routed_ids
     reply_context = json.loads(ai.calls[1]["context_pack"])
-    assert [item["record_id"] for item in reply_context["reply_chain"]] == [
-        "tg:tawg:3466",
-        "tg:tawg:3467",
-    ]
-    assert reply_context["trigger"]["context_scope"] == "conversation"
+    assert reply_context["reply_chain"][-1]["record_id"] == "tg:tawg:900"
+    assert reply_context["trigger"]["context_scope"] == "knowledge"
     assert "erc_evidence_mode" not in reply_context["trigger"]
-    assert reply_context["retrieved"] == []
-    assert "tg:tawg:3470" in reply_context["citation_allowlist"]
+    assert job.trigger_record_id in reply_context["citation_allowlist"]
     assert (
         tmp_path / "knowledge/topics/recomputable-verification-receipts.md"
     ).read_text(encoding="utf-8") == rvr_page
@@ -1244,6 +1187,7 @@ async def test_exact_pavlo_followup_prepares_the_rvr_entry_from_audited_conversa
     [
         (TriggerKind.MENTION, "knowledge", ["knowledge/topics/new-entry.md"]),
         (TriggerKind.MENTION, "conversation", ["knowledge/topics/new-entry.md"]),
+        (TriggerKind.REPLY_TO_BOT, "erc", ["knowledge/topics/new-entry.md"]),
         (
             TriggerKind.REPLY_TO_BOT,
             "conversation",
@@ -1267,7 +1211,7 @@ async def test_exact_pavlo_followup_prepares_the_rvr_entry_from_audited_conversa
         ),
     ],
 )
-async def test_new_page_creation_requires_one_audited_conversation_content_page(
+async def test_new_page_creation_requires_one_audited_direct_reply_content_page(
     tmp_path: Path,
     trigger_kind: TriggerKind,
     context_scope: str,

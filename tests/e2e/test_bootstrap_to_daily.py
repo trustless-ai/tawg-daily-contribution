@@ -39,6 +39,7 @@ from tests.integration.test_live_knowledge_refresh import (
 )
 from tests.integration.test_magicians_sync import TopicClient
 from tests.integration.test_telegram_cursor import FakeTelegramApi, fixture_updates
+from tests.support.runtime_repository import initialize_empty_runtime_state
 from tests.unit.test_delivery import Checkpoint
 
 ROOT = Path(__file__).parents[2]
@@ -103,14 +104,7 @@ def scaffold(root: Path) -> None:
     (meta / "claim-ledger.json").write_text(
         '{"schema":"tawg.claim-ledger.v1","entries":{}}\n', encoding="utf-8"
     )
-    state = root / "data/state"
-    state.mkdir(parents=True)
-    for source in (ROOT / "data/state").iterdir():
-        if source.is_file():
-            (state / source.name).write_bytes(source.read_bytes())
-    (state / "source-cursors.json").write_text(
-        SourceCursors().model_dump_json(indent=2) + "\n", encoding="utf-8"
-    )
+    initialize_empty_runtime_state(root)
 
 
 def page(title: str, page_type: str, body: str, citations: list[str]) -> str:

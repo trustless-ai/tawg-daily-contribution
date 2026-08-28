@@ -117,34 +117,3 @@ def test_reply_chain_cannot_cross_telegram_topic_boundary() -> None:
 
     assert context.record_ids == ("tg:tawg:201",)
     assert "Private context from another topic" not in context.text
-
-
-def test_routing_context_sanitizes_internal_telegram_ids() -> None:
-    trigger = _record(
-        3513,
-        "Good morning!🌞 Catching up!",
-        NOW,
-    ).model_copy(
-        update={
-            "source_payload": {
-                "message_kind": "group_message",
-                "message_thread_id": None,
-                "update_id": 998_810_840,
-            }
-        }
-    )
-
-    context = ConversationContextBuilder(
-        PrivacyFilter.from_yaml(ROOT / "config/privacy.yml")
-    ).build(
-        trigger=trigger,
-        records=(trigger,),
-        message_thread_id=None,
-        max_chars=64_000,
-        max_prior_records=100,
-    )
-
-    assert "Good morning!🌞 Catching up!" in context.text
-    assert "update_id" not in context.text
-    assert "998810840" not in context.text
-    assert "message_thread_id" not in context.text

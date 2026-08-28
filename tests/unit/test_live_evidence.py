@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import hashlib
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -198,6 +199,39 @@ async def test_failed_normative_fetch_is_not_citable_and_becomes_a_gap(tmp_path:
     assert [(gap.bucket, gap.source_key, gap.safe_error_code) for gap in pack.missing_required] == [
         ("normative_spec", "erc-8004-canonical", "timeout")
     ]
+
+
+@pytest.mark.asyncio
+async def test_live_evidence_enforces_its_operation_budget_against_wall_clock(
+    tmp_path: Path,
+) -> None:
+    cancelled = asyncio.Event()
+
+    class BlockingFetcher:
+        async def fetch(self, *args: object, **kwargs: object) -> object:
+            del args, kwargs
+            try:
+                await asyncio.Event().wait()
+            finally:
+                cancelled.set()
+
+    service = LiveEvidenceService(
+        root=tmp_path,
+        registry=_registry(tmp_path),
+        fetcher=BlockingFetcher(),  # type: ignore[arg-type]
+        operation_seconds=0.02,
+    )
+    pack = await asyncio.wait_for(
+        service.build(
+            ErcQuery(erc_numbers=(8004,), intent=ErcIntent.IMPLEMENTATION), now=NOW
+        ),
+        timeout=1,
+    )
+
+    assert cancelled.is_set()
+    assert {gap.safe_error_code for gap in pack.missing_required} == {
+        "operation_deadline"
+    }
 
 
 @pytest.mark.asyncio

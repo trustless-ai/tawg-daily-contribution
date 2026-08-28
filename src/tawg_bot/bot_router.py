@@ -1211,7 +1211,11 @@ class BotReplyService:
                 )
                 if (
                     route is not BotRoute.KNOWLEDGE_CORRECTION
-                    or context_scope is not RouteContextScope.CONVERSATION
+                    or context_scope
+                    not in {
+                        RouteContextScope.CONVERSATION,
+                        RouteContextScope.KNOWLEDGE,
+                    }
                     or trigger_kind is not TriggerKind.REPLY_TO_BOT
                     or not has_audited_bot_parent
                     or len(result.correction_transaction.writes) != 1
