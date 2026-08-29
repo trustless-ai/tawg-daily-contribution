@@ -791,6 +791,10 @@ class BotReplyService:
         message = str(error)
         if message == "Claude Code exceeded its time limit":
             return "reply_model_timeout"
+        if message == "context pack exceeds its size limit":
+            return "reply_context_too_large"
+        if message == "context pack failed privacy validation":
+            return "reply_context_privacy_failed"
         if message == "Claude Code could not be started" or message.startswith(
             "Claude Code failed with exit status"
         ):

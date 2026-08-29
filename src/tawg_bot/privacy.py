@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import math
 import re
 from collections.abc import Mapping
 from dataclasses import dataclass
@@ -68,6 +69,9 @@ class PrivacyFilter:
         re.I,
     )
     _IDENTITY_CONTAINERS = frozenset({"from", "sender", "user", "actor"})
+    _UNIX_TIMESTAMP_KEYS = frozenset(
+        {"block_time", "epoch", "timestamp", "unix_timestamp"}
+    )
 
     def __init__(
         self,
@@ -229,3 +233,19 @@ class PrivacyFilter:
             raise PrivacyViolation(inspected.reason_code or "unsafe_text")
         if inspected.sanitized_text != text:
             raise PrivacyViolation("unredacted_personal_data")
+
+    def assert_public_numeric(self, value: int | float, *, parent_key: str | None) -> None:
+        if parent_key in self._drop_numeric_id_keys:
+            raise PrivacyViolation("unredacted_numeric_id")
+        if isinstance(value, float) and not math.isfinite(value):
+            raise PrivacyViolation("invalid_numeric_value")
+        if 10_000_000 <= abs(value) < 1_000_000_000_000_000:
+            is_explicit_timestamp = (
+                isinstance(value, int)
+                and parent_key is not None
+                and parent_key.casefold() in self._UNIX_TIMESTAMP_KEYS
+                and 946_684_800 <= value <= 4_102_444_800
+            )
+            if not is_explicit_timestamp:
+                raise PrivacyViolation("unredacted_numeric_identifier")
+        self.assert_public(json.dumps({"value": value}, separators=(",", ":")))

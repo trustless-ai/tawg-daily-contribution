@@ -32,6 +32,11 @@ class CompletedProcess:
     stderr: bytes
 
 
+@dataclass(frozen=True, slots=True)
+class _JsonObject:
+    pairs: list[tuple[str, Any]]
+
+
 class ProcessRunner(Protocol):
     async def run(
         self,
@@ -145,7 +150,7 @@ class ClaudeCli:
         if len(context_pack.encode("utf-8")) > 2 * 1024 * 1024:
             raise ClaudeCliError("context pack exceeds its size limit")
         try:
-            self.privacy.assert_public(context_pack)
+            self._assert_context_public(context_pack)
         except PrivacyViolation:
             raise ClaudeCliError("context pack failed privacy validation") from None
         budget = self._budget(max_budget_usd)
@@ -236,6 +241,28 @@ class ClaudeCli:
         except ValidationError:
             raise ClaudeCliError("Claude Code structured output failed schema validation") from None
         return sanitized
+
+    def _assert_context_public(self, context_pack: str) -> None:
+        try:
+            structured = json.loads(context_pack, object_pairs_hook=_JsonObject)
+        except (UnicodeError, json.JSONDecodeError):
+            self.privacy.assert_public(context_pack)
+            return
+        except (RecursionError, ValueError):
+            raise PrivacyViolation("invalid_structured_context") from None
+        pending: list[tuple[Any, str | None]] = [(structured, None)]
+        while pending:
+            value, parent_key = pending.pop()
+            if isinstance(value, str):
+                self.privacy.assert_public(value)
+            elif isinstance(value, _JsonObject):
+                for key, item in value.pairs:
+                    self.privacy.assert_public(key)
+                    pending.append((item, key))
+            elif isinstance(value, list):
+                pending.extend((item, parent_key) for item in value)
+            elif isinstance(value, int | float) and not isinstance(value, bool):
+                self.privacy.assert_public_numeric(value, parent_key=parent_key)
 
     def _executable_argv(self) -> list[str]:
         if self.executable is not None:

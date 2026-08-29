@@ -2061,6 +2061,11 @@ async def test_failed_model_attempt_returns_job_to_retryable_pending_state(
     [
         ("Claude Code exceeded its time limit", "reply_model_timeout"),
         ("Claude Code could not be started", "reply_model_process_failed"),
+        ("context pack exceeds its size limit", "reply_context_too_large"),
+        (
+            "context pack failed privacy validation",
+            "reply_context_privacy_failed",
+        ),
     ],
 )
 async def test_model_failure_is_persisted_as_a_specific_safe_code(

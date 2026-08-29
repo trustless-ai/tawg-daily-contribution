@@ -214,6 +214,247 @@ async def test_reply_policy_requires_external_evidence_to_be_paraphrased(
 
 
 @pytest.mark.asyncio
+async def test_cli_privacy_checks_json_leaves_without_treating_newline_escapes_as_email(
+    tmp_path: Path,
+) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+    context_pack = json.dumps(
+        {"evidence": "Standalone mention.\n@davidecrapis.eth added a detail."}
+    )
+
+    await cli.run(
+        job_type="reply",
+        context_pack=context_pack,
+        operation_id="structured-context-privacy",
+        max_budget_usd="0.25",
+    )
+
+    assert runner.stdin == context_pack
+
+
+@pytest.mark.asyncio
+async def test_cli_still_rejects_personal_data_inside_a_json_leaf(tmp_path: Path) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+
+    with pytest.raises(ClaudeCliError, match="context pack failed privacy validation"):
+        await cli.run(
+            job_type="reply",
+            context_pack=json.dumps({"evidence": "Contact private@example.com"}),
+            operation_id="structured-context-private-leaf",
+            max_budget_usd="0.25",
+        )
+
+    assert runner.argv == []
+
+
+@pytest.mark.asyncio
+async def test_cli_still_rejects_a_phone_number_encoded_as_a_json_number(
+    tmp_path: Path,
+) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+
+    with pytest.raises(ClaudeCliError, match="context pack failed privacy validation"):
+        await cli.run(
+            job_type="reply",
+            context_pack=json.dumps({"phone": 85_212_345_678}),
+            operation_id="structured-context-numeric-phone",
+            max_budget_usd="0.25",
+        )
+
+    assert runner.argv == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("phone", [1_415_555_012, 1_415_555_012.0, 1_415_555_012.5])
+async def test_cli_rejects_a_ten_digit_phone_encoded_as_a_json_number(
+    tmp_path: Path, phone: int | float
+) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+
+    with pytest.raises(ClaudeCliError, match="context pack failed privacy validation"):
+        await cli.run(
+            job_type="reply",
+            context_pack=json.dumps({"phone": phone}),
+            operation_id="structured-context-ten-digit-phone",
+            max_budget_usd="0.25",
+        )
+
+    assert runner.argv == []
+
+
+@pytest.mark.asyncio
+async def test_cli_allows_a_unix_timestamp_only_under_an_explicit_time_key(
+    tmp_path: Path,
+) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+    context_pack = json.dumps({"timestamp": 1_787_965_537})
+
+    await cli.run(
+        job_type="reply",
+        context_pack=context_pack,
+        operation_id="structured-context-unix-timestamp",
+        max_budget_usd="0.25",
+    )
+
+    assert runner.stdin == context_pack
+
+
+@pytest.mark.asyncio
+async def test_cli_rejects_a_configured_internal_id_encoded_as_a_json_number(
+    tmp_path: Path,
+) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+
+    with pytest.raises(ClaudeCliError, match="context pack failed privacy validation"):
+        await cli.run(
+            job_type="reply",
+            context_pack=json.dumps({"update_id": 1234}),
+            operation_id="structured-context-internal-id",
+            max_budget_usd="0.25",
+        )
+
+    assert runner.argv == []
+
+
+@pytest.mark.asyncio
+async def test_cli_privacy_traversal_handles_deep_json_without_recursion_failure(
+    tmp_path: Path,
+) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+    context_pack = "[" * 900 + '"safe"' + "]" * 900
+
+    await cli.run(
+        job_type="reply",
+        context_pack=context_pack,
+        operation_id="structured-context-deep-json",
+        max_budget_usd="0.25",
+    )
+
+    assert runner.stdin == context_pack
+
+
+@pytest.mark.asyncio
+async def test_cli_rejects_overdeep_json_instead_of_scanning_only_escaped_text(
+    tmp_path: Path,
+) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+    context_pack = "[" * 10_000 + '"private\\u0040example.com"' + "]" * 10_000
+
+    with pytest.raises(ClaudeCliError, match="context pack failed privacy validation"):
+        await cli.run(
+            job_type="reply",
+            context_pack=context_pack,
+            operation_id="structured-context-overdeep-json",
+            max_budget_usd="0.25",
+        )
+
+    assert runner.argv == []
+
+
+@pytest.mark.asyncio
+async def test_cli_rejects_an_oversized_json_integer_with_a_safe_error(
+    tmp_path: Path,
+) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+    context_pack = '{"number":' + "1" * 5000 + "}"
+
+    with pytest.raises(ClaudeCliError, match="context pack failed privacy validation"):
+        await cli.run(
+            job_type="reply",
+            context_pack=context_pack,
+            operation_id="structured-context-oversized-integer",
+            max_budget_usd="0.25",
+        )
+
+    assert runner.argv == []
+
+
+@pytest.mark.asyncio
+async def test_cli_rejects_a_non_finite_json_number(tmp_path: Path) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+
+    with pytest.raises(ClaudeCliError, match="context pack failed privacy validation"):
+        await cli.run(
+            job_type="reply",
+            context_pack='{"number":NaN}',
+            operation_id="structured-context-non-finite-number",
+            max_budget_usd="0.25",
+        )
+
+    assert runner.argv == []
+
+
+@pytest.mark.asyncio
 async def test_daily_uses_bounded_configurable_effort(tmp_path: Path) -> None:
     runner = CapturingRunner(outer_daily())
     cli = ClaudeCli(
