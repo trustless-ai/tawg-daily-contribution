@@ -657,6 +657,8 @@ class TelegramIntake:
             return TriggerKind.REPLY_TO_BOT
         if self._has_explicit_mention(message):
             return TriggerKind.MENTION
+        if self._has_bot_command(message):
+            return None
         text = message.get("text", message.get("caption", ""))
         if isinstance(text, str) and self._is_greeting_candidate(text):
             return TriggerKind.GREETING_CANDIDATE
@@ -678,9 +680,15 @@ class TelegramIntake:
             value = self._utf16_slice(text, offset, length).casefold()
             if entity_type == "mention" and value == f"@{self.bot_username}":
                 return True
-            if entity_type == "bot_command" and value.endswith(f"@{self.bot_username}"):
-                return True
         return False
+
+    @staticmethod
+    def _has_bot_command(message: dict[str, Any]) -> bool:
+        entities = message.get("entities", message.get("caption_entities", []))
+        return isinstance(entities, list) and any(
+            isinstance(entity, dict) and entity.get("type") == "bot_command"
+            for entity in entities
+        )
 
     @classmethod
     def _is_greeting_candidate(cls, text: str) -> bool:
@@ -758,6 +766,11 @@ def _verify_envelope(
     ).hexdigest()
     if not hmac.compare_digest(envelope.integrity_digest, expected):
         raise ValueError("Telegram webhook envelope integrity check failed")
+    if (
+        any(entity.entity_type == "bot_command" for entity in envelope.entities)
+        and not envelope.has_bot_command
+    ):
+        raise ValueError("Telegram webhook envelope command metadata is invalid")
     expected_trigger = telegram_entities_trigger_reply(
         envelope.entities,
         bot_username=bot_username,
@@ -783,6 +796,8 @@ def _message_from_envelope(
             trigger_kind = TriggerKind.REPLY_TO_BOT
         elif envelope.triggers_reply:
             trigger_kind = TriggerKind.MENTION
+        elif envelope.has_bot_command:
+            trigger_kind = None
         elif TelegramIntake._is_greeting_candidate(envelope.text):
             trigger_kind = TriggerKind.GREETING_CANDIDATE
     return _TelegramMessage(

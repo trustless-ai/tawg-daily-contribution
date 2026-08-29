@@ -402,6 +402,43 @@ async def test_greeting_matching_uses_words_and_never_starts_a_bot_loop(
 
 
 @pytest.mark.asyncio
+async def test_paths_and_bot_commands_do_not_create_reply_jobs(tmp_path: Path) -> None:
+    seed_repository(tmp_path)
+    updates = [
+        telegram_update(1_200, "The receipt is live-pinned on /ledger for review."),
+        telegram_update(1_201, "Clients POST /observations after verification."),
+        telegram_update(1_202, "/ask@tawg_helper summarize the proposal"),
+        telegram_update(1_203, "/hello"),
+    ]
+    updates[0]["message"]["entities"] = [
+        {"type": "bot_command", "offset": 30, "length": 7}
+    ]
+    updates[1]["message"]["entities"] = [
+        {"type": "bot_command", "offset": 13, "length": 13}
+    ]
+    updates[2]["message"]["entities"] = [
+        {"type": "bot_command", "offset": 0, "length": 16}
+    ]
+    updates[3]["message"]["entities"] = [
+        {"type": "bot_command", "offset": 0, "length": 6}
+    ]
+
+    result = await TelegramIntake(
+        root=tmp_path,
+        api=FakeTelegramApi(updates),
+        chat_id=-100424242,
+        group_slug="tawg",
+        bot_username="tawg_helper",
+    ).collect(NOW)
+
+    assert result.persisted == 4
+    assert result.jobs_created == 0
+    assert json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    ) == []
+
+
+@pytest.mark.asyncio
 async def test_intake_persists_all_target_messages_jobs_and_cursor_atomically(
     tmp_path: Path,
 ) -> None:
@@ -422,7 +459,7 @@ async def test_intake_persists_all_target_messages_jobs_and_cursor_atomically(
     assert result.received == 7
     assert result.persisted == 5
     assert result.filtered == 1
-    assert result.jobs_created == 2
+    assert result.jobs_created == 1
     assert result.next_offset == 107
     records_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
     records = [json.loads(line) for line in records_path.read_text().splitlines()]
@@ -443,9 +480,8 @@ async def test_intake_persists_all_target_messages_jobs_and_cursor_atomically(
     assert "-100424242" not in serialized
     assert "secret-photo-file-id" not in serialized
     jobs = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())
-    assert [job["trigger_record_id"] for job in jobs] == ["tg:tawg:503", "tg:tawg:504"]
+    assert [job["trigger_record_id"] for job in jobs] == ["tg:tawg:503"]
     assert jobs[0]["message_thread_id"] == 700
-    assert jobs[1]["message_thread_id"] is None
     cursors = json.loads((tmp_path / "data/state/source-cursors.json").read_text())
     assert cursors["telegram_offset"] == 107
     assert not (tmp_path / "data/state/telegram-webhook-receipts.json").exists()
@@ -482,7 +518,7 @@ async def test_replayed_batch_after_source_only_checkpoint_is_idempotent(tmp_pat
     records = (tmp_path / "data/telegram/2026/08/messages.jsonl").read_text().splitlines()
     jobs = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())
     assert len(records) == 5
-    assert len(jobs) == 2
+    assert len(jobs) == 1
     assert jobs[0]["message_thread_id"] == 700
 
 

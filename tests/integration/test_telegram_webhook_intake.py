@@ -7,11 +7,14 @@ import pytest
 from pydantic import ValidationError
 
 from tawg_bot.models import SourceRecord, SourceType, TelegramWebhookReceipts
+from tawg_bot.privacy import PrivacyFilter
 from tawg_bot.telegram_intake import ingest_envelopes
 from tawg_bot.telegram_webhook import (
     TelegramWebhookAttachment,
+    TelegramWebhookConfig,
     TelegramWebhookEntity,
     TelegramWebhookEnvelope,
+    TelegramWebhookNormalizer,
 )
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
@@ -46,6 +49,7 @@ def envelope(
     reply_to_message_id: int | None = None,
     message_thread_id: int | None = None,
     author_is_bot: bool = False,
+    has_bot_command: bool = False,
     entities: tuple[TelegramWebhookEntity, ...] = (),
     attachments: tuple[TelegramWebhookAttachment, ...] = (),
 ) -> TelegramWebhookEnvelope:
@@ -63,6 +67,7 @@ def envelope(
         reply_to_message_id=reply_to_message_id,
         message_thread_id=message_thread_id,
         entities=entities,
+        has_bot_command=has_bot_command,
         attachments=attachments,
         triggers_reply=triggers_reply,
         integrity_digest="0" * 64,
@@ -153,16 +158,88 @@ def test_envelopes_persist_context_and_create_jobs_only_for_reply_triggers(
     assert not (tmp_path / "data/state/source-cursors.json").exists()
 
 
+def test_bot_command_cannot_fall_through_to_greeting_candidate(tmp_path: Path) -> None:
+    seed_repository(tmp_path)
+    command = envelope(
+        update_id=502,
+        message_id=42,
+        text="/hello",
+        entities=(
+            TelegramWebhookEntity(
+                entity_type="bot_command", offset=0, length=6, value="/hello"
+            ),
+        ),
+        has_bot_command=True,
+    )
+
+    result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(command,),
+        now=NOW,
+    )
+
+    assert result.persisted == 1
+    assert result.jobs_created == 0
+    assert json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    ) == []
+
+
+def test_redacted_bot_command_marker_survives_webhook_to_intake(tmp_path: Path) -> None:
+    seed_repository(tmp_path)
+    normalizer = TelegramWebhookNormalizer(
+        config=TelegramWebhookConfig(
+            secret_token="x" * 32,
+            chat_id=-100_123_456,
+            group_slug="tawg",
+            bot_username="tawg_bot",
+        ),
+        privacy=PrivacyFilter.from_yaml(tmp_path / "config/privacy.yml"),
+    )
+    body = json.dumps(
+        {
+            "update_id": 503,
+            "message": {
+                "message_id": 43,
+                "date": int(NOW.timestamp()),
+                "chat": {"id": -100_123_456, "type": "supergroup"},
+                "from": {"first_name": "Alice"},
+                "text": "/hello alice@example.com",
+                "entities": [{"type": "bot_command", "offset": 0, "length": 6}],
+            },
+        }
+    ).encode()
+
+    decision = normalizer.process("x" * 32, body)
+
+    assert decision.disposition == "dispatch"
+    assert decision.envelope is not None
+    assert decision.envelope.text == "/hello [REDACTED_EMAIL]"
+    assert decision.envelope.entities == ()
+    assert decision.envelope.has_bot_command is True
+    result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(decision.envelope,),
+        now=NOW,
+    )
+    assert result.persisted == 1
+    assert result.jobs_created == 0
+
+
 def test_replay_is_a_noop_but_an_older_unseen_update_is_ingested(tmp_path: Path) -> None:
     seed_repository(tmp_path)
     mention = envelope(
         update_id=900,
         message_id=90,
-        text="/ask",
+        text="@tawg_bot ask",
         triggers_reply=True,
         entities=(
             TelegramWebhookEntity(
-                entity_type="bot_command", offset=0, length=4, value="/ask"
+                entity_type="mention", offset=0, length=9, value="@tawg_bot"
             ),
         ),
     )
@@ -623,6 +700,32 @@ def test_reply_trigger_without_a_valid_entity_is_rejected_before_ingestion(
 
     assert not (tmp_path / "data/telegram").exists()
     assert not (tmp_path / "data/state/telegram-webhook-receipts.json").exists()
+    assert json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text()) == []
+
+
+def test_bot_command_entity_without_command_marker_is_rejected(tmp_path: Path) -> None:
+    seed_repository(tmp_path)
+    inconsistent = envelope(
+        update_id=802,
+        message_id=82,
+        text="/hello",
+        entities=(
+            TelegramWebhookEntity(
+                entity_type="bot_command", offset=0, length=6, value="/hello"
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="command metadata"):
+        ingest_envelopes(
+            root=tmp_path,
+            group_slug="tawg",
+            bot_username="tawg_bot",
+            envelopes=(inconsistent,),
+            now=NOW,
+        )
+
+    assert not (tmp_path / "data/telegram").exists()
     assert json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text()) == []
 
 

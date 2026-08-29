@@ -86,6 +86,7 @@ def test_group_message_dispatches_a_minimal_sanitized_envelope() -> None:
         "reply_to_message_id": None,
         "message_thread_id": None,
         "entities": (),
+        "has_bot_command": False,
         "attachments": (),
         "triggers_reply": False,
     }
@@ -130,14 +131,18 @@ def test_edited_message_dispatches_with_its_edit_timestamp() -> None:
 
 
 @pytest.mark.parametrize(
-    ("caption", "entity_type", "offset", "length"),
+    ("caption", "entity_type", "offset", "length", "triggers_reply"),
     [
-        ("🙂 @tawg_bot please help", "mention", 3, 9),
-        ("🙂 /ask@tawg_bot please help", "bot_command", 3, 13),
+        ("🙂 @tawg_bot please help", "mention", 3, 9, True),
+        ("🙂 /ask@tawg_bot please help", "bot_command", 3, 13, False),
     ],
 )
 def test_caption_media_preserves_safe_metadata_and_utf16_reply_trigger(
-    caption: str, entity_type: str, offset: int, length: int
+    caption: str,
+    entity_type: str,
+    offset: int,
+    length: int,
+    triggers_reply: bool,
 ) -> None:
     normalizer = TelegramWebhookNormalizer(
         config=TelegramWebhookConfig(
@@ -176,13 +181,14 @@ def test_caption_media_preserves_safe_metadata_and_utf16_reply_trigger(
         "length": length,
         "value": "@tawg_bot" if entity_type == "mention" else "/ask@tawg_bot",
     }
+    assert decision.envelope.has_bot_command is (entity_type == "bot_command")
     assert decision.envelope.attachments[0].model_dump() == {
         "media_type": "photo",
         "has_caption": True,
     }
     assert decision.envelope.reply_to_message_id == 41
     assert decision.envelope.message_thread_id == 13
-    assert decision.envelope.triggers_reply is True
+    assert decision.envelope.triggers_reply is triggers_reply
 
 
 @pytest.mark.parametrize(
@@ -609,16 +615,17 @@ def test_recursively_nested_json_returns_a_safe_rejection() -> None:
 
 
 @pytest.mark.parametrize(
-    ("command", "length", "triggers_reply"),
+    ("text", "offset", "length"),
     [
-        ("/ask", 4, True),
-        ("/ask@tawg_bot", 13, True),
-        ("/ask@other_bot", 14, False),
+        ("/ask", 0, 4),
+        ("/ask@tawg_bot", 0, 13),
+        ("/ask@other_bot", 0, 14),
+        ("/hello", 0, 6),
+        ("The receipt is live-pinned on /ledger for review.", 30, 7),
+        ("Clients POST /observations after verification.", 13, 13),
     ],
 )
-def test_command_trigger_accepts_unqualified_and_this_bot_only(
-    command: str, length: int, triggers_reply: bool
-) -> None:
+def test_bot_commands_never_trigger_a_reply(text: str, offset: int, length: int) -> None:
     normalizer = TelegramWebhookNormalizer(
         config=TelegramWebhookConfig(
             secret_token=VALID_WEBHOOK_SECRET,
@@ -635,8 +642,10 @@ def test_command_trigger_accepts_unqualified_and_this_bot_only(
                 "message_id": 58,
                 "date": 1_788_000_014,
                 "chat": {"id": -100_123_456, "type": "supergroup"},
-                "text": command,
-                "entities": [{"type": "bot_command", "offset": 0, "length": length}],
+                "text": text,
+                "entities": [
+                    {"type": "bot_command", "offset": offset, "length": length}
+                ],
             },
         }
     ).encode()
@@ -645,4 +654,5 @@ def test_command_trigger_accepts_unqualified_and_this_bot_only(
 
     assert decision.disposition == "dispatch"
     assert decision.envelope is not None
-    assert decision.envelope.triggers_reply is triggers_reply
+    assert decision.envelope.has_bot_command is True
+    assert decision.envelope.triggers_reply is False

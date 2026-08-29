@@ -67,6 +67,7 @@ class TelegramWebhookEnvelope(_FrozenStrictModel):
     reply_to_message_id: int | None = Field(default=None, ge=0)
     message_thread_id: int | None = Field(default=None, ge=0)
     entities: tuple[TelegramWebhookEntity, ...] = ()
+    has_bot_command: bool = False
     attachments: tuple[TelegramWebhookAttachment, ...] = ()
     triggers_reply: bool
     integrity_digest: str = Field(pattern=r"^[a-f0-9]{64}$")
@@ -86,10 +87,6 @@ def telegram_entities_trigger_reply(
     for entity in entities:
         value = entity.value.casefold()
         if entity.entity_type == "mention" and value == f"@{normalized_bot_username}":
-            return True
-        if entity.entity_type == "bot_command" and (
-            "@" not in value or value.endswith(f"@{normalized_bot_username}")
-        ):
             return True
     return False
 
@@ -235,6 +232,7 @@ class TelegramWebhookNormalizer:
         )
         if entities is None:
             return None, entity_reason or "malformed_update"
+        has_bot_command = any(entity.entity_type == "bot_command" for entity in entities)
         if text_result.sanitized_text != text:
             entities = ()
         reply = message.get("reply_to_message")
@@ -266,6 +264,7 @@ class TelegramWebhookNormalizer:
             "reply_to_message_id": reply_to_message_id,
             "message_thread_id": message_thread_id,
             "entities": entities,
+            "has_bot_command": has_bot_command,
             "attachments": attachments,
             "triggers_reply": telegram_entities_trigger_reply(
                 entities,
