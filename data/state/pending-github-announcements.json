@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "mzf11125",
-    "event_id": "github-announcement:pr_merged:a938246d18991f1c57cc1b43",
-    "kind": "pr_merged",
-    "number": 25,
-    "occurred_at": "2026-08-29T17:14:06Z",
-    "repository": "trustless-ai/agent-sdk",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "test(erc8354): real UltraHonk proof end to end, and close the CI gating hole"
-  }
-]
+[]
