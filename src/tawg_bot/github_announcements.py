@@ -1,0 +1,724 @@
+"""Deterministic GitHub activity announcements for the TAWG Telegram group."""
+
+from __future__ import annotations
+
+import hashlib
+import json
+import re
+from collections.abc import Mapping
+from datetime import UTC, datetime
+from enum import StrEnum
+from pathlib import Path
+from typing import Any, Literal, Protocol, cast
+from urllib.parse import quote
+
+import httpx
+from pydantic import Field, ValidationError, field_validator, model_validator
+
+from tawg_bot.models import StrictModel
+from tawg_bot.unit_of_work import RepositoryUnitOfWork
+
+_REPOSITORY = re.compile(r"^trustless-ai/[A-Za-z0-9_.-]{1,100}$")
+_LOGIN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:\[bot\])?$")
+_GIT_SHA = re.compile(r"^[a-f0-9]{40,64}$")
+_MAX_GITHUB_PAGES = 10
+
+
+class GitHubAnnouncementRejected(ValueError):
+    """Raised when GitHub metadata or durable announcement state is incomplete."""
+
+
+class GitHubAnnouncementClient(Protocol):
+    async def get_json(
+        self,
+        path: str,
+        params: dict[str, object] | None = None,
+    ) -> list[Any] | dict[str, Any]: ...
+
+
+class PublicGitHubHttpClient:
+    """Unauthenticated, read-only GitHub client used only for local baselining."""
+
+    def __init__(self, *, client: httpx.AsyncClient) -> None:
+        self.client = client
+        self.headers = {
+            "Accept": "application/vnd.github+json",
+            "X-GitHub-Api-Version": "2026-03-10",
+        }
+
+    async def get_json(
+        self,
+        path: str,
+        params: dict[str, object] | None = None,
+    ) -> list[Any] | dict[str, Any]:
+        if not path.startswith("/") or path.startswith("//"):
+            raise GitHubAnnouncementRejected("GitHub API path is invalid")
+        try:
+            response = await self.client.get(
+                f"https://api.github.com{path}",
+                params=cast(Any, params),
+                headers=self.headers,
+            )
+        except httpx.HTTPError:
+            raise GitHubAnnouncementRejected("GitHub bootstrap request failed") from None
+        if not response.is_success:
+            raise GitHubAnnouncementRejected("GitHub bootstrap request was rejected")
+        try:
+            payload = response.json()
+        except ValueError:
+            raise GitHubAnnouncementRejected("GitHub bootstrap response was invalid") from None
+        if not isinstance(payload, list | dict):
+            raise GitHubAnnouncementRejected("GitHub bootstrap response was invalid")
+        return payload
+
+
+def _require_utc(value: datetime) -> datetime:
+    if value.tzinfo is None or value.utcoffset() != UTC.utcoffset(value):
+        raise ValueError("GitHub announcement timestamps must use UTC")
+    return value.astimezone(UTC)
+
+
+class GitHubAnnouncementKind(StrEnum):
+    PR_OPENED = "pr_opened"
+    PR_UPDATED = "pr_updated"
+    PR_MERGED = "pr_merged"
+    ISSUE_OPENED = "issue_opened"
+
+
+class GitHubPullSnapshot(StrictModel):
+    number: int = Field(ge=1)
+    title: str = Field(min_length=1, max_length=512)
+    author_login: str = Field(pattern=_LOGIN.pattern)
+    head_sha: str = Field(pattern=_GIT_SHA.pattern)
+    created_at: datetime
+    updated_at: datetime
+    merged_at: datetime | None = None
+    merge_commit_sha: str | None = Field(default=None, pattern=_GIT_SHA.pattern)
+
+    _created_at_utc = field_validator("created_at")(_require_utc)
+    _updated_at_utc = field_validator("updated_at")(_require_utc)
+
+    @field_validator("merged_at")
+    @classmethod
+    def merged_at_is_utc(cls, value: datetime | None) -> datetime | None:
+        return None if value is None else _require_utc(value)
+
+    @model_validator(mode="after")
+    def merge_fields_are_consistent(self) -> GitHubPullSnapshot:
+        if (self.merged_at is None) != (self.merge_commit_sha is None):
+            raise ValueError("merged PR metadata must include both merge fields")
+        return self
+
+
+class GitHubIssueSnapshot(StrictModel):
+    number: int = Field(ge=1)
+    title: str = Field(min_length=1, max_length=512)
+    author_login: str = Field(pattern=_LOGIN.pattern)
+    created_at: datetime
+    updated_at: datetime
+
+    _created_at_utc = field_validator("created_at")(_require_utc)
+    _updated_at_utc = field_validator("updated_at")(_require_utc)
+
+
+class GitHubRepositorySnapshot(StrictModel):
+    full_name: str = Field(pattern=_REPOSITORY.pattern)
+    open_pulls: tuple[GitHubPullSnapshot, ...] = ()
+    recently_closed_pulls: tuple[GitHubPullSnapshot, ...] = ()
+    open_issues: tuple[GitHubIssueSnapshot, ...] = ()
+
+    @model_validator(mode="after")
+    def item_numbers_are_unique(self) -> GitHubRepositorySnapshot:
+        for items in (self.open_pulls, self.recently_closed_pulls, self.open_issues):
+            numbers = [item.number for item in items]
+            if len(numbers) != len(set(numbers)):
+                raise ValueError("GitHub repository snapshot item numbers must be unique")
+        return self
+
+
+class GitHubScanSnapshot(StrictModel):
+    repositories: tuple[GitHubRepositorySnapshot, ...]
+
+    @model_validator(mode="after")
+    def repository_names_are_unique(self) -> GitHubScanSnapshot:
+        names = [item.full_name for item in self.repositories]
+        if len(names) != len(set(names)):
+            raise ValueError("GitHub repository snapshots must be unique")
+        return self
+
+
+class GitHubPullState(StrictModel):
+    number: int = Field(ge=1)
+    head_sha: str = Field(pattern=_GIT_SHA.pattern)
+    merge_commit_sha: str | None = Field(default=None, pattern=_GIT_SHA.pattern)
+
+
+class GitHubRepositoryState(StrictModel):
+    full_name: str = Field(pattern=_REPOSITORY.pattern)
+    initialized_at: datetime
+    checked_at: datetime
+    pulls: tuple[GitHubPullState, ...] = ()
+    issue_numbers: tuple[int, ...] = ()
+
+    _initialized_at_utc = field_validator("initialized_at")(_require_utc)
+    _checked_at_utc = field_validator("checked_at")(_require_utc)
+
+    @model_validator(mode="after")
+    def state_keys_are_unique(self) -> GitHubRepositoryState:
+        pull_numbers = [item.number for item in self.pulls]
+        if len(pull_numbers) != len(set(pull_numbers)):
+            raise ValueError("GitHub PR state numbers must be unique")
+        if len(self.issue_numbers) != len(set(self.issue_numbers)):
+            raise ValueError("GitHub issue state numbers must be unique")
+        return self
+
+
+class GitHubAnnouncementState(StrictModel):
+    schema_version: Literal["tawg.github-announcement-state.v1"] = (
+        "tawg.github-announcement-state.v1"
+    )
+    initialized_at: datetime
+    repositories: tuple[GitHubRepositoryState, ...]
+
+    _initialized_at_utc = field_validator("initialized_at")(_require_utc)
+
+    @model_validator(mode="after")
+    def repository_state_names_are_unique(self) -> GitHubAnnouncementState:
+        names = [item.full_name for item in self.repositories]
+        if len(names) != len(set(names)):
+            raise ValueError("GitHub repository state names must be unique")
+        return self
+
+
+class GitHubAnnouncement(StrictModel):
+    schema_version: Literal["tawg.github-announcement.v1"] = "tawg.github-announcement.v1"
+    event_id: str = Field(pattern=r"^github-announcement:[a-z_]+:[a-f0-9]{24}$")
+    kind: GitHubAnnouncementKind
+    repository: str = Field(pattern=_REPOSITORY.pattern)
+    number: int = Field(ge=1)
+    title: str = Field(min_length=1, max_length=512)
+    author_login: str = Field(pattern=_LOGIN.pattern)
+    occurred_at: datetime
+
+    _occurred_at_utc = field_validator("occurred_at")(_require_utc)
+
+
+class GitHubReconcileResult(StrictModel):
+    state: GitHubAnnouncementState
+    events: tuple[GitHubAnnouncement, ...]
+
+
+class GitHubAnnouncementBatch(StrictModel):
+    state: GitHubAnnouncementState
+    pending: tuple[GitHubAnnouncement, ...]
+
+
+class GitHubAnnouncementScanner:
+    """Fetch public organization metadata and stage a retry-safe announcement queue."""
+
+    STATE_PATH = "data/state/github-announcement-state.json"
+    PENDING_PATH = "data/state/pending-github-announcements.json"
+
+    def __init__(
+        self,
+        root: Path,
+        *,
+        client: GitHubAnnouncementClient | None,
+    ) -> None:
+        self.root = root.resolve()
+        self.client = client
+
+    async def bootstrap(self, *, now: datetime) -> GitHubAnnouncementBatch:
+        """Fetch only open items and create a silent first baseline."""
+
+        _require_utc(now)
+        if self.client is None:
+            raise GitHubAnnouncementRejected("GitHub client is unavailable")
+        if (self.root / self.STATE_PATH).exists() or (self.root / self.PENDING_PATH).exists():
+            raise GitHubAnnouncementRejected("GitHub announcement baseline already exists")
+        try:
+            snapshot = await self._snapshot(previous=None)
+            state = bootstrap_announcement_state(snapshot, now=now)
+        except GitHubAnnouncementRejected:
+            raise
+        except Exception:
+            raise GitHubAnnouncementRejected("GitHub announcement bootstrap incomplete") from None
+        return GitHubAnnouncementBatch(state=state, pending=())
+
+    async def scan(self, *, now: datetime) -> GitHubAnnouncementBatch:
+        """Fetch one complete L2 snapshot and merge new events into the durable queue."""
+
+        _require_utc(now)
+        if self.client is None:
+            raise GitHubAnnouncementRejected("GitHub client is unavailable")
+        try:
+            previous = self._load_state()
+            snapshot = await self._snapshot(previous=previous)
+            reconciled = reconcile_announcements(previous, snapshot, now=now)
+            pending = self._merge_pending(self.pending(), reconciled.events)
+            return GitHubAnnouncementBatch(state=reconciled.state, pending=pending)
+        except GitHubAnnouncementRejected:
+            raise
+        except Exception:
+            raise GitHubAnnouncementRejected("GitHub announcement scan incomplete") from None
+
+    def stage(
+        self,
+        batch: GitHubAnnouncementBatch,
+        uow: RepositoryUnitOfWork,
+    ) -> None:
+        if uow.root != self.root:
+            raise GitHubAnnouncementRejected("scanner and unit of work roots differ")
+        uow.stage_json(self.STATE_PATH, batch.state.model_dump(mode="json"))
+        uow.stage_json(
+            self.PENDING_PATH,
+            [item.model_dump(mode="json") for item in batch.pending],
+        )
+
+    def pending(self) -> tuple[GitHubAnnouncement, ...]:
+        path = self.root / self.PENDING_PATH
+        try:
+            if path.is_symlink() or not path.is_file():
+                raise OSError
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(raw, list):
+                raise ValueError
+            pending = tuple(GitHubAnnouncement.model_validate(item) for item in raw)
+        except (OSError, UnicodeError, ValueError, ValidationError, json.JSONDecodeError):
+            raise GitHubAnnouncementRejected(
+                "pending GitHub announcement state is invalid"
+            ) from None
+        if len({item.event_id for item in pending}) != len(pending):
+            raise GitHubAnnouncementRejected("pending GitHub announcements are duplicated")
+        return pending
+
+    def acknowledge(self, event_id: str) -> None:
+        pending = self.pending()
+        remaining = tuple(item for item in pending if item.event_id != event_id)
+        if len(remaining) == len(pending):
+            return
+        digest = hashlib.sha256(event_id.encode("utf-8")).hexdigest()[:24]
+        uow = RepositoryUnitOfWork(
+            self.root,
+            operation_id=f"github-announcement-ack:{digest}",
+        )
+        uow.register_external_evidence(())
+        uow.stage_json(
+            self.PENDING_PATH,
+            [item.model_dump(mode="json") for item in remaining],
+        )
+        uow.publish()
+
+    async def _snapshot(
+        self,
+        *,
+        previous: GitHubAnnouncementState | None,
+    ) -> GitHubScanSnapshot:
+        repositories = await self._pages(
+            "/orgs/trustless-ai/repos",
+            {"type": "public", "sort": "full_name", "direction": "asc"},
+        )
+        previous_by_name = (
+            {} if previous is None else {item.full_name: item for item in previous.repositories}
+        )
+        snapshots: list[GitHubRepositorySnapshot] = []
+        for raw in repositories:
+            full_name = self._repository_name(raw)
+            if full_name is None:
+                continue
+            open_pulls = tuple(
+                self._pull(item, expected_state="open")
+                for item in await self._pages(
+                    f"/repos/{full_name}/pulls",
+                    {"state": "open", "sort": "updated", "direction": "asc"},
+                )
+            )
+            open_issues = tuple(
+                self._issue(item)
+                for item in await self._pages(
+                    f"/repos/{full_name}/issues",
+                    {"state": "open", "sort": "created", "direction": "asc"},
+                )
+                if "pull_request" not in item
+            )
+            old = previous_by_name.get(full_name)
+            recently_closed = (
+                ()
+                if old is None
+                else tuple(await self._recently_closed_pulls(full_name, since=old.checked_at))
+            )
+            snapshots.append(
+                GitHubRepositorySnapshot(
+                    full_name=full_name,
+                    open_pulls=open_pulls,
+                    recently_closed_pulls=recently_closed,
+                    open_issues=open_issues,
+                )
+            )
+        return GitHubScanSnapshot(repositories=tuple(snapshots))
+
+    async def _recently_closed_pulls(
+        self,
+        full_name: str,
+        *,
+        since: datetime,
+    ) -> list[GitHubPullSnapshot]:
+        assert self.client is not None
+        boundary = since.replace(microsecond=0)
+        recent: list[GitHubPullSnapshot] = []
+        for page in range(1, _MAX_GITHUB_PAGES + 1):
+            payload = await self.client.get_json(
+                f"/repos/{full_name}/pulls",
+                {
+                    "state": "closed",
+                    "sort": "updated",
+                    "direction": "desc",
+                    "per_page": 100,
+                    "page": page,
+                },
+            )
+            items = self._metadata_page(payload)
+            parsed = [self._pull(item, expected_state="closed") for item in items]
+            # GitHub timestamps are only precise to the second, while the scheduler's
+            # cursor may contain microseconds. Include the boundary second and rely on
+            # durable event identifiers/state to deduplicate it on the next scan.
+            recent.extend(item for item in parsed if item.updated_at >= boundary)
+            if len(items) < 100 or (parsed and parsed[-1].updated_at < boundary):
+                return recent
+        raise GitHubAnnouncementRejected("GitHub closed PR pagination exceeded its budget")
+
+    async def _pages(
+        self,
+        path: str,
+        params: dict[str, object],
+    ) -> list[dict[str, Any]]:
+        assert self.client is not None
+        items: list[dict[str, Any]] = []
+        for page in range(1, _MAX_GITHUB_PAGES + 1):
+            payload = await self.client.get_json(
+                path,
+                {**params, "per_page": 100, "page": page},
+            )
+            current = self._metadata_page(payload)
+            items.extend(current)
+            if len(current) < 100:
+                return items
+        raise GitHubAnnouncementRejected("GitHub pagination exceeded its budget")
+
+    @staticmethod
+    def _metadata_page(payload: object) -> list[dict[str, Any]]:
+        if not isinstance(payload, list) or not all(isinstance(item, dict) for item in payload):
+            raise GitHubAnnouncementRejected("GitHub announcement scan incomplete")
+        return payload
+
+    @staticmethod
+    def _repository_name(payload: Mapping[str, object]) -> str | None:
+        if payload.get("private") is True:
+            return None
+        full_name = payload.get("full_name")
+        if not isinstance(full_name, str) or _REPOSITORY.fullmatch(full_name) is None:
+            raise GitHubAnnouncementRejected("GitHub repository metadata is invalid")
+        return full_name
+
+    @staticmethod
+    def _pull(
+        payload: Mapping[str, object],
+        *,
+        expected_state: Literal["open", "closed"],
+    ) -> GitHubPullSnapshot:
+        user = payload.get("user")
+        head = payload.get("head")
+        if (
+            payload.get("state") != expected_state
+            or not isinstance(user, Mapping)
+            or not isinstance(head, Mapping)
+        ):
+            raise GitHubAnnouncementRejected("GitHub PR metadata is invalid")
+        merged_at = _timestamp(payload.get("merged_at"), optional=True)
+        merge_commit_sha = payload.get("merge_commit_sha") if merged_at is not None else None
+        try:
+            return GitHubPullSnapshot(
+                number=payload.get("number"),
+                title=payload.get("title"),
+                author_login=user.get("login"),
+                head_sha=head.get("sha"),
+                created_at=_timestamp(payload.get("created_at")),
+                updated_at=_timestamp(payload.get("updated_at")),
+                merged_at=merged_at,
+                merge_commit_sha=merge_commit_sha,
+            )
+        except (TypeError, ValidationError, ValueError):
+            raise GitHubAnnouncementRejected("GitHub PR metadata is invalid") from None
+
+    @staticmethod
+    def _issue(payload: Mapping[str, object]) -> GitHubIssueSnapshot:
+        user = payload.get("user")
+        if payload.get("state") != "open" or not isinstance(user, Mapping):
+            raise GitHubAnnouncementRejected("GitHub issue metadata is invalid")
+        try:
+            return GitHubIssueSnapshot(
+                number=payload.get("number"),
+                title=payload.get("title"),
+                author_login=user.get("login"),
+                created_at=_timestamp(payload.get("created_at")),
+                updated_at=_timestamp(payload.get("updated_at")),
+            )
+        except (TypeError, ValidationError, ValueError):
+            raise GitHubAnnouncementRejected("GitHub issue metadata is invalid") from None
+
+    def _load_state(self) -> GitHubAnnouncementState:
+        path = self.root / self.STATE_PATH
+        try:
+            if path.is_symlink() or not path.is_file():
+                raise OSError
+            return GitHubAnnouncementState.model_validate_json(path.read_text(encoding="utf-8"))
+        except (OSError, UnicodeError, ValidationError):
+            raise GitHubAnnouncementRejected(
+                "GitHub announcement baseline state is invalid"
+            ) from None
+
+    @staticmethod
+    def _merge_pending(
+        existing: tuple[GitHubAnnouncement, ...],
+        new: tuple[GitHubAnnouncement, ...],
+    ) -> tuple[GitHubAnnouncement, ...]:
+        by_id = {item.event_id: item for item in existing}
+        for item in new:
+            previous = by_id.get(item.event_id)
+            if previous is not None and previous != item:
+                raise GitHubAnnouncementRejected("GitHub announcement event ID conflicts")
+            by_id[item.event_id] = item
+        return tuple(
+            sorted(
+                by_id.values(),
+                key=lambda item: (
+                    item.occurred_at,
+                    item.repository,
+                    item.number,
+                    item.kind.value,
+                ),
+            )
+        )
+
+
+def bootstrap_announcement_state(
+    snapshot: GitHubScanSnapshot,
+    *,
+    now: datetime,
+) -> GitHubAnnouncementState:
+    """Build a silent baseline from only currently open PRs and issues."""
+
+    _require_utc(now)
+    repositories = tuple(
+        _baseline_repository(item, now=now)
+        for item in sorted(snapshot.repositories, key=lambda value: value.full_name)
+    )
+    return GitHubAnnouncementState(initialized_at=now, repositories=repositories)
+
+
+def reconcile_announcements(
+    previous: GitHubAnnouncementState,
+    snapshot: GitHubScanSnapshot,
+    *,
+    now: datetime,
+) -> GitHubReconcileResult:
+    """Advance durable state and return at most one deterministic event per item."""
+
+    _require_utc(now)
+    previous_by_name = {item.full_name: item for item in previous.repositories}
+    repositories: list[GitHubRepositoryState] = []
+    events: list[GitHubAnnouncement] = []
+    for current in sorted(snapshot.repositories, key=lambda item: item.full_name):
+        old = previous_by_name.get(current.full_name)
+        if old is None:
+            repositories.append(_baseline_repository(current, now=now))
+            continue
+        updated, repository_events = _reconcile_repository(old, current, now=now)
+        repositories.append(updated)
+        events.extend(repository_events)
+    ordered_events = tuple(
+        sorted(
+            events,
+            key=lambda item: (
+                item.occurred_at,
+                item.repository,
+                item.number,
+                item.kind.value,
+            ),
+        )
+    )
+    return GitHubReconcileResult(
+        state=GitHubAnnouncementState(
+            initialized_at=previous.initialized_at,
+            repositories=tuple(repositories),
+        ),
+        events=ordered_events,
+    )
+
+
+def _baseline_repository(
+    current: GitHubRepositorySnapshot,
+    *,
+    now: datetime,
+) -> GitHubRepositoryState:
+    return GitHubRepositoryState(
+        full_name=current.full_name,
+        initialized_at=now,
+        checked_at=now,
+        pulls=tuple(
+            GitHubPullState(number=item.number, head_sha=item.head_sha)
+            for item in sorted(current.open_pulls, key=lambda value: value.number)
+        ),
+        issue_numbers=tuple(sorted(item.number for item in current.open_issues)),
+    )
+
+
+def _reconcile_repository(
+    previous: GitHubRepositoryState,
+    current: GitHubRepositorySnapshot,
+    *,
+    now: datetime,
+) -> tuple[GitHubRepositoryState, tuple[GitHubAnnouncement, ...]]:
+    pulls = {item.number: item for item in previous.pulls}
+    candidates: dict[int, GitHubAnnouncement] = {}
+    boundary = previous.checked_at.replace(microsecond=0)
+    for item in current.open_pulls:
+        old = pulls.get(item.number)
+        if old is None and item.created_at >= boundary:
+            candidates[item.number] = _announcement(
+                GitHubAnnouncementKind.PR_OPENED,
+                current.full_name,
+                item,
+                occurred_at=item.created_at,
+                discriminator=item.head_sha,
+            )
+        elif old is not None and old.head_sha != item.head_sha:
+            candidates[item.number] = _announcement(
+                GitHubAnnouncementKind.PR_UPDATED,
+                current.full_name,
+                item,
+                occurred_at=item.updated_at,
+                discriminator=item.head_sha,
+            )
+        pulls[item.number] = GitHubPullState(
+            number=item.number,
+            head_sha=item.head_sha,
+            merge_commit_sha=old.merge_commit_sha if old is not None else None,
+        )
+
+    for item in current.recently_closed_pulls:
+        old = pulls.get(item.number)
+        pulls[item.number] = GitHubPullState(
+            number=item.number,
+            head_sha=item.head_sha,
+            merge_commit_sha=item.merge_commit_sha,
+        )
+        candidates.pop(item.number, None)
+        if (
+            item.merged_at is not None
+            and item.merge_commit_sha is not None
+            and item.merged_at >= boundary
+            and (old is None or old.merge_commit_sha != item.merge_commit_sha)
+        ):
+            candidates[item.number] = _announcement(
+                GitHubAnnouncementKind.PR_MERGED,
+                current.full_name,
+                item,
+                occurred_at=item.merged_at,
+                discriminator=item.merge_commit_sha,
+            )
+
+    issue_numbers = set(previous.issue_numbers)
+    issue_events: list[GitHubAnnouncement] = []
+    for issue_item in current.open_issues:
+        if issue_item.number not in issue_numbers and issue_item.created_at >= boundary:
+            issue_events.append(
+                _announcement(
+                    GitHubAnnouncementKind.ISSUE_OPENED,
+                    current.full_name,
+                    issue_item,
+                    occurred_at=issue_item.created_at,
+                    discriminator=str(issue_item.number),
+                )
+            )
+        issue_numbers.add(issue_item.number)
+
+    state = GitHubRepositoryState(
+        full_name=current.full_name,
+        initialized_at=previous.initialized_at,
+        checked_at=now,
+        pulls=tuple(pulls[number] for number in sorted(pulls)),
+        issue_numbers=tuple(sorted(issue_numbers)),
+    )
+    return state, (*candidates.values(), *issue_events)
+
+
+def _announcement(
+    kind: GitHubAnnouncementKind,
+    repository: str,
+    item: GitHubPullSnapshot | GitHubIssueSnapshot,
+    *,
+    occurred_at: datetime,
+    discriminator: str,
+) -> GitHubAnnouncement:
+    key = json.dumps(
+        [kind.value, repository, item.number, discriminator],
+        separators=(",", ":"),
+    ).encode("utf-8")
+    digest = hashlib.sha256(key).hexdigest()[:24]
+    return GitHubAnnouncement(
+        event_id=f"github-announcement:{kind.value}:{digest}",
+        kind=kind,
+        repository=repository,
+        number=item.number,
+        title=item.title,
+        author_login=item.author_login,
+        occurred_at=occurred_at,
+    )
+
+
+def render_announcement(event: GitHubAnnouncement) -> str:
+    """Render one safe, fixed Telegram Rich Markdown notification."""
+
+    repository = _markdown_label(event.repository)
+    title = _markdown_label(f"#{event.number} {_single_line(event.title)}")
+    author = _markdown_label(event.author_login)
+    repository_url = f"https://github.com/{event.repository}"
+    item_kind = "pull" if event.kind is not GitHubAnnouncementKind.ISSUE_OPENED else "issues"
+    item_url = f"{repository_url}/{item_kind}/{event.number}"
+    author_url = f"https://github.com/{quote(event.author_login, safe='')}"
+    heading, action = {
+        GitHubAnnouncementKind.PR_OPENED: ("🆕 **New PR**", "Opened by"),
+        GitHubAnnouncementKind.PR_UPDATED: ("🔄 **PR updated**", "New commits from"),
+        GitHubAnnouncementKind.PR_MERGED: ("🎉 **PR merged**", "Congratulations,"),
+        GitHubAnnouncementKind.ISSUE_OPENED: ("🆕 **New issue**", "Opened by"),
+    }[event.kind]
+    suffix = "!" if event.kind is GitHubAnnouncementKind.PR_MERGED else ""
+    return (
+        f"{heading} in [{repository}]({repository_url})\n"
+        f"[{title}]({item_url})\n"
+        f"{action} [{author}]({author_url}){suffix}"
+    )
+
+
+def _single_line(value: str) -> str:
+    return " ".join(value.split())
+
+
+def _markdown_label(value: str) -> str:
+    escaped = value.replace("\\", "\\\\")
+    for character in "[]()_*`~<>&":
+        escaped = escaped.replace(character, f"\\{character}")
+    return escaped
+
+
+def _timestamp(value: object, *, optional: bool = False) -> datetime | None:
+    if value is None and optional:
+        return None
+    if not isinstance(value, str):
+        raise ValueError("GitHub timestamp is invalid")
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        raise ValueError("GitHub timestamp is invalid") from None
+    return _require_utc(parsed)

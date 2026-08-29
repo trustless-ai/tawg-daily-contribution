@@ -42,6 +42,11 @@ from tawg_bot.delivery import (
 )
 from tawg_bot.erc_query import ErcIntent, ErcQuery
 from tawg_bot.evidence_fetch import RestrictedEvidenceFetcher
+from tawg_bot.github_announcements import (
+    GitHubAnnouncementBatch,
+    GitHubAnnouncementScanner,
+    render_announcement,
+)
 from tawg_bot.github_source import GitHubHttpClient, GitHubSourceError
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import KnowledgeRefresh, RefreshResult
@@ -52,7 +57,7 @@ from tawg_bot.persistence_guard import PersistenceRejected
 from tawg_bot.repository_session import RepositoryConflict
 from tawg_bot.scan_targets import ScanTargetStore, ScanTargetVerifier
 from tawg_bot.scheduler import IntakePolicy, Scheduler
-from tawg_bot.scoped_scanner import ScopedSourceScanner
+from tawg_bot.scoped_scanner import ScopedScanResult, ScopedSourceScanner
 from tawg_bot.source_registry import SourceRegistry
 from tawg_bot.telegram_api import TelegramApi
 from tawg_bot.telegram_intake import TelegramIntake, WebhookIntakeResult, ingest_envelopes
@@ -367,6 +372,10 @@ class _LivePipeline:
             github_client=registration_github,
             topic_client=registration_topics,
         )
+        self.github_announcements = GitHubAnnouncementScanner(
+            self.root,
+            client=registration_github,
+        )
         self.telegram_synced_at: datetime | None = None
         self.source_checked_at: datetime | None = None
         self.live_evidence_collected_at: datetime | None = None
@@ -386,11 +395,18 @@ class _LivePipeline:
 
     async def source_check(self, now: datetime) -> None:
         try:
-            result = await asyncio.wait_for(
-                self.scoped_scanner.scan(
+            async def scan_all() -> tuple[ScopedScanResult, GitHubAnnouncementBatch]:
+                scoped = await self.scoped_scanner.scan(
                     since=now - _SOURCE_RECHECK_INTERVAL,
                     now=now,
-                ),
+                )
+                if scoped.failed_sources:
+                    raise RuntimeFailure("source check incomplete")
+                announcements = await self.github_announcements.scan(now=now)
+                return scoped, announcements
+
+            result, announcement_batch = await asyncio.wait_for(
+                scan_all(),
                 timeout=_SOURCE_ERC_TIMEOUT_SECONDS,
             )
             uow = RepositoryUnitOfWork(
@@ -399,6 +415,7 @@ class _LivePipeline:
             )
             uow.register_external_evidence(())
             self.scoped_scanner.stage(result, uow)
+            self.github_announcements.stage(announcement_batch, uow)
             uow.publish()
             await self.checkpoint.publish(
                 f"scoped-source-check:{int(now.timestamp())}",
@@ -410,9 +427,6 @@ class _LivePipeline:
             _safe_log("source_check", "source_check_failed")
             raise RuntimeFailure("source check incomplete") from None
         self.source_checked_at = now
-        if result.failed_sources:
-            _safe_log("source_check", "source_check_failed")
-            raise RuntimeFailure("source check incomplete")
 
     async def check_sources(
         self,
@@ -630,6 +644,23 @@ class _LivePipeline:
             chat_id=chat_id,
             checkpoint=self.checkpoint,
         )
+        for event in self.github_announcements.pending():
+            try:
+                await delivery.deliver(
+                    job_id=event.event_id,
+                    text=render_announcement(event),
+                    reply_to_message_id=None,
+                    message_thread_id=None,
+                    now=self.now,
+                )
+            except (DeliveryAmbiguous, DeliveryFailed):
+                continue
+            self.github_announcements.acknowledge(event.event_id)
+            digest = event.event_id.rsplit(":", 1)[-1]
+            await self.checkpoint.publish(
+                f"github-announcement-ack:{digest}",
+                self.root,
+            )
         for reply in self.prepared_replies:
             try:
                 await delivery.deliver(

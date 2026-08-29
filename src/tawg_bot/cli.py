@@ -7,6 +7,7 @@ import asyncio
 import json
 import sys
 from collections.abc import Callable
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
@@ -61,6 +62,8 @@ def _parser() -> argparse.ArgumentParser:
     daily.add_argument("--window-end", type=_utc_timestamp, required=True)
     migration = commands.add_parser("migrate-open-knowledge")
     migration.add_argument("--now", type=_utc_timestamp)
+    github_baseline = commands.add_parser("bootstrap-github-announcements")
+    github_baseline.add_argument("--now", type=_utc_timestamp)
     commands.add_parser("vault-lint")
     return parser
 
@@ -105,6 +108,14 @@ def main(
             f"changed={migration_summary.changed}"
         )
         return 0
+    if args.command == "bootstrap-github-announcements":
+        now = args.now or (clock or (lambda: datetime.now(UTC)))()
+        summary = asyncio.run(_bootstrap_github_announcements(root, now=now))
+        print(
+            f"repositories={summary.repository_count} "
+            f"changed_paths={len(summary.changed_paths)} messages_sent=0"
+        )
+        return 0
     operational = runtime or _production_runtime(root)
     if args.command == "tick":
         now = args.now or (clock or (lambda: datetime.now(UTC)))()
@@ -129,13 +140,15 @@ def main(
         )
         return 0
     if args.command == "check-sources":
-        summary = asyncio.run(operational.check_sources(args.erc, observe_only=args.observe_only))
+        source_summary = asyncio.run(
+            operational.check_sources(args.erc, observe_only=args.observe_only)
+        )
         print(
-            f"ercs={getattr(summary, 'erc_count', 0)} "
-            f"evidence={getattr(summary, 'evidence_count', 0)} "
-            f"gaps={getattr(summary, 'gap_count', 0)} "
-            f"refresh_jobs={getattr(summary, 'refresh_job_count', 0)} "
-            f"persisted={getattr(summary, 'persisted', False)}"
+            f"ercs={getattr(source_summary, 'erc_count', 0)} "
+            f"evidence={getattr(source_summary, 'evidence_count', 0)} "
+            f"gaps={getattr(source_summary, 'gap_count', 0)} "
+            f"refresh_jobs={getattr(source_summary, 'refresh_job_count', 0)} "
+            f"persisted={getattr(source_summary, 'persisted', False)}"
         )
         return 0
     if args.command == "refresh-knowledge":
@@ -199,6 +212,43 @@ def _production_runtime(root: Path) -> OperationalRuntime:
     from tawg_bot.runtime import ProductionRuntime
 
     return ProductionRuntime.from_environment(root)
+
+
+@dataclass(frozen=True, slots=True)
+class GitHubBootstrapSummary:
+    repository_count: int
+    changed_paths: tuple[str, ...]
+
+
+async def _bootstrap_github_announcements(
+    root: Path,
+    *,
+    now: datetime,
+) -> GitHubBootstrapSummary:
+    import httpx
+
+    from tawg_bot.github_announcements import (
+        GitHubAnnouncementScanner,
+        PublicGitHubHttpClient,
+    )
+
+    async with httpx.AsyncClient(timeout=30) as client:
+        scanner = GitHubAnnouncementScanner(
+            root,
+            client=PublicGitHubHttpClient(client=client),
+        )
+        batch = await scanner.bootstrap(now=now)
+    uow = RepositoryUnitOfWork(
+        root,
+        operation_id=f"github-announcement-bootstrap:{int(now.timestamp())}",
+    )
+    uow.register_external_evidence(())
+    scanner.stage(batch, uow)
+    changed = uow.publish().changed_paths
+    return GitHubBootstrapSummary(
+        repository_count=len(batch.state.repositories),
+        changed_paths=changed,
+    )
 
 
 if __name__ == "__main__":

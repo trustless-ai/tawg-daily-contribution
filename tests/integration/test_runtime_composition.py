@@ -17,6 +17,10 @@ from tawg_bot.claude_cli import ClaudeCli as RealClaudeCli
 from tawg_bot.claude_cli import ClaudeCliError, CompletedProcess
 from tawg_bot.daily import DailyRejected, DailyWindow, PreparedDaily
 from tawg_bot.daily_evidence import DailyEvidence
+from tawg_bot.github_announcements import (
+    GitHubAnnouncementBatch,
+    GitHubAnnouncementState,
+)
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import RefreshResult
 from tawg_bot.live_evidence import LiveEvidenceService
@@ -50,6 +54,21 @@ class Checkpoint:
     async def publish(self, operation_id: str, root: Path) -> None:
         assert root.exists()
         self.operations.append(operation_id)
+
+
+class EmptyAnnouncements:
+    async def scan(self, *, now: datetime) -> GitHubAnnouncementBatch:
+        return GitHubAnnouncementBatch(
+            state=GitHubAnnouncementState(initialized_at=now, repositories=()),
+            pending=(),
+        )
+
+    def stage(self, batch: GitHubAnnouncementBatch, uow: Any) -> None:
+        uow.stage_json(
+            "data/state/github-announcement-state.json",
+            batch.state.model_dump(mode="json"),
+        )
+        uow.stage_json("data/state/pending-github-announcements.json", [])
 
 
 class LiveEvidence:
@@ -291,6 +310,7 @@ async def test_scheduled_source_check_uses_scoped_scanner(tmp_path: Path) -> Non
     async with httpx.AsyncClient() as client:
         pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
         pipeline.scoped_scanner = Scanner()  # type: ignore[assignment]
+        pipeline.github_announcements = EmptyAnnouncements()  # type: ignore[assignment]
 
         await pipeline.source_check(NOW)
 
@@ -1635,6 +1655,7 @@ async def test_internal_checkpoint_conflict_retries_phase_in_a_fresh_repository_
 
                 pipeline = _LivePipeline(root, client=client, checkpoint=checkpoint, now=NOW)
                 pipeline.scoped_scanner = Scanner()  # type: ignore[assignment]
+                pipeline.github_announcements = EmptyAnnouncements()  # type: ignore[assignment]
                 await pipeline.source_check(NOW)
             else:
                 class DailyPipeline(_LivePipeline):

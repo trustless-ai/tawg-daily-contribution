@@ -1,0 +1,194 @@
+{
+  "initialized_at": "2026-08-29T15:45:00Z",
+  "repositories": [
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/.github",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [
+        3
+      ],
+      "pulls": []
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/agent-contracts-examples",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": [
+        {
+          "head_sha": "57b4c55415a99b22a3448a53eec2b7b082d873fa",
+          "merge_commit_sha": null,
+          "number": 4
+        }
+      ]
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/agent-ercs",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": [
+        {
+          "head_sha": "fde4518c3722e2820c7fc2a49bc5844b5c7df587",
+          "merge_commit_sha": null,
+          "number": 15
+        },
+        {
+          "head_sha": "bfc9f3e0df777df80abcc1179983995bf7a4b00a",
+          "merge_commit_sha": null,
+          "number": 19
+        }
+      ]
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/agent-sdk",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": [
+        {
+          "head_sha": "21693d0181e1be5ab2166ef3d4195df792e7cecb",
+          "merge_commit_sha": null,
+          "number": 25
+        }
+      ]
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/ccip-router",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": [
+        {
+          "head_sha": "b6b9754108fe876cadbe2807444c78d16bb7c314",
+          "merge_commit_sha": null,
+          "number": 7
+        }
+      ]
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/collapsed-state-note",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": []
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/composed-attestation-note",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": []
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/cross-reference-console",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": []
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/eip7702-rescue",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": []
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/observation-conditions-note",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [
+        1
+      ],
+      "pulls": []
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/pq-agent-binding",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": []
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/recompute-kit",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": [
+        {
+          "head_sha": "81c1c2dba8238f4e76ab5950bfa0c0d81e233553",
+          "merge_commit_sha": null,
+          "number": 10
+        },
+        {
+          "head_sha": "b65b7a7e061235c8a62deb1dea9eb25223ec3dd8",
+          "merge_commit_sha": null,
+          "number": 14
+        },
+        {
+          "head_sha": "78ec58a6b5e97e2ddf2e1ad25f6fee7cd17e0743",
+          "merge_commit_sha": null,
+          "number": 15
+        },
+        {
+          "head_sha": "4ecf663f36a368e98c2f8f74089d26ff8bb50dad",
+          "merge_commit_sha": null,
+          "number": 17
+        },
+        {
+          "head_sha": "6091811d3f4e81dabc8a2fc672d707c0e3848fcd",
+          "merge_commit_sha": null,
+          "number": 18
+        },
+        {
+          "head_sha": "7c130af4d21684143c396e062da61d9be45ee684",
+          "merge_commit_sha": null,
+          "number": 19
+        },
+        {
+          "head_sha": "26647f9e84f17991b00606754a3a547026ec0a7a",
+          "merge_commit_sha": null,
+          "number": 29
+        }
+      ]
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/recompute-lens",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": []
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/tawg-daily-contribution",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": []
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/trustless-agent-substrate",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": []
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/trustless-ai-landing",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": []
+    },
+    {
+      "checked_at": "2026-08-29T15:45:00Z",
+      "full_name": "trustless-ai/zkIE",
+      "initialized_at": "2026-08-29T15:45:00Z",
+      "issue_numbers": [],
+      "pulls": []
+    }
+  ],
+  "schema_version": "tawg.github-announcement-state.v1"
+}

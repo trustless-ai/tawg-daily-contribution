@@ -9,6 +9,7 @@ from types import SimpleNamespace
 
 import pytest
 
+import tawg_bot.cli as cli_module
 from tawg_bot.cli import _parser, main
 from tawg_bot.telegram_webhook import TelegramWebhookEnvelope
 
@@ -162,6 +163,36 @@ def test_cli_exposes_unambiguous_polling_and_maintenance_commands() -> None:
     assert parser.parse_args(["maintenance-tick"]).command == "maintenance-tick"
     with pytest.raises(SystemExit):
         parser.parse_args(["maintenance-tick", "--input", "envelope.json"])
+
+
+def test_cli_bootstraps_github_announcements_without_constructing_runtime(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    calls: list[tuple[Path, datetime]] = []
+
+    async def bootstrap(root: Path, *, now: datetime) -> object:
+        calls.append((root, now))
+        return SimpleNamespace(repository_count=12, changed_paths=("state", "pending"))
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(cli_module, "_bootstrap_github_announcements", bootstrap)
+
+    assert (
+        main(
+            [
+                "bootstrap-github-announcements",
+                "--now",
+                "2026-08-24T01:17:00Z",
+            ],
+            runtime=None,
+        )
+        == 0
+    )
+
+    assert calls == [(tmp_path, NOW)]
+    assert capsys.readouterr().out == "repositories=12 changed_paths=2 messages_sent=0\n"
 
 
 def test_cli_dispatches_action_equivalent_observe_only_polling_tick() -> None:
