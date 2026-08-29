@@ -188,6 +188,32 @@ async def test_route_job_uses_the_strict_toolless_classifier_contract(
 
 
 @pytest.mark.asyncio
+async def test_reply_policy_requires_external_evidence_to_be_paraphrased(
+    tmp_path: Path,
+) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+
+    await cli.run(
+        job_type="reply",
+        context_pack="{}",
+        operation_id="reply-paraphrase-policy",
+        max_budget_usd="0.25",
+    )
+
+    assert "Paraphrase external evidence" in runner.policy
+    assert "never reproduce a source passage verbatim" in runner.policy
+    assert "even when implementation evidence is available" in runner.policy
+    assert "bind each external claim to its exact allowlisted citation" in runner.policy
+
+
+@pytest.mark.asyncio
 async def test_daily_uses_bounded_configurable_effort(tmp_path: Path) -> None:
     runner = CapturingRunner(outer_daily())
     cli = ClaudeCli(
