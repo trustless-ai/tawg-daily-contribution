@@ -189,6 +189,18 @@ class ReplyRepairReconciler:
             reason_code="latest_discussion_page_coverage_repaired",
             requires_refusal=False,
         ),
+        "reply:tg:tawg:3650": _ReplyRepairSpec(
+            trigger_id="tg:tawg:3650",
+            trigger_sha256=(
+                "50cb62e71685f569c95682d589d210a1e7f8603846d207c15b1abaa6837b71fe"
+            ),
+            prepared_text_sha256=(
+                "dd96f9874a401e43b8570fc9d813d075ef3db7aa0753659b8079f8360ccd03bc"
+            ),
+            policy_version="latest-discussion-write-v1",
+            reason_code="latest_discussion_knowledge_repaired",
+            requires_refusal=False,
+        ),
     }
 
     def __init__(self, root: Path, *, bot_username: str) -> None:
@@ -536,10 +548,18 @@ class BotReplyService:
                 return self._prepared(ready)
 
             failure_code = "reply_context_failed"
-            erc_query = (
-                self.router.erc_query(trigger.text_original)
-                if context_scope is RouteContextScope.ERC
-                else None
+            route_record_ids = frozenset(route_context.record_ids)
+            reply_chain = tuple(
+                record
+                for record in self._reply_chain(trigger, records)
+                if record.record_id in route_record_ids
+            )
+            erc_query, erc_query_text = self._erc_query_for_context(
+                trigger=trigger,
+                reply_chain=reply_chain,
+                route=route,
+                context_scope=context_scope,
+                trigger_kind=processing.trigger_kind,
             )
             local_erc_context: _LocalErcContext | None = None
             if erc_query is not None:
@@ -551,7 +571,7 @@ class BotReplyService:
                     local_erc_context.citations if local_erc_context is not None else ()
                 )
                 if self._needs_live_erc_evidence(
-                    trigger.text_original,
+                    erc_query_text,
                     erc_query,
                     local_erc_citations,
                 ):
@@ -568,6 +588,8 @@ class BotReplyService:
                 context_scope,
                 evidence_pack=evidence_pack,
                 local_erc_context=local_erc_context,
+                reply_chain=reply_chain,
+                validated_record_ids=route_record_ids,
             )
             raw = self._already_satisfied_repair_result(
                 processing,
@@ -842,31 +864,26 @@ class BotReplyService:
         *,
         evidence_pack: EvidencePack | None,
         local_erc_context: _LocalErcContext | None = None,
+        reply_chain: tuple[SourceRecord, ...] | None = None,
+        validated_record_ids: frozenset[str] | None = None,
     ) -> _ReplyContext:
-        chain: list[SourceRecord] = []
-        current = trigger
-        seen = {trigger.record_id}
-        while True:
-            parent_ids = [
-                relation.target_record_id
-                for relation in current.relations
-                if relation.relation_type == "reply_to"
-            ]
-            if not parent_ids or parent_ids[0] in seen:
-                break
-            parent = records.get(parent_ids[0])
-            if parent is None:
-                break
-            chain.append(parent)
-            seen.add(parent.record_id)
-            current = parent
-        chain.reverse()
+        chain = (
+            list(reply_chain)
+            if reply_chain is not None
+            else list(self._reply_chain(trigger, records))
+        )
+        seen = {trigger.record_id, *(record.record_id for record in chain)}
+
         nearby = [
             record
             for record in records.values()
             if abs(record.created_at - trigger.created_at) <= timedelta(minutes=30)
             and record.created_at <= trigger.created_at
             and record.record_id not in seen
+            and (
+                validated_record_ids is None
+                or record.record_id in validated_record_ids
+            )
         ]
         nearby.sort(key=lambda record: (record.created_at, record.record_id))
         retrieval_query = self._retrieval_query(trigger, chain)
@@ -1032,6 +1049,71 @@ class BotReplyService:
             )
         except ContextRejected as error:
             raise ReplyRejected(str(error)) from None
+
+    @staticmethod
+    def _reply_chain(
+        trigger: SourceRecord,
+        records: Mapping[str, SourceRecord],
+    ) -> tuple[SourceRecord, ...]:
+        chain: list[SourceRecord] = []
+        current = trigger
+        seen = {trigger.record_id}
+        while True:
+            parent_ids = [
+                relation.target_record_id
+                for relation in current.relations
+                if relation.relation_type == "reply_to"
+            ]
+            if not parent_ids or parent_ids[0] in seen:
+                break
+            parent = records.get(parent_ids[0])
+            if parent is None:
+                break
+            chain.append(parent)
+            seen.add(parent.record_id)
+            current = parent
+        chain.reverse()
+        return tuple(chain)
+
+    def _erc_query_for_context(
+        self,
+        *,
+        trigger: SourceRecord,
+        reply_chain: tuple[SourceRecord, ...],
+        route: BotRoute,
+        context_scope: RouteContextScope,
+        trigger_kind: TriggerKind,
+    ) -> tuple[ErcQuery | None, str]:
+        context_text = "\n\n".join(
+            record.text_original for record in (*reply_chain, trigger)
+        )
+        if (
+            context_scope is not RouteContextScope.ERC
+            and not (
+                route is BotRoute.KNOWLEDGE_CORRECTION
+                and trigger_kind is TriggerKind.REPLY_TO_BOT
+            )
+        ):
+            return None, context_text
+        query = self.router.erc_query(trigger.text_original)
+        if query is not None or trigger_kind is not TriggerKind.REPLY_TO_BOT:
+            return query, context_text
+        human_chain = tuple(
+            record
+            for record in reply_chain
+            if record.source_payload.get("message_kind") != "audited_bot_delivery"
+            and record.source_payload.get("author_is_bot") is not True
+        )
+        audited_bot_chain = tuple(
+            record
+            for record in reply_chain
+            if record.source_payload.get("message_kind") == "audited_bot_delivery"
+        )
+        for record in (*reversed(human_chain), *reversed(audited_bot_chain)):
+            query = self.router.erc_query(record.text_original)
+            if query is not None:
+                return query, context_text
+        return None, context_text
 
     @staticmethod
     def _already_satisfied_repair_result(

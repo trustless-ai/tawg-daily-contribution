@@ -1605,6 +1605,54 @@ def test_delivered_first_page_latest_discussion_reply_is_repaired(
     assert repair["message_thread_id"] is None
 
 
+def test_delivered_stale_latest_discussion_knowledge_write_is_repaired(
+    tmp_path: Path,
+) -> None:
+    seed(tmp_path, "@bot placeholder")
+    trigger = next(
+        record
+        for record in SourceQuery(PROJECT).records()
+        if record.record_id == "tg:tawg:3650"
+    )
+    assert trigger.content_sha256 == (
+        "50cb62e71685f569c95682d589d210a1e7f8603846d207c15b1abaa6837b71fe"
+    )
+    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    telegram_path.write_bytes(
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes([trigger])
+    )
+    production_jobs = json.loads(
+        (PROJECT / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    original = PendingBotJob.model_validate(
+        next(item for item in production_jobs if item["job_id"] == "reply:tg:tawg:3650")
+    )
+    assert original.status is JobStatus.DELIVERED
+    assert original.prepared_reply_text is not None
+    assert hashlib.sha256(original.prepared_reply_text.encode()).hexdigest() == (
+        "dd96f9874a401e43b8570fc9d813d075ef3db7aa0753659b8079f8360ccd03bc"
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs_path.write_text(
+        json.dumps([original.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+
+    created = ReplyRepairReconciler(
+        tmp_path,
+        bot_username="trustless_ai_bot",
+    ).reconcile(now=NOW + timedelta(minutes=2))
+
+    assert created == ("reply-repair:latest-discussion-write-v1:tg:tawg:3650",)
+    persisted = json.loads(jobs_path.read_text(encoding="utf-8"))
+    repair = next(item for item in persisted if item["job_id"] != original.job_id)
+    assert repair["status"] == "pending"
+    assert repair["repair_of_job_id"] == original.job_id
+    assert repair["repair_reason_code"] == "latest_discussion_knowledge_repaired"
+    assert repair["reply_to_message_id"] == 3650
+    assert repair["message_thread_id"] is None
+
+
 @pytest.mark.asyncio
 async def test_audited_correction_followup_can_create_one_content_page_when_ai_uses_knowledge_scope(
     tmp_path: Path,

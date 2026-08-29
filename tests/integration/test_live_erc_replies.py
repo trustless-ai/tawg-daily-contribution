@@ -20,7 +20,16 @@ from tawg_bot.live_evidence import (
     MissingEvidence,
     SourceChange,
 )
-from tawg_bot.models import JobStatus, PendingBotJob, SourceRecord, SourceType
+from tawg_bot.models import (
+    DeliveryAttempt,
+    DeliveryStatus,
+    JobStatus,
+    PendingBotJob,
+    Relation,
+    SourceRecord,
+    SourceType,
+    TriggerKind,
+)
 from tawg_bot.source_registry import EvidenceAuthority, EvidenceKind, SourceRegistry
 from tawg_bot.storage import JsonlCollection
 
@@ -292,6 +301,203 @@ async def test_ordinary_erc_reply_reuses_local_knowledge_without_live_fetch(
     assert CANONICAL in context
     assert prepared.citations == (CANONICAL, IMPLEMENTATION)
     assert live.calls == []
+
+
+@pytest.mark.asyncio
+async def test_reply_correction_inherits_erc_query_from_human_chain_and_fetches_live(
+    tmp_path: Path,
+) -> None:
+    job = _seed(tmp_path, "Have you recorded it? Please record it.")
+    original = SourceRecord.from_text(
+        record_id="tg:tawg:98",
+        source_type=SourceType.TELEGRAM_MESSAGE,
+        source_locator="repo:data/telegram/2026/08/messages.jsonl#tg:tawg:98",
+        author_person_id="alice",
+        author_source_handle="alice",
+        created_at=NOW - timedelta(minutes=6),
+        updated_at=NOW - timedelta(minutes=6),
+        text_original="@bot What is the latest ERC-8004 discussion?",
+        ingested_at=NOW - timedelta(minutes=6),
+    )
+    other_bot = SourceRecord.from_text(
+        record_id="tg:tawg:99",
+        source_type=SourceType.TELEGRAM_MESSAGE,
+        source_locator="repo:data/telegram/2026/08/messages.jsonl#tg:tawg:99",
+        author_person_id="other-bot",
+        author_source_handle="other_bot",
+        created_at=NOW - timedelta(minutes=5),
+        updated_at=NOW - timedelta(minutes=5),
+        text_original="Automated note about the ERC-8183 discussion.",
+        ingested_at=NOW - timedelta(minutes=5),
+        relations=[Relation(relation_type="reply_to", target_record_id="tg:tawg:98")],
+        source_payload={"message_kind": "group_message", "author_is_bot": True},
+    )
+    trigger = SourceRecord.from_text(
+        record_id="tg:tawg:100",
+        source_type=SourceType.TELEGRAM_MESSAGE,
+        source_locator="repo:data/telegram/2026/08/messages.jsonl#tg:tawg:100",
+        author_person_id="alice",
+        author_source_handle="alice",
+        created_at=NOW,
+        updated_at=NOW,
+        text_original="Have you recorded it? Please record it.",
+        ingested_at=NOW,
+        relations=[Relation(relation_type="reply_to", target_record_id="tg:tawg:900")],
+    )
+    telegram = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    telegram.write_bytes(
+        JsonlCollection(telegram, SourceRecord).merged_bytes(
+            [original, other_bot, trigger]
+        )
+    )
+    bot_text = "I checked the available context and prepared a summary."
+    delivered = PendingBotJob(
+        job_id="reply:tg:tawg:99",
+        trigger_record_id=other_bot.record_id,
+        reply_to_message_id=99,
+        status=JobStatus.DELIVERED,
+        prepared_reply_text=bot_text,
+        prepared_language="en",
+        created_at=NOW - timedelta(minutes=5),
+        updated_at=NOW - timedelta(minutes=4),
+    )
+    current = job.model_copy(
+        update={
+            "trigger_kind": TriggerKind.REPLY_TO_BOT,
+            "created_at": NOW,
+            "updated_at": NOW,
+        }
+    )
+    state = tmp_path / "data/state"
+    (state / "pending-bot-jobs.json").write_text(
+        json.dumps(
+            [delivered.model_dump(mode="json"), current.model_dump(mode="json")]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    attempt = DeliveryAttempt(
+        delivery_id=delivered.job_id,
+        job_id=delivered.job_id,
+        status=DeliveryStatus.DELIVERED,
+        content_sha256=hashlib.sha256(bot_text.encode()).hexdigest(),
+        message_count=1,
+        reply_to_message_id=99,
+        telegram_chat_id=-1001,
+        telegram_message_ids=[900],
+        sent_at=NOW - timedelta(minutes=4),
+        prepared_at=NOW - timedelta(minutes=4),
+        updated_at=NOW - timedelta(minutes=4),
+    )
+    (state / "delivery-state.json").write_text(
+        json.dumps([attempt.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+    page = tmp_path / "knowledge/ercs/erc-8004.md"
+    page.parent.mkdir(parents=True, exist_ok=True)
+    page.write_bytes((PROJECT / "knowledge/ercs/erc-8004.md").read_bytes())
+    ai = FakeAi(
+        _result(
+            citations=[],
+            status="not_verified",
+            gaps=["A write was not proposed in this deterministic fixture."],
+        ),
+        route="knowledge_correction",
+        context_scope="knowledge",
+    )
+    live = FakeLiveEvidence(_pack())
+    registry = SourceRegistry.from_yaml(tmp_path / "knowledge/meta/sources.yml")
+    service = BotReplyService(
+        tmp_path,
+        ai=ai,
+        bot_username="bot",
+        chat_id=-1001,
+        live_evidence=live,
+        knowledge_state=KnowledgeStateStore(tmp_path, registry=registry),
+    )
+
+    prepared = await service.prepare(
+        current.job_id,
+        now=NOW + timedelta(minutes=1),
+    )
+
+    assert prepared is not None
+    assert live.calls == [
+        ErcQuery(erc_numbers=(8004,), intent=ErcIntent.DISCUSSION)
+    ]
+    context = json.loads(ai.calls[1]["context_pack"])
+    assert context["trigger"]["erc_evidence_mode"] == "live"
+    assert context["evidence_pack"]["query"]["erc_numbers"] == [8004]
+
+
+@pytest.mark.asyncio
+async def test_reply_context_does_not_restore_cross_thread_parent_after_validation(
+    tmp_path: Path,
+) -> None:
+    job = _seed(tmp_path, "Please record this.")
+    parent = SourceRecord.from_text(
+        record_id="tg:tawg:99",
+        source_type=SourceType.TELEGRAM_MESSAGE,
+        source_locator="repo:data/telegram/2026/08/messages.jsonl#tg:tawg:99",
+        author_person_id="alice",
+        author_source_handle="alice",
+        created_at=NOW - timedelta(minutes=1),
+        updated_at=NOW - timedelta(minutes=1),
+        text_original="Context from a different Telegram topic.",
+        ingested_at=NOW - timedelta(minutes=1),
+        source_payload={"message_thread_id": 17},
+    )
+    trigger = SourceRecord.from_text(
+        record_id="tg:tawg:100",
+        source_type=SourceType.TELEGRAM_MESSAGE,
+        source_locator="repo:data/telegram/2026/08/messages.jsonl#tg:tawg:100",
+        author_person_id="alice",
+        author_source_handle="alice",
+        created_at=NOW,
+        updated_at=NOW,
+        text_original="Please record this.",
+        ingested_at=NOW,
+        relations=[Relation(relation_type="reply_to", target_record_id=parent.record_id)],
+        source_payload={"message_thread_id": 16},
+    )
+    telegram = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    telegram.write_bytes(
+        JsonlCollection(telegram, SourceRecord).merged_bytes([parent, trigger])
+    )
+    current = job.model_copy(
+        update={
+            "trigger_kind": TriggerKind.MENTION,
+            "message_thread_id": 16,
+            "created_at": NOW,
+            "updated_at": NOW,
+        }
+    )
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps([current.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+    ai = FakeAi(
+        _result(
+            citations=[],
+            status="not_verified",
+            gaps=["No supported correction was proposed."],
+        ),
+        route="knowledge_correction",
+        context_scope="knowledge",
+    )
+    live = FakeLiveEvidence(_pack())
+
+    prepared = await _service(tmp_path, ai=ai, live=live).prepare(
+        current.job_id,
+        now=NOW + timedelta(minutes=1),
+    )
+
+    assert prepared is not None
+    context = json.loads(ai.calls[1]["context_pack"])
+    assert context["reply_chain"] == []
+    assert context["recent_telegram"] == []
+    assert parent.record_id not in context["citation_allowlist"]
+    assert parent.text_original not in ai.calls[1]["context_pack"]
 
 
 @pytest.mark.asyncio
