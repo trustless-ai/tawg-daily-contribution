@@ -104,6 +104,16 @@ def test_job_prompts_narrow_each_output_contract() -> None:
     assert "citation_allowlist" in daily
 
 
+def test_bot_health_replies_require_audited_operational_evidence() -> None:
+    reply = (ROOT / "prompts/reply-system.md").read_text(encoding="utf-8")
+    skill = (ROOT / "bot-skill/SKILL.md").read_text(encoding="utf-8")
+
+    for guidance in (reply, skill):
+        assert "Never claim a root cause, recovery, or healthy operation" in guidance
+        assert "this reply path worked" in guidance
+        assert "no operational evidence" in guidance
+
+
 def test_shared_skill_scopes_interactive_writes_to_controller_capabilities() -> None:
     skill = (ROOT / "bot-skill/SKILL.md").read_text(encoding="utf-8")
 

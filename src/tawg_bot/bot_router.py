@@ -213,6 +213,18 @@ class ReplyRepairReconciler:
             reason_code="latest_discussion_knowledge_repaired",
             requires_refusal=False,
         ),
+        "reply:tg:tawg:3668": _ReplyRepairSpec(
+            trigger_id="tg:tawg:3668",
+            trigger_sha256=(
+                "5eb89cb1053e5d3dccdab15844f034cffc1babd8331d69c0f1a952fe03f43406"
+            ),
+            prepared_text_sha256=(
+                "ce93546fb43d6d2a96b3a24a9c49bae9182b272deb0efcfe2acbcee853dd2c6d"
+            ),
+            policy_version="bot-health-evidence-v1",
+            reason_code="unsupported_bot_recovery_claim",
+            requires_refusal=False,
+        ),
     }
 
     def __init__(self, root: Path, *, bot_username: str) -> None:

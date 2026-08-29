@@ -1554,6 +1554,65 @@ def test_delivered_stale_rvr_blocker_is_repaired_without_losing_audit(
     assert repair["trigger_kind"] == "reply_to_bot"
 
 
+def test_unsupported_bot_recovery_claim_is_repaired_without_losing_audit(
+    tmp_path: Path,
+) -> None:
+    seed(tmp_path, "@bot placeholder")
+    trigger = next(
+        record
+        for record in SourceQuery(PROJECT).records()
+        if record.record_id == "tg:tawg:3668"
+    )
+    assert (
+        trigger.content_sha256
+        == "5eb89cb1053e5d3dccdab15844f034cffc1babd8331d69c0f1a952fe03f43406"
+    )
+    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    telegram_path.write_bytes(
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes([trigger])
+    )
+    unsupported = (
+        "All good now, Jimmy! 👋 I'm back and responding normally. Sorry for the trouble "
+        "earlier — looks like things are working as expected now. If anything seems off "
+        "again, just ping me!"
+    )
+    assert hashlib.sha256(unsupported.encode()).hexdigest() == (
+        "ce93546fb43d6d2a96b3a24a9c49bae9182b272deb0efcfe2acbcee853dd2c6d"
+    )
+    original = PendingBotJob(
+        job_id="reply:tg:tawg:3668",
+        trigger_record_id=trigger.record_id,
+        reply_to_message_id=3668,
+        status=JobStatus.DELIVERED,
+        prepared_reply_text=unsupported,
+        prepared_language="en",
+        refusal=False,
+        created_at=NOW,
+        updated_at=NOW + timedelta(minutes=1),
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs_path.write_text(
+        json.dumps([original.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+
+    reconciler = ReplyRepairReconciler(tmp_path, bot_username="trustless_ai_bot")
+    created = reconciler.reconcile(now=NOW + timedelta(minutes=2))
+
+    assert created == ("reply-repair:bot-health-evidence-v1:tg:tawg:3668",)
+    persisted = json.loads(jobs_path.read_text(encoding="utf-8"))
+    original_after = next(item for item in persisted if item["job_id"] == original.job_id)
+    assert original_after["status"] == "delivered"
+    assert original_after["prepared_reply_text"] == unsupported
+    repair = next(item for item in persisted if item["job_id"] != original.job_id)
+    assert repair["status"] == "pending"
+    assert repair["repair_of_job_id"] == original.job_id
+    assert repair["repair_reason_code"] == "unsupported_bot_recovery_claim"
+    assert repair["reply_to_message_id"] == 3668
+    assert repair["message_thread_id"] is None
+    assert repair["trigger_kind"] == "mention"
+
+
 def test_delivered_first_page_latest_discussion_reply_is_repaired(
     tmp_path: Path,
 ) -> None:
