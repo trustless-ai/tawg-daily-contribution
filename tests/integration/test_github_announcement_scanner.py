@@ -201,6 +201,66 @@ async def test_incremental_scan_includes_merge_at_exact_cursor_second(
 
 
 @pytest.mark.asyncio
+async def test_incremental_scan_uses_head_sha_when_merged_pr_omits_merge_sha(
+    tmp_path: Path,
+) -> None:
+    client = GitHubClient()
+    scanner = GitHubAnnouncementScanner(tmp_path, client=client)
+    publish(tmp_path, scanner, await scanner.bootstrap(now=NOW))
+    merged_at = NOW + timedelta(minutes=20)
+    client.closed = [
+        {
+            **client._pull(6, head="6" * 40, created_at=NOW + timedelta(minutes=5)),
+            "state": "closed",
+            "updated_at": merged_at.isoformat().replace("+00:00", "Z"),
+            "merged_at": merged_at.isoformat().replace("+00:00", "Z"),
+            "merge_commit_sha": None,
+        }
+    ]
+
+    batch = await scanner.scan(now=NOW + timedelta(minutes=30))
+
+    assert [(event.number, event.kind) for event in batch.pending] == [
+        (6, GitHubAnnouncementKind.PR_MERGED)
+    ]
+    assert batch.state.repositories[0].pulls[-1].merge_commit_sha == "6" * 40
+
+
+@pytest.mark.asyncio
+async def test_incremental_scan_does_not_repeat_merge_when_api_adds_merge_sha(
+    tmp_path: Path,
+) -> None:
+    client = GitHubClient()
+    scanner = GitHubAnnouncementScanner(tmp_path, client=client)
+    publish(tmp_path, scanner, await scanner.bootstrap(now=NOW))
+    merged_at = NOW + timedelta(minutes=20)
+    merged_pull = {
+        **client._pull(6, head="6" * 40, created_at=NOW + timedelta(minutes=5)),
+        "state": "closed",
+        "updated_at": merged_at.isoformat().replace("+00:00", "Z"),
+        "merged_at": merged_at.isoformat().replace("+00:00", "Z"),
+        "merge_commit_sha": None,
+    }
+    client.closed = [merged_pull]
+    first = await scanner.scan(now=merged_at + timedelta(microseconds=500))
+    publish(tmp_path, scanner, first)
+    client.closed = [
+        {
+            **merged_pull,
+            "updated_at": (merged_at + timedelta(seconds=30))
+            .isoformat()
+            .replace("+00:00", "Z"),
+            "merge_commit_sha": "f" * 40,
+        }
+    ]
+
+    second = await scanner.scan(now=NOW + timedelta(minutes=50))
+
+    assert [event.event_id for event in second.pending] == [first.pending[0].event_id]
+    assert second.state.repositories[0].pulls[-1].merge_commit_sha == "f" * 40
+
+
+@pytest.mark.asyncio
 async def test_closed_pull_pagination_does_not_stop_on_a_full_boundary_page(
     tmp_path: Path,
 ) -> None:

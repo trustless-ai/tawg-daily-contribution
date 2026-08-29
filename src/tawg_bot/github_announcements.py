@@ -436,6 +436,8 @@ class GitHubAnnouncementScanner:
             raise GitHubAnnouncementRejected("GitHub PR metadata is invalid")
         merged_at = _timestamp(payload.get("merged_at"), optional=True)
         merge_commit_sha = payload.get("merge_commit_sha") if merged_at is not None else None
+        if merged_at is not None and merge_commit_sha is None:
+            merge_commit_sha = head.get("sha")
         try:
             return GitHubPullSnapshot(
                 number=payload.get("number"),
@@ -618,7 +620,7 @@ def _reconcile_repository(
             item.merged_at is not None
             and item.merge_commit_sha is not None
             and item.merged_at >= boundary
-            and (old is None or old.merge_commit_sha != item.merge_commit_sha)
+            and (old is None or old.merge_commit_sha is None)
         ):
             candidates[item.number] = _announcement(
                 GitHubAnnouncementKind.PR_MERGED,
