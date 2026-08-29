@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:299bf862fa255520d7977f05",
-    "kind": "pr_merged",
-    "number": 34,
-    "occurred_at": "2026-08-29T19:02:01Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "pq-key-binding-v1: pre_baseline is admitted, NOT governed (align enforcer to §states)"
-  }
-]
+[]
