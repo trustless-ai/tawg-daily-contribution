@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:7df49112dcb0f5b6ea8a7434",
+    "kind": "pr_merged",
+    "number": 35,
+    "occurred_at": "2026-08-29T20:38:13Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "pq-key-binding-v1: an unanchored binding cannot govern (fail-closed)"
+  }
+]
