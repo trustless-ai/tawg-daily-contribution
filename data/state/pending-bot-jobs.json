@@ -1014,14 +1014,17 @@
     "updated_at": "2026-08-28T18:14:11.032723Z"
   },
   {
-    "attempts": 19,
+    "attempts": 20,
     "classified_route": "knowledge_question",
     "created_at": "2026-08-28T18:15:07.061814Z",
     "job_id": "reply:tg:tawg:3620",
     "message_thread_id": null,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902",
+      "https://eips.ethereum.org/EIPS/eip-8183"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "Here's a rundown of the main threads in the ERC-8183 discussion as of the fetched evidence (page 1, up to March 11 2026; later pages exist and aren't in current evidence):\n\n**⚙️ Design critiques**\n- **mlegls** raised two structural concerns: (1) the Open → Funded split adds on-chain overhead that could be left to implementations, and (2) Rejected and Expired being near-identical precludes a useful \"reopen to Funded\" path after a reject. He compared ERC-8183 to OZ ConditionalEscrow and Alkahest, suggesting those more generic escrow patterns could be conformant implementations if the spec were less opinionated.\n- **wjmelements** pushed for a reference implementation first — he predicted the spec would shift once tradeoffs were weighed in code, and questioned the ABI completeness.\n- **beau** (daydreams/taskmarket) proposed merging or contributing a more fleshed-out design already in production, supporting a wider set of agentic commerce interactions.\n- **gpt3_eth** raised two-phase / linked-job support (e.g., open-position + close/evaluation jobs for DeFi strategies) as a possible first-class primitive gap.\n\n**🏷️ Naming debate**\n- **wjmelements** and **kevzzsk** both argued the protocol is general escrow logic — nothing is inherently \"agentic\" about it, and the label implies properties the spec doesn't encode. **kevzzsk** noted a human and AI initiator are treated identically by design.\n\n**🤖 Evaluator patterns**\n- **ThoughtProof** and **clawplaza** both shared production experience. ThoughtProof is building a multi-model evaluator (3+ independent models, MDI consensus threshold) and ran a Rasch-model experiment to measure evaluation calibration. clawplaza noted the evaluator is where real complexity lives, reputation gating at `beforeAction(fund)` is essential against low-effort submissions, and a credit abstraction layer helps for microtasks.\n- **miratisu** (likely an author) suggested the evaluator runtime listen for on-chain events and process async — the `expiredAt` field gives enough window for off-chain computation before calling `complete`/`reject`.\n\n**🔗 ERC-8004 / ERC-2771 composition**\n- Several participants discussed writing reputation signals to ERC-8004 registries on `complete`/`reject`, either from the evaluator or via `afterAction` hooks. This \"verification → payment → reputation\" atomic loop was the most popular integration theme.\n\nThe spec is still **Draft** status. https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902 — https://eips.ethereum.org/EIPS/eip-8183\n\n*Note: the fetched forum evidence covers only page 1 (posts 1–20). The thread is paginated and discussion has likely continued since March 11, 2026.*\n\nSummary of ERC-8183 Magicians discussion (page 1, posts 1–20, latest visible: March 11 2026): main threads are (1) design critiques on Open/Funded state split and Rejected/Expired similarity, (2) naming debate on \"agentic\" vs generic escrow, (3) evaluator pattern design including async off-chain evaluation and multi-model consensus, (4) ERC-8004 reputation integration. Production users (clawplaza, beau/daydreams) have shared real deployment learnings. Spec remains Draft. Later pages not in current evidence.",
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1030,12 +1033,12 @@
     "router_context_scope": "erc",
     "router_context_sha256": "8fdce983b14b2afcafa507cf93e386917e63fd95a3410750848a94bfc6c1b0e5",
     "router_version": "contextual-ai-v5",
-    "safe_error_code": "reply_persistence_failed",
+    "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3620",
-    "updated_at": "2026-08-29T00:12:57.190779Z"
+    "updated_at": "2026-08-29T00:20:16.082475Z"
   },
   {
     "attempts": 1,
@@ -1166,7 +1169,7 @@
     "updated_at": "2026-08-28T23:36:21.293808Z"
   },
   {
-    "attempts": 5,
+    "attempts": 6,
     "classified_route": "knowledge_question",
     "created_at": "2026-08-28T23:55:01.492687Z",
     "job_id": "reply:tg:tawg:3644",
@@ -1182,11 +1185,11 @@
     "router_context_scope": "erc",
     "router_context_sha256": "b33a1a6a8d4adbe8be13921353a31b765d6915fabbe18098144641ce87545c43",
     "router_version": "contextual-ai-v5",
-    "safe_error_code": "reply_evidence_status_invalid",
+    "safe_error_code": "reply_citation_not_allowed",
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "pending",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3644",
-    "updated_at": "2026-08-29T00:12:57.190779Z"
+    "updated_at": "2026-08-29T00:20:16.082475Z"
   }
 ]
