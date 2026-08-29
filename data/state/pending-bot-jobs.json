@@ -1243,14 +1243,19 @@
     "updated_at": "2026-08-29T00:40:10.552840Z"
   },
   {
-    "attempts": 5,
+    "attempts": 6,
     "classified_route": "knowledge_correction",
     "created_at": "2026-08-29T00:41:50.494089Z",
     "job_id": "reply:tg:tawg:3650",
     "message_thread_id": null,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "tg:tawg:3620",
+      "tg:tawg:3650",
+      "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902",
+      "https://eips.ethereum.org/EIPS/eip-8183"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "Done! I've created `knowledge/topics/erc-8183-agentic-commerce.md` to record the ERC-8183 discussion summary originally requested at [tg:tawg:3620]. The page captures the four main threads from the Magicians forum: the Open/Funded state-split debate, the naming critique around \"agentic\" vs general escrow, evaluator design patterns (multi-model consensus, async off-chain evaluation, reputation gating), and ERC-8004 reputation integration. Sources: https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902 and https://eips.ethereum.org/EIPS/eip-8183. [tg:tawg:3650]",
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1259,11 +1264,11 @@
     "router_context_scope": "knowledge",
     "router_context_sha256": "ae249cda56d6d2c5cc6f4ef9c1a78119f60a09c71c3e2ca8ac75969997cf19ad",
     "router_version": "contextual-ai-v5",
-    "safe_error_code": "reply_model_process_failed",
+    "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3650",
-    "updated_at": "2026-08-29T00:50:47.607228Z"
+    "updated_at": "2026-08-29T00:52:34.798221Z"
   }
 ]
