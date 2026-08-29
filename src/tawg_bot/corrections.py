@@ -20,7 +20,7 @@ class CorrectionService:
         *,
         operation_id: str,
         uow: RepositoryUnitOfWork,
-    ) -> None:
+    ) -> tuple[str, ...]:
         if transaction.operation_id != operation_id:
             raise CorrectionRejected("correction operation_id mismatch")
         for write in transaction.writes:
@@ -29,3 +29,4 @@ class CorrectionService:
                 raise CorrectionRejected("corrections replace current knowledge in place")
         inspection = self.engine.inspect(transaction)
         self.engine.stage(transaction, inspection.approval_sha256, uow)
+        return inspection.changed_paths

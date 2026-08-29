@@ -201,6 +201,18 @@ class ReplyRepairReconciler:
             reason_code="latest_discussion_knowledge_repaired",
             requires_refusal=False,
         ),
+        "reply-repair:latest-discussion-write-v1:tg:tawg:3650": _ReplyRepairSpec(
+            trigger_id="tg:tawg:3650",
+            trigger_sha256=(
+                "50cb62e71685f569c95682d589d210a1e7f8603846d207c15b1abaa6837b71fe"
+            ),
+            prepared_text_sha256=(
+                "62fd221154ae7b2d4f55295a8e8e12b73110962e816da3fcac32918464cc0512"
+            ),
+            policy_version="latest-discussion-write-v2",
+            reason_code="latest_discussion_knowledge_repaired",
+            requires_refusal=False,
+        ),
     }
 
     def __init__(self, root: Path, *, bot_username: str) -> None:
@@ -357,6 +369,9 @@ class BotReplyService:
     _ROUTE_TIMEOUT_SECONDS = 60.0
     _ROUTE_CONTEXT_MAX_CHARS = 64_000
     _ROUTE_CONTEXT_MAX_PRIOR_RECORDS = 100
+    _LATEST_DISCUSSION_KNOWLEDGE_PATH = (
+        "knowledge/topics/erc-8183-agentic-commerce.md"
+    )
 
     def __init__(
         self,
@@ -496,6 +511,24 @@ class BotReplyService:
                 route = processing.classified_route
                 context_scope = processing.router_context_scope
 
+            require_correction_transaction = (
+                processing.repair_reason_code
+                == "latest_discussion_knowledge_repaired"
+            )
+            required_revision_paths = (
+                (self._LATEST_DISCUSSION_KNOWLEDGE_PATH,)
+                if require_correction_transaction
+                else ()
+            )
+            if (
+                require_correction_transaction
+                and route is not BotRoute.KNOWLEDGE_CORRECTION
+            ):
+                failure_code = "reply_validation_failed"
+                raise ReplyRejected(
+                    "required knowledge correction has a non-correction route"
+                )
+
             if route is BotRoute.IGNORE:
                 ignored = processing.model_copy(
                     update={
@@ -590,6 +623,8 @@ class BotReplyService:
                 local_erc_context=local_erc_context,
                 reply_chain=reply_chain,
                 validated_record_ids=route_record_ids,
+                require_correction_transaction=require_correction_transaction,
+                required_revision_paths=required_revision_paths,
             )
             raw = self._already_satisfied_repair_result(
                 processing,
@@ -620,6 +655,8 @@ class BotReplyService:
                 ),
                 mutation_capability=context.mutation_capability,
                 mutation_source_urls=context.mutation_source_urls,
+                require_correction_transaction=require_correction_transaction,
+                required_revision_paths=required_revision_paths,
                 now=now,
             )
             reply_text = result.reply_text.strip()
@@ -728,13 +765,18 @@ class BotReplyService:
                     if local_erc_context is not None or scoped_urls
                     else None
                 )
-                CorrectionService(
+                changed_paths = CorrectionService(
                     VaultTransactionEngine(self.root, citation_scope=citation_scope)
                 ).stage(
                     result.correction_transaction,
                     operation_id=job_id,
                     uow=uow,
                 )
+                if required_revision_paths and (
+                    len(changed_paths) != len(required_revision_paths)
+                    or set(changed_paths) != set(required_revision_paths)
+                ):
+                    raise ReplyRejected("required knowledge correction is a no-op")
             if scan_registry is not None and scan_registry_changed:
                 ScanTargetStore(self.root).stage(uow, scan_registry)
             self._stage_jobs(uow, jobs)
@@ -802,6 +844,21 @@ class BotReplyService:
                 "English reply must not duplicate an English recap": "reply_language_invalid",
                 "reply attempted an unauthorized correction": "reply_correction_unauthorized",
                 "knowledge reply requires evidence citations": "reply_knowledge_citation_missing",
+                "required knowledge correction has no transaction": (
+                    "reply_required_correction_missing"
+                ),
+                "required knowledge correction has a non-correction route": (
+                    "reply_required_correction_route_invalid"
+                ),
+                "required knowledge correction targets the wrong path": (
+                    "reply_required_correction_target_invalid"
+                ),
+                "required knowledge correction has the wrong revision": (
+                    "reply_required_correction_target_invalid"
+                ),
+                "required knowledge correction is a no-op": (
+                    "reply_required_correction_noop"
+                ),
                 "coordination reply cannot cite evidence": (
                     "reply_coordination_citation_forbidden"
                 ),
@@ -866,6 +923,8 @@ class BotReplyService:
         local_erc_context: _LocalErcContext | None = None,
         reply_chain: tuple[SourceRecord, ...] | None = None,
         validated_record_ids: frozenset[str] | None = None,
+        require_correction_transaction: bool = False,
+        required_revision_paths: tuple[str, ...] = (),
     ) -> _ReplyContext:
         chain = (
             list(reply_chain)
@@ -897,11 +956,31 @@ class BotReplyService:
             if local_erc_context is not None
             else []
         )
-        local_erc_paths = (
-            {page["path"] for page in local_erc_context.pages}
-            if local_erc_context is not None
-            else set()
-        )
+        for relative in required_revision_paths:
+            target = self.root / relative
+            knowledge_root = (self.root / "knowledge").resolve()
+            if (
+                target.is_symlink()
+                or not target.is_file()
+                or not target.resolve().is_relative_to(knowledge_root)
+            ):
+                raise ReplyRejected("required repair target is unavailable")
+            try:
+                current_bytes = target.read_bytes()
+                current = current_bytes.decode("utf-8")
+            except (OSError, UnicodeError):
+                raise ReplyRejected("required repair target is unavailable") from None
+            retrieved.append(
+                {
+                    "chunk_id": f"repair:{relative}",
+                    "path": relative,
+                    "text": current,
+                    "record_id": "",
+                    "source_locator": "",
+                    "expected_sha256": hashlib.sha256(current_bytes).hexdigest(),
+                }
+            )
+        privileged_paths = {page["path"] for page in retrieved}
         retrieved.extend(
             [
                 {
@@ -912,7 +991,7 @@ class BotReplyService:
                     "source_locator": item.source_locator,
                 }
                 for item in retrieved_items
-                if item.path not in local_erc_paths
+                if item.path not in privileged_paths
             ]
         )
         mutation_capability = build_mutation_capability(
@@ -926,6 +1005,22 @@ class BotReplyService:
                 if isinstance(item.get("path"), str)
             ),
         )
+        if required_revision_paths:
+            revisions_by_path = {
+                revision.path: revision
+                for revision in mutation_capability.exact_revisions
+            }
+            if not set(required_revision_paths).issubset(revisions_by_path):
+                raise ReplyRejected("required repair target is not mutation-authorized")
+            mutation_capability = mutation_capability.model_copy(
+                update={
+                    "can_create_page": False,
+                    "allowed_create_roots": (),
+                    "exact_revisions": tuple(
+                        revisions_by_path[path] for path in required_revision_paths
+                    ),
+                }
+            )
         mutation_source_urls = (
             frozenset(extract_public_https_urls((trigger, *chain)))
             if route is BotRoute.KNOWLEDGE_CORRECTION
@@ -1011,6 +1106,10 @@ class BotReplyService:
         elif local_erc_context is not None:
             trigger_context["erc_evidence_mode"] = "local_synthesis"
             trigger_context["local_verified_at"] = list(local_erc_context.verified_at)
+        if require_correction_transaction:
+            trigger_context["required_action"] = (
+                "persist_correction_transaction_before_confirming"
+            )
         inputs = ContextInputs(
             trigger=trigger_context,
             reply_chain=[record.model_dump(mode="json") for record in chain],
@@ -1476,6 +1575,8 @@ class BotReplyService:
         correction_source_keys: frozenset[str],
         mutation_capability: KnowledgeMutationCapability,
         mutation_source_urls: frozenset[str],
+        require_correction_transaction: bool,
+        required_revision_paths: tuple[str, ...],
         now: datetime,
     ) -> _ReplyResult:
         try:
@@ -1566,12 +1667,42 @@ class BotReplyService:
             BotRoute.IDENTITY_CORRECTION,
             BotRoute.KNOWLEDGE_CORRECTION,
         }
+        if require_correction_transaction and result.correction_transaction is None:
+            raise ReplyRejected("required knowledge correction has no transaction")
         if result.correction_transaction is not None and (
             not correction_route or result.correction_transaction.operation_id != job_id
         ):
             raise ReplyRejected("reply attempted an unauthorized correction")
         if result.knowledge_write is not None and result.correction_transaction is None:
             raise ReplyRejected("knowledge write metadata has no transaction")
+        if require_correction_transaction:
+            assert result.correction_transaction is not None
+            transaction = result.correction_transaction
+            write_paths = tuple(write.path for write in transaction.writes)
+            if (
+                len(write_paths) != len(required_revision_paths)
+                or set(write_paths) != set(required_revision_paths)
+            ):
+                raise ReplyRejected(
+                    "required knowledge correction targets the wrong path"
+                )
+            revisions_by_path = {
+                revision.path: revision
+                for revision in mutation_capability.exact_revisions
+            }
+            for write in transaction.writes:
+                revision = revisions_by_path.get(write.path)
+                if (
+                    revision is None
+                    or write.expected_sha256 != revision.expected_sha256
+                ):
+                    raise ReplyRejected(
+                        "required knowledge correction has the wrong revision"
+                    )
+                if hashlib.sha256(write.content.encode("utf-8")).hexdigest() == (
+                    revision.expected_sha256
+                ):
+                    raise ReplyRejected("required knowledge correction is a no-op")
         if result.scan_registration is not None:
             if route is not BotRoute.KNOWLEDGE_CORRECTION:
                 raise ReplyRejected("scan registration is outside the correction route")

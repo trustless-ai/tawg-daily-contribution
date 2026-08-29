@@ -340,7 +340,7 @@ def test_adapter_separates_scheduled_trigger_from_single_writer_and_endpoint(
     assert worker.config["max_containers"] == 1
     assert 1 <= worker.config["timeout"] <= 3_600
     assert 1 <= worker.config["retries"].max_retries <= 3
-    assert maintenance.config["schedule"].expression == "*/5 * * * *"
+    assert maintenance.config["schedule"].expression == "*/15 * * * *"
     assert "max_containers" not in maintenance.config
     assert endpoint.config["timeout"] <= 30
     assert endpoint.raw_f.modal_web_config == {"method": "POST"}

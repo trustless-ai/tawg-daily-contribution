@@ -1653,6 +1653,310 @@ def test_delivered_stale_latest_discussion_knowledge_write_is_repaired(
     assert repair["message_thread_id"] is None
 
 
+def test_delivered_false_claim_latest_discussion_repair_is_repaired(
+    tmp_path: Path,
+) -> None:
+    seed(tmp_path, "@bot placeholder")
+    trigger = next(
+        record
+        for record in SourceQuery(PROJECT).records()
+        if record.record_id == "tg:tawg:3650"
+    )
+    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    telegram_path.write_bytes(
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes([trigger])
+    )
+    production_jobs = json.loads(
+        (PROJECT / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    original = PendingBotJob.model_validate(
+        next(
+            item
+            for item in production_jobs
+            if item["job_id"]
+            == "reply-repair:latest-discussion-write-v1:tg:tawg:3650"
+        )
+    )
+    assert original.status is JobStatus.DELIVERED
+    assert original.prepared_reply_text is not None
+    assert hashlib.sha256(original.prepared_reply_text.encode()).hexdigest() == (
+        "62fd221154ae7b2d4f55295a8e8e12b73110962e816da3fcac32918464cc0512"
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs_path.write_text(
+        json.dumps([original.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+
+    created = ReplyRepairReconciler(
+        tmp_path,
+        bot_username="trustless_ai_bot",
+    ).reconcile(now=NOW + timedelta(minutes=2))
+
+    assert created == ("reply-repair:latest-discussion-write-v2:tg:tawg:3650",)
+    persisted = json.loads(jobs_path.read_text(encoding="utf-8"))
+    repair = next(item for item in persisted if item["job_id"] != original.job_id)
+    assert repair["status"] == "pending"
+    assert repair["repair_of_job_id"] == original.job_id
+    assert repair["repair_reason_code"] == "latest_discussion_knowledge_repaired"
+    assert repair["reply_to_message_id"] == 3650
+    assert repair["message_thread_id"] is None
+
+
+@pytest.mark.asyncio
+async def test_latest_discussion_knowledge_repair_cannot_claim_write_without_transaction(
+    tmp_path: Path,
+) -> None:
+    original = seed(tmp_path, "Please record this discussion.")
+    repair = original.model_copy(
+        update={
+            "job_id": "reply-repair:latest-discussion-write-v2:tg:tawg:12",
+            "repair_of_job_id": original.job_id,
+            "repair_reason_code": "latest_discussion_knowledge_repaired",
+        }
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs_path.write_text(
+        json.dumps([repair.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+    target_page = tmp_path / "knowledge/topics/erc-8183-agentic-commerce.md"
+    target_page.parent.mkdir(parents=True, exist_ok=True)
+    target_page.write_text(
+        "---\n"
+        "title: ERC-8183 Agentic Commerce\n"
+        "type: topic\n"
+        "created: '2026-08-29'\n"
+        "updated: '2026-08-29'\n"
+        "source_ids:\n"
+        "  - tg:tawg:12\n"
+        "provenance_status: verified\n"
+        "---\n\n"
+        "# ERC-8183 Agentic Commerce\n\nOld page-1-only snapshot.\n",
+        encoding="utf-8",
+    )
+    output = reply_result(chinese=False)
+    output["reply_text"] = "Recorded and updated the discussion. [tg:tawg:10]"
+    ai = ContextualFakeAi("knowledge_correction", output)
+
+    with pytest.raises(ReplyRejected, match="reply preparation failed safely"):
+        await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+            repair.job_id,
+            now=NOW + timedelta(minutes=2),
+        )
+
+    persisted = json.loads(jobs_path.read_text(encoding="utf-8"))[0]
+    assert persisted["status"] == "pending"
+    assert persisted["safe_error_code"] == "reply_required_correction_missing"
+    reply_context = json.loads(ai.calls[1]["context_pack"])
+    assert reply_context["trigger"]["required_action"] == (
+        "persist_correction_transaction_before_confirming"
+    )
+    assert any(
+        item["path"] == "knowledge/topics/erc-8183-agentic-commerce.md"
+        for item in reply_context["retrieved"]
+    )
+    capability = reply_context["mutation_capability"]
+    assert capability["can_create_page"] is False
+    assert capability["allowed_create_roots"] == []
+    assert [item["path"] for item in capability["exact_revisions"]] == [
+        "knowledge/topics/erc-8183-agentic-commerce.md"
+    ]
+
+
+def _latest_discussion_repair_fixture(
+    root: Path,
+) -> tuple[PendingBotJob, Path, str]:
+    original = seed(root, "Please record this discussion.")
+    repair = original.model_copy(
+        update={
+            "job_id": "reply-repair:latest-discussion-write-v2:tg:tawg:12",
+            "repair_of_job_id": original.job_id,
+            "repair_reason_code": "latest_discussion_knowledge_repaired",
+        }
+    )
+    (root / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps([repair.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+    target = root / "knowledge/topics/erc-8183-agentic-commerce.md"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    content = (
+        "---\n"
+        "title: ERC-8183 Agentic Commerce\n"
+        "type: topic\n"
+        "created: '2026-08-23'\n"
+        "updated: '2026-08-23'\n"
+        "source_ids:\n"
+        "  - tg:tawg:12\n"
+        "provenance_status: verified\n"
+        "---\n\n"
+        "# ERC-8183 Agentic Commerce\n\nOld page-1-only snapshot.\n"
+    )
+    target.write_text(content, encoding="utf-8")
+    return repair, target, content
+
+
+def _latest_discussion_repair_result(
+    repair: PendingBotJob,
+    *,
+    path: str,
+    expected_sha256: str | None,
+    content: str,
+    creates_page: bool = False,
+) -> dict[str, Any]:
+    result = reply_result(chinese=False)
+    result.update(
+        {
+            "reply_text": "Recorded and updated the discussion. [tg:tawg:12]",
+            "citations": ["tg:tawg:12"],
+            "correction_transaction": {
+                "schema_version": "tawg.vault-transaction.v1",
+                "operation_id": repair.job_id,
+                "writes": [
+                    {
+                        "path": path,
+                        "expected_sha256": expected_sha256,
+                        "content": content,
+                        "citations": ["tg:tawg:12"],
+                    }
+                ],
+            },
+            "knowledge_write": (
+                {
+                    "authorship": "self_authored",
+                    "authorship_evidence": ["tg:tawg:12"],
+                    "original_url": None,
+                }
+                if creates_page
+                else None
+            ),
+            "scan_registration": None,
+        }
+    )
+    return result
+
+
+@pytest.mark.asyncio
+async def test_latest_discussion_knowledge_repair_rejects_unrelated_write(
+    tmp_path: Path,
+) -> None:
+    repair, target, original = _latest_discussion_repair_fixture(tmp_path)
+    unrelated = (
+        "---\n"
+        "title: Unrelated\n"
+        "type: topic\n"
+        "created: '2026-08-23'\n"
+        "updated: '2026-08-23'\n"
+        "source_ids:\n"
+        "  - tg:tawg:12\n"
+        "provenance_status: verified\n"
+        "---\n\n# Unrelated\n\nNot the requested repair.\n"
+    )
+    result = _latest_discussion_repair_result(
+        repair,
+        path="knowledge/topics/unrelated.md",
+        expected_sha256=None,
+        content=unrelated,
+        creates_page=True,
+    )
+
+    with pytest.raises(ReplyRejected, match="reply preparation failed safely"):
+        await BotReplyService(
+            tmp_path,
+            ai=ContextualFakeAi("knowledge_correction", result),
+            bot_username="bot",
+        ).prepare(repair.job_id, now=NOW + timedelta(minutes=2))
+
+    assert target.read_text(encoding="utf-8") == original
+    persisted = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )[0]
+    assert persisted["safe_error_code"] == "reply_required_correction_target_invalid"
+    assert not (tmp_path / "knowledge/topics/unrelated.md").exists()
+
+
+@pytest.mark.asyncio
+async def test_latest_discussion_knowledge_repair_rejects_noop_write(
+    tmp_path: Path,
+) -> None:
+    repair, target, original = _latest_discussion_repair_fixture(tmp_path)
+    result = _latest_discussion_repair_result(
+        repair,
+        path="knowledge/topics/erc-8183-agentic-commerce.md",
+        expected_sha256=hashlib.sha256(original.encode()).hexdigest(),
+        content=original,
+    )
+
+    with pytest.raises(ReplyRejected, match="reply preparation failed safely"):
+        await BotReplyService(
+            tmp_path,
+            ai=ContextualFakeAi("knowledge_correction", result),
+            bot_username="bot",
+        ).prepare(repair.job_id, now=NOW + timedelta(minutes=2))
+
+    assert target.read_text(encoding="utf-8") == original
+    persisted = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )[0]
+    assert persisted["safe_error_code"] == "reply_required_correction_noop"
+
+
+@pytest.mark.asyncio
+async def test_latest_discussion_knowledge_repair_requires_actual_target_change(
+    tmp_path: Path,
+) -> None:
+    repair, target, original = _latest_discussion_repair_fixture(tmp_path)
+    updated = original.replace(
+        "Old page-1-only snapshot.",
+        "Current synthesis includes the complete discussion. [tg:tawg:12]",
+    )
+    result = _latest_discussion_repair_result(
+        repair,
+        path="knowledge/topics/erc-8183-agentic-commerce.md",
+        expected_sha256=hashlib.sha256(original.encode()).hexdigest(),
+        content=updated,
+    )
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ContextualFakeAi("knowledge_correction", result),
+        bot_username="bot",
+    ).prepare(repair.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared is not None
+    assert target.read_text(encoding="utf-8") == updated
+    persisted = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )[0]
+    assert persisted["status"] == "ready"
+    assert persisted["safe_error_code"] is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("route", ["ignore", "refuse"])
+async def test_latest_discussion_knowledge_repair_rejects_non_correction_route(
+    tmp_path: Path,
+    route: str,
+) -> None:
+    repair, target, original = _latest_discussion_repair_fixture(tmp_path)
+
+    with pytest.raises(ReplyRejected, match="reply preparation failed safely"):
+        await BotReplyService(
+            tmp_path,
+            ai=ContextualFakeAi(route, reply_result(chinese=False)),
+            bot_username="bot",
+        ).prepare(repair.job_id, now=NOW + timedelta(minutes=2))
+
+    assert target.read_text(encoding="utf-8") == original
+    persisted = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )[0]
+    assert persisted["status"] == "pending"
+    assert persisted["prepared_reply_text"] is None
+    assert persisted["safe_error_code"] == "reply_required_correction_route_invalid"
+
+
 @pytest.mark.asyncio
 async def test_audited_correction_followup_can_create_one_content_page_when_ai_uses_knowledge_scope(
     tmp_path: Path,
