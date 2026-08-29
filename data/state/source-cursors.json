@@ -11,9 +11,9 @@
     "repo:eip7702-rescue:metadata_sha256": "77d86bd328cd492589e2a35a2fb265ad74beb397d3869ec76a3baedee7ce0610",
     "repo:observation-conditions-note:metadata_sha256": "8f584058b935d11bd58556e6b4845a9adb312621c1aef40ba2b1e963fcdf281e",
     "repo:pq-agent-binding:metadata_sha256": "bb162c3af447014b189b38c1bd78fdfda65805b44e6fdeb42734fc24a1331588",
-    "repo:recompute-kit:metadata_sha256": "f9c0c5ede031bdff2586296317a1c281550792e9dbb9bb845ae6db65ba59a045",
+    "repo:recompute-kit:metadata_sha256": "201dd9e573023cc40ba50fc2f40bc38bf67b0f18cca0b11c32f74264637dd732",
     "repo:recompute-lens:metadata_sha256": "3ca70fe18e4e62e8ea690138da610229ebfa681c3a23d3ddbfe9cd9112091551",
-    "repo:tawg-daily-contribution:metadata_sha256": "06c3b02ef0fde6a212f539ddb4a188ac5b1914b1d08f796a779d2bca889f3e0f",
+    "repo:tawg-daily-contribution:metadata_sha256": "acc4c5c9fb6319a8bca26264c88cd9c7dd48e2b6c8e02d6d75cce3f321f88cc0",
     "repo:trustless-agent-substrate:metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
     "repo:trustless-ai-landing:metadata_sha256": "7a57b0fceec9cd7150d2b697d3ef577c7fdb3eb227916765de296850833c7421",
     "repo:zkIE:metadata_sha256": "801c74d01767bf4ac32728169271f06d47cef5095953dc2ac3704ba76de50fe3"
