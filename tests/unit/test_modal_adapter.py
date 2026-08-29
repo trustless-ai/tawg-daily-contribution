@@ -732,6 +732,7 @@ async def test_worker_restores_inherited_git_environment_after_session(
 async def test_scheduled_no_argument_worker_runs_maintenance_in_the_same_boundary(
     modal_adapter: types.ModuleType,
     fake_worker_dependencies: None,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     del fake_worker_dependencies
 
@@ -746,6 +747,55 @@ async def test_scheduled_no_argument_worker_runs_maintenance_in_the_same_boundar
     now, observe_only = FakeRuntime.maintenance_calls[0]
     assert now.tzinfo is UTC
     assert observe_only is False
+    assert capsys.readouterr().out.splitlines() == [
+        "tawg_event=worker_started operation=maintenance",
+        "tawg_event=worker_completed operation=maintenance",
+    ]
+
+
+@pytest.mark.asyncio
+async def test_worker_failure_log_is_safe_and_re_raises(
+    modal_adapter: types.ModuleType,
+    fake_worker_dependencies: None,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    del fake_worker_dependencies
+
+    async def fail_run(self: object, **kwargs: object) -> object:
+        del self, kwargs
+        raise RuntimeError("sensitive backend failure")
+
+    monkeypatch.setattr(modal_adapter.RepositorySession, "run", fail_run)
+
+    with pytest.raises(RuntimeError, match="sensitive backend failure"):
+        await modal_adapter.repository_worker.raw_f()
+
+    rendered = capsys.readouterr().out
+    assert rendered.splitlines() == [
+        "tawg_event=worker_started operation=maintenance",
+        "tawg_event=worker_failed operation=maintenance",
+    ]
+    assert "sensitive backend failure" not in rendered
+
+
+@pytest.mark.asyncio
+async def test_malformed_webhook_payload_emits_safe_worker_failure_log(
+    modal_adapter: types.ModuleType,
+    fake_worker_dependencies: None,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    del fake_worker_dependencies
+
+    with pytest.raises(ValueError):
+        await modal_adapter.repository_worker.raw_f({"update_id": "not-an-integer"})
+
+    rendered = capsys.readouterr().out
+    assert rendered.splitlines() == [
+        "tawg_event=worker_started operation=webhook",
+        "tawg_event=worker_failed operation=webhook",
+    ]
+    assert "not-an-integer" not in rendered
 
 
 @pytest.mark.asyncio

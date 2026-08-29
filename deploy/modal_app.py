@@ -168,29 +168,36 @@ async def _bounded_body(stream: AsyncIterator[bytes]) -> bytes | None:
 async def repository_worker(envelope_payload: dict[str, object] | None = None) -> None:
     """Run one webhook ingestion or maintenance repository session."""
     now = datetime.now(UTC)
-    envelope = (
-        TelegramWebhookEnvelope.model_validate(envelope_payload)
-        if envelope_payload is not None
-        else None
-    )
-    operation_id = (
-        f"webhook:{envelope.update_id}"
-        if envelope is not None
-        else f"maintenance:{int(now.timestamp())}"
-    )
-
-    async def run_runtime(root: Path) -> None:
-        runtime = ProductionRuntime.from_environment(root)
-        if envelope is not None:
-            await runtime.ingest_webhook_envelope(envelope, now=now)
-        else:
-            await runtime.maintenance_tick(now, observe_only=False)
-
-    with _repository_environment():
-        await RepositorySession(remote=_REMOTE, branch=_BRANCH).run(
-            operation_id=operation_id,
-            operation=run_runtime,
+    operation_kind = "webhook" if envelope_payload is not None else "maintenance"
+    print(f"tawg_event=worker_started operation={operation_kind}", flush=True)
+    try:
+        envelope = (
+            TelegramWebhookEnvelope.model_validate(envelope_payload)
+            if envelope_payload is not None
+            else None
         )
+        operation_id = (
+            f"webhook:{envelope.update_id}"
+            if envelope is not None
+            else f"maintenance:{int(now.timestamp())}"
+        )
+
+        async def run_runtime(root: Path) -> None:
+            runtime = ProductionRuntime.from_environment(root)
+            if envelope is not None:
+                await runtime.ingest_webhook_envelope(envelope, now=now)
+            else:
+                await runtime.maintenance_tick(now, observe_only=False)
+
+        with _repository_environment():
+            await RepositorySession(remote=_REMOTE, branch=_BRANCH).run(
+                operation_id=operation_id,
+                operation=run_runtime,
+            )
+    except Exception:
+        print(f"tawg_event=worker_failed operation={operation_kind}", flush=True)
+        raise
+    print(f"tawg_event=worker_completed operation={operation_kind}", flush=True)
 
 
 @app.function(
