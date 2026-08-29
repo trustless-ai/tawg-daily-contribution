@@ -177,6 +177,18 @@ class ReplyRepairReconciler:
             reason_code="stale_citation_context_repaired",
             requires_refusal=False,
         ),
+        "reply:tg:tawg:3620": _ReplyRepairSpec(
+            trigger_id="tg:tawg:3620",
+            trigger_sha256=(
+                "9b455c63c9053fa84ba7e1d10323511bab8f97cfd6f75d0865180792540f6160"
+            ),
+            prepared_text_sha256=(
+                "31bf2825372e00933fa845ceebf1342d8eb016b04963f7259a15dfdf1dd1d2ac"
+            ),
+            policy_version="latest-discussion-v2",
+            reason_code="latest_discussion_page_coverage_repaired",
+            requires_refusal=False,
+        ),
     }
 
     def __init__(self, root: Path, *, bot_username: str) -> None:

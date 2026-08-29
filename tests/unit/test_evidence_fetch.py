@@ -3,6 +3,8 @@ from __future__ import annotations
 import asyncio
 import hashlib
 import ipaddress
+import json
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime, timedelta
 
 import httpx
@@ -31,6 +33,17 @@ class Resolver:
         return self.addresses
 
 
+class TrackingStream(httpx.AsyncByteStream):
+    def __init__(self, chunks: list[bytes]) -> None:
+        self.chunks = chunks
+        self.yield_count = 0
+
+    async def __aiter__(self) -> AsyncIterator[bytes]:
+        for chunk in self.chunks:
+            self.yield_count += 1
+            yield chunk
+
+
 def source(*, max_bytes: int = 100, mime_types: list[str] | None = None) -> RegisteredSource:
     return RegisteredSource.model_validate(
         {
@@ -46,6 +59,30 @@ def source(*, max_bytes: int = 100, mime_types: list[str] | None = None) -> Regi
                 "allowed_path_prefixes": ["/evidence"],
                 "max_bytes": max_bytes,
                 "mime_types": mime_types or ["text/plain", "text/html"],
+            },
+            "last_observed": None,
+            "status": "active",
+        }
+    )
+
+
+def discourse_source(*, max_bytes: int = 1_000_000) -> RegisteredSource:
+    return RegisteredSource.model_validate(
+        {
+            "source_key": "magicians-8183",
+            "topics": ["erc-8183"],
+            "kind": "discussion",
+            "authority": "community",
+            "canonical_url": (
+                "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902"
+            ),
+            "immutable_url": None,
+            "fetch_policy": {
+                "policy": "public-text",
+                "allowed_hosts": ["ethereum-magicians.org"],
+                "allowed_path_prefixes": ["/t/erc-8183-agentic-commerce/27902"],
+                "max_bytes": max_bytes,
+                "mime_types": ["text/html", "text/plain", "application/json"],
             },
             "last_observed": None,
             "status": "active",
@@ -85,6 +122,203 @@ async def test_fetch_returns_normalized_transient_evidence_without_ambient_crede
     assert seen_headers is not None
     assert "authorization" not in seen_headers
     assert "cookie" not in seen_headers
+
+
+@pytest.mark.asyncio
+async def test_discourse_discussion_fetches_the_latest_topic_page() -> None:
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request.url.path)
+        if request.url.path.endswith("/1.json"):
+            return httpx.Response(
+                200,
+                headers={"Content-Type": "application/json"},
+                json={
+                    "id": 27902,
+                    "title": "ERC-8183: Agentic Commerce",
+                    "highest_post_number": 394,
+                    "last_posted_at": "2026-08-24T15:58:38.080Z",
+                    "post_stream": {
+                        "posts": [
+                            {
+                                "post_number": 1,
+                                "username": "author",
+                                "created_at": "2026-03-04T21:49:13.338Z",
+                                "cooked": "<p>Stale opening post.</p>",
+                            }
+                        ]
+                    },
+                },
+            )
+        if request.url.path.endswith("/394.json"):
+            return httpx.Response(
+                200,
+                headers={"Content-Type": "application/json"},
+                json={
+                    "id": 27902,
+                    "title": "ERC-8183: Agentic Commerce",
+                    "highest_post_number": 394,
+                    "last_posted_at": "2026-08-24T15:58:38.080Z",
+                    "post_stream": {
+                        "posts": [
+                            {
+                                "post_number": 394,
+                                "username": "latest-author",
+                                "created_at": "2026-08-24T15:58:38.080Z",
+                                "cooked": (
+                                    "<p>Latest discussion focuses on evaluator "
+                                    "responsiveness.</p>"
+                                ),
+                            }
+                        ]
+                    },
+                },
+            )
+        return httpx.Response(
+            200,
+            headers={"Content-Type": "text/html"},
+            text="Stale opening page only.",
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        fetched = await RestrictedEvidenceFetcher(
+            client=client,
+            resolver=Resolver("8.8.8.8"),
+        ).fetch(discourse_source(), now=NOW)
+
+    assert calls == [
+        "/t/erc-8183-agentic-commerce/27902/1.json",
+        "/t/erc-8183-agentic-commerce/27902/394.json",
+    ]
+    assert "Post 394 by latest-author" in fetched.text
+    assert "Latest discussion focuses on evaluator responsiveness." in fetched.text
+    assert "Stale opening post" not in fetched.text
+    assert fetched.citation_url == discourse_source().canonical_url
+    assert fetched.version == "2026-08-24T15:58:38.080Z"
+
+
+@pytest.mark.asyncio
+async def test_discourse_fetch_stops_at_the_aggregate_source_byte_limit() -> None:
+    overview_payload = json.dumps(
+        {
+            "id": 27902,
+            "title": "ERC-8183",
+            "highest_post_number": 394,
+            "last_posted_at": "2026-08-24T15:58:38.080Z",
+            "post_stream": {"posts": []},
+        }
+    ).encode()
+    latest_payload = json.dumps(
+        {
+            "id": 27902,
+            "title": "ERC-8183",
+            "highest_post_number": 394,
+            "last_posted_at": "2026-08-24T15:58:38.080Z",
+            "post_stream": {
+                "posts": [
+                    {
+                        "post_number": 394,
+                        "username": "latest-author",
+                        "created_at": "2026-08-24T15:58:38.080Z",
+                        "cooked": f"<p>{'x' * 180}</p>",
+                    }
+                ]
+            },
+        }
+    ).encode()
+    max_bytes = max(len(overview_payload), len(latest_payload)) + 1
+    remaining = max_bytes - len(overview_payload)
+    assert 0 < remaining < len(latest_payload) < max_bytes
+    first_chunk_size = max(1, remaining // 2)
+    second_chunk_end = min(len(latest_payload), remaining + 1)
+    stream = TrackingStream(
+        [
+            latest_payload[:first_chunk_size],
+            latest_payload[first_chunk_size:second_chunk_end],
+            latest_payload[second_chunk_end:],
+        ]
+    )
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if request.url.path.endswith("/1.json"):
+            return httpx.Response(
+                200,
+                headers={"Content-Type": "application/json"},
+                content=overview_payload,
+            )
+        return httpx.Response(
+            200,
+            headers={"Content-Type": "application/json"},
+            stream=stream,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(EvidenceFetchRejected, match="size_policy"):
+            await RestrictedEvidenceFetcher(
+                client=client,
+                resolver=Resolver("8.8.8.8"),
+            ).fetch(discourse_source(max_bytes=max_bytes), now=NOW)
+
+    assert stream.yield_count == 2
+
+
+@pytest.mark.asyncio
+async def test_discourse_fetch_shares_one_redirect_budget_across_pages() -> None:
+    calls: list[str] = []
+    overview = {
+        "id": 27902,
+        "title": "ERC-8183",
+        "highest_post_number": 394,
+        "last_posted_at": "2026-08-24T15:58:38.080Z",
+        "post_stream": {"posts": []},
+    }
+    latest = {
+        **overview,
+        "post_stream": {
+            "posts": [
+                {
+                    "post_number": 394,
+                    "username": "latest-author",
+                    "created_at": "2026-08-24T15:58:38.080Z",
+                    "cooked": "<p>Latest post.</p>",
+                }
+            ]
+        },
+    }
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(request.url.path)
+        path = request.url.path
+        if path.endswith("/1.json"):
+            return httpx.Response(302, headers={"Location": "overview.json"})
+        if path.endswith("/overview.json"):
+            return httpx.Response(
+                200,
+                headers={"Content-Type": "application/json"},
+                json=overview,
+            )
+        if path.endswith("/394.json"):
+            return httpx.Response(302, headers={"Location": "latest.json"})
+        return httpx.Response(
+            200,
+            headers={"Content-Type": "application/json"},
+            json=latest,
+        )
+
+    async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
+        with pytest.raises(EvidenceFetchRejected, match="redirect_policy"):
+            await RestrictedEvidenceFetcher(
+                client=client,
+                resolver=Resolver("8.8.8.8"),
+                max_redirects=1,
+            ).fetch(discourse_source(), now=NOW)
+
+    assert calls == [
+        "/t/erc-8183-agentic-commerce/27902/1.json",
+        "/t/erc-8183-agentic-commerce/27902/overview.json",
+        "/t/erc-8183-agentic-commerce/27902/394.json",
+    ]
 
 
 @pytest.mark.asyncio
