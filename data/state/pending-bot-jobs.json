@@ -82,14 +82,17 @@
     "updated_at": "2026-08-29T01:30:11.311387Z"
   },
   {
-    "attempts": 2,
+    "attempts": 3,
     "classified_route": "knowledge_correction",
     "created_at": "2026-08-29T02:25:10.124740Z",
     "job_id": "reply-repair:latest-discussion-write-v1:tg:tawg:3650",
     "message_thread_id": null,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "https://eips.ethereum.org/EIPS/eip-8183",
+      "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "Recorded, Jimmy! ✅\n\nUpdated the ERC-8183 knowledge page with the full current discussion. Previous snapshot covered only page 1 (through March 11 2026); the updated page now captures all major threads through 2026-[REDACTED_PHONE] posts):\n\n- **job.reason property-contract** — thread converged on canonical/recomputable/tamper-evident/attributable as the correct level, with two independent implementations (proof-based + behavioral JWS) arriving there independently. v0.2 spec pass planned.\n- **Evaluator availability gap** — structural issue where a submitted provider loses funds if the evaluator ignores the job; converged on `evaluationWindow` at createJob + `evaluationDeadline` materialized at submit.\n- **Discriminated expiry + submission bond** — `JobExpired` needs a discriminator between Funded→Expired and Submitted→Expired; a burned bond at submit is required to make it forgery-resistant; both are core, not profile.\n- **ThoughtProof self-correction** — public audit correction: the cited Base mainnet evaluator contract had zero post-deploy calls, was pre-two-phase bytecode, and the cited settlement transaction used a wallet, not the evaluator contract.\n- **On-chain forensics** — predecessor data: 72.5% no-evaluator, 76.1% self-evaluated volume, 398 empty-hash deliverables of which 98.49% were approved and paid; ERC-8004 ValidationRegistry effectively unused (12 requests vs 419,155 reputation events).\n- **ERC-8378 composition** — parametric token proposal for post-completion settlement without interface changes.\n\nhttps://eips.ethereum.org/EIPS/eip-8183 — https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902",
     "refusal": false,
     "repair_of_job_id": "reply:tg:tawg:3650",
     "repair_reason_code": "latest_discussion_knowledge_repaired",
@@ -98,12 +101,12 @@
     "router_context_scope": "knowledge",
     "router_context_sha256": "ae249cda56d6d2c5cc6f4ef9c1a78119f60a09c71c3e2ca8ac75969997cf19ad",
     "router_version": "contextual-ai-v5",
-    "safe_error_code": "reply_validation_failed",
+    "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3650",
-    "updated_at": "2026-08-29T02:25:29.302382Z"
+    "updated_at": "2026-08-29T02:29:25.489527Z"
   },
   {
     "attempts": 4,
