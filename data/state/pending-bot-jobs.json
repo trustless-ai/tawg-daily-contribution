@@ -56,7 +56,7 @@
     "updated_at": "2026-08-28T15:21:19.438517Z"
   },
   {
-    "attempts": 8,
+    "attempts": 9,
     "classified_route": "knowledge_question",
     "created_at": "2026-08-29T01:00:25.215295Z",
     "job_id": "reply-repair:latest-discussion-v2:tg:tawg:3620",
@@ -77,7 +77,7 @@
     "status": "pending",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3620",
-    "updated_at": "2026-08-29T01:10:27.274964Z"
+    "updated_at": "2026-08-29T01:10:45.329542Z"
   },
   {
     "attempts": 4,
