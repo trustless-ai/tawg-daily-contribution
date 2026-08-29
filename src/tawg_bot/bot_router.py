@@ -647,8 +647,18 @@ class BotReplyService:
                 if evidence_pack is not None
                 else ()
             )
-            if verified_external_locators:
-                uow.register_trusted_source_locators(verified_external_locators)
+            persisted_reply_locators = tuple(
+                citation
+                for existing_job_id, existing_job in jobs.items()
+                if existing_job_id != job_id
+                for citation in existing_job.prepared_citations
+                if citation.startswith("https://")
+            )
+            trusted_reply_locators = tuple(
+                dict.fromkeys((*verified_external_locators, *persisted_reply_locators))
+            )
+            if trusted_reply_locators:
+                uow.register_trusted_source_locators(trusted_reply_locators)
             if evidence_pack is None and route is BotRoute.SOURCE_SUGGESTION:
                 if self.knowledge_state is None:
                     raise ReplyRejected("source candidate state is not configured")

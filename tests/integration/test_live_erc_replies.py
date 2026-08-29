@@ -33,6 +33,9 @@ IMPLEMENTATION = (
 ERC_8281_IMPLEMENTATION = (
     "https://github.com/trustless-ai/agent-ercs/blob/main/contracts/verify/ERC8281/README.md"
 )
+RELATED_DISCUSSION = (
+    "https://ethereum-magicians.org/t/recomputable-verification-receipts-rvr/29521"
+)
 
 
 class FakeAi:
@@ -551,7 +554,7 @@ async def test_retrieved_source_url_can_be_persisted_as_a_prepared_citation(
     job = _seed(tmp_path, "@bot What is the current status of ERC-8004?")
     pack = _pack()
     canonical = pack.evidence[0]
-    canonical_text = f"Canonical source: {CANONICAL}"
+    canonical_text = f"Canonical source: {CANONICAL}; related discussion: {RELATED_DISCUSSION}"
     canonical = canonical.model_copy(
         update={
             "text": canonical_text,
@@ -574,9 +577,9 @@ async def test_retrieved_source_url_can_be_persisted_as_a_prepared_citation(
             "job_id": "reply:tg:tawg:99",
             "status": JobStatus.DELIVERED,
             "attempts": 1,
-            "prepared_reply_text": f"Previous answer: {IMPLEMENTATION}",
+            "prepared_reply_text": f"Previous answer: {RELATED_DISCUSSION}",
             "prepared_language": "en",
-            "prepared_citations": [IMPLEMENTATION],
+            "prepared_citations": [RELATED_DISCUSSION],
         }
     )
     jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
