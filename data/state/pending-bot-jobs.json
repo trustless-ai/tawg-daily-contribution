@@ -56,14 +56,16 @@
     "updated_at": "2026-08-28T15:21:19.438517Z"
   },
   {
-    "attempts": 18,
+    "attempts": 19,
     "classified_route": "knowledge_question",
     "created_at": "2026-08-29T01:00:25.215295Z",
     "job_id": "reply-repair:latest-discussion-v2:tg:tawg:3620",
     "message_thread_id": null,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "Here's a rundown of the latest ERC-8183 discussion threads, based on the Ethereum Magicians forum fetched at 2026-08-29T01:30 UTC (latest post #394, 2026-08-24): https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902\n\n---\n\n**1. `job.reason` as a property-contract (Posts 375–383)**\n\nThe thread converged on defining `job.reason` by *properties* it must guarantee — canonical, recomputable, tamper-evident, attributable — rather than fixing it to a specific digest encoding. Two independent implementations arrived at this same contract from completely different directions:\n- A proof-based system using an 8274 `verificationDigest`\n- Sentinel Oracle's behavioral-evaluation system using `keccak256` over JCS-canonical evidence, shipped as a signed JWS\n\nThe argument: if two unrelated designs both satisfy the same four-property contract without importing each other's format, the contract is the real invariant and the encoding is a deployment choice. The plan for a v0.2 pass is to require the properties, name both patterns as conforming examples, and explicitly state non-interpretation as a non-goal.\n\n---\n\n**2. Evaluator availability risk and `claimRefund` (Posts 384–391)**\n\nThis became the most technically involved thread. `blockbird` identified that `claimRefund` is callable in `Submitted` state — meaning a provider who delivers work gets a full refund to the *client* if the evaluator simply goes quiet before `expiredAt`. A client can engineer this by setting a short `expiredAt` and naming an evaluator it controls.\n\nThe discussion worked through the problem and converged on:\n- Add `evaluationWindow` at `createJob`, materialize `evaluationDeadline` at `submit()` — keeps `expiredAt` immutable and bounds the evaluator's response window\n- Add a **discriminated expiry event**: distinguish \"nobody submitted\" from \"evaluator didn't respond\"\n- Add a **submission-side burned bond**: entering `Submitted` must carry a protocol-verifiable cost, otherwise a provider can forge the \"evaluator timeout\" discriminator at zero cost — a free, unfalsifiable indictment of the evaluator\n\nThe core-vs-profile line that emerged: the *cost of entering the state* is core (it's what makes the discriminator meaningful evidence); *tuning that cost* is a profile concern. The authors were asked to confirm this direction before a diff is written.\n\n---\n\n**3. ThoughtProof correction (Post 392)**\n\nThoughtProof issued a formal correction to their March 2026 posts about their ERC-8183 evaluator deployments. Key points:\n- Both Base mainnet evaluator addresses showed zero observed post-deploy calls from deployment to chain head\n- The deployed bytecode at the address cited for v1.3 was a pre-two-phase contract; the v1.3-shaped deployment came four days *after* the post claiming it was already live\n- One cited settlement transaction was signed by an EOA, not by the evaluator contract\nThe correction was independently reproduced and acknowledged.\n\n---\n\n**4. On-chain empirics (Post 393)**\n\nA researcher indexed actual usage across the Virtuals ACP predecessor (62,953 jobs) and ERC-8004:\n- 72.5% of jobs had *no evaluator set*; 27.5% were self-evaluated; 0.02% (10 jobs) used an independent evaluator\n- 398 jobs submitted `keccak256(\"\")` as deliverable; 98.49% were approved and paid\n- ERC-8004 fixed literal self-feedback, but one agent received 66% of all feedback events from 60 addresses; the ValidationRegistry had 12 requests, 7 responses, one validator — on a single self-owned agent\n\nThe question raised to the authors: should ERC-8183 settlement be able to reference an ERC-8004 validation entry committed at decision time, making verification→payment→validation a closeable loop?\n\n---\n\n**5. Parametric token integration (Post 394)**\n\nThe newest post proposes using ERC-8378 (Parametric Token, an ERC-20 extension) as the `paymentToken`. The idea: final payment value could be settled *post-outcome* based on confirmed `executionTime` rather than a pre-fixed amount, without any changes to ERC-8183 interfaces. The evaluator's role becomes more economically meaningful — it can record actual performance, and the token itself carries that outcome as redeemable value.\n\n---\n\nThe two most active open questions heading into the next spec pass are the evaluator-availability/discriminated-expiry design and the validation-linkage question.\n\nLatest ERC-8183 Magicians discussion (fetched 2026-08-29, latest post #394 from 2026-08-24): five active threads — (1) `job.reason` converging on a 4-property contract (canonical/recomputable/tamper-evident/attributable) over a fixed encoding; (2) evaluator availability risk from `claimRefund` in Submitted state, with consensus on discriminated expiry + evaluation window in core + burned submission bond; (3) ThoughtProof's public correction of earlier deployment claims; (4) on-chain forensics showing near-zero independent evaluator usage and an unused ValidationRegistry; (5) a proposal to use ERC-8378 parametric tokens as `paymentToken` for post-outcome settlement.",
     "refusal": false,
     "repair_of_job_id": "reply:tg:tawg:3620",
     "repair_reason_code": "latest_discussion_page_coverage_repaired",
@@ -72,12 +74,12 @@
     "router_context_scope": "erc",
     "router_context_sha256": "8fdce983b14b2afcafa507cf93e386917e63fd95a3410750848a94bfc6c1b0e5",
     "router_version": "contextual-ai-v5",
-    "safe_error_code": "reply_model_failed",
+    "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3620",
-    "updated_at": "2026-08-29T01:25:37.363167Z"
+    "updated_at": "2026-08-29T01:30:11.311387Z"
   },
   {
     "attempts": 4,
