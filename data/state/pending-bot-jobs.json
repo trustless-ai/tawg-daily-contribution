@@ -1235,11 +1235,11 @@
     "router_context_scope": null,
     "router_context_sha256": null,
     "router_version": null,
-    "safe_error_code": "reply_route_model_process_failed",
+    "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "pending",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3648",
-    "updated_at": "2026-08-29T00:39:02.154518Z"
+    "updated_at": "2026-08-29T00:39:34.420148Z"
   }
 ]
