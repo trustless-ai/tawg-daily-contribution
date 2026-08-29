@@ -1243,7 +1243,7 @@
     "updated_at": "2026-08-29T00:40:10.552840Z"
   },
   {
-    "attempts": 2,
+    "attempts": 3,
     "classified_route": "knowledge_correction",
     "created_at": "2026-08-29T00:41:50.494089Z",
     "job_id": "reply:tg:tawg:3650",
@@ -1264,6 +1264,6 @@
     "status": "pending",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3650",
-    "updated_at": "2026-08-29T00:44:16.220711Z"
+    "updated_at": "2026-08-29T00:46:22.353546Z"
   }
 ]
