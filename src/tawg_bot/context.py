@@ -124,21 +124,21 @@ class ContextPackBuilder:
                 raise ContextRejected("priority context does not fit the configured budget")
         return ContextPack(text, hashlib.sha256(text.encode()).hexdigest(), omitted)
 
-    def _assert_public(self, value: object) -> None:
+    def _assert_public(self, value: object, *, parent_key: str | None = None) -> None:
         if isinstance(value, str):
             try:
-                self.privacy.assert_public(value)
+                self.privacy.assert_public_value(value, parent_key=parent_key)
             except PrivacyViolation as error:
                 raise ContextRejected(f"context privacy rejection: {error}") from None
             return
         if isinstance(value, dict):
             for key, item in value.items():
                 self._assert_public(str(key))
-                self._assert_public(item)
+                self._assert_public(item, parent_key=str(key))
             return
         if isinstance(value, list):
             for item in value:
-                self._assert_public(item)
+                self._assert_public(item, parent_key=parent_key)
 
     @staticmethod
     def _prune(value: object) -> bool:

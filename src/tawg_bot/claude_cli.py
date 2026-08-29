@@ -254,7 +254,7 @@ class ClaudeCli:
         while pending:
             value, parent_key = pending.pop()
             if isinstance(value, str):
-                self.privacy.assert_public(value)
+                self.privacy.assert_public_value(value, parent_key=parent_key)
             elif isinstance(value, _JsonObject):
                 for key, item in value.pairs:
                     self.privacy.assert_public(key)
@@ -279,7 +279,11 @@ class ClaudeCli:
         return ["claude"]
 
     def _sanitize_structured_output(
-        self, value: Any, *, controller_operation_id: str
+        self,
+        value: Any,
+        *,
+        controller_operation_id: str,
+        parent_key: str | None = None,
     ) -> Any:
         if isinstance(value, dict):
             is_transaction = value.get("schema_version") == "tawg.vault-transaction.v1"
@@ -288,7 +292,9 @@ class ClaudeCli:
                     controller_operation_id
                     if is_transaction and key == "operation_id"
                     else self._sanitize_structured_output(
-                        item, controller_operation_id=controller_operation_id
+                        item,
+                        controller_operation_id=controller_operation_id,
+                        parent_key=key,
                     )
                 )
                 for key, item in value.items()
@@ -296,11 +302,19 @@ class ClaudeCli:
         if isinstance(value, list):
             return [
                 self._sanitize_structured_output(
-                    item, controller_operation_id=controller_operation_id
+                    item,
+                    controller_operation_id=controller_operation_id,
+                    parent_key=parent_key,
                 )
                 for item in value
             ]
         if isinstance(value, str):
+            try:
+                self.privacy.assert_public_value(value, parent_key=parent_key)
+            except PrivacyViolation:
+                pass
+            else:
+                return value
             inspected = self.privacy.inspect(value)
             if not inspected.accepted or inspected.sanitized_text is None:
                 raise ClaudeCliError(

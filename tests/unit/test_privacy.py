@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from tawg_bot.privacy import PrivacyFilter, PrivateChatRejected
+from tawg_bot.privacy import PrivacyFilter, PrivacyViolation, PrivateChatRejected
 
 ROOT = Path(__file__).parents[2]
 
@@ -94,6 +94,132 @@ def test_iso_dates_are_not_mistaken_for_phone_numbers(redactor: PrivacyFilter) -
 
     assert result.accepted
     assert result.sanitized_text == "created: 2026-08-23"
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Updated through post #394 (2026-08-24).",
+        "Updated through 2026-08-24 (394 posts).",
+    ],
+)
+def test_forum_post_number_next_to_iso_date_is_not_a_phone(
+    redactor: PrivacyFilter,
+    text: str,
+) -> None:
+    result = redactor.inspect(text)
+
+    assert result.accepted
+    assert result.sanitized_text == text
+
+
+def test_phone_number_next_to_iso_date_is_still_redacted(
+    redactor: PrivacyFilter,
+) -> None:
+    result = redactor.inspect("Contact 4155550123 (2026-08-24 follow-up).")
+
+    assert result.accepted
+    assert result.sanitized_text is not None
+    assert "4155550123" not in result.sanitized_text
+    assert "[REDACTED_PHONE]" in result.sanitized_text
+
+
+@pytest.mark.parametrize(
+    ("text", "phone"),
+    [
+        (
+            "Updated through post #394 (2026-08-24); call 4155550123.",
+            "4155550123",
+        ),
+        (
+            "Call 415-555-0123 after post #394 (2026-08-24).",
+            "415-555-0123",
+        ),
+        (
+            "post #394 dated 2026-08-24; phone +1 (415) 555-0123",
+            "+1 (415) 555-0123",
+        ),
+    ],
+)
+def test_dated_forum_post_does_not_exempt_nearby_phone(
+    redactor: PrivacyFilter,
+    text: str,
+    phone: str,
+) -> None:
+    result = redactor.inspect(text)
+
+    assert result.accepted
+    assert result.sanitized_text is not None
+    assert phone not in result.sanitized_text
+    assert "[REDACTED_PHONE]" in result.sanitized_text
+
+
+def test_long_decimal_requires_explicit_technical_context(
+    redactor: PrivacyFilter,
+) -> None:
+    result = redactor.inspect("Account 1234567890123456")
+
+    assert result.accepted
+    assert result.sanitized_text == "Account [REDACTED_PHONE]"
+
+
+@pytest.mark.parametrize("field", ["observed_sha256", "content_sha256"])
+def test_decimal_sha256_fixture_is_explicit_technical_context(
+    redactor: PrivacyFilter,
+    field: str,
+) -> None:
+    text = f'"{field}":"' + "0" * 64 + '"'
+
+    result = redactor.inspect(text)
+
+    assert result.accepted
+    assert result.sanitized_text == text
+
+
+def test_structured_sha256_value_requires_sha256_field(
+    redactor: PrivacyFilter,
+) -> None:
+    value = "0" * 64
+
+    redactor.assert_public_value(value, parent_key="observed_sha256")
+    with pytest.raises(PrivacyViolation, match="unredacted_personal_data"):
+        redactor.assert_public_value(value, parent_key="account_number")
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Account hash=1234567890123456",
+        '"hash":"1234567890123456"',
+        "not-int 1234567890123456",
+        "uint999 1234567890123456",
+        "not-int" + " " * 61 + "1234567890123456",
+        "accountuint256" + " " * 57 + "1234567890123456",
+        "账户int 1234567890123456",
+        "éuint256 1234567890123456",
+        "\N{GREEK SMALL LETTER ALPHA}int8 1234567890123456",
+    ],
+)
+def test_untrusted_labels_do_not_exempt_long_account_numbers(
+    redactor: PrivacyFilter,
+    text: str,
+) -> None:
+    result = redactor.inspect(text)
+
+    assert result.accepted
+    assert result.sanitized_text is not None
+    assert "1234567890123456" not in result.sanitized_text
+    assert "[REDACTED_PHONE]" in result.sanitized_text
+
+
+@pytest.mark.parametrize("integer_type", ["int", "uint", "int8", "uint256"])
+def test_legal_integer_type_exempts_long_decimal(
+    redactor: PrivacyFilter,
+    integer_type: str,
+) -> None:
+    text = f"{integer_type} 123456789012345678901234567890"
+
+    assert redactor.inspect(text).sanitized_text == text
 
 
 def test_github_comment_record_id_is_not_treated_as_a_phone(

@@ -72,6 +72,28 @@ class PrivacyFilter:
     _UNIX_TIMESTAMP_KEYS = frozenset(
         {"block_time", "epoch", "timestamp", "unix_timestamp"}
     )
+    _SHA256_KEYS = frozenset(
+        {
+            "approval_sha256",
+            "content_sha256",
+            "expected_sha256",
+            "metadata_sha256",
+            "observed_sha256",
+            "previous_sha256",
+            "prepared_text_sha256",
+            "router_context_sha256",
+            "sha256",
+            "source_sha256",
+            "source_state_sha256",
+            "trigger_sha256",
+        }
+    )
+    _SHA256_VALUE = re.compile(r"[A-Fa-f0-9]{64}")
+    _INTEGER_WIDTHS = "|".join(str(width) for width in range(8, 257, 8))
+    _TYPED_INTEGER_PREFIX = re.compile(
+        rf"(?<![\w-])(?:u?int(?:(?:{_INTEGER_WIDTHS}))?)[ \t]+$",
+        re.I,
+    )
 
     def __init__(
         self,
@@ -113,10 +135,39 @@ class PrivacyFilter:
         sanitized = text
         sanitized = self._EMAIL.sub("[REDACTED_EMAIL]", sanitized)
         public_urls = tuple(match.span() for match in re.finditer(r"https?://\S+", sanitized, re.I))
+        dated_forum_posts = tuple(
+            match.span()
+            for pattern in (
+                re.compile(
+                    r"\bposts?\s*#?\s*\d{1,6}\s*\(\s*"
+                    r"\d{4}-\d{2}-\d{2}\s*\)",
+                    re.I,
+                ),
+                re.compile(
+                    r"\b\d{4}-\d{2}-\d{2}\s*\(\s*"
+                    r"\d{1,6}\s+posts?\s*\)",
+                    re.I,
+                ),
+            )
+            for match in pattern.finditer(sanitized)
+        )
+        sha256_json_values = tuple(
+            match.span("value")
+            for match in re.finditer(
+                r'"(?P<key>[A-Za-z0-9_]+)"\s*:\s*"(?P<value>[A-Fa-f0-9]{64})"',
+                sanitized,
+            )
+            if match.group("key") in self._SHA256_KEYS
+        )
 
         def replace_phone(match: re.Match[str]) -> str:
             value = match.group(0)
             if any(start <= match.start() and match.end() <= end for start, end in public_urls):
+                return value
+            if any(
+                start <= match.start() and match.end() <= end
+                for start, end in dated_forum_posts
+            ):
                 return value
             github_prefix = sanitized[max(0, match.start() - 256) : match.start()]
             github_suffix = sanitized[match.end() : match.end() + 1]
@@ -128,8 +179,15 @@ class PrivacyFilter:
             ) and (not github_suffix or github_suffix in {'"', "'", ",", "]", "}", "\n"}):
                 return value
             digit_count = sum(character.isdigit() for character in value)
-            if digit_count > 15:
-                return value
+            if digit_count > 15 and value.isdigit():
+                if any(
+                    start <= match.start() and match.end() <= end
+                    for start, end in sha256_json_values
+                ):
+                    return value
+                numeric_prefix = sanitized[: match.start()]
+                if self._TYPED_INTEGER_PREFIX.search(numeric_prefix):
+                    return value
             if value.isdigit():
                 context = sanitized[max(0, match.start() - 40) : match.start()]
                 surrounding = sanitized[
@@ -233,6 +291,16 @@ class PrivacyFilter:
             raise PrivacyViolation(inspected.reason_code or "unsafe_text")
         if inspected.sanitized_text != text:
             raise PrivacyViolation("unredacted_personal_data")
+
+    def assert_public_value(self, value: str, *, parent_key: str | None) -> None:
+        """Validate a structured string while preserving exact SHA-256 fields."""
+
+        if (
+            parent_key in self._SHA256_KEYS
+            and self._SHA256_VALUE.fullmatch(value) is not None
+        ):
+            return
+        self.assert_public(value)
 
     def assert_public_numeric(self, value: int | float, *, parent_key: str | None) -> None:
         if parent_key in self._drop_numeric_id_keys:

@@ -262,6 +262,81 @@ async def test_cli_still_rejects_personal_data_inside_a_json_leaf(tmp_path: Path
 
 
 @pytest.mark.asyncio
+async def test_cli_allows_exact_sha256_value_under_an_explicit_sha256_key(
+    tmp_path: Path,
+) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+    context_pack = json.dumps({"observed_sha256": "0" * 64})
+
+    await cli.run(
+        job_type="reply",
+        context_pack=context_pack,
+        operation_id="structured-context-sha256",
+        max_budget_usd="0.25",
+    )
+
+    assert runner.stdin == context_pack
+
+
+@pytest.mark.asyncio
+async def test_cli_rejects_sha_shaped_digits_under_an_untrusted_key(
+    tmp_path: Path,
+) -> None:
+    runner = CapturingRunner(outer_reply())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+
+    with pytest.raises(ClaudeCliError, match="context pack failed privacy validation"):
+        await cli.run(
+            job_type="reply",
+            context_pack=json.dumps({"account_number": "0" * 64}),
+            operation_id="structured-context-fake-sha256",
+            max_budget_usd="0.25",
+        )
+
+    assert runner.argv == []
+
+
+def test_cli_structured_output_preserves_exact_sha256_field(
+    tmp_path: Path,
+) -> None:
+    cli = ClaudeCli(root=ROOT, runner=CapturingRunner({}), runtime_root=tmp_path)
+    value = "0" * 64
+
+    sanitized = cli._sanitize_structured_output(
+        {"expected_sha256": value},
+        controller_operation_id="structured-output-sha256",
+    )
+
+    assert sanitized == {"expected_sha256": value}
+
+
+def test_cli_structured_output_does_not_exempt_untrusted_sha_shaped_field(
+    tmp_path: Path,
+) -> None:
+    cli = ClaudeCli(root=ROOT, runner=CapturingRunner({}), runtime_root=tmp_path)
+
+    sanitized = cli._sanitize_structured_output(
+        {"account_number": "0" * 64},
+        controller_operation_id="structured-output-fake-sha256",
+    )
+
+    assert sanitized == {"account_number": "[REDACTED_PHONE]"}
+
+
+@pytest.mark.asyncio
 async def test_cli_still_rejects_a_phone_number_encoded_as_a_json_number(
     tmp_path: Path,
 ) -> None:
