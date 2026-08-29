@@ -118,6 +118,24 @@
     "updated_at": "2026-08-28T05:28:07.780897Z"
   },
   {
+    "content_sha256": "67de787179e0a05f221c44389cc42a5a2d18415de282d75a5bd0a555e492e945",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply-repair:bot-health-evidence-v1:tg:tawg:3668",
+    "destination": "tawg",
+    "job_id": "reply-repair:bot-health-evidence-v1:tg:tawg:3668",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-08-29T04:15:42.400522Z",
+    "reply_to_message_id": 3668,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-08-29T04:15:42.400522Z"
+  },
+  {
     "content_sha256": "144afabf473139e7b0e9bd5a31af9ff6a55c0f88016d40dc756831d9ff5c14c2",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "reply-repair:correction-followup-v1:tg:tawg:3470",
