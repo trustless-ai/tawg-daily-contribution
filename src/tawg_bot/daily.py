@@ -172,6 +172,16 @@ class DailyService:
         deadline = monotonic() + self.timeout_seconds
         rejection: DailyRejected | None = None
         for attempt in range(2):
+            context_pack = context
+            if rejection is not None:
+                context_pack = self._context(
+                    window,
+                    context_evidence,
+                    revision_feedback=(
+                        f"The previous draft was rejected: {rejection}. Return a corrected "
+                        "full result that follows the existing output contract."
+                    ),
+                )
             timeout_seconds = (
                 self.timeout_seconds if attempt == 0 else deadline - monotonic()
             )
@@ -180,7 +190,7 @@ class DailyService:
                 raise rejection
             raw = await self.ai.run(
                 job_type="daily",
-                context_pack=context,
+                context_pack=context_pack,
                 operation_id=operation_id,
                 max_budget_usd=str(self.policy["max_model_budget_usd"]),
                 timeout_seconds=timeout_seconds,
@@ -201,7 +211,13 @@ class DailyService:
         assert rejection is not None
         raise rejection
 
-    def _context(self, window: DailyWindow, evidence: tuple[DailyEvidence, ...]) -> str:
+    def _context(
+        self,
+        window: DailyWindow,
+        evidence: tuple[DailyEvidence, ...],
+        *,
+        revision_feedback: str | None = None,
+    ) -> str:
         mention_labels = self._mention_labels(evidence)
         evidence_payload: list[dict[str, Any]] = []
         for item in evidence:
@@ -237,87 +253,90 @@ class DailyService:
             if item.path.startswith("knowledge/")
         ]
         schema = self._json_mapping(self.root / "src/tawg_bot/schemas/daily-result.v1.json")
-        inputs = ContextInputs(
-            trigger={
-                "operation": "prepare_daily_catch_up",
-                "window_id": window.window_id,
-                "window_start": window.start.isoformat(),
-                "window_end": window.end.isoformat(),
-                "required_heading": "TAWG Daily Catch-up",
-                "required_window_label": self._window_label(window),
-                "output_contract": {
-                    "required_sections": list(self.policy["required_sections"]),
-                    "forbidden_terms": [
-                        "score",
-                        "leaderboard",
-                        "rank",
-                        "ranked",
-                        "ranking",
-                        "first place",
-                        "top contributor",
-                        "priority",
-                        "tier",
-                        "tiers",
-                        "winner",
-                        "winners",
-                        "MVP",
-                        "hero",
-                        "I did",
-                        "my work",
-                        "earned reward",
-                        "reward eligibility",
-                        "payout",
-                        "on-chain credit",
-                    ],
-                    "max_emoji": self.policy["max_emoji"],
-                    "citation_rule": (
-                        "Every active Highlight quote and every concrete What moved list item "
-                        "contains no other citation and ends with exactly one exact allowlisted "
-                        "citation."
-                    ),
-                    "ordering_rule": (
-                        "Order directions and items by contribution impact and importance, "
-                        "without saying that anyone is ranked or scored."
-                    ),
-                    "synthesis_rule": (
-                        "Each direction's first synthesis sentence may be uncited because its "
-                        "concrete supporting bullets immediately below are cited. It must not "
-                        "contain a URL or citation."
-                    ),
-                    "persistence_rule": (
-                        "Paraphrase external evidence; never reproduce a source passage verbatim."
-                    ),
-                    "highlight_rule": (
-                        "Select one to four event-centric outcomes on active days, render each "
-                        "as a separate Rich Markdown quote, and never frame a contributor as a "
-                        "winner."
-                    ),
-                    "rich_markdown_rule": (
-                        "Use the exact bold title and italic UTC window, level-two section "
-                        "headings, level-three direction/subsection headings, quote blocks for "
-                        "Highlights and Trusty's take, and '- ' list items for What moved and "
-                        "Next up."
-                    ),
-                    "what_moved_rule": (
-                        "Integrate appreciation into each concrete item: name who did what, what "
-                        "it advanced, and why it helps the group or Trustless AI. Do not add a "
-                        "separate Appreciation section."
-                    ),
-                    "telegram_mention_rule": (
-                        "When window evidence supplies contributor_label, begin every concrete "
-                        "'- ' list item citing the evidence with that exact Public Name "
-                        "(@telegram_handle) label. Never invent or infer a Telegram handle."
-                    ),
-                    "trustys_take_rule": (
-                        "From Trusty's observer perspective, synthesize one already-established "
-                        "collaboration event and end with a playful team-wide encouragement. Add "
-                        "no names, mentions, URLs, citations, rankings, or new source-dependent "
-                        "facts."
-                    ),
-                },
-                "window_evidence": evidence_payload,
-                "quiet_day_required": not evidence,
+        trigger = {
+            "operation": "prepare_daily_catch_up",
+            "window_id": window.window_id,
+            "window_start": window.start.isoformat(),
+            "window_end": window.end.isoformat(),
+            "required_heading": "TAWG Daily Catch-up",
+            "required_window_label": self._window_label(window),
+            "output_contract": {
+                "required_sections": list(self.policy["required_sections"]),
+                "forbidden_terms": [
+                    "score",
+                    "leaderboard",
+                    "rank",
+                    "ranked",
+                    "ranking",
+                    "first place",
+                    "top contributor",
+                    "priority",
+                    "tier",
+                    "tiers",
+                    "winner",
+                    "winners",
+                    "MVP",
+                    "hero",
+                    "I did",
+                    "my work",
+                    "earned reward",
+                    "reward eligibility",
+                    "payout",
+                    "on-chain credit",
+                ],
+                "max_emoji": self.policy["max_emoji"],
+                "citation_rule": (
+                    "Every active Highlight quote and every concrete What moved list item "
+                    "contains no other citation and ends with exactly one exact allowlisted "
+                    "citation."
+                ),
+                "ordering_rule": (
+                    "Order directions and items by contribution impact and importance, "
+                    "without saying that anyone is ranked or scored."
+                ),
+                "synthesis_rule": (
+                    "Each direction's first synthesis sentence may be uncited because its "
+                    "concrete supporting bullets immediately below are cited. It must not "
+                    "contain a URL or citation."
+                ),
+                "persistence_rule": (
+                    "Paraphrase external evidence; never reproduce a source passage verbatim."
+                ),
+                "highlight_rule": (
+                    "Select one to four event-centric outcomes on active days, render each "
+                    "as a separate Rich Markdown quote, and never frame a contributor as a "
+                    "winner."
+                ),
+                "rich_markdown_rule": (
+                    "Use the exact bold title and italic UTC window, level-two section "
+                    "headings, level-three direction/subsection headings, quote blocks for "
+                    "Highlights and Trusty's take, and '- ' list items for What moved and "
+                    "Next up."
+                ),
+                "what_moved_rule": (
+                    "Integrate appreciation into each concrete item: name who did what, what "
+                    "it advanced, and why it helps the group or Trustless AI. Do not add a "
+                    "separate Appreciation section."
+                ),
+                "telegram_mention_rule": (
+                    "When window evidence supplies contributor_label, begin every concrete "
+                    "'- ' list item citing the evidence with that exact Public Name "
+                    "(@telegram_handle) label. Never invent or infer a Telegram handle."
+                ),
+                "trustys_take_rule": (
+                    "From Trusty's observer perspective, synthesize one already-established "
+                    "collaboration event and end with a playful team-wide encouragement. Add "
+                    "no names, mentions, URLs, citations, rankings, or new source-dependent "
+                    "facts."
+                ),
             },
+            "window_evidence": evidence_payload,
+            "quiet_day_required": not evidence,
+        }
+        if revision_feedback is not None:
+            trigger["revision_feedback"] = revision_feedback
+        inputs = ContextInputs(
+            trigger=trigger,
             reply_chain=[],
             recent_telegram=[],
             retrieved=current_context,

@@ -11,6 +11,8 @@ Do not put an introduction between the UTC window and the first section.
 
 Follow every field in the supplied `output_contract` literally. Use exactly the required top-level sections in their supplied order, never emit any listed forbidden term even in a negation, stay within the emoji limit, and apply the citation rule to factual bullets.
 
+If `revision_feedback` is supplied, correct that rejection in the new full result while continuing to follow the entire output contract.
+
 Use these exact Rich Markdown section headings, in this order: `## ⚡ **Highlights**`, `## 🤝 **What moved**`, `## 🚀 **Next up**`, `## 🤖 **Trusty's take**`. Section-heading emoji count toward the emoji limit. Separate every major block with a blank line.
 
 Inside Highlights, select one to four of the most meaningful event-level outcomes from the current window. A highlight is about what moved through collaboration, not about choosing a winning person. It may represent fast progress, a multi-person relay, a closed implementation loop, or a key uncertainty becoming clear. Render every active-day highlight as its own one-line Rich Markdown quotation in this exact shape: `> **short outcome** — short explanation. trailing-citation`. It contains no Telegram mention and ends with exactly one exact allowlisted citation. A quiet day instead says exactly `No source-backed highlight landed in this window.` with no list or citation.

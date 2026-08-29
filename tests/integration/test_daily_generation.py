@@ -208,6 +208,38 @@ async def test_daily_retries_one_rejected_model_draft_within_the_same_run(
 
 
 @pytest.mark.asyncio
+async def test_daily_retry_tells_the_model_why_the_previous_draft_was_rejected(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    policy_path = tmp_path / "config/bot-policy.yml"
+    policy_path.write_text(
+        policy_path.read_text(encoding="utf-8").replace(
+            "max_context_chars: 250000", "max_context_chars: 4050"
+        ),
+        encoding="utf-8",
+    )
+    rejected = _fixture("daily-active")
+    rejected["telegram_text"] = rejected["telegram_text"].replace("\n>\n", "\n", 1)
+    ai = SequenceAi([rejected, _fixture("daily-active")])
+
+    prepared = await DailyService(tmp_path, ai=ai).prepare(
+        WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+    )
+
+    assert prepared is not None
+    first_context = json.loads(ai.calls[0]["context_pack"])
+    retry_context = json.loads(ai.calls[1]["context_pack"])
+    assert len(ai.calls[0]["context_pack"]) <= 4050
+    assert len(ai.calls[1]["context_pack"]) <= 4050
+    assert "revision_feedback" not in first_context["trigger"]
+    assert retry_context["trigger"]["revision_feedback"] == (
+        "The previous draft was rejected: Daily Trusty's take has an invalid quote "
+        "structure. Return a corrected full result that follows the existing output contract."
+    )
+
+
+@pytest.mark.asyncio
 async def test_daily_stops_after_two_rejected_model_drafts(tmp_path: Path) -> None:
     _seed(tmp_path)
     rejected = _fixture("daily-active")
