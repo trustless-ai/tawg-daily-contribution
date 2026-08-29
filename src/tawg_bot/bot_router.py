@@ -491,14 +491,9 @@ class BotReplyService:
                         )
                         break
                     except AiRouteRejected:
-                        if route_attempt:
-                            raise
+                        raise
                     except ClaudeCliError as error:
-                        if (
-                            route_attempt
-                            or str(error)
-                            != "Claude Code structured output failed schema validation"
-                        ):
+                        if route_attempt or not self._retryable_route_failure(error):
                             raise
                 assert decision is not None
                 route = self.router.authorize_ai_route(
@@ -818,6 +813,15 @@ class BotReplyService:
             raise ReplyRejected(
                 "reply preparation failed safely", safe_code=safe_error_code
             ) from None
+
+    @staticmethod
+    def _retryable_route_failure(error: ClaudeCliError) -> bool:
+        message = str(error)
+        return (
+            message == "Claude Code structured output failed schema validation"
+            or message == "Claude Code could not be started"
+            or message.startswith("Claude Code failed with exit status")
+        )
 
     @staticmethod
     def _safe_failure_code(stage_code: str, error: Exception) -> str:
@@ -1602,12 +1606,7 @@ class BotReplyService:
             and result.english_recap
         ):
             result = result.model_copy(
-                update={
-                    "reply_text": (
-                        f"{result.reply_text.rstrip()}\n\n{result.english_recap.strip()}"
-                    ),
-                    "english_recap": None,
-                }
+                update={"english_recap": None}
             )
         normalized_reply_text = self._normalize_local_citation_rendering(
             result.reply_text, allowed_citations

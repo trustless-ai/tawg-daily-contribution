@@ -2,7 +2,7 @@
 title: TAWG Knowledge Index
 type: index
 created: '2026-08-23'
-updated: '2026-08-23'
+updated: '2026-08-29'
 source_ids:
 - tg:tawg:3150
 ---
@@ -37,6 +37,7 @@ This vault compiles current, source-cited knowledge for the Daily Contribution a
 - [[topics/observation-conditions|Observation Conditions]]
 - [[topics/scope-contestation|Scope Contestation]]
 - [[topics/daily-contribution-tawg|Daily Contribution and Settlement TAWG]]
+- [[topics/trusty|Trusty]]
 
 ## Repositories
 

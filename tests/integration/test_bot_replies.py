@@ -967,7 +967,7 @@ async def test_invalid_ai_route_remains_pending_without_a_false_refusal(
         )
 
     assert failed.value.safe_code == "reply_route_model_schema_invalid"
-    assert [call["job_type"] for call in ai.calls] == ["route", "route"]
+    assert [call["job_type"] for call in ai.calls] == ["route"]
     persisted = json.loads(
         (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
     )[0]
@@ -1009,6 +1009,68 @@ async def test_route_schema_failure_is_retried_once_before_reply(
 
     assert prepared is not None
     assert [call["job_type"] for call in ai.calls] == ["route", "route", "reply"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "process_error",
+    [
+        "Claude Code failed with exit status 1",
+        "Claude Code could not be started",
+    ],
+)
+async def test_route_process_failure_is_retried_once_before_reply(
+    tmp_path: Path,
+    process_error: str,
+) -> None:
+    job = seed(tmp_path, "@bot what proving systems should we benchmark?")
+
+    class RetryRouteAi:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        async def run(self, **kwargs: Any) -> dict[str, Any]:
+            self.calls.append(kwargs)
+            route_calls = sum(call["job_type"] == "route" for call in self.calls)
+            if kwargs["job_type"] == "route" and route_calls == 1:
+                raise ClaudeCliError(process_error)
+            if kwargs["job_type"] == "route":
+                return {
+                    "schema_version": "tawg.route-result.v2",
+                    "route": "knowledge_question",
+                    "context_scope": "conversation",
+                }
+            return reply_result(chinese=False)
+
+    ai = RetryRouteAi()
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is not None
+    assert [call["job_type"] for call in ai.calls] == ["route", "route", "reply"]
+
+
+@pytest.mark.asyncio
+async def test_route_timeout_is_not_retried(tmp_path: Path) -> None:
+    job = seed(tmp_path, "@bot what proving systems should we benchmark?")
+
+    class TimeoutRouteAi:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, Any]] = []
+
+        async def run(self, **kwargs: Any) -> dict[str, Any]:
+            self.calls.append(kwargs)
+            raise ClaudeCliError("Claude Code exceeded its time limit")
+
+    ai = TimeoutRouteAi()
+    with pytest.raises(ReplyRejected) as failed:
+        await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+            job.job_id, now=NOW + timedelta(minutes=2)
+        )
+
+    assert failed.value.safe_code == "reply_route_model_timeout"
+    assert [call["job_type"] for call in ai.calls] == ["route"]
 
 
 @pytest.mark.asyncio
@@ -1190,7 +1252,7 @@ async def test_english_reply_has_no_duplicate_recap(tmp_path: Path) -> None:
 
 
 @pytest.mark.asyncio
-async def test_english_reply_merges_an_unexpected_english_recap(tmp_path: Path) -> None:
+async def test_english_reply_discards_an_unexpected_english_recap(tmp_path: Path) -> None:
     job = seed(tmp_path, "@bot What did we discuss just now?")
     output = reply_result(chinese=False)
     output["reply_text"] = "The discussion focused on a verifiable validation path."
@@ -1205,9 +1267,8 @@ async def test_english_reply_merges_an_unexpected_english_recap(tmp_path: Path) 
     ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
 
     assert prepared.language == "en"
-    assert prepared.reply_text.endswith(
-        "The recap adds one final implementation detail. [tg:tawg:10]"
-    )
+    assert "The recap adds one final implementation detail." not in prepared.reply_text
+    assert prepared.reply_text.endswith("Sources:\n• [tg:tawg:10]")
     assert prepared.reply_text.count("[tg:tawg:10]") == 1
     assert "English recap:" not in prepared.reply_text
 
