@@ -21,11 +21,11 @@
     "updated_at": "2026-08-30T02:47:58Z"
   },
   {
-    "metadata_sha256": "fc4a09e5972f454ea2c00e088fcd0513880b6ef14d19473a4661f9ba949f49b3",
+    "metadata_sha256": "904f9ad7ee5dda03690dd5760c92d4680084cb4a9b7ecbd16400d68ed09d2ab0",
     "source_key": "agent-sdk",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/agent-sdk",
-    "updated_at": "2026-08-29T17:14:30Z"
+    "updated_at": "2026-08-30T14:44:58Z"
   },
   {
     "metadata_sha256": "9ac2874b9a085411a98e86b24cc3e168aea750abbb4bfe9ec6d13d7a14c95383",
@@ -91,11 +91,11 @@
     "updated_at": "2026-07-19T09:39:18Z"
   },
   {
-    "metadata_sha256": "42203383b578790b932f4870f67bd18ba00b277940e24e6496806df80ac785e8",
+    "metadata_sha256": "552eb7efeedffac1ea6c7e3dc1cafab563a18dbca967d3edf5beaa25f6683c25",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-08-30T14:25:48Z"
+    "updated_at": "2026-08-30T14:57:47Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
