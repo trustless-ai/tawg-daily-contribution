@@ -118,6 +118,24 @@
     "updated_at": "2026-08-29T23:22:54.682296Z"
   },
   {
+    "content_sha256": "8d2b74957fac74521dbf290b9183971631ecef09aa53c10a1c4278a41cef60c8",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-08-30T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-08-30T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-08-30T23:00:19.242807Z",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-08-30T23:00:19.242807Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
