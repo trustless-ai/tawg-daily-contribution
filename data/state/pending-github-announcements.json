@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_opened:081aac1d7d5315659c2301c1",
+    "kind": "pr_opened",
+    "number": 26,
+    "occurred_at": "2026-08-29T23:54:57Z",
+    "repository": "trustless-ai/agent-sdk",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "fix(erc8354): bind programKey in HonkVerifierAdapter, disclose expiry gap honestly"
+  }
+]
