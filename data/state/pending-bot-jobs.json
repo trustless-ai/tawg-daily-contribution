@@ -241,7 +241,7 @@
     "router_version": "contextual-ai-v5",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "ready",
+    "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3766",
     "updated_at": "2026-08-30T12:30:19.362445Z"
