@@ -1746,14 +1746,25 @@
     "updated_at": "2026-08-30T10:19:53.317775Z"
   },
   {
-    "attempts": 15,
+    "attempts": 16,
     "classified_route": "knowledge_question",
     "created_at": "2026-08-30T10:23:04.794621Z",
     "job_id": "reply:tg:tawg:3764",
     "message_thread_id": null,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "tg:tawg:3714",
+      "tg:tawg:3723",
+      "tg:tawg:3729",
+      "tg:tawg:3736",
+      "tg:tawg:3734",
+      "tg:tawg:3739",
+      "tg:tawg:3743",
+      "tg:tawg:3745",
+      "tg:tawg:3748",
+      "tg:tawg:3751"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "Good morning, Merlini! 🙂 Here's your catch-up from the last ~16 hours — it was a productive night for the WG:\n\n---\n\n**pq-key-binding.v1 — complete and deployed**\nThe main arc was a multi-round correction of the v1 enforcer. Pavlo's exact-head recompute found that the `activated_at` bypass was still present in PR #34 — the implementation was retroactively granting authority in ways the spec explicitly forbids [tg:tawg:3714]. A corrected PR #35 was accepted (25/25) with the bypass removed, fail-closed empty-chain behavior, and the unanchored-key rule pinned: no immutable anchor means `binding_anchor_unavailable / unverifiable / REJECT`, never authority-from-always [tg:tawg:3723]. The gateway was deployed with consumer audit [tg:tawg:3729], stale surface notes cleaned up and independently verified [tg:tawg:3736], and the whole thing — enforcer, vectors, ERC-8373 asset, live gateway — now says the same thing, recomputable by anyone from public data [tg:tawg:3734].\n\n**Attribution ledger validator — v2 accepted**\nBaby Blue Viper's ledger validator went through a full review loop: tri-state exit codes (VALID/UNRESOLVED/INVALID), schema composition, fully locked transitive dependency file, GitHub CI wired and green, and correct amendment_families classification (verifier growth/shrink/replace). Pavlo confirmed it at exact commit [tg:tawg:3739]. The open design question about an explicit `amends` pointer vs. content-addressing-as-append-only is deliberately held for a separate proposal.\n\n**RVR ERC — draft PR open for WG review**\nPavlo submitted the formal RVR ERC as a draft PR to ethereum/ERCs (#1980) [tg:tawg:3743]. It is explicitly marked Draft — the current ask is substantive WG feedback before it moves to formal editor review [tg:tawg:3745]. Baby Blue Viper reviewed it on the PR and used the ERC-8354 programKey fix as a concrete boundary example; Pavlo added a Security Considerations clarification: REPRODUCED establishes stability under the profile-defined procedure, not completeness of that procedure against any broader unstated claim [tg:tawg:3748].\n\n**agent-sdk PR #27 open**\nBaby Blue Viper opened agent-sdk#27 closing two of Jimmy's post-merge follow-ups from #25 — proper Go CI gating (genuinely gates now, not just quarantined) and an explicit proof-coverage-boundary note. All suites green [tg:tawg:3751].\n\n---\n\nThat's the shape of it — big night! Happy to dig into any of these threads with you.",
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1762,11 +1773,11 @@
     "router_context_scope": "conversation",
     "router_context_sha256": "47dea44cb12085b281e3b2ecc4be6dbbd7e3f771926e914c235c1ad28048a584",
     "router_version": "contextual-ai-v5",
-    "safe_error_code": "reply_knowledge_citation_missing",
+    "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3764",
-    "updated_at": "2026-08-30T10:45:45.485996Z"
+    "updated_at": "2026-08-30T10:46:37.168606Z"
   }
 ]
