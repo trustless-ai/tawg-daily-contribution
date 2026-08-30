@@ -47,6 +47,12 @@ people:
     display_names:
     - Jinx | @thepoktopus
     handles: {}
+  logan-verdict:
+    display_names:
+    - Logan Verdict
+    handles:
+      telegram:
+      - loganverdict
   m-blockbird:
     display_names:
     - M @Blockbird
