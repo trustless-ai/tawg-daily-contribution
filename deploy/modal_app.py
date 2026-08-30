@@ -203,7 +203,7 @@ async def repository_worker(envelope_payload: dict[str, object] | None = None) -
 @app.function(
     image=image,
     secrets=[maintenance_secret],
-    schedule=modal.Cron("*/15 * * * *"),
+    schedule=modal.Cron("*/5 * * * *"),
     timeout=_ENDPOINT_TIMEOUT_SECONDS,
 )
 async def scheduled_maintenance() -> None:

@@ -5,7 +5,7 @@ invocation wrapper: normalization, ingestion, scheduling, reply processing, deli
 repository checkpoints remain in the platform-neutral `tawg_bot` package and are also callable
 from the CLI and GitHub Actions.
 
-The same separation applies to source discovery. Modal's fifteen-minute wrapper invokes the shared
+The same separation applies to source discovery. Modal's five-minute wrapper invokes the shared
 maintenance pipeline; the wrapper contains no source-selection logic. The shared controller scans
 only every public `trustless-ai` repository (including archived repositories), the exact Magicians
 topics in `knowledge/meta/scan-targets.yml`, and each target's optional exact `ethereum/ERCs` PR.
@@ -33,7 +33,7 @@ The endpoint receives only the `tawg-webhook` Modal Secret. It authenticates the
 `X-Telegram-Bot-Api-Secret-Token` header, validates the configured group, strips numeric chat and
 user identities, and spawns one sanitized envelope. It cannot clone GitHub, call a model, or send
 Telegram messages. The single-container `repository_worker` receives `tawg-worker`, checks out a
-fresh `main`, and invokes the shared core. A separate fifteen-minute scheduled adapter receives only
+fresh `main`, and invokes the shared core. A separate five-minute scheduled adapter receives only
 `tawg-maintenance`; it is a hard no-op unless `TAWG_MODAL_MAINTENANCE_ENABLED` is exactly `true`,
 and then it spawns that same worker without calling `getUpdates`.
 
@@ -152,7 +152,7 @@ deployed endpoint and do not register it with Telegram. Confirm only safe deploy
 1. The deployed commit is the reviewed commit and the app name is `tawg-production`.
 2. The public function has only `tawg-webhook`; the repository worker has only `tawg-worker`; the
    schedule trigger has only `tawg-maintenance`.
-3. The worker is limited to one container. The fifteen-minute schedule is visible, its maintenance
+3. The worker is limited to one container. The five-minute schedule is visible, its maintenance
    flag is exact `false`, and observing a scheduled invocation confirms that it does not spawn the
    worker or create a repository commit.
 4. `getWebhookInfo.result.url` remains empty, `TAWG_RUNTIME_MODE=poll`, and GitHub polling remains
