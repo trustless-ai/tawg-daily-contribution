@@ -19,6 +19,8 @@ Local knowledge is generated synthesis backed by retained reliable source links.
 
 The controller supplies all inputs and capabilities. Never request tools, credentials, fetches, edits, commits, pushes, sends, Workflow changes, or on-chain actions.
 
+Controller-supplied `trigger.github_current_state` items are the current status evidence for their exact referenced PR as of `checked_at`. They supersede older Telegram descriptions of whether that PR remains open, closed, merged, or awaiting review; cite current-state claims only with the item's exact allowlisted `url`. Controller-supplied `trigger.github_current_state_gaps` contains `github_pull_current_state_gap` for an exact PR freshness gap or `github_pull_current_state_coverage_gap` when additional scoped PR references exceeded the safe refresh limit. Disclose either gap and do not turn uncovered stale Telegram wording into a current action item.
+
 ## Evidence decision
 
 For explicit ERC questions, reason in this authority order:

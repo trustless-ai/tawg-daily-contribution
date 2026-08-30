@@ -11,7 +11,7 @@ from datetime import UTC, datetime, timedelta
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from time import monotonic
-from typing import Any, Literal, Protocol
+from typing import Any, Literal, Protocol, cast
 
 import yaml
 from pydantic import Field, ValidationError, field_validator
@@ -25,6 +25,11 @@ from tawg_bot.conversation_context import (
 )
 from tawg_bot.corrections import CorrectionService
 from tawg_bot.erc_query import ErcIntent, ErcQuery, ErcQueryPlanner
+from tawg_bot.github_announcements import (
+    GitHubAnnouncementClient,
+    GitHubAnnouncementRejected,
+    resolve_referenced_pull_evidence,
+)
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_mutation import (
     KnowledgeMutationCapability,
@@ -398,6 +403,7 @@ class BotReplyService:
         route_max_budget_usd: str = "0.10",
         timeout_seconds: float = 300,
         scan_target_verifier: ScanTargetVerifier | None = None,
+        github_current_client: GitHubAnnouncementClient | None = None,
     ) -> None:
         self.root = root.resolve()
         self.ai = ai
@@ -416,6 +422,7 @@ class BotReplyService:
         )
         self.timeout_seconds = timeout_seconds
         self.scan_target_verifier = scan_target_verifier
+        self.github_current_client = github_current_client
         self.privacy = PrivacyFilter.from_yaml(self.root / "config/privacy.yml")
 
     async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply | None:
@@ -623,7 +630,7 @@ class BotReplyService:
                     failure_code = "reply_evidence_failed"
                     evidence_pack = await self.live_evidence.build(erc_query, now=now)
                     failure_code = "reply_context_failed"
-            context = self._context(
+            context = await self._context(
                 trigger,
                 records,
                 processing,
@@ -636,6 +643,8 @@ class BotReplyService:
                 scoped_record_ids=reply_scope.record_ids,
                 require_correction_transaction=require_correction_transaction,
                 required_revision_paths=required_revision_paths,
+                now=now,
+                model_deadline=model_deadline,
             )
             raw = self._already_satisfied_repair_result(
                 processing,
@@ -948,7 +957,7 @@ class BotReplyService:
             raise ValueError("model budgets must be positive finite decimals")
         return format(min(overall_budget, route_budget), "f")
 
-    def _context(
+    async def _context(
         self,
         trigger: SourceRecord,
         records: Mapping[str, SourceRecord],
@@ -963,6 +972,8 @@ class BotReplyService:
         scoped_record_ids: frozenset[str] | None = None,
         require_correction_transaction: bool = False,
         required_revision_paths: tuple[str, ...] = (),
+        now: datetime,
+        model_deadline: float,
     ) -> _ReplyContext:
         chain = (
             list(reply_chain)
@@ -992,6 +1003,36 @@ class BotReplyService:
         ]
         nearby.sort(key=ConversationContextBuilder.order_key)
         nearby = nearby[-50:]
+        try:
+            current_github = (
+                await resolve_referenced_pull_evidence(
+                    self.root,
+                    (
+                        record.text_original
+                        for record in (trigger, *chain, *reversed(nearby[:50]))
+                    ),
+                    now=now,
+                    client=self.github_current_client,
+                    refresh_timeout_seconds=min(
+                        8.0,
+                        self._remaining_model_time(model_deadline),
+                    ),
+                )
+                if route is BotRoute.KNOWLEDGE_QUESTION
+                else ()
+            )
+        except GitHubAnnouncementRejected:
+            raise ReplyRejected("current GitHub state is invalid") from None
+        current_github_gaps = tuple(
+            item
+            for item in current_github
+            if item.get("kind") != "github_pull_current_state"
+        )
+        current_github_states = tuple(
+            item
+            for item in current_github
+            if item.get("kind") == "github_pull_current_state"
+        )
         retrieval_query = self._retrieval_query(trigger, chain)
         retrieved_items = (
             []
@@ -1027,7 +1068,11 @@ class BotReplyService:
                     "expected_sha256": hashlib.sha256(current_bytes).hexdigest(),
                 }
             )
-        privileged_paths = {page["path"] for page in retrieved}
+        privileged_paths = {
+            page["path"]
+            for page in retrieved
+            if isinstance(page.get("path"), str)
+        }
         retrieved.extend(
             [
                 {
@@ -1073,6 +1118,11 @@ class BotReplyService:
             if route is BotRoute.KNOWLEDGE_CORRECTION
             else frozenset()
         )
+        current_github_urls: frozenset[str] = frozenset(
+            cast(str, item["url"])
+            for item in current_github_states
+            if isinstance(item.get("url"), str)
+        )
         local_ids: set[str] = (
             seen
             | {record.record_id for record in nearby[:50]}
@@ -1101,6 +1151,7 @@ class BotReplyService:
                 correction_local_ids
                 | set(evidence_pack.citation_allowlist)
                 | set(mutation_source_urls)
+                | set(current_github_urls)
             )
             citation_entries = [
                 {
@@ -1121,12 +1172,21 @@ class BotReplyService:
                     mutation_source_urls - set(evidence_pack.citation_allowlist)
                 )
             )
+            citation_entries.extend(
+                {"url": url}
+                for url in sorted(
+                    current_github_urls - set(evidence_pack.citation_allowlist)
+                )
+            )
         else:
             local_erc_citations = (
                 local_erc_context.citations if local_erc_context is not None else ()
             )
             allowed_citations = frozenset(
-                local_ids | set(local_erc_citations) | set(mutation_source_urls)
+                local_ids
+                | set(local_erc_citations)
+                | set(mutation_source_urls)
+                | set(current_github_urls)
             )
             citation_entries = [
                 {
@@ -1142,6 +1202,10 @@ class BotReplyService:
             citation_entries.extend(
                 {"url": url}
                 for url in sorted(mutation_source_urls - set(local_erc_citations))
+            )
+            citation_entries.extend(
+                {"url": url}
+                for url in sorted(current_github_urls - set(local_erc_citations))
             )
         def record_context(record: SourceRecord) -> dict[str, Any]:
             payload = record.model_dump(mode="json")
@@ -1162,6 +1226,10 @@ class BotReplyService:
         persisted_knowledge = self._persisted_knowledge(jobs, records, local_ids)
         if persisted_knowledge:
             trigger_context["persisted_knowledge"] = persisted_knowledge
+        if current_github_states:
+            trigger_context["github_current_state"] = list(current_github_states)
+        if current_github_gaps:
+            trigger_context["github_current_state_gaps"] = list(current_github_gaps)
         if evidence_pack is not None:
             trigger_context["erc_evidence_mode"] = "live"
         elif local_erc_context is not None:

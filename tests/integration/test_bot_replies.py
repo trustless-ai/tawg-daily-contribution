@@ -1417,6 +1417,219 @@ async def test_conversation_reply_retrieves_safe_records_omitted_from_route_budg
 
 
 @pytest.mark.asyncio
+async def test_conversation_reply_joins_referenced_pulls_to_fresh_l2_state(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "@bot did I miss anything I need to look at?",
+        trigger_reply_to="tg:tawg:missing",
+    )
+    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    telegram_path.unlink()
+    records = [
+        _record(
+            "tg:tawg:10",
+            "trustless-ai/agent-sdk#26 is ready for review.",
+            NOW - timedelta(hours=2),
+        ),
+        _record(
+            "tg:tawg:11",
+            "trustless-ai/agent-sdk#27 closes Jimmy's follow-ups.",
+            NOW - timedelta(hours=1),
+        ),
+        _record(
+            "tg:tawg:12",
+            "@bot did I miss anything I need to look at?",
+            NOW,
+        ),
+    ]
+    telegram_path.write_bytes(
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes(records)
+    )
+    state_path = tmp_path / "data/state/github-announcement-state.json"
+    state_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "tawg.github-announcement-state.v1",
+                "initialized_at": (NOW - timedelta(days=1)).isoformat(),
+                "repositories": [
+                    {
+                        "full_name": "trustless-ai/agent-sdk",
+                        "initialized_at": (NOW - timedelta(days=1)).isoformat(),
+                        "checked_at": (NOW + timedelta(minutes=1)).isoformat(),
+                        "pulls": [
+                            {
+                                "number": 26,
+                                "title": "Fix programKey validation",
+                                "author_login": "alice-dev",
+                                "head_sha": "a" * 40,
+                                "state": "open",
+                                "updated_at": (NOW - timedelta(minutes=20)).isoformat(),
+                                "merged_at": None,
+                                "merge_commit_sha": None,
+                            },
+                            {
+                                "number": 27,
+                                "title": "Close follow-up checks",
+                                "author_login": "alice-dev",
+                                "head_sha": "b" * 40,
+                                "state": "merged",
+                                "updated_at": (NOW - timedelta(minutes=10)).isoformat(),
+                                "merged_at": (NOW - timedelta(minutes=10)).isoformat(),
+                                "merge_commit_sha": "c" * 40,
+                            },
+                        ],
+                        "issue_numbers": [],
+                    }
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    pull_26_url = "https://github.com/trustless-ai/agent-sdk/pull/26"
+    output = reply_result(chinese=False)
+    output["reply_text"] = f"PR #26 remains open. [PR #26]({pull_26_url})"
+    output["citations"] = [pull_26_url]
+    ai = FakeAi(output, context_scope="conversation")
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    reply_context = json.loads(
+        next(call["context_pack"] for call in ai.calls if call["job_type"] == "reply")
+    )
+    assert {
+        item["number"]: item
+        for item in reply_context["trigger"]["github_current_state"]
+    } == {
+        26: {
+            "author_login": "alice-dev",
+            "checked_at": "2026-08-23T02:01:00Z",
+            "head_sha": "a" * 40,
+            "kind": "github_pull_current_state",
+            "number": 26,
+            "repository": "trustless-ai/agent-sdk",
+            "state": "open",
+            "title": "Fix programKey validation",
+            "updated_at": "2026-08-23T01:40:00Z",
+            "url": pull_26_url,
+        },
+        27: {
+            "author_login": "alice-dev",
+            "checked_at": "2026-08-23T02:01:00Z",
+            "head_sha": "b" * 40,
+            "kind": "github_pull_current_state",
+            "merged_at": "2026-08-23T01:50:00Z",
+            "number": 27,
+            "repository": "trustless-ai/agent-sdk",
+            "state": "merged",
+            "title": "Close follow-up checks",
+            "updated_at": "2026-08-23T01:50:00Z",
+            "url": "https://github.com/trustless-ai/agent-sdk/pull/27",
+        },
+    }
+    assert reply_context["retrieved"] == []
+    assert {
+        pull_26_url,
+        "https://github.com/trustless-ai/agent-sdk/pull/27",
+    }.issubset(reply_context["citation_allowlist"])
+    assert prepared.citations == (pull_26_url,)
+
+
+@pytest.mark.asyncio
+async def test_conversation_reply_target_refreshes_a_referenced_pull_when_l2_is_stale(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "@bot is agent-sdk#26 still waiting for me?",
+        trigger_reply_to="tg:tawg:missing",
+    )
+    state_path = tmp_path / "data/state/github-announcement-state.json"
+    state_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "tawg.github-announcement-state.v1",
+                "initialized_at": (NOW - timedelta(days=1)).isoformat(),
+                "repositories": [
+                    {
+                        "full_name": "trustless-ai/agent-sdk",
+                        "initialized_at": (NOW - timedelta(days=1)).isoformat(),
+                        "checked_at": (NOW - timedelta(hours=2)).isoformat(),
+                        "pulls": [
+                            {
+                                "number": 26,
+                                "title": "Old title",
+                                "author_login": "alice-dev",
+                                "head_sha": "a" * 40,
+                                "state": "open",
+                                "updated_at": (NOW - timedelta(hours=3)).isoformat(),
+                                "merged_at": None,
+                                "merge_commit_sha": None,
+                            }
+                        ],
+                        "issue_numbers": [],
+                    }
+                ],
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    class GitHubClient:
+        async def get_json(
+            self,
+            path: str,
+            params: dict[str, object] | None = None,
+        ) -> dict[str, Any]:
+            assert params is None
+            assert path == "/repos/trustless-ai/agent-sdk/pulls/26"
+            return {
+                "number": 26,
+                "title": "Fix programKey validation",
+                "state": "open",
+                "created_at": "2026-08-22T20:00:00Z",
+                "updated_at": "2026-08-23T01:55:00Z",
+                "merged_at": None,
+                "merge_commit_sha": None,
+                "user": {"login": "alice-dev"},
+                "head": {"sha": "d" * 40},
+            }
+
+    ai = FakeAi(reply_result(chinese=False), context_scope="conversation")
+
+    await BotReplyService(
+        tmp_path,
+        ai=ai,
+        bot_username="bot",
+        github_current_client=GitHubClient(),
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    reply_context = json.loads(
+        next(call["context_pack"] for call in ai.calls if call["job_type"] == "reply")
+    )
+    assert reply_context["trigger"]["github_current_state"] == [
+        {
+            "author_login": "alice-dev",
+            "checked_at": "2026-08-23T02:02:00Z",
+            "head_sha": "d" * 40,
+            "kind": "github_pull_current_state",
+            "number": 26,
+            "repository": "trustless-ai/agent-sdk",
+            "state": "open",
+            "title": "Fix programKey validation",
+            "updated_at": "2026-08-23T01:55:00Z",
+            "url": "https://github.com/trustless-ai/agent-sdk/pull/26",
+        }
+    ]
+    assert reply_context["retrieved"] == []
+
+
+@pytest.mark.asyncio
 async def test_conversation_reply_cannot_cite_evidence_pruned_from_reply_budget(
     tmp_path: Path,
 ) -> None:

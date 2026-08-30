@@ -739,6 +739,7 @@ class _LivePipeline:
                 ),
                 timeout_seconds=min(_REPLY_TIMEOUT_SECONDS, remaining_seconds),
                 scan_target_verifier=self.scan_target_verifier,
+                github_current_client=getattr(self.github_announcements, "client", None),
             )
             try:
                 prepared = await service.prepare(job.job_id, now=self.now)

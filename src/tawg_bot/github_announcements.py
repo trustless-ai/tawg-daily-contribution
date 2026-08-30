@@ -2,11 +2,13 @@
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import json
+import math
 import re
-from collections.abc import Mapping
-from datetime import UTC, datetime
+from collections.abc import Iterable, Mapping
+from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
 from typing import Any, Literal, Protocol, cast
@@ -15,6 +17,7 @@ from urllib.parse import quote
 import httpx
 from pydantic import Field, ValidationError, field_validator, model_validator
 
+from tawg_bot.github_source import GitHubSourceError
 from tawg_bot.models import StrictModel
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
@@ -22,6 +25,16 @@ _REPOSITORY = re.compile(r"^trustless-ai/[A-Za-z0-9_.-]{1,100}$")
 _LOGIN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:\[bot\])?$")
 _GIT_SHA = re.compile(r"^[a-f0-9]{40,64}$")
 _MAX_GITHUB_PAGES = 10
+_PULL_URL_REFERENCE = re.compile(
+    r"https://github\.com/(trustless-ai/[A-Za-z0-9_.-]{1,100})/pull/"
+    r"([1-9][0-9]{0,9})(?:\b|/)",
+    re.IGNORECASE,
+)
+_PULL_SHORTHAND_REFERENCE = re.compile(
+    r"(?<![A-Za-z0-9_.-])(?:(trustless-ai)/)?"
+    r"([A-Za-z0-9_.-]{1,100})#([1-9][0-9]{0,9})\b",
+    re.IGNORECASE,
+)
 
 
 class GitHubAnnouncementRejected(ValueError):
@@ -149,8 +162,63 @@ class GitHubScanSnapshot(StrictModel):
 
 class GitHubPullState(StrictModel):
     number: int = Field(ge=1)
+    title: str | None = Field(default=None, min_length=1, max_length=512)
+    author_login: str | None = Field(default=None, pattern=_LOGIN.pattern)
     head_sha: str = Field(pattern=_GIT_SHA.pattern)
+    state: Literal["open", "closed", "merged"] | None = None
+    updated_at: datetime | None = None
+    merged_at: datetime | None = None
     merge_commit_sha: str | None = Field(default=None, pattern=_GIT_SHA.pattern)
+
+    @field_validator("updated_at", "merged_at")
+    @classmethod
+    def optional_timestamps_are_utc(cls, value: datetime | None) -> datetime | None:
+        return None if value is None else _require_utc(value)
+
+    @model_validator(mode="after")
+    def current_metadata_is_consistent(self) -> GitHubPullState:
+        metadata = (self.title, self.author_login, self.state, self.updated_at)
+        if any(value is not None for value in metadata) and any(
+            value is None for value in metadata
+        ):
+            raise ValueError("current PR metadata must be complete")
+        if self.state == "merged":
+            if self.merged_at is None or self.merge_commit_sha is None:
+                raise ValueError("merged current PR metadata is incomplete")
+        elif self.state in {"open", "closed"} and (
+            self.merged_at is not None or self.merge_commit_sha is not None
+        ):
+            raise ValueError("unmerged current PR metadata includes merge fields")
+        return self
+
+    def context_evidence(
+        self,
+        *,
+        repository: str,
+        checked_at: datetime,
+    ) -> dict[str, object] | None:
+        if (
+            self.title is None
+            or self.author_login is None
+            or self.state is None
+            or self.updated_at is None
+        ):
+            return None
+        evidence: dict[str, object] = {
+            "kind": "github_pull_current_state",
+            "repository": repository,
+            "number": self.number,
+            "title": self.title,
+            "author_login": self.author_login,
+            "state": self.state,
+            "head_sha": self.head_sha,
+            "updated_at": self.updated_at.isoformat().replace("+00:00", "Z"),
+            "checked_at": checked_at.isoformat().replace("+00:00", "Z"),
+            "url": f"https://github.com/{repository}/pull/{self.number}",
+        }
+        if self.merged_at is not None:
+            evidence["merged_at"] = self.merged_at.isoformat().replace("+00:00", "Z")
+        return evidence
 
 
 class GitHubRepositoryState(StrictModel):
@@ -503,6 +571,193 @@ class GitHubAnnouncementScanner:
         )
 
 
+async def resolve_referenced_pull_evidence(
+    root: Path,
+    texts: Iterable[str],
+    *,
+    now: datetime,
+    client: GitHubAnnouncementClient | None,
+    max_items: int = 16,
+    max_age: timedelta = timedelta(minutes=35),
+    refresh_timeout_seconds: float = 8.0,
+) -> tuple[dict[str, object], ...]:
+    """Use fresh L2 state, with a bounded per-reference refresh when needed."""
+
+    _require_utc(now)
+    if max_age <= timedelta(0):
+        raise ValueError("current GitHub evidence max age must be positive")
+    if not math.isfinite(refresh_timeout_seconds) or refresh_timeout_seconds <= 0:
+        raise ValueError("current GitHub refresh timeout must be positive and finite")
+    scoped_texts = tuple(texts)
+    if not any(
+        _PULL_URL_REFERENCE.search(text) or _PULL_SHORTHAND_REFERENCE.search(text)
+        for text in scoped_texts
+    ):
+        return ()
+    state = _load_reference_state(root)
+    if state is None:
+        return ()
+    references, reference_limit_exceeded = _referenced_pull_keys(
+        state,
+        scoped_texts,
+        max_items=max_items,
+    )
+    repositories = {item.full_name: item for item in state.repositories}
+    resolved: dict[tuple[str, int], dict[str, object]] = {}
+    refreshes: list[tuple[str, int]] = []
+    for repository_name, number in references:
+        repository = repositories[repository_name]
+        pull = next((item for item in repository.pulls if item.number == number), None)
+        current = (
+            None
+            if pull is None
+            else pull.context_evidence(
+                repository=repository_name,
+                checked_at=repository.checked_at,
+            )
+        )
+        if current is not None and repository.checked_at >= now - max_age:
+            resolved[(repository_name, number)] = current
+            continue
+        refreshes.append((repository_name, number))
+    if refreshes:
+        tasks = [
+            asyncio.create_task(
+                _refresh_pull_evidence(
+                    client,
+                    repository=repository_name,
+                    number=number,
+                    now=now,
+                )
+            )
+            for repository_name, number in refreshes
+        ]
+        try:
+            done, _ = await asyncio.wait(tasks, timeout=refresh_timeout_seconds)
+            for key, task in zip(refreshes, tasks, strict=True):
+                if task not in done:
+                    continue
+                refreshed = task.result()
+                if refreshed is not None:
+                    resolved[key] = refreshed
+        finally:
+            for task in tasks:
+                if not task.done():
+                    task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)
+    evidence: list[dict[str, object]] = []
+    for repository_name, number in references:
+        current = resolved.get((repository_name, number))
+        if current is not None:
+            evidence.append(current)
+            continue
+        repository = repositories[repository_name]
+        evidence.append(
+            {
+                "kind": "github_pull_current_state_gap",
+                "repository": repository_name,
+                "number": number,
+                "checked_at": repository.checked_at.isoformat().replace("+00:00", "Z"),
+                "reason": "l2_state_stale_or_incomplete",
+            }
+        )
+    if reference_limit_exceeded:
+        evidence.append(
+            {
+                "kind": "github_pull_current_state_coverage_gap",
+                "max_items": max_items,
+                "reason": "reference_limit_exceeded",
+            }
+        )
+    return tuple(evidence)
+
+
+def _load_reference_state(root: Path) -> GitHubAnnouncementState | None:
+    path = root.resolve() / GitHubAnnouncementScanner.STATE_PATH
+    if not path.exists():
+        return None
+    try:
+        if path.is_symlink() or not path.is_file():
+            raise OSError
+        return GitHubAnnouncementState.model_validate_json(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValidationError):
+        raise GitHubAnnouncementRejected(
+            "GitHub announcement baseline state is invalid"
+        ) from None
+
+
+def _referenced_pull_keys(
+    state: GitHubAnnouncementState,
+    texts: Iterable[str],
+    *,
+    max_items: int,
+) -> tuple[tuple[tuple[str, int], ...], bool]:
+    if max_items <= 0:
+        raise ValueError("current GitHub evidence limit must be positive")
+    repositories = {item.full_name: item for item in state.repositories}
+    short_names: dict[str, str | None] = {}
+    for full_name in repositories:
+        short = full_name.removeprefix("trustless-ai/").casefold()
+        short_names[short] = full_name if short not in short_names else None
+    references: set[tuple[str, int]] = set()
+    ordered_references: list[tuple[str, int]] = []
+    reference_limit_exceeded = False
+    canonical_names = {name.casefold(): name for name in repositories}
+    for text in texts:
+        matches: list[tuple[int, str | None, int]] = []
+        matches.extend(
+            (match.start(), canonical_names.get(match.group(1).casefold()), int(match.group(2)))
+            for match in _PULL_URL_REFERENCE.finditer(text)
+        )
+        for match in _PULL_SHORTHAND_REFERENCE.finditer(text):
+            canonical = (
+                canonical_names.get(f"trustless-ai/{match.group(2)}".casefold())
+                if match.group(1) is not None
+                else short_names.get(match.group(2).casefold())
+            )
+            matches.append((match.start(), canonical, int(match.group(3))))
+        for _, canonical, number in sorted(matches, key=lambda item: item[0]):
+            if canonical is None or (canonical, number) in references:
+                continue
+            reference = (canonical, number)
+            references.add(reference)
+            if len(ordered_references) < max_items:
+                ordered_references.append(reference)
+            else:
+                reference_limit_exceeded = True
+    return tuple(ordered_references), reference_limit_exceeded
+
+
+async def _refresh_pull_evidence(
+    client: GitHubAnnouncementClient | None,
+    *,
+    repository: str,
+    number: int,
+    now: datetime,
+) -> dict[str, object] | None:
+    if client is None:
+        return None
+    try:
+        payload = await client.get_json(f"/repos/{repository}/pulls/{number}")
+        if not isinstance(payload, Mapping) or payload.get("state") not in {"open", "closed"}:
+            raise GitHubAnnouncementRejected("GitHub PR metadata is invalid")
+        snapshot = GitHubAnnouncementScanner._pull(
+            payload,
+            expected_state=cast(Literal["open", "closed"], payload["state"]),
+        )
+        state: Literal["open", "closed", "merged"] = (
+            "merged"
+            if snapshot.merged_at is not None
+            else cast(Literal["open", "closed"], payload["state"])
+        )
+        return _pull_state(snapshot, state=state).context_evidence(
+            repository=repository,
+            checked_at=now,
+        )
+    except (GitHubAnnouncementRejected, GitHubSourceError):
+        return None
+
+
 def bootstrap_announcement_state(
     snapshot: GitHubScanSnapshot,
     *,
@@ -568,7 +823,7 @@ def _baseline_repository(
         initialized_at=now,
         checked_at=now,
         pulls=tuple(
-            GitHubPullState(number=item.number, head_sha=item.head_sha)
+            _pull_state(item, state="open")
             for item in sorted(current.open_pulls, key=lambda value: value.number)
         ),
         issue_numbers=tuple(sorted(item.number for item in current.open_issues)),
@@ -602,18 +857,13 @@ def _reconcile_repository(
                 occurred_at=item.updated_at,
                 discriminator=item.head_sha,
             )
-        pulls[item.number] = GitHubPullState(
-            number=item.number,
-            head_sha=item.head_sha,
-            merge_commit_sha=old.merge_commit_sha if old is not None else None,
-        )
+        pulls[item.number] = _pull_state(item, state="open")
 
     for item in current.recently_closed_pulls:
         old = pulls.get(item.number)
-        pulls[item.number] = GitHubPullState(
-            number=item.number,
-            head_sha=item.head_sha,
-            merge_commit_sha=item.merge_commit_sha,
+        pulls[item.number] = _pull_state(
+            item,
+            state="merged" if item.merged_at is not None else "closed",
         )
         candidates.pop(item.number, None)
         if (
@@ -653,6 +903,23 @@ def _reconcile_repository(
         issue_numbers=tuple(sorted(issue_numbers)),
     )
     return state, (*candidates.values(), *issue_events)
+
+
+def _pull_state(
+    item: GitHubPullSnapshot,
+    *,
+    state: Literal["open", "closed", "merged"],
+) -> GitHubPullState:
+    return GitHubPullState(
+        number=item.number,
+        title=item.title,
+        author_login=item.author_login,
+        head_sha=item.head_sha,
+        state=state,
+        updated_at=item.updated_at,
+        merged_at=item.merged_at,
+        merge_commit_sha=item.merge_commit_sha,
+    )
 
 
 def _announcement(

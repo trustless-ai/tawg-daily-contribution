@@ -197,3 +197,46 @@ def test_context_never_prunes_mutation_capability() -> None:
     pack = builder().build(safe, max_chars=1800, max_recent_telegram=1)
 
     assert "MUTATION_CAPABILITY_REQUIRED" in pack.text
+
+
+def test_context_keeps_trigger_github_state_gaps_while_chat_is_retained() -> None:
+    safe = inputs()
+    safe.trigger["github_current_state"] = [
+        {
+            "kind": "github_pull_current_state",
+            "number": 26,
+            "state": "open",
+            "url": "https://github.com/trustless-ai/agent-sdk/pull/26",
+        }
+    ]
+    safe.trigger["github_current_state_gaps"] = [
+        {
+            "kind": "github_pull_current_state_coverage_gap",
+            "max_items": 16,
+            "reason": "reference_limit_exceeded",
+        }
+    ]
+    safe.retrieved = [
+        {"chunk_id": f"chunk-{index}", "text": "x" * 1000}
+        for index in range(50)
+    ]
+
+    pack = builder().build(safe, max_chars=2_000, max_recent_telegram=2)
+
+    payload = json.loads(pack.text)
+    assert payload["trigger"]["github_current_state"] == [
+        {
+            "kind": "github_pull_current_state",
+            "number": 26,
+            "state": "open",
+            "url": "https://github.com/trustless-ai/agent-sdk/pull/26",
+        }
+    ]
+    assert payload["trigger"]["github_current_state_gaps"] == [
+        {
+            "kind": "github_pull_current_state_coverage_gap",
+            "max_items": 16,
+            "reason": "reference_limit_exceeded",
+        }
+    ]
+    assert payload["recent_telegram"]
