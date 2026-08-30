@@ -458,6 +458,24 @@
     "updated_at": "2026-08-28T17:31:36.189360Z"
   },
   {
+    "content_sha256": "48bb3e2b2474bd9d609829d0c4a9c568d42e6dcb407efbfb4ec4f13836645416",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply-repair:stale-mutation-status-v1:tg:tawg:3766",
+    "destination": "tawg",
+    "job_id": "reply-repair:stale-mutation-status-v1:tg:tawg:3766",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-08-30T12:30:19.362445Z",
+    "reply_to_message_id": 3766,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-08-30T12:30:19.362445Z"
+  },
+  {
     "content_sha256": "c88b75647067456eeb21dc284da1e93b36df61f1afc102ad6a913f19a6fde50e",
     "delivery_id": "reply:tg:tawg:3369",
     "destination": "tawg",
