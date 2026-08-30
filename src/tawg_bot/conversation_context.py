@@ -49,7 +49,7 @@ class ConversationContextBuilder:
         group = self._telegram_group(trigger)
         by_id = {record.record_id: record for record in records}
         by_id[trigger.record_id] = trigger
-        trigger_key = self._order_key(trigger)
+        trigger_key = self.order_key(trigger)
 
         chain = self._reply_chain(
             trigger=trigger,
@@ -67,13 +67,13 @@ class ConversationContextBuilder:
             and record.source_type is SourceType.TELEGRAM_MESSAGE
             and self._telegram_group(record) == group
             and self._thread_id(record) == message_thread_id
-            and self._order_key(record) < trigger_key
+            and self.order_key(record) < trigger_key
         ]
-        ordinary.sort(key=self._order_key, reverse=True)
+        ordinary.sort(key=self.order_key, reverse=True)
         omitted = max(0, len(ordinary) - max_prior_records)
         ordinary = ordinary[:max_prior_records]
 
-        selected = sorted([*chain, *ordinary], key=self._order_key)
+        selected = sorted([*chain, *ordinary], key=self.order_key)
         try:
             while True:
                 text = self._encode(trigger, selected, omitted, trigger_kind)
@@ -142,7 +142,7 @@ class ConversationContextBuilder:
                 or parent.source_type is not SourceType.TELEGRAM_MESSAGE
                 or self._telegram_group(parent) != group
                 or not parent_thread_matches
-                or self._order_key(parent) >= trigger_key
+                or self.order_key(parent) >= trigger_key
             ):
                 break
             chain.append(parent)
@@ -190,7 +190,7 @@ class ConversationContextBuilder:
         return value if isinstance(value, int) and not isinstance(value, bool) else None
 
     @staticmethod
-    def _order_key(record: SourceRecord) -> tuple[datetime, int, str]:
+    def order_key(record: SourceRecord) -> tuple[datetime, int, str]:
         raw_message_id = record.record_id.rsplit(":", 1)[-1]
         message_id = int(raw_message_id) if raw_message_id.isdigit() else -1
         return record.created_at, message_id, record.record_id

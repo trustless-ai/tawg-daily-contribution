@@ -948,19 +948,28 @@ class BotReplyService:
             else list(self._reply_chain(trigger, records))
         )
         seen = {trigger.record_id, *(record.record_id for record in chain)}
+        use_routed_conversation = (
+            context_scope is RouteContextScope.CONVERSATION
+            and validated_record_ids is not None
+        )
 
         nearby = [
             record
             for record in records.values()
-            if abs(record.created_at - trigger.created_at) <= timedelta(minutes=30)
-            and record.created_at <= trigger.created_at
+            if record.created_at <= trigger.created_at
             and record.record_id not in seen
             and (
                 validated_record_ids is None
                 or record.record_id in validated_record_ids
             )
+            and (
+                use_routed_conversation
+                or abs(record.created_at - trigger.created_at)
+                <= timedelta(minutes=30)
+            )
         ]
-        nearby.sort(key=lambda record: (record.created_at, record.record_id))
+        nearby.sort(key=ConversationContextBuilder.order_key)
+        nearby = nearby[-50:]
         retrieval_query = self._retrieval_query(trigger, chain)
         retrieved_items = (
             []

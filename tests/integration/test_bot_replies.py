@@ -1301,6 +1301,109 @@ async def test_recent_discussion_question_uses_group_context_instead_of_refusing
 
 
 @pytest.mark.asyncio
+async def test_last_hours_summary_uses_routed_conversation_as_reply_evidence(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "@bot give me a short resume of what happened in the last hours",
+        trigger_reply_to="tg:tawg:missing",
+    )
+    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    telegram_path.unlink()
+    records = [
+        _record(
+            "tg:tawg:10",
+            "The working group agreed to test the new validation flow.",
+            NOW - timedelta(hours=4),
+        ),
+        _record(
+            "tg:tawg:11",
+            "The next step is to document the validation results.",
+            NOW - timedelta(hours=2),
+        ),
+        _record("tg:tawg:13", "Good morning", NOW - timedelta(minutes=4)),
+        _record("tg:tawg:14", "", NOW - timedelta(minutes=3)),
+        _record(
+            "tg:tawg:12",
+            "@bot give me a short resume of what happened in the last hours",
+            NOW,
+        ),
+    ]
+    telegram_path.write_bytes(
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes(records)
+    )
+    output = reply_result(chinese=False)
+    output["reply_text"] = (
+        "The group agreed to test the validation flow and document the results. "
+        "[tg:tawg:10]"
+    )
+    ai = FakeAi(output, context_scope="conversation")
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared.citations == ("tg:tawg:10",)
+    reply_context = json.loads(
+        next(call["context_pack"] for call in ai.calls if call["job_type"] == "reply")
+    )
+    assert [item["record_id"] for item in reply_context["recent_telegram"]] == [
+        "tg:tawg:10",
+        "tg:tawg:11",
+        "tg:tawg:13",
+        "tg:tawg:14",
+    ]
+    assert "tg:tawg:10" in reply_context["citation_allowlist"]
+
+
+@pytest.mark.asyncio
+async def test_conversation_reply_caps_equal_timestamps_by_numeric_message_id(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "@bot summarize the latest discussion",
+        trigger_reply_to="tg:tawg:missing",
+    )
+    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    telegram_path.unlink()
+    prior_message_ids = [value for value in range(1, 57) if value != 12]
+    records = [
+        _record(
+            f"tg:tawg:{message_id}",
+            f"Discussion update {message_id}",
+            NOW - timedelta(hours=1),
+        )
+        for message_id in prior_message_ids
+    ]
+    records.append(
+        _record("tg:tawg:12", "@bot summarize the latest discussion", NOW)
+    )
+    telegram_path.write_bytes(
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes(records)
+    )
+    output = reply_result(chinese=False)
+    output["reply_text"] = "The latest discussion reached update 56. [tg:tawg:56]"
+    output["citations"] = ["tg:tawg:56"]
+    ai = FakeAi(output, context_scope="conversation")
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared.citations == ("tg:tawg:56",)
+    reply_context = json.loads(
+        next(call["context_pack"] for call in ai.calls if call["job_type"] == "reply")
+    )
+    assert [item["record_id"] for item in reply_context["recent_telegram"]] == [
+        *(f"tg:tawg:{message_id}" for message_id in range(6, 12)),
+        *(f"tg:tawg:{message_id}" for message_id in range(13, 57)),
+    ]
+    assert len(reply_context["citation_allowlist"]) == 50
+
+
+@pytest.mark.asyncio
 async def test_recent_discussion_question_cannot_cite_its_own_trigger(
     tmp_path: Path,
 ) -> None:
