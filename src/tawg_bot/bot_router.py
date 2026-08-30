@@ -371,7 +371,7 @@ class _ReplyContext:
 @dataclass(frozen=True, slots=True)
 class _LocalErcContext:
     citations: tuple[str, ...]
-    pages: tuple[dict[str, str], ...]
+    pages: tuple[dict[str, Any], ...]
     source_keys: tuple[str, ...]
     verified_at: tuple[str, ...]
 
@@ -449,7 +449,8 @@ class BotReplyService:
         scan_registry_changed = False
         failure_code = "reply_route_context_failed"
         try:
-            route_context = ConversationContextBuilder(self.privacy).build(
+            context_builder = ConversationContextBuilder(self.privacy)
+            route_context = context_builder.build(
                 trigger=trigger,
                 records=records.values(),
                 message_thread_id=processing.message_thread_id,
@@ -588,11 +589,13 @@ class BotReplyService:
                 return self._prepared(ready)
 
             failure_code = "reply_context_failed"
-            route_record_ids = frozenset(route_context.record_ids)
+            reply_scope = context_builder.scope(
+                trigger=trigger,
+                records=records.values(),
+                message_thread_id=processing.message_thread_id,
+            )
             reply_chain = tuple(
-                record
-                for record in self._reply_chain(trigger, records)
-                if record.record_id in route_record_ids
+                records[record_id] for record_id in reply_scope.reply_chain_ids
             )
             erc_query, erc_query_text = self._erc_query_for_context(
                 trigger=trigger,
@@ -630,7 +633,7 @@ class BotReplyService:
                 evidence_pack=evidence_pack,
                 local_erc_context=local_erc_context,
                 reply_chain=reply_chain,
-                validated_record_ids=route_record_ids,
+                scoped_record_ids=reply_scope.record_ids,
                 require_correction_transaction=require_correction_transaction,
                 required_revision_paths=required_revision_paths,
             )
@@ -957,7 +960,7 @@ class BotReplyService:
         evidence_pack: EvidencePack | None,
         local_erc_context: _LocalErcContext | None = None,
         reply_chain: tuple[SourceRecord, ...] | None = None,
-        validated_record_ids: frozenset[str] | None = None,
+        scoped_record_ids: frozenset[str] | None = None,
         require_correction_transaction: bool = False,
         required_revision_paths: tuple[str, ...] = (),
     ) -> _ReplyContext:
@@ -967,9 +970,9 @@ class BotReplyService:
             else list(self._reply_chain(trigger, records))
         )
         seen = {trigger.record_id, *(record.record_id for record in chain)}
-        use_routed_conversation = (
+        use_scoped_conversation = (
             context_scope is RouteContextScope.CONVERSATION
-            and validated_record_ids is not None
+            and scoped_record_ids is not None
         )
 
         nearby = [
@@ -978,11 +981,11 @@ class BotReplyService:
             if record.created_at <= trigger.created_at
             and record.record_id not in seen
             and (
-                validated_record_ids is None
-                or record.record_id in validated_record_ids
+                scoped_record_ids is None
+                or record.record_id in scoped_record_ids
             )
             and (
-                use_routed_conversation
+                use_scoped_conversation
                 or abs(record.created_at - trigger.created_at)
                 <= timedelta(minutes=30)
             )
@@ -1140,10 +1143,21 @@ class BotReplyService:
                 {"url": url}
                 for url in sorted(mutation_source_urls - set(local_erc_citations))
             )
+        def record_context(record: SourceRecord) -> dict[str, Any]:
+            payload = record.model_dump(mode="json")
+            citation_urls = [
+                url
+                for url in extract_public_https_urls((record,))
+                if url in mutation_source_urls
+            ]
+            if citation_urls:
+                payload["citation_urls"] = citation_urls
+            return payload
+
         trigger_context: dict[str, Any] = {
             "route": route.value,
             "context_scope": context_scope.value,
-            "record": trigger.model_dump(mode="json"),
+            "record": record_context(trigger),
         }
         persisted_knowledge = self._persisted_knowledge(jobs, records, local_ids)
         if persisted_knowledge:
@@ -1159,7 +1173,7 @@ class BotReplyService:
             )
         inputs = ContextInputs(
             trigger=trigger_context,
-            reply_chain=[record.model_dump(mode="json") for record in chain],
+            reply_chain=[record_context(record) for record in chain],
             recent_telegram=[record.model_dump(mode="json") for record in nearby[:50]],
             retrieved=retrieved,
             citations=citation_entries,
@@ -1188,7 +1202,7 @@ class BotReplyService:
             )
             return _ReplyContext(
                 text=packed.text,
-                allowed_citations=allowed_citations,
+                allowed_citations=frozenset(packed.citation_allowlist),
                 evidence_pack=evidence_pack,
                 mutation_capability=mutation_capability,
                 mutation_source_urls=mutation_source_urls,
@@ -1572,7 +1586,7 @@ class BotReplyService:
         if self.knowledge_state is None:
             return None
         citations: list[str] = []
-        pages: list[dict[str, str]] = []
+        pages: list[dict[str, Any]] = []
         context_source_keys: list[str] = []
         verified_times: list[str] = []
         for erc_number in query.erc_numbers:
@@ -1616,6 +1630,7 @@ class BotReplyService:
                 "text": current if include_revision else body[:20_000],
                 "record_id": "",
                 "source_locator": "",
+                "citation_urls": page_citations,
             }
             if include_revision:
                 context_page["expected_sha256"] = hashlib.sha256(current_bytes).hexdigest()

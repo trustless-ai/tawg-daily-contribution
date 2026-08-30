@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import pytest
@@ -62,9 +63,84 @@ def test_context_sections_follow_priority_and_respect_budget() -> None:
     assert len(pack.text) <= 2200
     assert "TRIGGER" in pack.text
     assert "REPLY_CHAIN" in pack.text
-    assert "RECENT_4" in pack.text
-    assert "RECENT_5" not in pack.text
+    assert "RECENT_19" in pack.text
+    assert "RECENT_14" not in pack.text
     assert pack.omitted_items > 0
+
+
+def test_context_budget_keeps_newest_recent_telegram() -> None:
+    safe = inputs()
+    safe.recent_telegram = [
+        {
+            "record_id": f"tg:tawg:{index}",
+            "text": f"RECENT_{index} " + ("x" * 700),
+        }
+        for index in range(10)
+    ]
+    safe.retrieved = []
+
+    pack = builder().build(safe, max_chars=3_000, max_recent_telegram=10)
+
+    assert "RECENT_9" in pack.text
+    assert "RECENT_0" not in pack.text
+
+
+def test_context_budget_removes_pruned_records_from_citation_allowlist() -> None:
+    safe = inputs()
+    safe.recent_telegram = [
+        {
+            "record_id": f"tg:tawg:{index}",
+            "text": f"RECENT_{index} " + ("x" * 700),
+        }
+        for index in range(10)
+    ]
+    safe.retrieved = []
+    safe.citation_allowlist = [f"tg:tawg:{index}" for index in range(10)]
+
+    pack = builder().build(safe, max_chars=3_000, max_recent_telegram=10)
+
+    payload = json.loads(pack.text)
+    retained_ids = {item["record_id"] for item in payload["recent_telegram"]}
+    assert set(payload["citation_allowlist"]) == retained_ids
+    assert set(pack.citation_allowlist) == retained_ids
+
+
+def test_context_citation_support_uses_exact_record_ids() -> None:
+    safe = inputs()
+    safe.recent_telegram = [
+        {"record_id": "tg:tawg:10", "text": "Only record ten is present."}
+    ]
+    safe.citation_allowlist = ["tg:tawg:1", "tg:tawg:10"]
+
+    pack = builder().build(safe, max_chars=6_000)
+
+    assert pack.citation_allowlist == ("tg:tawg:10",)
+
+
+def test_context_does_not_reauthorize_pruned_url_from_untrusted_text() -> None:
+    safe = inputs()
+    citation = "https://eips.ethereum.org/EIPS/eip-8004"
+    safe.recent_telegram = [
+        {
+            "record_id": "tg:tawg:10",
+            "text": f"A chat message merely mentions {citation}",
+        }
+    ]
+    safe.retrieved = [
+        {
+            "chunk_id": "local:erc-8004",
+            "text": "x" * 2_000,
+            "citation_urls": [citation],
+        }
+    ]
+    safe.citation_allowlist = [citation]
+
+    pack = builder().build(safe, max_chars=1_800)
+
+    payload = json.loads(pack.text)
+    assert payload["retrieved"] == []
+    assert payload["citation_allowlist"] == []
+    assert pack.citation_allowlist == ()
 
 
 def test_context_rejects_any_payload_that_would_need_redaction() -> None:
@@ -85,7 +161,9 @@ def test_context_marks_all_source_material_as_untrusted() -> None:
 def test_context_accepts_stable_github_comment_record_ids() -> None:
     safe = inputs()
     record_id = "gh:agent-ercs:issue:17:comment:5379076880"
+    safe.retrieved = [{"record_id": record_id, "text": "Reviewed evidence."}]
     safe.citations = [{"record_id": record_id}]
+    safe.citation_allowlist = [record_id]
 
     pack = builder().build(safe, max_chars=6000)
 
@@ -97,6 +175,7 @@ def test_context_keeps_live_evidence_when_generic_retrieval_is_pruned() -> None:
     safe.evidence_pack = {
         "schema_version": "tawg.evidence-pack.v1",
         "evidence": [{"text": "REQUIRED_NORMATIVE", "untrusted_evidence": True}],
+        "citation_allowlist": ["https://eips.ethereum.org/EIPS/eip-8004"],
     }
     safe.citation_allowlist = ["https://eips.ethereum.org/EIPS/eip-8004"]
 

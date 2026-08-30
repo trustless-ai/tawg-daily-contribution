@@ -37,9 +37,29 @@ class ContextPack:
     text: str
     sha256: str
     omitted_items: int
+    citation_allowlist: tuple[str, ...]
 
 
 class ContextPackBuilder:
+    _STRUCTURED_CITATION_KEYS = frozenset(
+        {
+            "citation",
+            "citation_allowlist",
+            "citation_url",
+            "citation_urls",
+            "record_id",
+            "source_locator",
+            "url",
+        }
+    )
+    _EVIDENCE_KEYS = (
+        "trigger",
+        "reply_chain",
+        "recent_telegram",
+        "retrieved",
+        "evidence_pack",
+    )
+
     def __init__(self, privacy: PrivacyFilter) -> None:
         self.privacy = privacy
 
@@ -55,7 +75,11 @@ class ContextPackBuilder:
         if max_recent_telegram < 0:
             raise ValueError("max_recent_telegram cannot be negative")
         safe = copy.deepcopy(inputs)
-        recent = safe.recent_telegram[:max_recent_telegram]
+        recent = (
+            safe.recent_telegram[-max_recent_telegram:]
+            if max_recent_telegram
+            else []
+        )
         omitted = max(0, len(safe.recent_telegram) - len(recent))
         payload: dict[str, Any] = {
             "context_schema": "tawg.context-pack.v1",
@@ -86,6 +110,7 @@ class ContextPackBuilder:
             "budgets": self._canonical(safe.budgets),
         }
         self._assert_public(payload)
+        self._sync_citation_authority(payload)
         text = self._encode(payload)
         prune_order = (
             "budgets",
@@ -101,12 +126,17 @@ class ContextPackBuilder:
         while len(text) > max_chars:
             pruned = False
             for key in prune_order:
-                if self._prune(payload[key]):
+                if (
+                    self._prune_oldest(payload[key])
+                    if key == "recent_telegram"
+                    else self._prune(payload[key])
+                ):
                     omitted += 1
                     pruned = True
                     break
             if not pruned:
                 break
+            self._sync_citation_authority(payload)
             text = self._encode(payload)
         if len(text) > max_chars:
             trigger = payload["trigger"]
@@ -117,12 +147,74 @@ class ContextPackBuilder:
                         excess = len(text) - max_chars
                         trigger[key] = value[: max(0, len(value) - excess - 16)]
                         omitted += 1
+                        self._sync_citation_authority(payload)
                         text = self._encode(payload)
                         if len(text) <= max_chars:
                             break
             if len(text) > max_chars:
                 raise ContextRejected("priority context does not fit the configured budget")
-        return ContextPack(text, hashlib.sha256(text.encode()).hexdigest(), omitted)
+        citation_allowlist = tuple(payload["citation_allowlist"])
+        return ContextPack(
+            text=text,
+            sha256=hashlib.sha256(text.encode()).hexdigest(),
+            omitted_items=omitted,
+            citation_allowlist=citation_allowlist,
+        )
+
+    @classmethod
+    def _sync_citation_authority(cls, payload: dict[str, Any]) -> None:
+        supported: set[str] = set()
+        for key in cls._EVIDENCE_KEYS:
+            cls._collect_supported_citations(payload[key], supported)
+        raw_allowlist = payload["citation_allowlist"]
+        if not isinstance(raw_allowlist, list):
+            raw_allowlist = []
+        retained = [
+            citation
+            for citation in raw_allowlist
+            if isinstance(citation, str) and citation in supported
+        ]
+        payload["citation_allowlist"] = retained
+        retained_set = set(retained)
+        raw_entries = payload["citations"]
+        if isinstance(raw_entries, list):
+            payload["citations"] = [
+                entry
+                for entry in raw_entries
+                if isinstance(entry, dict)
+                and any(
+                    isinstance(value, str) and value in retained_set
+                    for value in entry.values()
+                )
+            ]
+
+    @classmethod
+    def _collect_supported_citations(
+        cls,
+        value: object,
+        supported: set[str],
+        *,
+        parent_key: str | None = None,
+    ) -> None:
+        if isinstance(value, str):
+            if parent_key in cls._STRUCTURED_CITATION_KEYS:
+                supported.add(value)
+            return
+        if isinstance(value, dict):
+            for key, item in value.items():
+                cls._collect_supported_citations(
+                    item,
+                    supported,
+                    parent_key=str(key),
+                )
+            return
+        if isinstance(value, list):
+            for item in value:
+                cls._collect_supported_citations(
+                    item,
+                    supported,
+                    parent_key=parent_key,
+                )
 
     def _assert_public(self, value: object, *, parent_key: str | None = None) -> None:
         if isinstance(value, str):
@@ -149,6 +241,13 @@ class ContextPackBuilder:
             value.pop(next(reversed(value)))
             return True
         return False
+
+    @staticmethod
+    def _prune_oldest(value: object) -> bool:
+        if isinstance(value, list) and value:
+            value.pop(0)
+            return True
+        return ContextPackBuilder._prune(value)
 
     @staticmethod
     def _encode(payload: dict[str, Any]) -> str:

@@ -26,6 +26,15 @@ class ConversationContext:
     omitted_items: int
 
 
+@dataclass(frozen=True, slots=True)
+class ConversationScope:
+    """Unbounded record identities admitted by one Telegram conversation boundary."""
+
+    trigger_record_id: str
+    record_ids: frozenset[str]
+    reply_chain_ids: tuple[str, ...]
+
+
 class ConversationContextBuilder:
     """Select same-conversation records that strictly precede one mention."""
 
@@ -46,29 +55,12 @@ class ConversationContextBuilder:
             raise ValueError("conversation context max_chars must be at least 512")
         if max_prior_records < 0:
             raise ValueError("max_prior_records cannot be negative")
-        group = self._telegram_group(trigger)
-        by_id = {record.record_id: record for record in records}
-        by_id[trigger.record_id] = trigger
-        trigger_key = self.order_key(trigger)
-
-        chain = self._reply_chain(
+        chain, ordinary = self._scoped_records(
             trigger=trigger,
-            records=by_id,
-            group=group,
+            records=records,
             message_thread_id=message_thread_id,
-            trigger_key=trigger_key,
         )
         chain_ids = {record.record_id for record in chain}
-        ordinary = [
-            record
-            for record in by_id.values()
-            if record.record_id != trigger.record_id
-            and record.record_id not in chain_ids
-            and record.source_type is SourceType.TELEGRAM_MESSAGE
-            and self._telegram_group(record) == group
-            and self._thread_id(record) == message_thread_id
-            and self.order_key(record) < trigger_key
-        ]
         ordinary.sort(key=self.order_key, reverse=True)
         omitted = max(0, len(ordinary) - max_prior_records)
         ordinary = ordinary[:max_prior_records]
@@ -102,6 +94,60 @@ class ConversationContextBuilder:
             record_ids=record_ids,
             omitted_items=omitted,
         )
+
+    def scope(
+        self,
+        *,
+        trigger: SourceRecord,
+        records: Iterable[SourceRecord],
+        message_thread_id: int | None,
+    ) -> ConversationScope:
+        """Return the full safe record scope without applying an AI input budget."""
+
+        chain, ordinary = self._scoped_records(
+            trigger=trigger,
+            records=records,
+            message_thread_id=message_thread_id,
+        )
+        return ConversationScope(
+            trigger_record_id=trigger.record_id,
+            record_ids=frozenset(
+                record.record_id for record in [*chain, *ordinary, trigger]
+            ),
+            reply_chain_ids=tuple(record.record_id for record in chain),
+        )
+
+    def _scoped_records(
+        self,
+        *,
+        trigger: SourceRecord,
+        records: Iterable[SourceRecord],
+        message_thread_id: int | None,
+    ) -> tuple[list[SourceRecord], list[SourceRecord]]:
+        group = self._telegram_group(trigger)
+        by_id = {record.record_id: record for record in records}
+        by_id[trigger.record_id] = trigger
+        trigger_key = self.order_key(trigger)
+
+        chain = self._reply_chain(
+            trigger=trigger,
+            records=by_id,
+            group=group,
+            message_thread_id=message_thread_id,
+            trigger_key=trigger_key,
+        )
+        chain_ids = {record.record_id for record in chain}
+        ordinary = [
+            record
+            for record in by_id.values()
+            if record.record_id != trigger.record_id
+            and record.record_id not in chain_ids
+            and record.source_type is SourceType.TELEGRAM_MESSAGE
+            and self._telegram_group(record) == group
+            and self._thread_id(record) == message_thread_id
+            and self.order_key(record) < trigger_key
+        ]
+        return chain, ordinary
 
     def _reply_chain(
         self,
