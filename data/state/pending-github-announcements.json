@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "mzf11125",
+    "event_id": "github-announcement:pr_merged:7cb0cd2444c1e60e8869071e",
+    "kind": "pr_merged",
+    "number": 19,
+    "occurred_at": "2026-08-30T02:47:52Z",
+    "repository": "trustless-ai/agent-ercs",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat(erc8354): sync CAPV interfaces with the merged spec (PR #1919)"
+  }
+]

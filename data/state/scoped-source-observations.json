@@ -14,11 +14,11 @@
     "updated_at": "2026-08-09T13:10:52Z"
   },
   {
-    "metadata_sha256": "2cb8b68f30a6748a1db0f7dfa94c094b4d369d3b1ab2749bc81cd7ff515e0d4d",
+    "metadata_sha256": "89b269945cb74597c252367f5dd0e0d78c5da806ea3bb5579a8008a947f6b12d",
     "source_key": "agent-ercs",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/agent-ercs",
-    "updated_at": "2026-08-24T15:15:02Z"
+    "updated_at": "2026-08-30T02:47:58Z"
   },
   {
     "metadata_sha256": "fc4a09e5972f454ea2c00e088fcd0513880b6ef14d19473a4661f9ba949f49b3",
@@ -91,11 +91,11 @@
     "updated_at": "2026-07-19T09:39:18Z"
   },
   {
-    "metadata_sha256": "246a12c8ca0806b40316cc6c05ba78f557bf13e863f54d774e8d0ad3084389b7",
+    "metadata_sha256": "a566bc2bec633862984c076f29b78ce16a7fc748502ff0bc37c617abaf2163f8",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-08-30T02:22:28Z"
+    "updated_at": "2026-08-30T02:55:41Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
