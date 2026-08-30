@@ -216,28 +216,35 @@
     "updated_at": "2026-08-28T17:31:36.189360Z"
   },
   {
-    "attempts": 0,
-    "classified_route": null,
+    "attempts": 1,
+    "classified_route": "knowledge_question",
     "created_at": "2026-08-30T12:23:43Z",
     "job_id": "reply-repair:stale-mutation-status-v1:tg:tawg:3766",
     "message_thread_id": null,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "tg:tawg:3736",
+      "tg:tawg:3739",
+      "tg:tawg:3743",
+      "tg:tawg:3745",
+      "tg:tawg:3746",
+      "tg:tawg:3751"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "Hey Jimmy! Good morning ☀️ — you caught a busy night. Here's what landed while you were out:\n\n**pq-key-binding v1 enforcer arc — fully closed.** Pavlo caught the `activated_at` bypass in the original PR, Merlini pushed two correction PRs (#34, then #35), and the gateway is now live with 25/25 reproduced under pinned commit provenance. The key semantic rule is settled: an unanchored binding has no reproducible boundary B and must not govern — result is `binding_anchor_unavailable / unverifiable / REJECT`. All stale surface notes are cleared. [tg:tawg:3736]\n\n**Attribution ledger validator — accepted at v2.** Baby Blue Viper shipped a reference validator for the attribution ledger; Pavlo reviewed it and found four mechanical issues (all addressed: tri-state result, schema composition, dependency declaration, amendment_families fix). 19/19 tests pass, CI is wired, requirements fully locked. The amends/verification-addendum design question is intentionally left open for its own explicit proposal. [tg:tawg:3739]\n\n**👀 RVR ERC draft — this is the one to look at.** Pavlo posted the formal RVR draft and opened PR #1980 on ethereum/ERCs. It is currently marked **Draft** (used as a review surface only; not yet ready for formal editor review). Baby Blue Viper has already posted a substantive review, and Pavlo added a \"Procedure completeness\" clarification. If you have any technical, semantic, security, interoperability, or overlap concerns, now is the time to comment. [tg:tawg:3743] [tg:tawg:3745]\n\n**ERC-8354 programKey fix — CI green.** agent-sdk#26 passed all five language suites. agent-sdk#27 also closed two of your post-merge follow-ups: the Go CI gating genuinely gates now (not quarantined), and an explicit proof-coverage-boundary note was added. [tg:tawg:3746] [tg:tawg:3751]\n\nAlso — the RVR knowledge page (`knowledge/topics/rvr.md`) is already updated from your earlier request. ✅",
     "refusal": false,
     "repair_of_job_id": "reply:tg:tawg:3766",
     "repair_reason_code": "stale_mutation_status_claim",
     "reply_to_message_id": 3766,
-    "routed_at": null,
-    "router_context_scope": null,
-    "router_context_sha256": null,
-    "router_version": null,
+    "routed_at": "2026-08-30T12:30:19.362445Z",
+    "router_context_scope": "conversation",
+    "router_context_sha256": "8f5cfd79742e7619165a11bbeed01ff988c9b54610230fda1981d3f354b5be91",
+    "router_version": "contextual-ai-v5",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3766",
-    "updated_at": "2026-08-30T12:23:43Z"
+    "updated_at": "2026-08-30T12:30:19.362445Z"
   },
   {
     "attempts": 0,
@@ -1649,6 +1656,10 @@
     "classified_route": "knowledge_correction",
     "created_at": "2026-08-30T02:53:16.677719Z",
     "job_id": "reply:tg:tawg:3755",
+    "knowledge_mutation_paths": [
+      "knowledge/topics/rvr.md"
+    ],
+    "knowledge_mutation_trigger_sha256": "c59ed8ee01a08a019245c50791c47f772a256e36142ddc40d94e1aeb15295d3a",
     "message_thread_id": null,
     "prepared_citations": [
       "tg:tawg:3755",
@@ -1661,10 +1672,6 @@
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
-    "knowledge_mutation_paths": [
-      "knowledge/topics/rvr.md"
-    ],
-    "knowledge_mutation_trigger_sha256": "c59ed8ee01a08a019245c50791c47f772a256e36142ddc40d94e1aeb15295d3a",
     "reply_to_message_id": 3755,
     "routed_at": "2026-08-30T02:53:16.677719Z",
     "router_context_scope": "knowledge",
