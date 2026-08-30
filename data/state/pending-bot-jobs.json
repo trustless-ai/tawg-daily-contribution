@@ -1746,7 +1746,7 @@
     "updated_at": "2026-08-30T10:19:53.317775Z"
   },
   {
-    "attempts": 3,
+    "attempts": 4,
     "classified_route": "knowledge_question",
     "created_at": "2026-08-30T10:23:04.794621Z",
     "job_id": "reply:tg:tawg:3764",
@@ -1767,6 +1767,6 @@
     "status": "pending",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3764",
-    "updated_at": "2026-08-30T10:25:45.191439Z"
+    "updated_at": "2026-08-30T10:26:15.371512Z"
   }
 ]
