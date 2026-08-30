@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_merged:cb866d5ef1cc281bba964b5a",
-    "kind": "pr_merged",
-    "number": 27,
-    "occurred_at": "2026-08-30T14:44:03Z",
-    "repository": "trustless-ai/agent-sdk",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "ci(go): gate the full go/test package, disclose the real-proof coverage boundary"
-  }
-]
+[]
