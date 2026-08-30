@@ -318,6 +318,24 @@
     "updated_at": "2026-08-29T17:00:20.267901Z"
   },
   {
+    "content_sha256": "ca3537bb5d2f8fffe6f2d8b53bde67f3eac880d9307cccc1d1a42b58c607ee82",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:e7615a6f79ce6e12e2468321",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:e7615a6f79ce6e12e2468321",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-08-30T16:10:17.603167Z",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-08-30T16:10:17.603167Z"
+  },
+  {
     "content_sha256": "67de787179e0a05f221c44389cc42a5a2d18415de282d75a5bd0a555e492e945",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "reply-repair:bot-health-evidence-v1:tg:tawg:3668",
