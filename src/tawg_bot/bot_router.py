@@ -279,7 +279,7 @@ class ReplyRepairReconciler:
             uow.register_external_evidence(())
             uow.stage_json(
                 self._STATE_PATH,
-                [jobs[job_id].model_dump(mode="json") for job_id in sorted(jobs)],
+                [jobs[job_id].persistence_payload() for job_id in sorted(jobs)],
             )
             uow.publish()
         return tuple(created)
@@ -626,6 +626,7 @@ class BotReplyService:
                 processing,
                 route,
                 context_scope,
+                jobs=jobs,
                 evidence_pack=evidence_pack,
                 local_erc_context=local_erc_context,
                 reply_chain=reply_chain,
@@ -745,6 +746,11 @@ class BotReplyService:
                     raise ReplyRejected("source suggestion has no safe URL")
                 self.knowledge_state.add_candidates(uow, urls, trigger.record_id, now)
             if result.correction_transaction is not None:
+                if (
+                    route is BotRoute.KNOWLEDGE_CORRECTION
+                    and len(result.correction_transaction.writes) > 3
+                ):
+                    raise ReplyRejected("correction changed too many knowledge paths")
                 uses_general_source_urls = self._transaction_has_source_urls(
                     result.correction_transaction
                 )
@@ -784,6 +790,18 @@ class BotReplyService:
                     or set(changed_paths) != set(required_revision_paths)
                 ):
                     raise ReplyRejected("required knowledge correction is a no-op")
+                if changed_paths and route is BotRoute.KNOWLEDGE_CORRECTION:
+                    ready_payload = ready.model_dump(mode="json")
+                    ready_payload.update(
+                        {
+                            "knowledge_mutation_paths": list(changed_paths),
+                            "knowledge_mutation_trigger_sha256": (
+                                trigger.content_sha256
+                            ),
+                        }
+                    )
+                    ready = PendingBotJob.model_validate(ready_payload)
+                    jobs[job_id] = ready
             if scan_registry is not None and scan_registry_changed:
                 ScanTargetStore(self.root).stage(uow, scan_registry)
             self._stage_jobs(uow, jobs)
@@ -935,6 +953,7 @@ class BotReplyService:
         route: BotRoute,
         context_scope: RouteContextScope,
         *,
+        jobs: Mapping[str, PendingBotJob],
         evidence_pack: EvidencePack | None,
         local_erc_context: _LocalErcContext | None = None,
         reply_chain: tuple[SourceRecord, ...] | None = None,
@@ -1126,6 +1145,9 @@ class BotReplyService:
             "context_scope": context_scope.value,
             "record": trigger.model_dump(mode="json"),
         }
+        persisted_knowledge = self._persisted_knowledge(jobs, records, local_ids)
+        if persisted_knowledge:
+            trigger_context["persisted_knowledge"] = persisted_knowledge
         if evidence_pack is not None:
             trigger_context["erc_evidence_mode"] = "live"
         elif local_erc_context is not None:
@@ -1173,6 +1195,39 @@ class BotReplyService:
             )
         except ContextRejected as error:
             raise ReplyRejected(str(error)) from None
+
+    @staticmethod
+    def _persisted_knowledge(
+        jobs: Mapping[str, PendingBotJob],
+        records: Mapping[str, SourceRecord],
+        record_ids: set[str],
+    ) -> list[dict[str, Any]]:
+        matches: dict[str, set[str]] = {}
+        ordered_jobs = sorted(
+            jobs.values(),
+            key=lambda item: (item.updated_at, item.job_id),
+            reverse=True,
+        )
+        for job in ordered_jobs:
+            trigger = records.get(job.trigger_record_id)
+            if (
+                job.trigger_record_id not in record_ids
+                or job.status not in {JobStatus.READY, JobStatus.DELIVERED}
+                or job.classified_route is not BotRoute.KNOWLEDGE_CORRECTION
+                or not job.knowledge_mutation_paths
+                or trigger is None
+                or job.knowledge_mutation_trigger_sha256 != trigger.content_sha256
+            ):
+                continue
+            matches.setdefault(job.trigger_record_id, set()).update(
+                job.knowledge_mutation_paths
+            )
+            if len(matches) >= 50:
+                break
+        return [
+            {"record_id": record_id, "paths": sorted(paths)[:3]}
+            for record_id, paths in sorted(matches.items())
+        ]
 
     @staticmethod
     def _reply_chain(
@@ -1996,7 +2051,7 @@ class BotReplyService:
     def _stage_jobs(uow: RepositoryUnitOfWork, jobs: Mapping[str, PendingBotJob]) -> None:
         uow.stage_json(
             "data/state/pending-bot-jobs.json",
-            [jobs[job_id].model_dump(mode="json") for job_id in sorted(jobs)],
+            [jobs[job_id].persistence_payload() for job_id in sorted(jobs)],
         )
 
     @staticmethod

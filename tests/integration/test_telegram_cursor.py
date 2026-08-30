@@ -542,10 +542,17 @@ async def test_edited_pending_trigger_clears_stale_route_and_prepared_reply(
             "status": "ready",
             "prepared_reply_text": "Stale prepared reply",
             "prepared_language": "en",
-            "classified_route": "knowledge_question",
+            "classified_route": "knowledge_correction",
+            "router_context_scope": "knowledge",
             "router_context_sha256": "a" * 64,
             "router_version": "contextual-ai-v1",
             "routed_at": NOW.isoformat().replace("+00:00", "Z"),
+            "knowledge_mutation_paths": ["knowledge/topics/rvr.md"],
+            "knowledge_mutation_trigger_sha256": json.loads(
+                (tmp_path / "data/telegram/2026/08/messages.jsonl")
+                .read_text(encoding="utf-8")
+                .splitlines()[0]
+            )["content_sha256"],
         }
     )
     jobs_path.write_text(json.dumps(jobs), encoding="utf-8")
@@ -575,6 +582,8 @@ async def test_edited_pending_trigger_clears_stale_route_and_prepared_reply(
     assert refreshed["routed_at"] is None
     assert refreshed["prepared_reply_text"] is None
     assert refreshed["prepared_language"] is None
+    assert "knowledge_mutation_paths" not in refreshed
+    assert "knowledge_mutation_trigger_sha256" not in refreshed
 
 
 @pytest.mark.asyncio

@@ -6,6 +6,7 @@ import hashlib
 import unicodedata
 from datetime import UTC, datetime
 from enum import StrEnum
+from pathlib import PurePosixPath
 from typing import Annotated, Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
@@ -181,6 +182,10 @@ class PendingBotJob(StrictModel):
     routed_at: datetime | None = None
     repair_of_job_id: str | None = Field(default=None, max_length=128)
     repair_reason_code: str | None = Field(default=None, max_length=64)
+    knowledge_mutation_paths: list[str] = Field(default_factory=list, max_length=3)
+    knowledge_mutation_trigger_sha256: str | None = Field(
+        default=None, pattern=r"^[a-f0-9]{64}$"
+    )
     created_at: datetime
     updated_at: datetime
 
@@ -189,6 +194,36 @@ class PendingBotJob(StrictModel):
     _routed_at_utc = field_validator("routed_at")(
         lambda value: None if value is None else _require_utc(value)
     )
+
+    @field_validator("knowledge_mutation_paths")
+    @classmethod
+    def knowledge_paths_are_confined(cls, values: list[str]) -> list[str]:
+        if len(set(values)) != len(values):
+            raise ValueError("knowledge mutation paths must be unique")
+        for value in values:
+            path = PurePosixPath(value)
+            if (
+                len(value) > 512
+                or any(ord(character) < 32 or ord(character) == 127 for character in value)
+                or "\\" in value
+                or path.is_absolute()
+                or path.as_posix() != value
+                or ".." in path.parts
+                or len(path.parts) < 3
+                or path.parts[0] != "knowledge"
+                or path.suffix.casefold() != ".md"
+            ):
+                raise ValueError("invalid knowledge mutation path")
+        return values
+
+    def persistence_payload(self) -> dict[str, Any]:
+        validated = type(self).model_validate(self.model_dump(mode="json"))
+        exclude = (
+            {"knowledge_mutation_paths", "knowledge_mutation_trigger_sha256"}
+            if not validated.knowledge_mutation_paths
+            else None
+        )
+        return validated.model_dump(mode="json", exclude=exclude)
 
     @model_validator(mode="after")
     def repair_metadata_is_complete(self) -> PendingBotJob:
@@ -206,6 +241,18 @@ class PendingBotJob(StrictModel):
             value is None for value in routing
         ):
             raise ValueError("reply routing metadata must be complete")
+        has_mutation_paths = bool(self.knowledge_mutation_paths)
+        has_mutation_hash = self.knowledge_mutation_trigger_sha256 is not None
+        if has_mutation_paths != has_mutation_hash:
+            raise ValueError("knowledge mutation receipt must be complete")
+        if has_mutation_paths and (
+            self.status not in {JobStatus.READY, JobStatus.DELIVERED}
+            or self.classified_route is not BotRoute.KNOWLEDGE_CORRECTION
+            or self.router_context_scope is None
+        ):
+            raise ValueError(
+                "knowledge mutation receipt requires a completed correction route"
+            )
         if self.status is JobStatus.IGNORED and (
             self.trigger_kind is not TriggerKind.GREETING_CANDIDATE
             or self.classified_route is not BotRoute.IGNORE

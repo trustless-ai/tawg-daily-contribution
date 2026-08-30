@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from tawg_bot.delivery import DeliveryRejected, DeliveryService
+from tawg_bot.models import BotRoute, JobStatus, PendingBotJob, RouteContextScope
 from tawg_bot.telegram_api import SentMessage
 
 PROJECT = Path(__file__).parents[2]
@@ -98,6 +99,60 @@ async def test_rich_reply_keeps_legacy_over_4096_content_in_one_message(tmp_path
     assert api.calls[0][2] == 12
     assert api.calls[0][3] == 700
     assert len(api.calls[0][1]) > 4096
+
+
+@pytest.mark.asyncio
+async def test_reply_delivery_preserves_sparse_mutation_receipts(tmp_path: Path) -> None:
+    seed(tmp_path)
+    target = PendingBotJob(
+        job_id="reply:tg:tawg:12",
+        trigger_record_id="tg:tawg:12",
+        reply_to_message_id=12,
+        status=JobStatus.READY,
+        classified_route=BotRoute.KNOWLEDGE_CORRECTION,
+        router_context_scope=RouteContextScope.KNOWLEDGE,
+        router_context_sha256="a" * 64,
+        router_version="contextual-ai-v5",
+        routed_at=NOW,
+        prepared_reply_text="Recorded RVR.",
+        prepared_language="en",
+        knowledge_mutation_paths=["knowledge/topics/rvr.md"],
+        knowledge_mutation_trigger_sha256="b" * 64,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    legacy = PendingBotJob(
+        job_id="reply:tg:tawg:11",
+        trigger_record_id="tg:tawg:11",
+        reply_to_message_id=11,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs_path.write_text(
+        json.dumps([legacy.persistence_payload(), target.persistence_payload()]) + "\n",
+        encoding="utf-8",
+    )
+
+    await DeliveryService(
+        tmp_path, api=Api(), chat_id=-10077, checkpoint=Checkpoint()
+    ).deliver(
+        job_id=target.job_id,
+        text="Recorded RVR.",
+        reply_to_message_id=12,
+        message_thread_id=None,
+        now=NOW,
+    )
+
+    persisted = {
+        item["job_id"]: item
+        for item in json.loads(jobs_path.read_text(encoding="utf-8"))
+    }
+    assert persisted[target.job_id]["knowledge_mutation_paths"] == [
+        "knowledge/topics/rvr.md"
+    ]
+    assert persisted[target.job_id]["knowledge_mutation_trigger_sha256"] == "b" * 64
+    assert "knowledge_mutation_paths" not in persisted[legacy.job_id]
 
 
 @pytest.mark.asyncio

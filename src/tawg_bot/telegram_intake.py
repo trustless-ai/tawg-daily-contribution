@@ -247,9 +247,12 @@ class _TelegramPersistence:
                             "refusal": False,
                             "safe_error_code": None,
                             "classified_route": None,
+                            "router_context_scope": None,
                             "router_context_sha256": None,
                             "router_version": None,
                             "routed_at": None,
+                            "knowledge_mutation_paths": [],
+                            "knowledge_mutation_trigger_sha256": None,
                             "updated_at": now,
                         }
                     )
@@ -302,7 +305,7 @@ class _TelegramPersistence:
                 uow.stage_records(target, stable_records)
         uow.stage_json(
             "data/state/pending-bot-jobs.json",
-            [jobs_by_id[job_id].model_dump(mode="json") for job_id in sorted(jobs_by_id)],
+            [jobs_by_id[job_id].persistence_payload() for job_id in sorted(jobs_by_id)],
         )
         if cursors is not None:
             uow.stage_json("data/state/source-cursors.json", cursors.model_dump(mode="json"))

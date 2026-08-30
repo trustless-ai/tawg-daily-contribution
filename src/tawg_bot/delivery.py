@@ -275,7 +275,7 @@ class DeliveryService:
             )
             uow.stage_json(
                 self._JOBS_PATH,
-                [jobs[job_id].model_dump(mode="json") for job_id in sorted(jobs)],
+                [jobs[job_id].persistence_payload() for job_id in sorted(jobs)],
             )
         uow.publish()
 

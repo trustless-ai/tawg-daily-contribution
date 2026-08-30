@@ -16,11 +16,13 @@ from tawg_bot.bot_router import (
 )
 from tawg_bot.claude_cli import ClaudeCliError
 from tawg_bot.models import (
+    BotRoute,
     DeliveryAttempt,
     DeliveryStatus,
     JobStatus,
     PendingBotJob,
     Relation,
+    RouteContextScope,
     SourceRecord,
     SourceType,
     TriggerKind,
@@ -1358,6 +1360,142 @@ async def test_last_hours_summary_uses_routed_conversation_as_reply_evidence(
 
 
 @pytest.mark.asyncio
+async def test_conversation_catchup_does_not_infer_outcome_from_page_provenance(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "@bot did I miss anything I need to look at?",
+        trigger_reply_to="tg:tawg:missing",
+    )
+    (tmp_path / "knowledge/topics").mkdir()
+    (tmp_path / "knowledge/topics/rvr.md").write_text(
+        "---\n"
+        'title: "RVR"\n'
+        "type: topic\n"
+        'created: "2026-08-23"\n'
+        'updated: "2026-08-23"\n'
+        "source_ids:\n"
+        '- "tg:tawg:10"\n'
+        "telegram_record_ids:\n"
+        '- "tg:tawg:10"\n'
+        "provenance_status: verified\n"
+        "---\n\n"
+        "# RVR\n\nThe requested RVR knowledge update is persisted.\n",
+        encoding="utf-8",
+    )
+    output = reply_result(chinese=False)
+    ai = FakeAi(output, context_scope="conversation")
+
+    await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    reply_context = json.loads(
+        next(call["context_pack"] for call in ai.calls if call["job_type"] == "reply")
+    )
+    assert "persisted_knowledge" not in reply_context["trigger"]
+
+
+@pytest.mark.asyncio
+async def test_conversation_catchup_includes_controller_recorded_knowledge_outcomes(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "@bot did I miss anything I need to look at?",
+        trigger_reply_to="tg:tawg:missing",
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs = json.loads(jobs_path.read_text(encoding="utf-8"))
+    jobs.append(
+        PendingBotJob(
+            job_id="reply:tg:tawg:10",
+            trigger_record_id="tg:tawg:10",
+            reply_to_message_id=10,
+            status=JobStatus.DELIVERED,
+            classified_route=BotRoute.KNOWLEDGE_CORRECTION,
+            router_context_scope=RouteContextScope.KNOWLEDGE,
+            router_context_sha256="a" * 64,
+            router_version="contextual-ai-v5",
+            routed_at=NOW - timedelta(minutes=9),
+            prepared_reply_text="Recorded RVR.",
+            prepared_language="en",
+            knowledge_mutation_paths=["knowledge/topics/rvr.md"],
+            knowledge_mutation_trigger_sha256=next(
+                json.loads(line)["content_sha256"]
+                for line in (
+                    tmp_path / "data/telegram/2026/08/messages.jsonl"
+                ).read_text(encoding="utf-8").splitlines()
+                if json.loads(line)["record_id"] == "tg:tawg:10"
+            ),
+            created_at=NOW - timedelta(minutes=10),
+            updated_at=NOW - timedelta(minutes=9),
+        ).model_dump(mode="json")
+    )
+    jobs_path.write_text(json.dumps(jobs) + "\n", encoding="utf-8")
+    output = reply_result(chinese=False)
+    ai = FakeAi(output, context_scope="conversation")
+
+    await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    reply_context = json.loads(
+        next(call["context_pack"] for call in ai.calls if call["job_type"] == "reply")
+    )
+    assert reply_context["trigger"]["persisted_knowledge"] == [
+        {
+            "paths": ["knowledge/topics/rvr.md"],
+            "record_id": "tg:tawg:10",
+        }
+    ]
+
+
+@pytest.mark.asyncio
+async def test_conversation_catchup_ignores_receipt_for_edited_trigger_content(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "@bot did I miss anything I need to look at?",
+        trigger_reply_to="tg:tawg:missing",
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs = json.loads(jobs_path.read_text(encoding="utf-8"))
+    jobs.append(
+        PendingBotJob(
+            job_id="reply:tg:tawg:10",
+            trigger_record_id="tg:tawg:10",
+            reply_to_message_id=10,
+            status=JobStatus.DELIVERED,
+            classified_route=BotRoute.KNOWLEDGE_CORRECTION,
+            router_context_scope=RouteContextScope.KNOWLEDGE,
+            router_context_sha256="a" * 64,
+            router_version="contextual-ai-v5",
+            routed_at=NOW - timedelta(minutes=9),
+            prepared_reply_text="Recorded RVR.",
+            prepared_language="en",
+            knowledge_mutation_paths=["knowledge/topics/rvr.md"],
+            knowledge_mutation_trigger_sha256="b" * 64,
+            created_at=NOW - timedelta(minutes=10),
+            updated_at=NOW - timedelta(minutes=9),
+        ).model_dump(mode="json")
+    )
+    jobs_path.write_text(json.dumps(jobs) + "\n", encoding="utf-8")
+    ai = FakeAi(reply_result(chinese=False), context_scope="conversation")
+
+    await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    reply_context = json.loads(
+        next(call["context_pack"] for call in ai.calls if call["job_type"] == "reply")
+    )
+    assert "persisted_knowledge" not in reply_context["trigger"]
+
+
+@pytest.mark.asyncio
 async def test_conversation_reply_caps_equal_timestamps_by_numeric_message_id(
     tmp_path: Path,
 ) -> None:
@@ -2265,6 +2403,83 @@ async def test_audited_correction_followup_can_create_one_content_page_when_ai_u
         trigger_record_id=job.trigger_record_id,
         expected_body=expected_body,
     )
+    persisted_job = next(
+        item
+        for item in json.loads(
+            (tmp_path / "data/state/pending-bot-jobs.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        if item["job_id"] == job.job_id
+    )
+    assert persisted_job["knowledge_mutation_paths"] == [
+        "knowledge/topics/recomputable-verification-receipts.md"
+    ]
+    assert persisted_job["knowledge_mutation_trigger_sha256"] == next(
+        json.loads(line)["content_sha256"]
+        for line in (
+            tmp_path / "data/telegram/2026/08/messages.jsonl"
+        ).read_text(encoding="utf-8").splitlines()
+        if json.loads(line)["record_id"] == job.trigger_record_id
+    )
+
+
+@pytest.mark.asyncio
+async def test_identity_correction_reload_does_not_claim_a_knowledge_mutation_receipt(
+    tmp_path: Path,
+) -> None:
+    job = seed(tmp_path, "@bot correct this local member identity")
+    targets: list[tuple[Path, str, str]] = []
+    for index in range(4):
+        target = tmp_path / f"knowledge/acknowledgements/member-{index}.md"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        original = (
+            "---\n"
+            f"title: Member {index}\n"
+            "type: person\n"
+            "created: '2026-08-23'\n"
+            "updated: '2026-08-23'\n"
+            "source_ids:\n"
+            "  - tg:tawg:10\n"
+            "---\n\n"
+            f"# Member {index}\n\nOld local identity.\n"
+        )
+        corrected = original.replace("Old local identity.", "Corrected local identity.")
+        target.write_text(original, encoding="utf-8")
+        targets.append((target, original, corrected))
+    result = reply_result(chinese=False)
+    result["reply_text"] = "The local identity is corrected. [tg:tawg:10]"
+    result["correction_transaction"] = {
+        "schema_version": "tawg.vault-transaction.v1",
+        "operation_id": job.job_id,
+        "writes": [
+            {
+                "path": target.relative_to(tmp_path).as_posix(),
+                "expected_sha256": hashlib.sha256(original.encode()).hexdigest(),
+                "content": corrected,
+                "citations": ["tg:tawg:10"],
+            }
+            for target, original, corrected in targets
+        ],
+    }
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ContextualFakeAi("identity_correction", result),
+        bot_username="bot",
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared is not None
+    assert all(
+        target.read_text(encoding="utf-8") == corrected
+        for target, _, corrected in targets
+    )
+    persisted = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )[0]
+    assert "knowledge_mutation_paths" not in persisted
+    assert "knowledge_mutation_trigger_sha256" not in persisted
+    PendingBotJob.model_validate(persisted)
 
 
 @pytest.mark.asyncio
