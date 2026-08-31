@@ -19,7 +19,7 @@
     "router_version": "deterministic-member-welcome-v1",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "ready",
+    "status": "delivered",
     "trigger_kind": "member_introduction",
     "trigger_record_id": "tg:tawg:3778",
     "updated_at": "2026-08-31T02:05:11.853171Z",
