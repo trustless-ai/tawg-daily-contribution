@@ -25,9 +25,12 @@ from tawg_bot.telegram_webhook import (
     is_valid_telegram_webhook_secret,
 )
 
-_APP_NAME = "tawg-production"
+_APP_NAME = os.environ.get("TAWG_MODAL_APP_NAME", "tawg-production")
 _REMOTE = "https://github.com/trustless-ai/tawg-daily-contribution.git"
-_BRANCH = "main"
+_BRANCH = os.environ.get("TAWG_MODAL_BRANCH", "main")
+_REPOSITORY_PERSIST_ENABLED = os.environ.get(
+    "TAWG_REPOSITORY_PERSIST_ENABLED", "true"
+)
 _RUNTIME_ROOT = Path("/opt/tawg")
 _PRIVACY_CONFIG = _RUNTIME_ROOT / "config/privacy.yml"
 _LOCAL_PRIVACY_CONFIG = Path(__file__).parents[1] / "config/privacy.yml"
@@ -98,7 +101,12 @@ image = (
     )
     .add_local_dir("src", str(_RUNTIME_ROOT / "src"), copy=True)
     .add_local_file("config/privacy.yml", str(_PRIVACY_CONFIG), copy=True)
-    .env({"PYTHONPATH": str(_RUNTIME_ROOT / "src")})
+    .env(
+        {
+            "PYTHONPATH": str(_RUNTIME_ROOT / "src"),
+            "TAWG_REPOSITORY_PERSIST_ENABLED": _REPOSITORY_PERSIST_ENABLED,
+        }
+    )
     .workdir(str(_RUNTIME_ROOT))
 )
 webhook_secret = modal.Secret.from_name(

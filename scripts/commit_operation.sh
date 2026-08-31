@@ -6,6 +6,11 @@ if [[ ! "$operation_id" =~ ^[A-Za-z0-9._:-]{1,180}$ ]]; then
   exit 2
 fi
 
+# Dev/observe workers may ingest and reply without persisting to GitHub.
+if [[ "${TAWG_REPOSITORY_PERSIST_ENABLED:-true}" == "false" ]]; then
+  exit 0
+fi
+
 allowed_path() {
   local path="$1"
   case "$path" in
