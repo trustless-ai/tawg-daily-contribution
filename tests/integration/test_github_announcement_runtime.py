@@ -10,6 +10,7 @@ import httpx
 import pytest
 
 import tawg_bot.runtime as runtime_module
+from tawg_bot.bot_router import PreparedReply
 from tawg_bot.github_announcements import (
     GitHubAnnouncement,
     GitHubAnnouncementKind,
@@ -123,7 +124,7 @@ async def test_source_failure_does_not_scan_or_advance_announcement_state(
 
 
 @pytest.mark.asyncio
-async def test_delivery_sends_each_pending_announcement_as_top_level_markdown_and_acks_it(
+async def test_delivery_sends_each_pending_announcement_to_configured_topic_and_acks_it(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -171,6 +172,7 @@ async def test_delivery_sends_each_pending_announcement_as_top_level_markdown_an
 
     api = Api()
     monkeypatch.setenv("TAWG_TELEGRAM_CHAT_ID", "-10077")
+    monkeypatch.setenv("TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID", "3788")
     monkeypatch.setattr(runtime_module.TelegramApi, "from_env", lambda **kwargs: api)
     checkpoint = Checkpoint()
     async with httpx.AsyncClient() as client:
@@ -183,9 +185,79 @@ async def test_delivery_sends_each_pending_announcement_as_top_level_markdown_an
     assert [call[0] for call in api.calls] == [-10077, -10077]
     assert "**New PR**" in api.calls[0][1]
     assert "**New issue**" in api.calls[1][1]
-    assert [call[2:] for call in api.calls] == [(None, None), (None, None)]
+    assert [call[2:] for call in api.calls] == [(None, 3788), (None, 3788)]
     assert acknowledged == [event.event_id, issue_event.event_id]
     assert checkpoint.operations[-1].startswith("github-announcement-ack:")
+
+
+@pytest.mark.asyncio
+async def test_invalid_announcement_topic_defers_github_but_keeps_other_delivery_running(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scaffold(tmp_path)
+    event = GitHubAnnouncement(
+        event_id="github-announcement:pr_updated:" + "c" * 24,
+        kind=GitHubAnnouncementKind.PR_UPDATED,
+        repository="trustless-ai/agent-sdk",
+        number=27,
+        title="Tighten CI gate",
+        author_login="alice-dev",
+        occurred_at=NOW,
+    )
+    acknowledged: list[str] = []
+
+    class Announcements:
+        def pending(self) -> tuple[GitHubAnnouncement, ...]:
+            return (event,)
+
+        def acknowledge(self, event_id: str) -> None:
+            acknowledged.append(event_id)
+
+    class Api:
+        def __init__(self) -> None:
+            self.calls: list[tuple[int, str, int | None, int | None]] = []
+
+        async def send_message(
+            self,
+            chat_id: int,
+            text: str,
+            reply_to_message_id: int | None = None,
+            message_thread_id: int | None = None,
+        ) -> SentMessage:
+            self.calls.append((chat_id, text, reply_to_message_id, message_thread_id))
+            return SentMessage(message_id=902, chat_id=chat_id)
+
+    api = Api()
+    monkeypatch.setenv("TAWG_TELEGRAM_CHAT_ID", "-10077")
+    monkeypatch.delenv("TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID", raising=False)
+    monkeypatch.setattr(runtime_module.TelegramApi, "from_env", lambda **kwargs: api)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        pipeline.github_announcements = Announcements()  # type: ignore[assignment]
+        pipeline.prepared_replies = [
+            PreparedReply("reply:test", 41, 55, "ordinary reply", (), "en", False)
+        ]
+
+        await pipeline.telegram_delivery()
+
+    assert api.calls == [(-10077, "ordinary reply", 41, 55)]
+    assert acknowledged == []
+
+
+@pytest.mark.parametrize("raw", [None, "not-a-topic", "0", "-1"])
+def test_github_announcement_topic_rejects_missing_or_invalid_configuration(
+    raw: str | None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    name = "TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID"
+    if raw is None:
+        monkeypatch.delenv(name, raising=False)
+    else:
+        monkeypatch.setenv(name, raw)
+
+    with pytest.raises(RuntimeFailure, match=name):
+        _LivePipeline._github_announcement_topic_id()
 
 
 @pytest.mark.asyncio

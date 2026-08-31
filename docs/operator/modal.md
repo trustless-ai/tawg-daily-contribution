@@ -49,7 +49,7 @@ uv run --with modal==1.5.4 modal setup
 Run setup once and diagnose a failure before retrying. Do not paste the returned authentication
 material into chat. CI uses the separately provisioned `MODAL_TOKEN_ID` and
 `MODAL_TOKEN_SECRET` GitHub secrets described in
-[`github-actions.md`](github-actions.md); they do not belong in the three runtime secrets below.
+[`github-actions.md`](github-actions.md); they do not belong in the four runtime secrets below.
 
 Create the runtime secrets in the Modal dashboard's Secrets panel. This is preferred because no
 value appears in shell history or a process argument. The names and exact keys are:
@@ -72,6 +72,8 @@ value appears in shell history or a process argument. The names and exact keys a
   - `CLAUDE_CODE_EFFORT_LEVEL`
   - `CLAUDE_CODE_AUTO_COMPACT_WINDOW`
   - `GITHUB_TOKEN`
+- `tawg-github-announcements`
+  - `TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID`
 - `tawg-maintenance`
   - `TAWG_MODAL_MAINTENANCE_ENABLED`
 
@@ -79,6 +81,10 @@ The GitHub token must be restricted to this repository and the contents-write pe
 by the reviewed checkpoint script. The webhook secret must be 32-256 ASCII characters from
 `A-Z`, `a-z`, `0-9`, `_`, and `-`. The same value is supplied to Modal and later to Telegram's
 `secret_token` parameter.
+
+Set `TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID` to the positive Telegram
+`message_thread_id` for the forum topic that receives GitHub PR and issue announcements. This
+setting does not affect daily reports, ordinary replies, member welcomes, or knowledge updates.
 
 Create `tawg-maintenance` with the exact value `false` for every shadow deployment. This secret is
 the only credential available to the schedule trigger; it contains no repository, Telegram,

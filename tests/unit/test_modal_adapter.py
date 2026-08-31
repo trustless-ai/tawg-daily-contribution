@@ -411,13 +411,17 @@ def test_image_and_secret_cover_the_complete_runtime_without_source_secrets(
         "ANTHROPIC_MODEL",
         "GITHUB_TOKEN",
     }
+    assert secrets["tawg-github-announcements"] == {
+        "TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID"
+    }
     assert secrets["tawg-maintenance"] == {"TAWG_MODAL_MAINTENANCE_ENABLED"}
     assert "TAWG_TELEGRAM_WEBHOOK_SECRET" not in secrets["tawg-worker"]
     assert "GITHUB_TOKEN" not in secrets["tawg-webhook"]
     assert "TELEGRAM_BOT_TOKEN" not in secrets["tawg-webhook"]
     assert "ANTHROPIC_AUTH_TOKEN" not in secrets["tawg-webhook"]
     assert [secret.name for secret in modal_adapter.repository_worker.config["secrets"]] == [
-        "tawg-worker"
+        "tawg-worker",
+        "tawg-github-announcements",
     ]
     assert [secret.name for secret in modal_adapter.telegram_webhook.config["secrets"]] == [
         "tawg-webhook"

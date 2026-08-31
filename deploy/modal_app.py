@@ -61,6 +61,9 @@ _WORKER_SECRET_KEYS = [
     "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
     "GITHUB_TOKEN",
 ]
+_GITHUB_ANNOUNCEMENT_SECRET_KEYS = [
+    "TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID",
+]
 _MAINTENANCE_SECRET_KEYS = ["TAWG_MODAL_MAINTENANCE_ENABLED"]
 
 image = (
@@ -105,6 +108,10 @@ webhook_secret = modal.Secret.from_name(
 worker_secret = modal.Secret.from_name(
     "tawg-worker",
     required_keys=_WORKER_SECRET_KEYS,
+)
+github_announcement_secret = modal.Secret.from_name(
+    "tawg-github-announcements",
+    required_keys=_GITHUB_ANNOUNCEMENT_SECRET_KEYS,
 )
 maintenance_secret = modal.Secret.from_name(
     "tawg-maintenance",
@@ -160,7 +167,7 @@ async def _bounded_body(stream: AsyncIterator[bytes]) -> bytes | None:
 
 @app.function(
     image=image,
-    secrets=[worker_secret],
+    secrets=[worker_secret, github_announcement_secret],
     max_containers=1,
     timeout=_WORKER_TIMEOUT_SECONDS,
     retries=modal.Retries(max_retries=_WORKER_RETRIES),

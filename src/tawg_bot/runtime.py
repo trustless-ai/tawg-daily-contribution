@@ -663,13 +663,23 @@ class _LivePipeline:
             chat_id=chat_id,
             checkpoint=self.checkpoint,
         )
-        for event in self.github_announcements.pending():
+        pending_announcements = self.github_announcements.pending()
+        announcement_topic_id: int | None = None
+        if pending_announcements:
+            try:
+                announcement_topic_id = self._github_announcement_topic_id()
+            except RuntimeFailure:
+                _safe_log(
+                    "github_announcement_delivery",
+                    "invalid_topic_configuration",
+                )
+        for event in pending_announcements if announcement_topic_id is not None else ():
             try:
                 await delivery.deliver(
                     job_id=event.event_id,
                     text=render_announcement(event),
                     reply_to_message_id=None,
-                    message_thread_id=None,
+                    message_thread_id=announcement_topic_id,
                     now=self.now,
                 )
             except (DeliveryAmbiguous, DeliveryFailed):
@@ -810,6 +820,20 @@ class _LivePipeline:
             return int(raw)
         except ValueError:
             raise RuntimeFailure("TAWG_TELEGRAM_CHAT_ID must be an integer") from None
+
+    @staticmethod
+    def _github_announcement_topic_id() -> int:
+        name = "TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID"
+        raw = os.environ.get(name)
+        if not raw:
+            raise RuntimeFailure(f"{name} is not configured")
+        try:
+            topic_id = int(raw)
+        except ValueError:
+            raise RuntimeFailure(f"{name} must be a positive integer") from None
+        if topic_id <= 0:
+            raise RuntimeFailure(f"{name} must be a positive integer")
+        return topic_id
 
 
 def _require_utc(value: datetime, label: str) -> None:
