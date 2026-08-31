@@ -158,6 +158,24 @@
     "updated_at": "2026-08-28T05:28:07.780897Z"
   },
   {
+    "content_sha256": "beaf8e545368835916a1b9653f015c14502737b60dd44b5be8c235c5a0c0c467",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:0259305860acedab5296a003",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:0259305860acedab5296a003",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-08-31T12:01:11.481378Z",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-08-31T12:01:11.481378Z"
+  },
+  {
     "content_sha256": "ee5da1f8b856cfb0a85192ea55743405633bc2c3d57919c000ab11ff1fd83cd0",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:04db50cea481fb91a4c41779",
