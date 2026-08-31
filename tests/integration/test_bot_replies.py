@@ -4026,6 +4026,20 @@ def _fake_invinoveritas_client(handler) -> SafeJsonHttpClient:
     return SafeJsonHttpClient(httpx.AsyncClient(transport=httpx.MockTransport(handler)))
 
 
+def _genuinely_verified_proof_payload() -> dict[str, Any]:
+    """A /verify-proof response with every check confirm_proof() requires (Pavlo, msg 3825) --
+    NOT just a bare valid: true, matching the client's own pinned check contract."""
+    return {
+        "valid": True,
+        "checks": {
+            "signature_valid": True,
+            "id_integrity": True,
+            "issued_by_invinoveritas": True,
+            "artifact_hash_matches": True,
+        },
+    }
+
+
 @pytest.mark.asyncio
 async def test_verification_route_confirms_proof_and_replies(tmp_path: Path) -> None:
     job = seed(tmp_path, "@bot verify: 2+2=4")
@@ -4034,7 +4048,7 @@ async def test_verification_route_confirms_proof_and_replies(tmp_path: Path) -> 
     def handler(request: httpx.Request) -> httpx.Response:
         if "/review" in str(request.url):
             return httpx.Response(200, json=_signed_review_payload())
-        return httpx.Response(200, json={"valid": True, "checks": {"signature_valid": True}})
+        return httpx.Response(200, json=_genuinely_verified_proof_payload())
 
     prepared = await BotReplyService(
         tmp_path,
@@ -4078,6 +4092,47 @@ async def test_verification_route_fails_closed_when_proof_unverified(tmp_path: P
 
 
 @pytest.mark.asyncio
+async def test_verification_route_fails_closed_on_valid_true_with_missing_check(
+    tmp_path: Path,
+) -> None:
+    """Pavlo (damon msg 3825, verbatim): "Do not accept top-level valid: true as sufficient by
+    itself. Pin the exact required /verify-proof check contract and require every load-bearing
+    check to be present and exactly true ... Missing or contradictory checks must fail closed
+    even when the server reports valid: true." A malformed response claiming valid: true but
+    missing artifact_hash_matches must still be withheld, at the full BotReplyService level."""
+    job = seed(tmp_path, "@bot verify: 2+2=4")
+    ai = ContextualFakeAi("verification", reply_result(chinese=False))
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        if "/review" in str(request.url):
+            return httpx.Response(200, json=_signed_review_payload())
+        return httpx.Response(
+            200,
+            json={
+                "valid": True,
+                "checks": {
+                    "signature_valid": True,
+                    "id_integrity": True,
+                    "issued_by_invinoveritas": True,
+                    # artifact_hash_matches deliberately absent -- the server bug/malformed-
+                    # response case Pavlo's point is about.
+                },
+            },
+        )
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ai,
+        bot_username="bot",
+        invinoveritas_client=_fake_invinoveritas_client(handler),
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.refusal
+    assert "withheld" in prepared.reply_text
+    assert "approve" not in prepared.reply_text
+
+
+@pytest.mark.asyncio
 async def test_verification_route_sends_only_trigger_text_not_reply_chain(
     tmp_path: Path,
 ) -> None:
@@ -4093,7 +4148,7 @@ async def test_verification_route_sends_only_trigger_text_not_reply_chain(
         if "/review" in str(request.url):
             captured["artifact"] = json.loads(request.content)["artifact"]
             return httpx.Response(200, json=_signed_review_payload())
-        return httpx.Response(200, json={"valid": True, "checks": {}})
+        return httpx.Response(200, json=_genuinely_verified_proof_payload())
 
     await BotReplyService(
         tmp_path,

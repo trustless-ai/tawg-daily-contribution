@@ -35,6 +35,18 @@ from tawg_bot.http import SafeHttpError, SafeJsonHttpClient
 DEFAULT_REVIEW_URL = "https://api.babyblueviper.com/review"
 DEFAULT_VERIFY_PROOF_URL = "https://api.babyblueviper.com/verify-proof"
 
+# Pavlo (damon group, msg 3825): the exact pinned contract of load-bearing /verify-proof checks
+# confirm_proof() requires -- every one of these must be present in the response AND `is True`,
+# independent of what the top-level `valid` field says. artifact_hash_matches is included because
+# confirm_proof() always sends expect_artifact_hash (see below); a caller that changes that must
+# also update this tuple.
+_REQUIRED_VERIFY_PROOF_CHECKS: tuple[str, ...] = (
+    "signature_valid",
+    "id_integrity",
+    "issued_by_invinoveritas",
+    "artifact_hash_matches",
+)
+
 
 class VerificationRejected(ValueError):
     """A verification request could not be completed or the response was untrustworthy."""
@@ -187,10 +199,14 @@ async def confirm_proof(
     ourselves.
 
     FAILS CLOSED (verified=False), never assumes-valid, on: no proof/event in the /review
-    response at all, an unreachable /verify-proof endpoint, or a genuine valid=False from the
-    verify call. `error` always carries a real, specific reason -- "unresolvable" per Pavlo's
-    framing is not a separate silent-pass state, it is verified=False with an explanatory
-    error, same as any other failure here.
+    response at all, an unreachable /verify-proof endpoint, a genuine valid=False from the
+    verify call, OR (msg 3825, same day) any of _REQUIRED_VERIFY_PROOF_CHECKS missing or not
+    exactly `True` in the response's `checks` object -- the top-level `valid` field is NOT
+    trusted alone; every load-bearing check is independently pinned and required, so a
+    malformed or incomplete response fails closed here even if `valid` itself claims true.
+    `error` always carries a real, specific reason -- "unresolvable" per Pavlo's framing is not
+    a separate silent-pass state, it is verified=False with an explanatory error, same as any
+    other failure here.
     """
     proof = (result.raw or {}).get("proof")
     event = proof.get("event") if isinstance(proof, dict) else None
@@ -212,11 +228,26 @@ async def confirm_proof(
     checks = payload.get("checks")
     if not isinstance(checks, dict):
         checks = {}
-    if payload.get("valid") is not True:
+    # Pavlo (damon group, msg 3825, same day): "Do not accept top-level valid: true as
+    # sufficient by itself. Pin the exact required /verify-proof check contract and require
+    # every load-bearing check to be present and exactly true ... Missing or contradictory
+    # checks must fail closed even when the server reports valid: true." Implemented exactly:
+    # independently require every named check in _REQUIRED_VERIFY_PROOF_CHECKS to be present
+    # AND `is True` (not just truthy, not just absent-and-assumed-fine) -- a malformed or
+    # incomplete response fails closed here even if `valid` itself says true. artifact_hash_matches
+    # is required because this function always sends expect_artifact_hash above; a caller that
+    # never asks for that check should not get an unearned pass on it.
+    missing_or_failed = [
+        name for name in _REQUIRED_VERIFY_PROOF_CHECKS if checks.get(name) is not True
+    ]
+    if payload.get("valid") is not True or missing_or_failed:
+        error = payload.get("error")
+        if not error and missing_or_failed:
+            error = f"required check(s) not confirmed true: {', '.join(missing_or_failed)}"
         return ProofStatus(
             verified=False,
             checks=checks,
-            error=payload.get("error") or "proof did not independently verify (valid=false)",
+            error=error or "proof did not independently verify (valid=false)",
         )
     return ProofStatus(verified=True, checks=checks, error=None)
 

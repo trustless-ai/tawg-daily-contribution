@@ -168,6 +168,7 @@ def test_confirm_proof_calls_verify_proof_with_event_and_artifact_hash() -> None
                     "id_integrity": True,
                     "signature_valid": True,
                     "issued_by_invinoveritas": True,
+                    "artifact_hash_matches": True,
                 },
             },
         )
@@ -222,6 +223,82 @@ def test_confirm_proof_fails_closed_on_valid_false() -> None:
     assert status.error == "signature mismatch"
 
 
+def test_confirm_proof_fails_closed_on_valid_true_with_missing_required_check() -> None:
+    """Pavlo (damon group, msg 3825, verbatim): "Do not accept top-level valid: true as
+    sufficient by itself. Pin the exact required /verify-proof check contract and require
+    every load-bearing check to be present and exactly true ... Missing or contradictory
+    checks must fail closed even when the server reports valid: true." A response that
+    claims valid: true but omits artifact_hash_matches (the exact class of malformed/buggy
+    response this guards against) must still fail closed."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "valid": True,
+                "checks": {
+                    "signature_valid": True,
+                    "id_integrity": True,
+                    "issued_by_invinoveritas": True,
+                    # artifact_hash_matches deliberately absent.
+                },
+            },
+        )
+
+    async def run() -> ProofStatus:
+        from tawg_bot.invinoveritas_verify import VerificationResult
+
+        result = VerificationResult(
+            verdict="approve",
+            confidence=0.9,
+            summary="",
+            verify_proof_url=VERIFY_PROOF_URL,
+            decision_ref=None,
+            raw={"proof": {"event": {"id": "abc123"}}},
+        )
+        return await confirm_proof(_client(handler), result, artifact="claim")
+
+    status = asyncio.run(run())
+    assert status.verified is False
+    assert "artifact_hash_matches" in status.error
+
+
+def test_confirm_proof_fails_closed_on_valid_true_with_a_false_required_check() -> None:
+    """Same guard, contradictory-not-just-missing case: valid: true at the top level while one
+    named required check is explicitly False."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "valid": True,
+                "checks": {
+                    "signature_valid": True,
+                    "id_integrity": True,
+                    "issued_by_invinoveritas": False,
+                    "artifact_hash_matches": True,
+                },
+            },
+        )
+
+    async def run() -> ProofStatus:
+        from tawg_bot.invinoveritas_verify import VerificationResult
+
+        result = VerificationResult(
+            verdict="approve",
+            confidence=0.9,
+            summary="",
+            verify_proof_url=VERIFY_PROOF_URL,
+            decision_ref=None,
+            raw={"proof": {"event": {"id": "abc123"}}},
+        )
+        return await confirm_proof(_client(handler), result, artifact="claim")
+
+    status = asyncio.run(run())
+    assert status.verified is False
+    assert "issued_by_invinoveritas" in status.error
+
+
 def test_confirm_proof_fails_closed_when_no_proof_event_present() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         raise AssertionError("must not call the network when there is no event to verify")
@@ -273,7 +350,18 @@ def test_verify_and_confirm_calls_both_endpoints_in_order() -> None:
         calls.append(str(request.url))
         if request.url == REVIEW_URL:
             return httpx.Response(200, json=_signed_payload())
-        return httpx.Response(200, json={"valid": True, "checks": {}})
+        return httpx.Response(
+            200,
+            json={
+                "valid": True,
+                "checks": {
+                    "signature_valid": True,
+                    "id_integrity": True,
+                    "issued_by_invinoveritas": True,
+                    "artifact_hash_matches": True,
+                },
+            },
+        )
 
     async def run():
         return await verify_and_confirm(_client(handler), artifact="1+1=2")
