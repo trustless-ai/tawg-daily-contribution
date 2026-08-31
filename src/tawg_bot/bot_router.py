@@ -42,7 +42,8 @@ from tawg_bot.knowledge_mutation import (
 )
 from tawg_bot.live_evidence import EvidencePack
 from tawg_bot.member_welcome import (
-    build_member_reply,
+    build_member_ai_context,
+    build_member_welcome_reply,
     member_profile_snapshot,
     member_welcome_is_expired,
 )
@@ -88,6 +89,16 @@ _INLINE_CITATION = re.compile(
     re.IGNORECASE,
 )
 _LOCAL_CITATION = re.compile(r"\[((?:[A-Za-z0-9_.-]+:){2,}[A-Za-z0-9_.:/@-]+)\]")
+_TELEGRAM_MENTION = re.compile(
+    r"(?<![A-Za-z0-9_@])@[A-Za-z0-9_]{1,64}(?![A-Za-z0-9_])"
+)
+_UNSAFE_MEMBER_LOCATOR = re.compile(
+    r"(?:\b(?:www\.|t\.me/|telegram\.me/)|"
+    r"\[[^\]]+\]\([^)]+\)|"
+    r"\b(?:mailto|ftp|tg):|"
+    r"(?<![@\w.-])(?:[A-Za-z0-9-]+\.)+[A-Za-z]{2,}(?:/\S*)?)",
+    re.IGNORECASE,
+)
 _URL_CITATION = re.compile(r"https?://[^\s<>()\[\]]+", re.IGNORECASE)
 _RENDERED_URL_CITATION = re.compile(
     r"\[(?P<label>[^\]\n]+)\]\((?P<link>https?://[^\s<>()\[\]]+)\)"
@@ -447,9 +458,13 @@ class BotReplyService:
         }
         if job.status is JobStatus.DELIVERED:
             return self._prepared(job)
+        reuse_ready_introduction = (
+            job.status is JobStatus.READY
+            and job.trigger_kind is TriggerKind.MEMBER_INTRODUCTION
+        )
         if job.status is JobStatus.READY and job.trigger_kind not in member_kinds:
             return self._prepared(job)
-        if job.status is JobStatus.READY:
+        if job.status is JobStatus.READY and not reuse_ready_introduction:
             reset_payload = job.model_dump(mode="json")
             reset_payload.update(
                 {
@@ -503,6 +518,8 @@ class BotReplyService:
             jobs[job_id] = PendingBotJob.model_validate(cancelled_payload)
             self._publish_jobs(jobs, f"{job_id}:cancelled")
             return None
+        if reuse_ready_introduction:
+            return self._prepared(job)
         records = self._with_audited_bot_parent(records, jobs, job, trigger)
         processing = job.model_copy(
             update={
@@ -530,6 +547,7 @@ class BotReplyService:
                     records,
                     jobs,
                     now=now,
+                    model_deadline=model_deadline,
                 )
             context_builder = ConversationContextBuilder(self.privacy)
             route_context = context_builder.build(
@@ -931,6 +949,7 @@ class BotReplyService:
         jobs: dict[str, PendingBotJob],
         *,
         now: datetime,
+        model_deadline: float,
     ) -> PreparedReply:
         if job.welcome_target_person_id is None or job.welcome_target_record_id is None:
             raise ReplyRejected("member welcome target is incomplete")
@@ -959,6 +978,7 @@ class BotReplyService:
             or not isinstance(telegram_handles[0], str)
         ):
             raise ReplyRejected("member welcome target has no unique public handle")
+        prerequisite = None
         if job.trigger_kind is TriggerKind.MEMBER_INTRODUCTION:
             prerequisite = jobs.get(job.prerequisite_job_id or "")
             if prerequisite is None or prerequisite.status is not JobStatus.DELIVERED:
@@ -967,14 +987,52 @@ class BotReplyService:
             self.root,
             person_id=job.welcome_target_person_id,
         )
-        reply_text, context_hash = build_member_reply(
-            job=job,
-            trigger=trigger,
-            target=target,
-            identity=identity,
-            existing_profile=existing_profile,
-            existing_frontmatter=existing_frontmatter,
-        )
+        if job.trigger_kind is TriggerKind.MEMBER_WELCOME:
+            reply_text, context_hash, language = build_member_welcome_reply(
+                trigger=trigger,
+                target=target,
+                identity=identity,
+            )
+            router_version = "template-member-welcome-v1"
+        else:
+            context_pack, context_hash, expected_mention = build_member_ai_context(
+                job=job,
+                trigger=trigger,
+                target=target,
+                identity=identity,
+                existing_profile=existing_profile,
+                existing_frontmatter=existing_frontmatter,
+                prior_delivered_welcome=(
+                    prerequisite.prepared_reply_text if prerequisite is not None else None
+                ),
+            )
+            raw = await self.ai.run(
+                job_type="reply",
+                context_pack=context_pack,
+                operation_id=safe_operation_id(job.job_id),
+                max_budget_usd=self.max_budget_usd,
+                timeout_seconds=self._remaining_model_time(model_deadline),
+            )
+            try:
+                result = _ReplyResult.model_validate(raw)
+            except ValidationError as error:
+                raise ReplyRejected("invalid member introduction model output") from error
+            reply_text = result.reply_text.strip()
+            if not reply_text or result.refusal:
+                raise ReplyRejected("member introduction model refused")
+            mentions = {
+                mention.casefold() for mention in _TELEGRAM_MENTION.findall(reply_text)
+            }
+            if mentions != {expected_mention.casefold()}:
+                raise ReplyRejected("member introduction mention is unsafe")
+            if _INLINE_CITATION.search(reply_text) or _UNSAFE_MEMBER_LOCATOR.search(
+                reply_text
+            ):
+                raise ReplyRejected("member introduction contains an unsafe locator")
+            if len(reply_text) > 8192:
+                raise ReplyRejected("member introduction is too long")
+            language = result.language
+            router_version = "ai-member-introduction-v1"
         self.privacy.assert_public(reply_text)
         ready_payload = job.model_dump(mode="json")
         ready_payload.update(
@@ -982,15 +1040,13 @@ class BotReplyService:
                 "status": JobStatus.READY,
                 "prepared_reply_text": reply_text,
                 "prepared_citations": [],
-                "prepared_language": (
-                    "zh" if re.search(r"[\u3400-\u9fff]", reply_text) else "en"
-                ),
+                "prepared_language": language,
                 "refusal": False,
                 "safe_error_code": None,
                 "classified_route": BotRoute.COORDINATION,
                 "router_context_scope": RouteContextScope.CONVERSATION,
                 "router_context_sha256": context_hash,
-                "router_version": "deterministic-member-welcome-v1",
+                "router_version": router_version,
                 "routed_at": now,
                 "updated_at": now,
             }

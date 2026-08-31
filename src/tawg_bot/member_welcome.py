@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import re
 import unicodedata
 from collections.abc import Mapping
@@ -19,6 +20,8 @@ from tawg_bot.vault import parse_frontmatter
 _MAX_WELCOME_AGE = timedelta(hours=24)
 _INTRODUCTION_L1_GRACE = timedelta(minutes=15)
 _CJK = re.compile(r"[\u3400-\u9fff]")
+_JAPANESE = re.compile(r"[\u3040-\u30ff]")
+_KOREAN = re.compile(r"[\uac00-\ud7af]")
 
 
 class MemberWelcomeRejected(ValueError):
@@ -63,7 +66,7 @@ def member_profile_snapshot(
     return current, frontmatter
 
 
-def build_member_reply(
+def build_member_ai_context(
     *,
     job: PendingBotJob,
     trigger: SourceRecord,
@@ -71,59 +74,69 @@ def build_member_reply(
     identity: Mapping[str, Any] | None,
     existing_profile: str,
     existing_frontmatter: Mapping[str, Any] | None,
-) -> tuple[str, str]:
+    prior_delivered_welcome: str | None,
+) -> tuple[str, str, str]:
     mention = _public_mention(target=target, identity=identity)
-    chinese = _CJK.search(trigger.text_original) is not None
-    if job.trigger_kind is TriggerKind.MEMBER_WELCOME:
-        known_from_magicians = (
-            existing_frontmatter is not None
-            and existing_frontmatter.get("provenance_status") == "verified"
-            and any(
-                isinstance(source_id, str) and source_id.startswith("magicians:")
-                for source_id in existing_frontmatter.get("source_ids", [])
-            )
-        )
-        if chinese:
-            reply = (
-                f"{mention} 欢迎来到 TAWG！之前在 Ethereum Magicians 看到过你的贡献，"  # noqa: RUF001
-                "很高兴这次能把这些经验也带到这里一起交流 👋"
-                if known_from_magicians
-                else f"{mention} 欢迎来到 TAWG，很高兴你加入我们！👋"  # noqa: RUF001
-            )
-        else:
-            reply = (
-                f"{mention} We've seen your contributions around Ethereum Magicians, and "
-                "it's great to have that experience in TAWG too — welcome! 👋"
-                if known_from_magicians
-                else f"{mention} Welcome to TAWG — really glad to have you here! 👋"
-            )
-    elif job.trigger_kind is TriggerKind.MEMBER_INTRODUCTION:
-        reply = (
-            f"{mention} 顺便介绍一下 Trustless AI：我们是一群因为 ERC 标准在线认识的"  # noqa: RUF001
-            "全球开发者、研究者和 EIP 作者，大家会把想法一起做成研究、标准和能跑的实现，"  # noqa: RUF001
-            "目标是让 AI / 区块链结果可以被任何人独立验证或重算。看到感兴趣的话题直接聊、"
-            "提想法或挑件想做的事就好。"
-            if chinese
-            else f"{mention} A bit of context on Trustless AI: we're people from around "
-            "the world who met online around ERCs — builders, researchers, and EIP authors "
-            "turning ideas into research, standards, and working implementations, with AI "
-            "and blockchain results anyone can independently verify or recompute. Feel free "
-            "to jump into a chat, propose something, or pick up whatever looks fun."
-        )
-    else:
+    if job.trigger_kind not in {
+        TriggerKind.MEMBER_WELCOME,
+        TriggerKind.MEMBER_INTRODUCTION,
+    }:
         raise MemberWelcomeRejected("unsupported member welcome phase")
-    context_payload = "\n".join(
-        (
-            job.trigger_kind.value,
-            trigger.record_id,
-            trigger.content_sha256,
-            target.record_id,
-            target.content_sha256,
-            hashlib.sha256(existing_profile.encode("utf-8")).hexdigest(),
-            reply,
-        )
+    verified_profile = None
+    if (
+        existing_profile
+        and existing_frontmatter is not None
+        and existing_frontmatter.get("provenance_status") == "verified"
+    ):
+        if job.welcome_target_person_id is None:
+            raise MemberWelcomeRejected("member person ID is missing")
+        verified_profile = {
+            "path": member_profile_path(job.welcome_target_person_id),
+            "text": existing_profile,
+        }
+    context = {
+        "trigger_kind": job.trigger_kind.value,
+        "trigger": {
+            "record_id": trigger.record_id,
+            "text_original": trigger.text_original,
+            "created_at": trigger.created_at.isoformat().replace("+00:00", "Z"),
+        },
+        "target": {
+            "person_id": job.welcome_target_person_id,
+            "record_id": target.record_id,
+            "mention": mention,
+            "text_original": target.text_original,
+        },
+        "verified_profile": verified_profile,
+        "prior_delivered_welcome": prior_delivered_welcome,
+    }
+    rendered = json.dumps(context, ensure_ascii=False, sort_keys=True)
+    return rendered, hashlib.sha256(rendered.encode("utf-8")).hexdigest(), mention
+
+
+def build_member_welcome_reply(
+    *,
+    trigger: SourceRecord,
+    target: SourceRecord,
+    identity: Mapping[str, Any] | None,
+) -> tuple[str, str, str]:
+    mention = _public_mention(target=target, identity=identity)
+    if _JAPANESE.search(trigger.text_original):
+        reply = f"{mention}、Trustless AIへようこそ！👋"  # noqa: RUF001
+        language = "ja"
+    elif _KOREAN.search(trigger.text_original):
+        reply = f"{mention}님, Trustless AI에 오신 것을 환영합니다! 👋"
+        language = "ko"
+    elif _CJK.search(trigger.text_original):
+        reply = f"欢迎加入 Trustless AI，{mention}！👋"  # noqa: RUF001
+        language = "zh"
+    else:
+        reply = f"{mention} Welcome to Trustless AI! 👋"
+        language = "en"
+    payload = "\n".join(
+        (trigger.record_id, trigger.content_sha256, target.record_id, mention, reply)
     )
-    return reply, hashlib.sha256(context_payload.encode("utf-8")).hexdigest()
+    return reply, hashlib.sha256(payload.encode("utf-8")).hexdigest(), language
 
 
 def stage_member_profile(
@@ -172,6 +185,15 @@ def stage_member_profile(
         body = (
             f"{body.rstrip()}\n\n## TAWG-local participation\n\n"
             f"Welcomed to the TAWG Telegram group on {now.date().isoformat()}.\n"
+        ).lstrip()
+    if "## Related topics" not in body:
+        body = (
+            f"{body.rstrip()}\n\n## Related topics\n\n"
+            "Frequently referenced maintained standards: No maintained ERC page is "
+            "strongly represented in the imported messages.\n\n"
+            "This page is a navigation aid, not an identity claim outside this TAWG "
+            "and not a contribution score. Detailed statements remain in the cited "
+            "source records and can be corrected through the Bot.\n"
         ).lstrip()
     rendered = (
         "---\n"
