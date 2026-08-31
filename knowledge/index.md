@@ -62,9 +62,10 @@ This vault compiles current, source-cited knowledge for the Daily Contribution a
 
 - [[acknowledgements/baby-blue-viper|Baby Blue Viper]]
 - [[acknowledgements/damon-zwicker|Damon Zwicker]]
-- [[acknowledgements/j|J]]
 - [[acknowledgements/jimmy-shi|Jimmy Shi]]
 - [[acknowledgements/jinx-thepoktopus|Jinx | @thepoktopus]]
+- [[acknowledgements/j|J]]
+- [[acknowledgements/logan-verdict|Logan Verdict]]
 - [[acknowledgements/m-blockbird|M @Blockbird]]
 - [[acknowledgements/merlini|Merlini]]
 - [[acknowledgements/pavlo|Pavlo]]
@@ -78,7 +79,6 @@ This vault compiles current, source-cited knowledge for the Daily Contribution a
 - [[acknowledgements/zexo|Zexo]]
 - [[acknowledgements/zidan|Zidan]]
 - [[acknowledgements/繁星之上|繁星之上]]
-
 ## Timelines
 
 - [[timeline/2026-06|June 2026]]
