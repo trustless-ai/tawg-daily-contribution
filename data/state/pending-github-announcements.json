@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_updated:601387a89c518be3d558f96e",
-    "kind": "pr_updated",
-    "number": 36,
-    "occurred_at": "2026-08-31T11:29:52Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "pq-key-binding-v1: schema namespace is opaque to the enforcer (normative MUST-NOT + failing witness)"
-  }
-]
+[]
