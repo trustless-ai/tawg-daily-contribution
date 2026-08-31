@@ -24,7 +24,7 @@ from tawg_bot.github_announcements import (
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import RefreshResult
 from tawg_bot.live_evidence import LiveEvidenceService
-from tawg_bot.models import DeliveryStatus, JobStatus, PendingBotJob
+from tawg_bot.models import DeliveryStatus, JobStatus, PendingBotJob, TriggerKind
 from tawg_bot.persistence_guard import PersistenceRejected
 from tawg_bot.repository_session import CommandResult, RepositoryConflict, RepositorySession
 from tawg_bot.runtime import (
@@ -79,6 +79,98 @@ class LiveEvidence:
         assert now == NOW
         self.calls.append(query)
         return _pack().model_copy(update={"query": query})
+
+
+@pytest.mark.asyncio
+async def test_member_introduction_waits_for_the_l1_enabled_pipeline(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scaffold(tmp_path)
+    direct = PendingBotJob(
+        job_id="member-welcome:logan",
+        trigger_record_id="tg:tawg:101",
+        reply_to_message_id=None,
+        message_thread_id=88,
+        trigger_kind=TriggerKind.MEMBER_WELCOME,
+        status=JobStatus.DELIVERED,
+        prepared_reply_text="@LoganVerdict Welcome!",
+        prepared_language="en",
+        welcome_target_person_id="logan",
+        welcome_target_record_id="tg:tawg:100",
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    introduction = PendingBotJob(
+        job_id="member-introduction:logan",
+        trigger_record_id="tg:tawg:101",
+        reply_to_message_id=None,
+        message_thread_id=88,
+        trigger_kind=TriggerKind.MEMBER_INTRODUCTION,
+        welcome_target_person_id="logan",
+        welcome_target_record_id="tg:tawg:100",
+        prerequisite_job_id=direct.job_id,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps(
+            [direct.model_dump(mode="json"), introduction.model_dump(mode="json")]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    prepared_ids: list[str] = []
+
+    class NoopReconciler:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+
+        def reconcile(self, *, now: datetime) -> int:
+            assert now == NOW
+            return 0
+
+    class ReplyService:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+
+        async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply:
+            assert now == NOW
+            prepared_ids.append(job_id)
+            return PreparedReply(
+                job_id=job_id,
+                reply_to_message_id=None,
+                message_thread_id=88,
+                reply_text="@LoganVerdict Welcome to Trustless AI.",
+                citations=(),
+                language="en",
+                refusal=False,
+            )
+
+    monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "bot")
+    monkeypatch.setattr(runtime_module, "MemberWelcomeReconciler", NoopReconciler)
+    monkeypatch.setattr(runtime_module, "ReplyRepairReconciler", NoopReconciler)
+    monkeypatch.setattr(runtime_module, "BotReplyService", ReplyService)
+    async with httpx.AsyncClient() as client:
+        webhook_pipeline = _LivePipeline(
+            tmp_path,
+            client=client,
+            checkpoint=Checkpoint(),
+            now=NOW,
+        )
+        await webhook_pipeline._prepare_pending_replies()
+        assert prepared_ids == []
+
+        l1_pipeline = _LivePipeline(
+            tmp_path,
+            client=client,
+            checkpoint=Checkpoint(),
+            now=NOW,
+            member_introductions_enabled=True,
+        )
+        await l1_pipeline._prepare_pending_replies()
+
+    assert prepared_ids == [introduction.job_id]
 
 
 def scaffold(root: Path) -> None:

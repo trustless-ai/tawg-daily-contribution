@@ -15,7 +15,7 @@ from pathlib import Path
 from typing import Any, Protocol
 from uuid import uuid4
 
-from tawg_bot.aliases import AliasRegistry
+from tawg_bot.aliases import AliasError, AliasRegistry
 from tawg_bot.ids import telegram_id
 from tawg_bot.models import (
     AttachmentMetadata,
@@ -52,6 +52,15 @@ _LEGACY_DIRECT_REPLY_BACKFILLS: dict[str, tuple[str, str]] = {
         "tg:tawg:3467",
     )
 }
+
+_MEMBER_WELCOME = re.compile(
+    r"(?<!\w)(?:welcome|glad\s+to\s+have\s+you|great\s+to\s+have\s+you|"
+    r"happy\s+to\s+have\s+you|nice\s+to\s+have\s+you)(?!\w)|"
+    r"欢迎|歡迎|ようこそ|환영",
+    re.IGNORECASE,
+)
+_PUBLIC_TELEGRAM_HANDLE = re.compile(r"(?<!\w)@([A-Za-z][A-Za-z0-9_]{4,31})(?!\w)")
+_WELCOME_TARGET_MAX_AGE_SECONDS = 24 * 60 * 60
 
 
 @dataclass(frozen=True, slots=True)
@@ -280,10 +289,25 @@ class _TelegramPersistence:
                     }
                 )
 
+        combined_records = {**persisted_by_id, **records_by_id}
+        _invalidate_edited_member_welcomes(
+            jobs=jobs_by_id,
+            edited_record_ids={
+                message.record_id for message in fresh_messages if message.edited
+            },
+        )
+
         self._reconcile_direct_replies(
-            records={**persisted_by_id, **records_by_id},
+            records=combined_records,
             jobs=jobs_by_id,
             now=now,
+        )
+        _reconcile_member_welcome_jobs(
+            aliases=self.aliases,
+            records=combined_records,
+            jobs=jobs_by_id,
+            now=now,
+            remove_pending_generic=True,
         )
 
         monthly: dict[str, list[SourceRecord]] = defaultdict(list)
@@ -384,6 +408,328 @@ class _TelegramPersistence:
                 created_at=now,
                 updated_at=now,
             )
+
+
+class MemberWelcomeReconciler:
+    """Boundedly backfill two-stage welcomes from durable Telegram evidence."""
+
+    def __init__(self, root: Path) -> None:
+        self.root = root.resolve()
+
+    def reconcile(self, *, now: datetime) -> int:
+        _require_utc(now, "member welcome reconciliation time")
+        jobs_path = self.root / "data/state/pending-bot-jobs.json"
+        aliases_path = self.root / "knowledge/meta/aliases.yml"
+        if not jobs_path.exists() or not aliases_path.exists():
+            return 0
+        raw = json.loads(jobs_path.read_text(encoding="utf-8"))
+        jobs = {
+            job.job_id: job
+            for job in (PendingBotJob.model_validate(item) for item in raw)
+        }
+        initial_ids = set(jobs)
+        changed = _reconcile_member_welcome_jobs(
+            aliases=AliasRegistry.from_yaml(aliases_path),
+            records={record.record_id: record for record in TelegramQuery(self.root).records()},
+            jobs=jobs,
+            now=now,
+            remove_pending_generic=True,
+        )
+        created = len(set(jobs) - initial_ids)
+        if not changed:
+            return 0
+        uow = RepositoryUnitOfWork(
+            self.root,
+            operation_id=f"member-welcome-reconcile:{int(now.timestamp())}",
+        )
+        uow.register_external_evidence(())
+        uow.stage_json(
+            "data/state/pending-bot-jobs.json",
+            [jobs[job_id].persistence_payload() for job_id in sorted(jobs)],
+        )
+        uow.publish()
+        return created
+
+
+def _reconcile_member_welcome_jobs(
+    *,
+    aliases: AliasRegistry,
+    records: dict[str, SourceRecord],
+    jobs: dict[str, PendingBotJob],
+    now: datetime,
+    remove_pending_generic: bool,
+) -> bool:
+    changed = False
+    candidates = sorted(
+        (
+            job
+            for job in jobs.values()
+            if job.trigger_kind is TriggerKind.GREETING_CANDIDATE
+            and (trigger := records.get(job.trigger_record_id)) is not None
+            and _MEMBER_WELCOME.search(trigger.text_original) is not None
+            and 0
+            <= (now - trigger.created_at).total_seconds()
+            <= _WELCOME_TARGET_MAX_AGE_SECONDS
+        ),
+        key=lambda job: (
+            records[job.trigger_record_id].created_at,
+            job.trigger_record_id,
+        ),
+    )
+    for candidate in candidates:
+        trigger = records[candidate.trigger_record_id]
+        resolved = resolve_member_welcome_target(
+            trigger=trigger,
+            aliases=aliases,
+            records=records,
+            message_thread_id=candidate.message_thread_id,
+        )
+        if resolved is None:
+            if remove_pending_generic and candidate.status is JobStatus.PENDING:
+                jobs.pop(candidate.job_id, None)
+                changed = True
+            continue
+        target_person_id, target_record_id = resolved
+        direct_id = f"member-welcome:{target_person_id}"
+        introduction_id = f"member-introduction:{target_person_id}"
+        if remove_pending_generic and candidate.status is JobStatus.PENDING:
+            jobs.pop(candidate.job_id, None)
+            changed = True
+        if direct_id not in jobs:
+            jobs[direct_id] = PendingBotJob(
+                job_id=direct_id,
+                trigger_record_id=trigger.record_id,
+                reply_to_message_id=None,
+                message_thread_id=candidate.message_thread_id,
+                trigger_kind=TriggerKind.MEMBER_WELCOME,
+                welcome_target_person_id=target_person_id,
+                welcome_target_record_id=target_record_id,
+                created_at=now,
+                updated_at=now,
+            )
+            changed = True
+        if introduction_id not in jobs:
+            jobs[introduction_id] = PendingBotJob(
+                job_id=introduction_id,
+                trigger_record_id=trigger.record_id,
+                reply_to_message_id=None,
+                message_thread_id=candidate.message_thread_id,
+                trigger_kind=TriggerKind.MEMBER_INTRODUCTION,
+                welcome_target_person_id=target_person_id,
+                welcome_target_record_id=target_record_id,
+                prerequisite_job_id=direct_id,
+                created_at=now,
+                updated_at=now,
+            )
+            changed = True
+    return changed
+
+
+def _invalidate_edited_member_welcomes(
+    *,
+    jobs: dict[str, PendingBotJob],
+    edited_record_ids: set[str],
+) -> None:
+    if not edited_record_ids:
+        return
+    member_kinds = {
+        TriggerKind.MEMBER_WELCOME,
+        TriggerKind.MEMBER_INTRODUCTION,
+    }
+    for job_id, job in tuple(jobs.items()):
+        if (
+            job.trigger_kind not in member_kinds
+            or (
+                job.trigger_record_id not in edited_record_ids
+                and job.welcome_target_record_id not in edited_record_ids
+            )
+            or job.status is JobStatus.DELIVERED
+        ):
+            continue
+        jobs.pop(job_id, None)
+
+
+def resolve_member_welcome_target(
+    *,
+    trigger: SourceRecord,
+    aliases: AliasRegistry,
+    records: dict[str, SourceRecord],
+    message_thread_id: int | None = None,
+) -> tuple[str, str] | None:
+    reply_targets = [
+        relation.target_record_id
+        for relation in trigger.relations
+        if relation.relation_type == "reply_to"
+    ]
+    if len(reply_targets) == 1:
+        target = records.get(reply_targets[0])
+        if (
+            target is not None
+            and target.source_payload.get("message_thread_id") == message_thread_id
+            and _eligible_welcome_target(
+                trigger,
+                target,
+                aliases,
+                records,
+            )
+        ):
+            assert target.author_person_id is not None
+            return target.author_person_id, target.record_id
+
+    welcome_match = _MEMBER_WELCOME.search(trigger.text_original)
+    if welcome_match is None:
+        return None
+    nearby_text = trigger.text_original[
+        max(0, welcome_match.start() - 64) : welcome_match.end() + 96
+    ]
+    person_ids: set[str] = set()
+    for handle in _PUBLIC_TELEGRAM_HANDLE.findall(nearby_text):
+        try:
+            person_id = aliases.lookup_public_handle("telegram", handle)
+        except AliasError:
+            return None
+        if person_id is not None:
+            person_ids.add(person_id)
+    for person_id, identity in aliases.people.items():
+        for display_name in identity.get("display_names", []):
+            if isinstance(display_name, str) and _display_name_is_mentioned(
+                nearby_text,
+                display_name,
+            ):
+                person_ids.add(person_id)
+                break
+    person_ids.discard(trigger.author_person_id or "")
+    resolved: list[tuple[str, str]] = []
+    for person_id in sorted(person_ids):
+        target = _latest_target_record(
+            trigger,
+            person_id,
+            records,
+            message_thread_id=message_thread_id,
+        )
+        if target is not None and _eligible_welcome_target(
+            trigger,
+            target,
+            aliases,
+            records,
+        ):
+            resolved.append((person_id, target.record_id))
+    return resolved[0] if len(resolved) == 1 else None
+
+
+def _latest_target_record(
+    trigger: SourceRecord,
+    person_id: str,
+    records: dict[str, SourceRecord],
+    *,
+    message_thread_id: int | None,
+) -> SourceRecord | None:
+    candidates = [
+        record
+        for record in records.values()
+        if record.author_person_id == person_id
+        and record.created_at <= trigger.created_at
+        and record.source_payload.get("message_thread_id") == message_thread_id
+        and (trigger.created_at - record.created_at).total_seconds()
+        <= _WELCOME_TARGET_MAX_AGE_SECONDS
+    ]
+    return max(candidates, key=lambda item: (item.created_at, item.record_id), default=None)
+
+
+def _eligible_welcome_target(
+    trigger: SourceRecord,
+    target: SourceRecord,
+    aliases: AliasRegistry,
+    records: dict[str, SourceRecord],
+) -> bool:
+    if (
+        target.source_type is not SourceType.TELEGRAM_MESSAGE
+        or target.author_person_id is None
+        or target.author_person_id == trigger.author_person_id
+        or target.created_at > trigger.created_at
+        or (trigger.created_at - target.created_at).total_seconds()
+        > _WELCOME_TARGET_MAX_AGE_SECONDS
+    ):
+        return False
+    identity = aliases.people.get(target.author_person_id, {})
+    handles = identity.get("handles", {})
+    telegram_handles = handles.get("telegram", []) if isinstance(handles, dict) else []
+    return (
+        isinstance(telegram_handles, list)
+        and len(telegram_handles) == 1
+        and isinstance(telegram_handles[0], str)
+        and _is_new_tawg_member(trigger, target.author_person_id, aliases, records)
+    )
+
+
+def _is_new_tawg_member(
+    trigger: SourceRecord,
+    person_id: str,
+    aliases: AliasRegistry,
+    records: dict[str, SourceRecord],
+) -> bool:
+    identity = aliases.people.get(person_id, {})
+    handles = _identity_public_handles(identity)
+    related_ids = {
+        candidate_id
+        for candidate_id, candidate in aliases.people.items()
+        if handles & _identity_public_handles(candidate)
+    }
+    related_ids.add(person_id)
+    first_seen = min(
+        (
+            record.created_at
+            for record in records.values()
+            if record.source_type is SourceType.TELEGRAM_MESSAGE
+            and record.author_person_id in related_ids
+            and record.created_at <= trigger.created_at
+        ),
+        default=None,
+    )
+    return (
+        first_seen is not None
+        and 0
+        <= (trigger.created_at - first_seen).total_seconds()
+        <= _WELCOME_TARGET_MAX_AGE_SECONDS
+    )
+
+
+def _identity_public_handles(identity: dict[str, Any]) -> set[tuple[str, str]]:
+    handles = identity.get("handles", {})
+    if not isinstance(handles, dict):
+        return set()
+    return {
+        (platform.casefold(), value.removeprefix("@").casefold())
+        for platform, values in handles.items()
+        if isinstance(platform, str)
+        if isinstance(values, list)
+        for value in values
+        if isinstance(value, str) and value.strip()
+    }
+
+
+def _display_name_is_mentioned(text: str, display_name: str) -> bool:
+    normalized = " ".join(display_name.split())
+    if len(normalized) < 2:
+        return False
+    candidates = [normalized]
+    first_name = normalized.split(" ", 1)[0]
+    if len(first_name) >= 3 and first_name != normalized:
+        candidates.append(first_name)
+    for candidate in candidates:
+        if any(character.isalnum() and ord(character) < 128 for character in candidate):
+            if (
+                re.search(
+                    rf"(?<!\w){re.escape(candidate)}(?!\w)",
+                    text,
+                    re.IGNORECASE,
+                )
+                is not None
+            ):
+                return True
+        elif candidate.casefold() in text.casefold():
+            return True
+    return False
 
 
 def ingest_envelopes(
@@ -698,6 +1044,7 @@ class TelegramIntake:
         return (
             cls._ENGLISH_GREETING.search(text) is not None
             or cls._CJK_AND_OTHER_GREETING.search(text) is not None
+            or _MEMBER_WELCOME.search(text) is not None
         )
 
     @staticmethod
@@ -824,7 +1171,7 @@ def _message_from_envelope(
         edited=envelope.edited,
         trigger_kind=trigger_kind,
         author_is_bot=envelope.author_is_bot,
-        persist_thread_metadata=False,
+        persist_thread_metadata=True,
     )
 
 

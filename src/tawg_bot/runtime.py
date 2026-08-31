@@ -52,7 +52,13 @@ from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import KnowledgeRefresh, RefreshResult
 from tawg_bot.live_evidence import EvidencePack, LiveEvidenceService
 from tawg_bot.magicians_source import MagiciansHttpClient
-from tawg_bot.models import DeliveryAttempt, DeliveryStatus, JobStatus, PendingBotJob
+from tawg_bot.models import (
+    DeliveryAttempt,
+    DeliveryStatus,
+    JobStatus,
+    PendingBotJob,
+    TriggerKind,
+)
 from tawg_bot.persistence_guard import PersistenceRejected
 from tawg_bot.repository_session import RepositoryConflict
 from tawg_bot.scan_targets import ScanTargetStore, ScanTargetVerifier
@@ -60,7 +66,12 @@ from tawg_bot.scheduler import IntakePolicy, Scheduler
 from tawg_bot.scoped_scanner import ScopedScanResult, ScopedSourceScanner
 from tawg_bot.source_registry import SourceRegistry
 from tawg_bot.telegram_api import TelegramApi
-from tawg_bot.telegram_intake import TelegramIntake, WebhookIntakeResult, ingest_envelopes
+from tawg_bot.telegram_intake import (
+    MemberWelcomeReconciler,
+    TelegramIntake,
+    WebhookIntakeResult,
+    ingest_envelopes,
+)
 from tawg_bot.telegram_webhook import TelegramWebhookEnvelope
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 from tawg_bot.vault import VaultLinter
@@ -247,7 +258,13 @@ class ProductionRuntime:
         intake_policy: IntakePolicy,
     ) -> None:
         async with httpx.AsyncClient(timeout=30) as client:
-            pipeline = _LivePipeline(self.root, client=client, checkpoint=self.checkpoint, now=now)
+            pipeline = _LivePipeline(
+                self.root,
+                client=client,
+                checkpoint=self.checkpoint,
+                now=now,
+                member_introductions_enabled=True,
+            )
             result = await Scheduler(self.root, pipeline=pipeline).tick(
                 now,
                 observe_only=observe_only,
@@ -341,6 +358,7 @@ class _LivePipeline:
         checkpoint: DeliveryCheckpoint,
         now: datetime,
         ai: ClaudeCli | None = None,
+        member_introductions_enabled: bool = False,
     ) -> None:
         self.root = root.resolve()
         self.client = client
@@ -385,6 +403,7 @@ class _LivePipeline:
         self.prepared_daily: PreparedDaily | None = None
         self.prepared_replies: list[PreparedReply] = []
         self.reply_failures: list[str] = []
+        self.member_introductions_enabled = member_introductions_enabled
 
     async def telegram_intake(self, now: datetime) -> None:
         api = TelegramApi.from_env(client=self.client)
@@ -683,6 +702,8 @@ class _LivePipeline:
 
     async def _prepare_pending_replies(self) -> None:
         username = os.environ.get("TAWG_TELEGRAM_BOT_USERNAME")
+        if self.member_introductions_enabled:
+            MemberWelcomeReconciler(self.root).reconcile(now=self.now)
         if username:
             ReplyRepairReconciler(self.root, bot_username=username).reconcile(now=self.now)
         jobs = self._load_jobs()
@@ -694,9 +715,25 @@ class _LivePipeline:
         actionable = [
             job
             for job in jobs
+            if (
+                job.trigger_kind is not TriggerKind.MEMBER_INTRODUCTION
+                or (
+                    self.member_introductions_enabled
+                    and job.prerequisite_job_id is not None
+                    and any(
+                        prerequisite.job_id == job.prerequisite_job_id
+                        and prerequisite.status is JobStatus.DELIVERED
+                        for prerequisite in jobs
+                    )
+                )
+            )
             if job.status is JobStatus.READY
             or (
-                not model_work_deferred
+                (
+                    not model_work_deferred
+                    or job.trigger_kind
+                    in {TriggerKind.MEMBER_WELCOME, TriggerKind.MEMBER_INTRODUCTION}
+                )
                 and (
                     job.status is JobStatus.PENDING
                     or (

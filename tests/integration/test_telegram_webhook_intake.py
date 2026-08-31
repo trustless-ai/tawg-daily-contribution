@@ -6,9 +6,18 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from tawg_bot.models import SourceRecord, SourceType, TelegramWebhookReceipts
+from tawg_bot.models import (
+    BotRoute,
+    JobStatus,
+    PendingBotJob,
+    RouteContextScope,
+    SourceRecord,
+    SourceType,
+    TelegramWebhookReceipts,
+    TriggerKind,
+)
 from tawg_bot.privacy import PrivacyFilter
-from tawg_bot.telegram_intake import ingest_envelopes
+from tawg_bot.telegram_intake import MemberWelcomeReconciler, ingest_envelopes
 from tawg_bot.telegram_webhook import (
     TelegramWebhookAttachment,
     TelegramWebhookConfig,
@@ -52,17 +61,20 @@ def envelope(
     has_bot_command: bool = False,
     entities: tuple[TelegramWebhookEntity, ...] = (),
     attachments: tuple[TelegramWebhookAttachment, ...] = (),
+    public_username: str = "alice_tawg",
+    display_name: str = "Alice",
+    created_at: datetime = NOW,
 ) -> TelegramWebhookEnvelope:
     value = TelegramWebhookEnvelope(
         update_id=update_id,
         source_id=f"tg:tawg:{message_id}",
         message_id=message_id,
-        timestamp=int(NOW.timestamp()),
+        timestamp=int(created_at.timestamp()),
         edited=edited,
         edited_timestamp=edited_timestamp,
         text=text,
-        public_username="alice_tawg",
-        display_name="Alice",
+        public_username=public_username,
+        display_name=display_name,
         author_is_bot=author_is_bot,
         reply_to_message_id=reply_to_message_id,
         message_thread_id=message_thread_id,
@@ -348,6 +360,7 @@ def test_edited_envelope_updates_safe_content_without_changing_record_or_job_ide
         "author_is_bot": False,
         "edited": True,
         "message_kind": "group_message",
+        "message_thread_id": 12,
         "update_id": 701,
     }
     jobs = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())
@@ -398,6 +411,666 @@ def test_webhook_direct_reply_and_greeting_use_the_shared_trigger_classifier(
         ("reply:tg:tawg:72", "greeting_candidate"),
     ]
     assert jobs[0]["message_thread_id"] == 16
+
+
+def test_member_welcome_creates_one_immediate_job_and_one_l1_introduction_job(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    joined_member = envelope(
+        update_id=720,
+        message_id=80,
+        text="Happy to be here",
+        public_username="LoganVerdict",
+        display_name="Logan",
+        message_thread_id=77,
+    )
+    welcome = envelope(
+        update_id=721,
+        message_id=81,
+        text="Welcome, Logan 👋",
+        reply_to_message_id=80,
+        message_thread_id=77,
+    )
+
+    result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(joined_member, welcome),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert result.jobs_created == 2
+    assert [(job["job_id"], job["trigger_kind"]) for job in jobs] == [
+        ("member-introduction:logan", "member_introduction"),
+        ("member-welcome:logan", "member_welcome"),
+    ]
+    direct = next(job for job in jobs if job["trigger_kind"] == "member_welcome")
+    introduction = next(
+        job for job in jobs if job["trigger_kind"] == "member_introduction"
+    )
+    assert direct["reply_to_message_id"] is None
+    assert direct["message_thread_id"] == 77
+    assert direct["welcome_target_person_id"] == "logan"
+    assert direct["welcome_target_record_id"] == "tg:tawg:80"
+    assert introduction["reply_to_message_id"] is None
+    assert introduction["message_thread_id"] == 77
+    assert introduction["prerequisite_job_id"] == "member-welcome:logan"
+
+
+def test_existing_cross_source_member_page_does_not_suppress_first_tawg_welcome(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    profile = tmp_path / "knowledge/acknowledgements/logan.md"
+    profile.parent.mkdir(parents=True, exist_ok=True)
+    profile.write_text(
+        "---\n"
+        "title: Logan\n"
+        "type: person\n"
+        "created: 2026-08-01\n"
+        "updated: 2026-08-01\n"
+        "source_ids:\n"
+        "  - magicians:member:logan\n"
+        "provenance_status: verified\n"
+        "---\n\n"
+        "## Contributions\n\nReviews Web3 projects on Ethereum Magicians.\n",
+        encoding="utf-8",
+    )
+    joined_member = envelope(
+        update_id=730,
+        message_id=90,
+        text="Happy to join",
+        public_username="LoganVerdict",
+        display_name="Logan",
+        message_thread_id=77,
+    )
+    welcome = envelope(
+        update_id=731,
+        message_id=91,
+        text="Welcome, Logan!",
+        reply_to_message_id=90,
+        message_thread_id=77,
+    )
+
+    result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(joined_member, welcome),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert result.jobs_created == 2
+    assert {job["job_id"] for job in jobs} == {
+        "member-welcome:logan",
+        "member-introduction:logan",
+    }
+
+
+def test_l1_reconciler_backfills_earliest_historical_welcome_once(tmp_path: Path) -> None:
+    seed_repository(tmp_path)
+    joined_member = envelope(
+        update_id=740,
+        message_id=100,
+        text="Happy to join",
+        public_username="LoganVerdict",
+        display_name="Logan Verdict",
+        message_thread_id=88,
+    )
+    first_welcome = envelope(
+        update_id=741,
+        message_id=101,
+        text="Hi Logan, glad to have you here!",
+        message_thread_id=88,
+        has_bot_command=True,
+    )
+    later_welcome = envelope(
+        update_id=742,
+        message_id=102,
+        text="Welcome, Logan 👋",
+        reply_to_message_id=100,
+        message_thread_id=99,
+        has_bot_command=True,
+    )
+    ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(joined_member, first_welcome, later_welcome),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+    ignored_jobs = []
+    for record_id, thread_id in (("tg:tawg:101", 88), ("tg:tawg:102", 99)):
+        ignored_jobs.append(
+            PendingBotJob(
+                job_id=f"reply:{record_id}",
+                trigger_record_id=record_id,
+                reply_to_message_id=int(record_id.rsplit(":", 1)[-1]),
+                message_thread_id=thread_id,
+                trigger_kind=TriggerKind.GREETING_CANDIDATE,
+                status=JobStatus.IGNORED,
+                classified_route=BotRoute.IGNORE,
+                router_context_scope=RouteContextScope.CONVERSATION,
+                router_context_sha256="a" * 64,
+                router_version="contextual-ai-v5",
+                routed_at=NOW,
+                created_at=NOW,
+                updated_at=NOW,
+            )
+        )
+    (tmp_path / "data/state/pending-bot-jobs.json").write_text(
+        json.dumps([job.model_dump(mode="json") for job in ignored_jobs]) + "\n",
+        encoding="utf-8",
+    )
+
+    reconciler = MemberWelcomeReconciler(tmp_path)
+    assert reconciler.reconcile(now=NOW) == 2
+    assert reconciler.reconcile(now=NOW) == 0
+
+    jobs = {
+        item["job_id"]: item
+        for item in json.loads(
+            (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+        )
+    }
+    assert jobs["member-welcome:logan-verdict"]["trigger_record_id"] == "tg:tawg:101"
+    assert jobs["member-welcome:logan-verdict"]["message_thread_id"] == 88
+    assert jobs["member-introduction:logan-verdict"]["message_thread_id"] == 88
+
+
+def test_l1_reconciler_atomically_replaces_pending_generic_welcome(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    joined_member = envelope(
+        update_id=743,
+        message_id=103,
+        text="Happy to join",
+        public_username="LoganVerdict",
+        display_name="Logan Verdict",
+        message_thread_id=88,
+    )
+    welcome = envelope(
+        update_id=744,
+        message_id=104,
+        text="Welcome, Logan!",
+        reply_to_message_id=103,
+        message_thread_id=88,
+        has_bot_command=True,
+    )
+    ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(joined_member, welcome),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+    generic = PendingBotJob(
+        job_id="reply:tg:tawg:104",
+        trigger_record_id="tg:tawg:104",
+        reply_to_message_id=104,
+        message_thread_id=88,
+        trigger_kind=TriggerKind.GREETING_CANDIDATE,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs_path.write_text(
+        json.dumps([generic.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+
+    assert MemberWelcomeReconciler(tmp_path).reconcile(now=NOW) == 2
+
+    jobs = json.loads(jobs_path.read_text(encoding="utf-8"))
+    assert {job["job_id"] for job in jobs} == {
+        "member-welcome:logan-verdict",
+        "member-introduction:logan-verdict",
+    }
+
+
+def test_repeated_welcome_keeps_the_first_topic_and_creates_no_generic_reply(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    joined_member = envelope(
+        update_id=750,
+        message_id=110,
+        text="Happy to join",
+        public_username="LoganVerdict",
+        display_name="Logan",
+        message_thread_id=88,
+    )
+    first = envelope(
+        update_id=751,
+        message_id=111,
+        text="Welcome, Logan!",
+        reply_to_message_id=110,
+        message_thread_id=88,
+    )
+    later = envelope(
+        update_id=752,
+        message_id=112,
+        text="Welcome Logan 👋",
+        reply_to_message_id=110,
+        message_thread_id=99,
+    )
+
+    first_result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(joined_member, first),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+    later_result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(later,),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert first_result.jobs_created == 2
+    assert later_result.jobs_created == 0
+    assert len(jobs) == 2
+    assert {job["message_thread_id"] for job in jobs} == {88}
+
+
+def test_standalone_welcome_never_resolves_a_member_from_another_topic(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    joined_member = envelope(
+        update_id=755,
+        message_id=115,
+        text="Happy to join",
+        public_username="LoganVerdict",
+        display_name="Logan Verdict",
+        message_thread_id=99,
+    )
+    wrong_topic = envelope(
+        update_id=756,
+        message_id=116,
+        text="Welcome Logan!",
+        public_username="merlini",
+        display_name="Merlini",
+        message_thread_id=88,
+    )
+
+    result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(joined_member, wrong_topic),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+
+    assert result.jobs_created == 0
+    assert json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    ) == []
+
+
+def test_reply_welcome_never_resolves_a_member_from_another_topic(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    joined_member = envelope(
+        update_id=753,
+        message_id=113,
+        text="Happy to join",
+        public_username="LoganVerdict",
+        display_name="Logan Verdict",
+        message_thread_id=99,
+    )
+    wrong_topic = envelope(
+        update_id=754,
+        message_id=114,
+        text="Welcome Logan!",
+        reply_to_message_id=113,
+        public_username="merlini",
+        display_name="Merlini",
+        message_thread_id=88,
+    )
+
+    result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(joined_member, wrong_topic),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+
+    assert result.jobs_created == 0
+    assert json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    ) == []
+
+
+def test_same_display_name_with_a_distinct_handle_is_still_a_new_tawg_member(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    old_alice = envelope(
+        update_id=757,
+        message_id=117,
+        text="An old message",
+        public_username="AliceOld",
+        display_name="Alice",
+        message_thread_id=77,
+        created_at=NOW.replace(day=20),
+    )
+    new_alice = envelope(
+        update_id=758,
+        message_id=118,
+        text="Happy to join",
+        public_username="AliceNew",
+        display_name="Alice",
+        message_thread_id=77,
+    )
+    welcome = envelope(
+        update_id=759,
+        message_id=119,
+        text="Welcome Alice!",
+        reply_to_message_id=118,
+        public_username="merlini",
+        display_name="Merlini",
+        message_thread_id=77,
+    )
+
+    result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(old_alice, new_alice, welcome),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+
+    assert result.jobs_created == 2
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert {job["welcome_target_record_id"] for job in jobs} == {"tg:tawg:118"}
+
+
+def test_ambiguous_welcome_fails_closed_without_a_generic_greeting_job(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    alice = envelope(
+        update_id=760,
+        message_id=120,
+        text="Joining the group",
+        public_username="alice_new",
+        display_name="Alice",
+    )
+    bob = envelope(
+        update_id=761,
+        message_id=121,
+        text="Joining the group",
+        public_username="bob_new",
+        display_name="Bob",
+    )
+    ambiguous = envelope(
+        update_id=762,
+        message_id=122,
+        text="Welcome Alice and Bob!",
+        message_thread_id=77,
+        public_username="charlie_tawg",
+        display_name="Charlie",
+    )
+
+    result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(alice, bob, ambiguous),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert result.jobs_created == 0
+    assert jobs == []
+
+
+@pytest.mark.parametrize(
+    "welcome_text",
+    [
+        "Glad to have you, Logan!",
+        "欢迎 Logan 👋",
+    ],
+)
+def test_member_welcome_phrase_does_not_require_an_unrelated_greeting_word(
+    tmp_path: Path,
+    welcome_text: str,
+) -> None:
+    seed_repository(tmp_path)
+    joined_member = envelope(
+        update_id=770,
+        message_id=130,
+        text="Joining the group",
+        public_username="LoganVerdict",
+        display_name="Logan Verdict",
+        message_thread_id=77,
+    )
+    welcome = envelope(
+        update_id=771,
+        message_id=131,
+        text=welcome_text,
+        message_thread_id=77,
+    )
+
+    result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(joined_member, welcome),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+
+    assert result.jobs_created == 2
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert {job["trigger_kind"] for job in jobs} == {
+        "member_welcome",
+        "member_introduction",
+    }
+
+
+def test_editing_away_a_welcome_cancels_undelivered_member_jobs(tmp_path: Path) -> None:
+    seed_repository(tmp_path)
+    joined_member = envelope(
+        update_id=780,
+        message_id=140,
+        text="Joining the group",
+        public_username="LoganVerdict",
+        display_name="Logan Verdict",
+        message_thread_id=77,
+    )
+    welcome = envelope(
+        update_id=781,
+        message_id=141,
+        text="Welcome, Logan!",
+        message_thread_id=77,
+    )
+    ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(joined_member, welcome),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+    edited = envelope(
+        update_id=782,
+        message_id=141,
+        text="Correction: that was meant for another chat.",
+        message_thread_id=77,
+        edited=True,
+        edited_timestamp=int(NOW.timestamp()) + 60,
+    )
+
+    ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(edited,),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert jobs == []
+
+
+def test_editing_the_member_identity_invalidates_old_member_jobs(tmp_path: Path) -> None:
+    seed_repository(tmp_path)
+    joined_member = envelope(
+        update_id=786,
+        message_id=144,
+        text="Joining the group",
+        public_username="LoganVerdict",
+        display_name="Logan Verdict",
+        message_thread_id=77,
+    )
+    welcome = envelope(
+        update_id=787,
+        message_id=145,
+        text="Welcome, Logan!",
+        message_thread_id=77,
+    )
+    ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(joined_member, welcome),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    original_jobs = json.loads(jobs_path.read_text(encoding="utf-8"))
+    old_person_id = original_jobs[0]["welcome_target_person_id"]
+    edited_member = envelope(
+        update_id=788,
+        message_id=144,
+        text="Joining the group",
+        public_username="DifferentHandle",
+        display_name="Different Person",
+        message_thread_id=77,
+        edited=True,
+        edited_timestamp=int(NOW.timestamp()) + 60,
+    )
+
+    ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(edited_member,),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+
+    refreshed = json.loads(jobs_path.read_text(encoding="utf-8"))
+    assert all(
+        job.get("welcome_target_person_id") != old_person_id for job in refreshed
+    )
+
+
+def test_editing_a_welcome_resets_ready_copy_before_reconciliation(
+    tmp_path: Path,
+) -> None:
+    seed_repository(tmp_path)
+    joined_member = envelope(
+        update_id=783,
+        message_id=142,
+        text="Joining the group",
+        public_username="LoganVerdict",
+        display_name="Logan Verdict",
+        message_thread_id=77,
+    )
+    welcome = envelope(
+        update_id=784,
+        message_id=143,
+        text="Welcome, Logan!",
+        message_thread_id=77,
+    )
+    ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(joined_member, welcome),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs = json.loads(jobs_path.read_text(encoding="utf-8"))
+    direct = next(item for item in jobs if item["trigger_kind"] == "member_welcome")
+    direct.update(
+        {
+            "status": "ready",
+            "prepared_reply_text": "@LoganVerdict stale welcome",
+            "prepared_language": "en",
+            "classified_route": "coordination",
+            "router_context_scope": "conversation",
+            "router_context_sha256": "a" * 64,
+            "router_version": "deterministic-member-welcome-v1",
+            "routed_at": NOW.isoformat(),
+        }
+    )
+    jobs_path.write_text(json.dumps(jobs) + "\n", encoding="utf-8")
+    edited = envelope(
+        update_id=785,
+        message_id=143,
+        text="Welcome Logan — glad to have you here!",
+        message_thread_id=77,
+        edited=True,
+        edited_timestamp=int(NOW.timestamp()) + 60,
+    )
+
+    ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(edited,),
+        now=NOW,
+        telegram_chat_id=-100424242,
+    )
+
+    refreshed = json.loads(jobs_path.read_text(encoding="utf-8"))
+    assert len(refreshed) == 2
+    refreshed_direct = next(
+        item for item in refreshed if item["trigger_kind"] == "member_welcome"
+    )
+    assert refreshed_direct["status"] == "pending"
+    assert refreshed_direct["prepared_reply_text"] is None
 
 
 def test_webhook_direct_reply_audit_is_bound_to_the_configured_chat(

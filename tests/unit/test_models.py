@@ -66,6 +66,67 @@ def test_only_a_greeting_candidate_can_have_ignored_reply_state() -> None:
         )
 
 
+def test_member_welcome_jobs_are_independent_topic_messages() -> None:
+    now = datetime(2026, 8, 23, tzinfo=UTC)
+
+    direct = PendingBotJob(
+        job_id="member-welcome:logan",
+        trigger_record_id="tg:tawg:81",
+        reply_to_message_id=None,
+        message_thread_id=77,
+        trigger_kind=TriggerKind.MEMBER_WELCOME,
+        welcome_target_person_id="logan",
+        welcome_target_record_id="tg:tawg:80",
+        created_at=now,
+        updated_at=now,
+    )
+    introduction = PendingBotJob(
+        job_id="member-introduction:logan",
+        trigger_record_id="tg:tawg:81",
+        reply_to_message_id=None,
+        message_thread_id=77,
+        trigger_kind=TriggerKind.MEMBER_INTRODUCTION,
+        welcome_target_person_id="logan",
+        welcome_target_record_id="tg:tawg:80",
+        prerequisite_job_id=direct.job_id,
+        created_at=now,
+        updated_at=now,
+    )
+
+    assert direct.reply_to_message_id is None
+    assert introduction.prerequisite_job_id == direct.job_id
+
+
+def test_member_welcome_metadata_is_rejected_on_an_ordinary_reply_job() -> None:
+    now = datetime(2026, 8, 23, tzinfo=UTC)
+
+    with pytest.raises(ValidationError, match="member welcome metadata"):
+        PendingBotJob(
+            job_id="reply:tg:tawg:81",
+            trigger_record_id="tg:tawg:81",
+            reply_to_message_id=81,
+            trigger_kind=TriggerKind.GREETING_CANDIDATE,
+            welcome_target_person_id="logan",
+            welcome_target_record_id="tg:tawg:80",
+            created_at=now,
+            updated_at=now,
+        )
+
+
+def test_ordinary_reply_job_requires_a_reply_target() -> None:
+    now = datetime(2026, 8, 23, tzinfo=UTC)
+
+    with pytest.raises(ValidationError, match="ordinary reply"):
+        PendingBotJob(
+            job_id="reply:tg:tawg:81",
+            trigger_record_id="tg:tawg:81",
+            reply_to_message_id=None,
+            trigger_kind=TriggerKind.MENTION,
+            created_at=now,
+            updated_at=now,
+        )
+
+
 @pytest.mark.parametrize(
     "paths",
     [

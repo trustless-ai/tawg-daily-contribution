@@ -23,6 +23,14 @@ from tawg_bot.storage import JsonlCollection
 _OPERATION_ID = re.compile(r"^[A-Za-z0-9._:-]{1,128}$")
 
 
+def safe_operation_id(operation_id: str) -> str:
+    """Keep valid IDs readable and hash untrusted/oversized IDs into the contract."""
+    if _OPERATION_ID.fullmatch(operation_id):
+        return operation_id
+    digest = hashlib.sha256(operation_id.encode("utf-8")).hexdigest()
+    return f"external:{digest}"
+
+
 class ConcurrentModification(RuntimeError):
     """Raised when a staged target changes before publication."""
 

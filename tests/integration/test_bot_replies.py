@@ -15,6 +15,7 @@ from tawg_bot.bot_router import (
     ReplyRepairReconciler,
 )
 from tawg_bot.claude_cli import ClaudeCliError
+from tawg_bot.delivery import DeliveryFailed, DeliveryRejected, DeliveryService
 from tawg_bot.models import (
     BotRoute,
     DeliveryAttempt,
@@ -29,6 +30,7 @@ from tawg_bot.models import (
 )
 from tawg_bot.query import SourceQuery
 from tawg_bot.storage import JsonlCollection
+from tawg_bot.telegram_api import SentMessage, TelegramApiError
 from tawg_bot.vault import parse_frontmatter
 
 PROJECT = Path(__file__).parents[2]
@@ -105,6 +107,29 @@ class ContextualFakeAi:
         if self.reply_error is not None:
             raise self.reply_error
         return deepcopy(self.reply)
+
+
+class MemberDeliveryApi:
+    def __init__(self, *, fail: bool = False) -> None:
+        self.fail = fail
+        self.calls: list[tuple[int, str, int | None, int | None]] = []
+
+    async def send_message(
+        self,
+        chat_id: int,
+        text: str,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
+    ) -> SentMessage:
+        self.calls.append((chat_id, text, reply_to_message_id, message_thread_id))
+        if self.fail:
+            raise TelegramApiError("explicit test failure")
+        return SentMessage(message_id=900, chat_id=chat_id)
+
+
+class NoopCheckpoint:
+    async def publish(self, operation_id: str, root: Path) -> None:
+        del operation_id, root
 
 
 def _record(
@@ -265,6 +290,103 @@ def coordination_result() -> dict[str, Any]:
     }
 
 
+def member_result(text: str) -> dict[str, Any]:
+    result = coordination_result()
+    result["reply_text"] = text
+    return result
+
+
+def seed_member_welcome(
+    root: Path,
+    *,
+    existing_profile: bool = False,
+    person_id: str = "logan",
+    display_name: str = "Logan",
+    telegram_handle: str = "LoganVerdict",
+) -> tuple[PendingBotJob, PendingBotJob]:
+    seed(
+        root,
+        "Welcome, Logan 👋",
+        trigger_kind=TriggerKind.GREETING_CANDIDATE,
+        trigger_reply_to="tg:tawg:14",
+    )
+    aliases = root / "knowledge/meta/aliases.yml"
+    aliases.write_text(
+        "schema: tawg.aliases.v1\n"
+        "scope: tawg-only\n"
+        "people:\n"
+        f"  {person_id}:\n"
+        f"    display_names: [{display_name}]\n"
+        "    handles:\n"
+        f"      telegram: [{telegram_handle}]\n",
+        encoding="utf-8",
+    )
+    target = SourceRecord.from_text(
+        record_id="tg:tawg:14",
+        source_type=SourceType.TELEGRAM_MESSAGE,
+        source_locator="repo:data/telegram/2026/08/messages.jsonl#tg:tawg:14",
+        author_person_id=person_id,
+        author_source_handle=f"@{telegram_handle}",
+        created_at=NOW - timedelta(minutes=1),
+        updated_at=NOW - timedelta(minutes=1),
+        text_original="Happy to be here",
+        ingested_at=NOW,
+        source_payload={"message_thread_id": 77},
+    )
+    telegram_path = root / "data/telegram/2026/08/messages.jsonl"
+    telegram_path.write_bytes(
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes([target])
+    )
+    direct = PendingBotJob(
+        job_id=f"member-welcome:{person_id}",
+        trigger_record_id="tg:tawg:12",
+        reply_to_message_id=None,
+        message_thread_id=77,
+        trigger_kind=TriggerKind.MEMBER_WELCOME,
+        welcome_target_person_id=person_id,
+        welcome_target_record_id=target.record_id,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    introduction = PendingBotJob(
+        job_id=f"member-introduction:{person_id}",
+        trigger_record_id="tg:tawg:12",
+        reply_to_message_id=None,
+        message_thread_id=77,
+        trigger_kind=TriggerKind.MEMBER_INTRODUCTION,
+        welcome_target_person_id=person_id,
+        welcome_target_record_id=target.record_id,
+        prerequisite_job_id=direct.job_id,
+        created_at=NOW,
+        updated_at=NOW,
+    )
+    state = root / "data/state/pending-bot-jobs.json"
+    state.write_text(
+        json.dumps(
+            [direct.model_dump(mode="json"), introduction.model_dump(mode="json")]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    if existing_profile:
+        profile = root / f"knowledge/acknowledgements/{person_id}.md"
+        profile.parent.mkdir(parents=True, exist_ok=True)
+        profile.write_text(
+            "---\n"
+            f"title: {display_name}\n"
+            "type: person\n"
+            "created: 2026-08-01\n"
+            "updated: 2026-08-01\n"
+            "source_ids:\n"
+            f"  - magicians:member:{person_id}\n"
+            "provenance_status: verified\n"
+            "---\n\n"
+            "## Contributions\n\nReviews Web3 projects on Ethereum Magicians.\n",
+            encoding="utf-8",
+        )
+    return direct, introduction
+
+
 @pytest.mark.asyncio
 async def test_incidental_greeting_candidate_is_ignored_without_delivery(
     tmp_path: Path,
@@ -308,6 +430,568 @@ async def test_real_greeting_candidate_gets_a_coordination_reply(tmp_path: Path)
     assert prepared is not None
     assert prepared.reply_text.startswith("Good morning")
     assert [call["job_type"] for call in ai.calls] == ["route", "reply"]
+
+
+@pytest.mark.asyncio
+async def test_direct_member_welcome_uses_existing_profile_without_suppressing_delivery(
+    tmp_path: Path,
+) -> None:
+    direct, introduction = seed_member_welcome(tmp_path, existing_profile=True)
+    ai = ContextualFakeAi(
+        "ignore",
+        member_result(
+            "@LoganVerdict Great to have you here — your Web3 project reviews on "
+            "Ethereum Magicians are a lovely fit for the conversations in TAWG. Welcome!"
+        ),
+    )
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        direct.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is not None
+    assert prepared.reply_to_message_id is None
+    assert prepared.message_thread_id == 77
+    assert prepared.reply_text.startswith("@LoganVerdict ")
+    assert "knowledge" not in prepared.reply_text.casefold()
+    assert ai.calls == []
+    assert "Ethereum Magicians" in prepared.reply_text
+    profile = (tmp_path / "knowledge/acknowledgements/logan.md").read_text(
+        encoding="utf-8"
+    )
+    assert "magicians:member:logan" in profile
+    assert "## Contributions" in profile
+    assert "## TAWG-local participation" not in profile
+    assert "[[acknowledgements/logan|Logan]]" not in (
+        tmp_path / "knowledge/index.md"
+    ).read_text(encoding="utf-8")
+    jobs = {
+        item["job_id"]: item
+        for item in json.loads(
+            (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+        )
+    }
+    assert jobs[introduction.job_id]["status"] == "pending"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("fail_delivery", [False, True])
+async def test_member_profile_is_written_only_after_successful_delivery(
+    tmp_path: Path,
+    fail_delivery: bool,
+) -> None:
+    direct, _ = seed_member_welcome(tmp_path, existing_profile=True)
+    ai = ContextualFakeAi("ignore", member_result("unused"))
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        direct.job_id, now=NOW + timedelta(minutes=2)
+    )
+    assert prepared is not None
+    delivery_state = tmp_path / "data/state/delivery-state.json"
+    delivery_state.write_text("[]\n", encoding="utf-8")
+    api = MemberDeliveryApi(fail=fail_delivery)
+    delivery = DeliveryService(
+        tmp_path,
+        api=api,
+        chat_id=-10077,
+        checkpoint=NoopCheckpoint(),
+    )
+
+    if fail_delivery:
+        with pytest.raises(DeliveryFailed):
+            await delivery.deliver(
+                job_id=prepared.job_id,
+                text=prepared.reply_text,
+                reply_to_message_id=prepared.reply_to_message_id,
+                message_thread_id=prepared.message_thread_id,
+                now=NOW + timedelta(minutes=3),
+            )
+    else:
+        await delivery.deliver(
+            job_id=prepared.job_id,
+            text=prepared.reply_text,
+            reply_to_message_id=prepared.reply_to_message_id,
+            message_thread_id=prepared.message_thread_id,
+            now=NOW + timedelta(minutes=3),
+        )
+
+    profile = (tmp_path / "knowledge/acknowledgements/logan.md").read_text(
+        encoding="utf-8"
+    )
+    if fail_delivery:
+        assert "## TAWG-local participation" not in profile
+    else:
+        assert "## TAWG-local participation" in profile
+        assert direct.trigger_record_id in profile
+        assert "[[acknowledgements/logan|Logan]]" in (
+            tmp_path / "knowledge/index.md"
+        ).read_text(encoding="utf-8")
+        persisted = {
+            item["job_id"]: item
+            for item in json.loads(
+                (tmp_path / "data/state/pending-bot-jobs.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+        }
+        assert persisted[direct.job_id]["status"] == "delivered"
+        assert persisted[direct.job_id]["knowledge_mutation_paths"] == [
+            "knowledge/acknowledgements/logan.md",
+            "knowledge/index.md",
+        ]
+
+
+@pytest.mark.asyncio
+async def test_delivered_member_welcome_retry_returns_receipt_without_resending(
+    tmp_path: Path,
+) -> None:
+    direct, _ = seed_member_welcome(tmp_path)
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ContextualFakeAi("ignore", member_result("unused")),
+        bot_username="bot",
+    ).prepare(direct.job_id, now=NOW + timedelta(minutes=2))
+    assert prepared is not None
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        "[]\n", encoding="utf-8"
+    )
+    api = MemberDeliveryApi()
+    service = DeliveryService(
+        tmp_path,
+        api=api,
+        chat_id=-10077,
+        checkpoint=NoopCheckpoint(),
+    )
+    first = await service.deliver(
+        job_id=prepared.job_id,
+        text=prepared.reply_text,
+        reply_to_message_id=prepared.reply_to_message_id,
+        message_thread_id=prepared.message_thread_id,
+        now=NOW + timedelta(minutes=3),
+    )
+
+    retried = await service.deliver(
+        job_id=prepared.job_id,
+        text=prepared.reply_text,
+        reply_to_message_id=prepared.reply_to_message_id,
+        message_thread_id=prepared.message_thread_id,
+        now=NOW + timedelta(minutes=4),
+    )
+
+    assert retried == first
+    assert len(api.calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_expired_member_welcome_is_cancelled_before_preparation(
+    tmp_path: Path,
+) -> None:
+    direct, _ = seed_member_welcome(tmp_path)
+    ai = ContextualFakeAi("ignore", member_result("unused"))
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        direct.job_id, now=NOW + timedelta(days=7)
+    )
+
+    assert prepared is None
+    assert ai.calls == []
+    persisted = {
+        item["job_id"]: item
+        for item in json.loads(
+            (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+        )
+    }
+    assert persisted[direct.job_id]["status"] == "cancelled"
+    assert persisted[direct.job_id]["safe_error_code"] == "member_welcome_expired"
+
+
+@pytest.mark.asyncio
+async def test_ready_member_welcome_is_cancelled_before_expired_delivery(
+    tmp_path: Path,
+) -> None:
+    direct, _ = seed_member_welcome(tmp_path)
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ContextualFakeAi("ignore", member_result("unused")),
+        bot_username="bot",
+    ).prepare(direct.job_id, now=NOW + timedelta(minutes=2))
+    assert prepared is not None
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        "[]\n", encoding="utf-8"
+    )
+    api = MemberDeliveryApi()
+
+    with pytest.raises(DeliveryRejected, match="delivery window expired"):
+        await DeliveryService(
+            tmp_path,
+            api=api,
+            chat_id=-10077,
+            checkpoint=NoopCheckpoint(),
+        ).deliver(
+            job_id=prepared.job_id,
+            text=prepared.reply_text,
+            reply_to_message_id=prepared.reply_to_message_id,
+            message_thread_id=prepared.message_thread_id,
+            now=NOW + timedelta(days=7),
+        )
+
+    assert api.calls == []
+    persisted = {
+        item["job_id"]: item
+        for item in json.loads(
+            (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+        )
+    }
+    assert persisted[direct.job_id]["status"] == "cancelled"
+
+
+@pytest.mark.asyncio
+async def test_withdrawn_member_welcome_cannot_be_delivered_from_stale_memory(
+    tmp_path: Path,
+) -> None:
+    direct, _ = seed_member_welcome(tmp_path)
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ContextualFakeAi("ignore", member_result("unused")),
+        bot_username="bot",
+    ).prepare(direct.job_id, now=NOW + timedelta(minutes=2))
+    assert prepared is not None
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs_path.write_text("[]\n", encoding="utf-8")
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        "[]\n", encoding="utf-8"
+    )
+    api = MemberDeliveryApi()
+
+    with pytest.raises(DeliveryRejected, match="active tracked intent"):
+        await DeliveryService(
+            tmp_path,
+            api=api,
+            chat_id=-10077,
+            checkpoint=NoopCheckpoint(),
+        ).deliver(
+            job_id=prepared.job_id,
+            text=prepared.reply_text,
+            reply_to_message_id=prepared.reply_to_message_id,
+            message_thread_id=prepared.message_thread_id,
+            now=NOW + timedelta(minutes=3),
+        )
+
+    assert api.calls == []
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("text_suffix", "message_thread_id"),
+    [(" stale", 77), ("", 78)],
+)
+async def test_member_delivery_must_match_the_persisted_ready_intent(
+    tmp_path: Path,
+    text_suffix: str,
+    message_thread_id: int,
+) -> None:
+    direct, _ = seed_member_welcome(tmp_path)
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ContextualFakeAi("ignore", member_result("unused")),
+        bot_username="bot",
+    ).prepare(direct.job_id, now=NOW + timedelta(minutes=2))
+    assert prepared is not None
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        "[]\n", encoding="utf-8"
+    )
+    api = MemberDeliveryApi()
+
+    with pytest.raises(DeliveryRejected, match="active tracked intent"):
+        await DeliveryService(
+            tmp_path,
+            api=api,
+            chat_id=-10077,
+            checkpoint=NoopCheckpoint(),
+        ).deliver(
+            job_id=prepared.job_id,
+            text=prepared.reply_text + text_suffix,
+            reply_to_message_id=prepared.reply_to_message_id,
+            message_thread_id=message_thread_id,
+            now=NOW + timedelta(minutes=3),
+        )
+
+    assert api.calls == []
+
+
+@pytest.mark.asyncio
+async def test_introduction_gets_one_l1_cycle_after_late_direct_delivery(
+    tmp_path: Path,
+) -> None:
+    direct, introduction = seed_member_welcome(tmp_path)
+    direct_prepared = await BotReplyService(
+        tmp_path,
+        ai=ContextualFakeAi("ignore", member_result("unused")),
+        bot_username="bot",
+    ).prepare(direct.job_id, now=NOW + timedelta(hours=23, minutes=58))
+    assert direct_prepared is not None
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        "[]\n", encoding="utf-8"
+    )
+    await DeliveryService(
+        tmp_path,
+        api=MemberDeliveryApi(),
+        chat_id=-10077,
+        checkpoint=NoopCheckpoint(),
+    ).deliver(
+        job_id=direct_prepared.job_id,
+        text=direct_prepared.reply_text,
+        reply_to_message_id=direct_prepared.reply_to_message_id,
+        message_thread_id=direct_prepared.message_thread_id,
+        now=NOW + timedelta(hours=23, minutes=58),
+    )
+
+    introduction_prepared = await BotReplyService(
+        tmp_path,
+        ai=ContextualFakeAi("ignore", member_result("unused")),
+        bot_username="bot",
+    ).prepare(
+        introduction.job_id,
+        now=NOW + timedelta(days=1, minutes=3),
+    )
+
+    assert introduction_prepared is not None
+    assert "Trustless AI" in introduction_prepared.reply_text
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("person_id", "display_name", "telegram_handle"),
+    [
+        ("繁星之上", "繁星之上", "StarBeyond"),
+        ("p" * 128, "Long Person", "LongPerson"),
+    ],
+)
+async def test_member_identity_can_be_unicode_or_maximum_length(
+    tmp_path: Path,
+    person_id: str,
+    display_name: str,
+    telegram_handle: str,
+) -> None:
+    direct, _ = seed_member_welcome(
+        tmp_path,
+        person_id=person_id,
+        display_name=display_name,
+        telegram_handle=telegram_handle,
+    )
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ContextualFakeAi("ignore", member_result("unused")),
+        bot_username="bot",
+    ).prepare(direct.job_id, now=NOW + timedelta(minutes=2))
+    assert prepared is not None
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        "[]\n", encoding="utf-8"
+    )
+
+    await DeliveryService(
+        tmp_path,
+        api=MemberDeliveryApi(),
+        chat_id=-10077,
+        checkpoint=NoopCheckpoint(),
+    ).deliver(
+        job_id=prepared.job_id,
+        text=prepared.reply_text,
+        reply_to_message_id=None,
+        message_thread_id=77,
+        now=NOW + timedelta(minutes=3),
+    )
+
+    assert (tmp_path / f"knowledge/acknowledgements/{person_id}.md").is_file()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "unsafe_display_name",
+    ["<img src=x onerror=alert(1)>", "Admin\u202eTXT"],
+)
+async def test_unsafe_member_display_name_never_reaches_profile_or_index(
+    tmp_path: Path,
+    unsafe_display_name: str,
+) -> None:
+    direct, _ = seed_member_welcome(
+        tmp_path,
+        person_id="safe-member",
+        display_name=unsafe_display_name,
+        telegram_handle="SafeHandle",
+    )
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ContextualFakeAi("ignore", member_result("unused")),
+        bot_username="bot",
+    ).prepare(direct.job_id, now=NOW + timedelta(minutes=2))
+    assert prepared is not None
+    (tmp_path / "data/state/delivery-state.json").write_text(
+        "[]\n", encoding="utf-8"
+    )
+    await DeliveryService(
+        tmp_path,
+        api=MemberDeliveryApi(),
+        chat_id=-10077,
+        checkpoint=NoopCheckpoint(),
+    ).deliver(
+        job_id=prepared.job_id,
+        text=prepared.reply_text,
+        reply_to_message_id=None,
+        message_thread_id=77,
+        now=NOW + timedelta(minutes=3),
+    )
+
+    profile = (
+        tmp_path / "knowledge/acknowledgements/safe-member.md"
+    ).read_text(encoding="utf-8")
+    frontmatter, _ = parse_frontmatter(profile)
+    assert frontmatter is not None
+    assert frontmatter["title"] == "@SafeHandle"
+    index = (tmp_path / "knowledge/index.md").read_text(encoding="utf-8")
+    assert unsafe_display_name not in profile
+    assert unsafe_display_name not in index
+    assert "[[acknowledgements/safe-member|@SafeHandle]]" in index
+
+
+@pytest.mark.asyncio
+async def test_legacy_profile_is_preserved_but_never_used_as_verified_praise(
+    tmp_path: Path,
+) -> None:
+    direct, _ = seed_member_welcome(tmp_path)
+    profile = tmp_path / "knowledge/acknowledgements/logan.md"
+    profile.parent.mkdir(parents=True, exist_ok=True)
+    profile.write_text(
+        "---\n"
+        "title: Logan\n"
+        "type: person\n"
+        "created: 2026-08-01\n"
+        "updated: 2026-08-01\n"
+        "source_ids: [magicians:member:logan]\n"
+        "provenance_status: legacy_incomplete\n"
+        "---\n\n"
+        "Unverified legacy claim that must not be used for public praise.\n",
+        encoding="utf-8",
+    )
+    ai = ContextualFakeAi(
+        "ignore",
+        member_result("@LoganVerdict Great to have you here — welcome to TAWG!"),
+    )
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        direct.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is not None
+    assert ai.calls == []
+    assert "Ethereum Magicians" not in prepared.reply_text
+    assert profile.read_text(encoding="utf-8").endswith(
+        "Unverified legacy claim that must not be used for public praise.\n"
+    )
+
+
+@pytest.mark.asyncio
+async def test_l1_member_introduction_is_a_second_independent_message(
+    tmp_path: Path,
+) -> None:
+    direct, introduction = seed_member_welcome(tmp_path)
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs = json.loads(jobs_path.read_text(encoding="utf-8"))
+    jobs[0]["status"] = "delivered"
+    jobs[0]["prepared_reply_text"] = "@LoganVerdict Welcome!"
+    jobs[0]["prepared_language"] = "en"
+    jobs_path.write_text(json.dumps(jobs) + "\n", encoding="utf-8")
+    ai = ContextualFakeAi(
+        "ignore",
+        member_result(
+            "@LoganVerdict A little context on Trustless AI: we're people from around "
+            "the world who met online around ERC standards and now build research, "
+            "standards, and working implementations for independently verifiable AI. "
+            "Jump into any conversation or idea that looks fun."
+        ),
+    )
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        introduction.job_id, now=NOW + timedelta(minutes=5)
+    )
+
+    assert prepared is not None
+    assert prepared.reply_to_message_id is None
+    assert prepared.message_thread_id == 77
+    assert prepared.reply_text.startswith("@LoganVerdict ")
+    assert "Trustless AI" in prepared.reply_text
+    assert ai.calls == []
+    assert "around ERCs" in prepared.reply_text
+    assert "independently verify or recompute" in prepared.reply_text
+
+
+@pytest.mark.asyncio
+async def test_same_display_name_does_not_merge_a_distinct_member_profile(
+    tmp_path: Path,
+) -> None:
+    direct, _ = seed_member_welcome(tmp_path)
+    other = tmp_path / "knowledge/acknowledgements/other-logan.md"
+    other.parent.mkdir(parents=True, exist_ok=True)
+    original = (
+        "---\n"
+        "title: Logan\n"
+        "type: person\n"
+        "created: 2026-08-01\n"
+        "updated: 2026-08-01\n"
+        "source_ids: [magicians:member:other-logan]\n"
+        "provenance_status: verified\n"
+        "---\n\n"
+        "A different person with the same display name.\n"
+    )
+    other.write_text(original, encoding="utf-8")
+    ai = ContextualFakeAi(
+        "ignore",
+        member_result("@LoganVerdict Great to have you here — welcome to TAWG!"),
+    )
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        direct.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is not None
+    assert ai.calls == []
+    assert other.read_text(encoding="utf-8") == original
+    assert not (tmp_path / "knowledge/acknowledgements/logan.md").exists()
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "original",
+    [
+        "Logan profile without valid frontmatter.\n",
+        (
+            "---\n"
+            "title: 'Logan|[[injected]]'\n"
+            "type: person\n"
+            "created: 2026-08-01\n"
+            "updated: 2026-08-01\n"
+            "---\n\nUnsafe title must not enter the index.\n"
+        ),
+    ],
+)
+async def test_invalid_existing_member_profile_is_never_overwritten(
+    tmp_path: Path,
+    original: str,
+) -> None:
+    direct, _ = seed_member_welcome(tmp_path)
+    profile = tmp_path / "knowledge/acknowledgements/logan.md"
+    profile.parent.mkdir(parents=True, exist_ok=True)
+    profile.write_text(original, encoding="utf-8")
+    ai = ContextualFakeAi(
+        "ignore",
+        member_result("@LoganVerdict Great to have you here — welcome to TAWG!"),
+    )
+
+    with pytest.raises(ReplyRejected):
+        await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+            direct.job_id, now=NOW + timedelta(minutes=2)
+        )
+
+    assert profile.read_text(encoding="utf-8") == original
 
 
 @pytest.mark.asyncio

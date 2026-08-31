@@ -135,12 +135,15 @@ class JobStatus(StrEnum):
     READY = "ready"
     DELIVERED = "delivered"
     IGNORED = "ignored"
+    CANCELLED = "cancelled"
 
 
 class TriggerKind(StrEnum):
     MENTION = "mention"
     REPLY_TO_BOT = "reply_to_bot"
     GREETING_CANDIDATE = "greeting_candidate"
+    MEMBER_WELCOME = "member_welcome"
+    MEMBER_INTRODUCTION = "member_introduction"
 
 
 class BotRoute(StrEnum):
@@ -163,7 +166,7 @@ class PendingBotJob(StrictModel):
     schema_version: str = "tawg.pending-bot-job.v1"
     job_id: str
     trigger_record_id: str
-    reply_to_message_id: int
+    reply_to_message_id: int | None
     message_thread_id: int | None = None
     trigger_kind: TriggerKind = TriggerKind.MENTION
     status: JobStatus = JobStatus.PENDING
@@ -182,6 +185,9 @@ class PendingBotJob(StrictModel):
     routed_at: datetime | None = None
     repair_of_job_id: str | None = Field(default=None, max_length=128)
     repair_reason_code: str | None = Field(default=None, max_length=64)
+    welcome_target_person_id: str | None = Field(default=None, max_length=128)
+    welcome_target_record_id: str | None = Field(default=None, max_length=256)
+    prerequisite_job_id: str | None = Field(default=None, max_length=256)
     knowledge_mutation_paths: list[str] = Field(default_factory=list, max_length=3)
     knowledge_mutation_trigger_sha256: str | None = Field(
         default=None, pattern=r"^[a-f0-9]{64}$"
@@ -209,7 +215,10 @@ class PendingBotJob(StrictModel):
                 or path.is_absolute()
                 or path.as_posix() != value
                 or ".." in path.parts
-                or len(path.parts) < 3
+                or (
+                    len(path.parts) < 3
+                    and path.parts != ("knowledge", "index.md")
+                )
                 or path.parts[0] != "knowledge"
                 or path.suffix.casefold() != ".md"
             ):
@@ -231,6 +240,37 @@ class PendingBotJob(StrictModel):
             raise ValueError("reply repair metadata must be complete")
         if self.repair_of_job_id == self.job_id:
             raise ValueError("reply repair cannot supersede itself")
+        member_kinds = {
+            TriggerKind.MEMBER_WELCOME,
+            TriggerKind.MEMBER_INTRODUCTION,
+        }
+        has_member_metadata = any(
+            value is not None
+            for value in (
+                self.welcome_target_person_id,
+                self.welcome_target_record_id,
+                self.prerequisite_job_id,
+            )
+        )
+        if self.trigger_kind in member_kinds:
+            if (
+                self.reply_to_message_id is not None
+                or self.welcome_target_person_id is None
+                or self.welcome_target_record_id is None
+                or (
+                    self.trigger_kind is TriggerKind.MEMBER_WELCOME
+                    and self.prerequisite_job_id is not None
+                )
+                or (
+                    self.trigger_kind is TriggerKind.MEMBER_INTRODUCTION
+                    and self.prerequisite_job_id is None
+                )
+            ):
+                raise ValueError("member welcome metadata is incomplete")
+        elif has_member_metadata or self.reply_to_message_id is None:
+            raise ValueError(
+                "member welcome metadata is not allowed on an ordinary reply"
+            )
         routing = (
             self.classified_route,
             self.router_context_sha256,
@@ -245,9 +285,16 @@ class PendingBotJob(StrictModel):
         has_mutation_hash = self.knowledge_mutation_trigger_sha256 is not None
         if has_mutation_paths != has_mutation_hash:
             raise ValueError("knowledge mutation receipt must be complete")
+        member_welcome_mutation = (
+            self.trigger_kind is TriggerKind.MEMBER_WELCOME
+            and self.classified_route is BotRoute.COORDINATION
+        )
         if has_mutation_paths and (
             self.status not in {JobStatus.READY, JobStatus.DELIVERED}
-            or self.classified_route is not BotRoute.KNOWLEDGE_CORRECTION
+            or (
+                self.classified_route is not BotRoute.KNOWLEDGE_CORRECTION
+                and not member_welcome_mutation
+            )
             or self.router_context_scope is None
         ):
             raise ValueError(

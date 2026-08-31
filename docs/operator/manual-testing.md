@@ -217,7 +217,30 @@ python -m tawg_bot.cli tick
 
 预期为中文回复，并附一段英文要点供群内其他成员阅读。
 
-### 3B：提交更正
+### 3B：新人欢迎的两阶段消息
+
+在一个 Telegram topic 中，让一个已有公开用户名的新成员先发一条普通消息，再由另一位
+成员发送包含 `welcome`、`glad to have you` 或同义表达的欢迎消息。欢迎对象必须能从被回复
+消息、公开用户名或唯一显示名中确定。
+
+预期：
+
+- webhook worker 立即在同一个 topic 发送一条独立欢迎消息；它不是对人类 welcome 消息的
+  reply，并以新成员的公开 `@username` 开头。
+- 已有 Ethereum Magicians 等公开人物页不会阻止首次 TAWG 欢迎；若人物页已验证，确定性
+  欢迎文案可以自然提到曾在该社区看到过对方的贡献，但不暴露持久化或知识库操作。
+- 下一个五分钟 maintenance/L1 worker 才发送第二条独立消息，仍在原 topic、仍不 reply，
+  简短介绍 Trustless AI 并邀请新人自由参与。
+- 多人连续欢迎同一新人只产生这一组两阶段消息，并保留最早可明确识别的 welcome topic。
+- 不能唯一识别欢迎对象时不创建回复；不要人工重跑或猜测对象。
+
+人物页和索引只能在第一条 Telegram 消息成功投递的最终事务里更新；发送失败或 welcome
+被编辑撤回时不得留下“已欢迎”记录。第一条成功投递前，第二条必须保持 `pending`。检查
+`pending-bot-jobs.json` 中稳定的
+`member-welcome:<person>` 与 `member-introduction:<person>`，并确认第二条的
+`prerequisite_job_id` 指向第一条。
+
+### 3C：提交更正
 
 根据刚才的回答发送一条有依据的更正：
 

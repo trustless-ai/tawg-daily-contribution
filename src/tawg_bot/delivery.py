@@ -11,20 +11,25 @@ from typing import Protocol
 
 from pydantic import ValidationError
 
+from tawg_bot.aliases import AliasRegistry
+from tawg_bot.member_welcome import member_welcome_is_expired, stage_member_profile
 from tawg_bot.models import (
     DeliveryAttempt,
     DeliveryStatus,
     JobStatus,
     PendingBotJob,
+    TriggerKind,
 )
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
+from tawg_bot.query import SourceQuery
 from tawg_bot.telegram_api import (
     SentMessage,
     TelegramApiAmbiguousError,
     TelegramApiError,
 )
+from tawg_bot.telegram_intake import resolve_member_welcome_target
 from tawg_bot.telegram_text import TelegramTextSplitError, split_telegram_text
-from tawg_bot.unit_of_work import RepositoryUnitOfWork
+from tawg_bot.unit_of_work import RepositoryUnitOfWork, safe_operation_id
 
 
 class DeliveryRejected(ValueError):
@@ -59,6 +64,7 @@ class DeliveryService:
     _JOBS_PATH = "data/state/pending-bot-jobs.json"
     _TELEGRAM_LIMIT = 32768
     _MAX_MESSAGES = 2
+    _MEMBER_JOB_PREFIXES = ("member-welcome:", "member-introduction:")
 
     def __init__(
         self,
@@ -100,6 +106,21 @@ class DeliveryService:
             raise DeliveryFailed("delivery job content changed after intent was recorded")
         if existing is not None and existing.status is DeliveryStatus.DELIVERED:
             return existing
+        jobs = self._load_jobs_if_present()
+        tracked_job = jobs.get(job_id)
+        if job_id.startswith(self._MEMBER_JOB_PREFIXES) or (
+            tracked_job is not None
+            and tracked_job.trigger_kind
+            in {TriggerKind.MEMBER_WELCOME, TriggerKind.MEMBER_INTRODUCTION}
+        ):
+            self._require_active_member_intent(
+                jobs,
+                job_id=job_id,
+                text=text,
+                reply_to_message_id=reply_to_message_id,
+                message_thread_id=message_thread_id,
+                now=now,
+            )
         if existing is not None and existing.status is DeliveryStatus.AMBIGUOUS:
             raise DeliveryAmbiguous("delivery requires operator review")
         if existing is not None and existing.status is DeliveryStatus.SENDING:
@@ -112,7 +133,9 @@ class DeliveryService:
             )
             attempts[job_id] = ambiguous
             self._publish_attempts(attempts, f"delivery:{job_id}:ambiguous")
-            await self.checkpoint.publish(f"delivery:{job_id}:ambiguous", self.root)
+            await self.checkpoint.publish(
+                safe_operation_id(f"delivery:{job_id}:ambiguous"), self.root
+            )
             raise DeliveryAmbiguous("recovered sending delivery requires operator review")
 
         prepared = DeliveryAttempt(
@@ -129,16 +152,29 @@ class DeliveryService:
         )
         attempts[job_id] = prepared
         self._publish_attempts(attempts, f"delivery:{job_id}:prepared")
-        await self.checkpoint.publish(f"delivery:{job_id}:prepared", self.root)
+        await self.checkpoint.publish(
+            safe_operation_id(f"delivery:{job_id}:prepared"), self.root
+        )
 
         sending = prepared.model_copy(update={"status": DeliveryStatus.SENDING, "updated_at": now})
         attempts[job_id] = sending
         self._publish_attempts(attempts, f"delivery:{job_id}:sending")
-        await self.checkpoint.publish(f"delivery:{job_id}:sending", self.root)
+        await self.checkpoint.publish(
+            safe_operation_id(f"delivery:{job_id}:sending"), self.root
+        )
         try:
             self.privacy.assert_public(text)
         except PrivacyViolation:
             raise DeliveryRejected("delivery text failed final privacy validation") from None
+        if job_id.startswith(self._MEMBER_JOB_PREFIXES):
+            self._require_active_member_intent(
+                self._load_jobs_if_present(),
+                job_id=job_id,
+                text=text,
+                reply_to_message_id=reply_to_message_id,
+                message_thread_id=message_thread_id,
+                now=now,
+            )
 
         sent: list[SentMessage] = []
         for index, message in enumerate(messages):
@@ -179,7 +215,9 @@ class DeliveryService:
                 )
                 attempts[job_id] = failed
                 self._publish_attempts(attempts, f"delivery:{job_id}:{status.value}")
-                await self.checkpoint.publish(f"delivery:{job_id}:{status.value}", self.root)
+                await self.checkpoint.publish(
+                    safe_operation_id(f"delivery:{job_id}:{status.value}"), self.root
+                )
                 if status is DeliveryStatus.AMBIGUOUS:
                     raise DeliveryAmbiguous("Telegram delivery outcome is unknown") from None
                 raise DeliveryFailed("Telegram explicitly rejected the delivery") from None
@@ -201,7 +239,9 @@ class DeliveryService:
                 )
                 attempts[job_id] = ambiguous
                 self._publish_attempts(attempts, f"delivery:{job_id}:ambiguous")
-                await self.checkpoint.publish(f"delivery:{job_id}:ambiguous", self.root)
+                await self.checkpoint.publish(
+                    safe_operation_id(f"delivery:{job_id}:ambiguous"), self.root
+                )
                 raise DeliveryAmbiguous("Telegram returned an unexpected destination")
             sent.append(response)
 
@@ -218,8 +258,10 @@ class DeliveryService:
             }
         )
         attempts[job_id] = delivered
-        self._publish_final(attempts, delivered)
-        await self.checkpoint.publish(f"delivery:{job_id}:delivered", self.root)
+        self._publish_final(attempts, delivered, text=text)
+        await self.checkpoint.publish(
+            safe_operation_id(f"delivery:{job_id}:delivered"), self.root
+        )
         return delivered
 
     def _split(self, text: str) -> tuple[str, ...]:
@@ -252,31 +294,192 @@ class DeliveryService:
         return by_id
 
     def _publish_attempts(self, attempts: Mapping[str, DeliveryAttempt], operation_id: str) -> None:
-        uow = RepositoryUnitOfWork(self.root, operation_id=operation_id)
+        uow = RepositoryUnitOfWork(
+            self.root, operation_id=safe_operation_id(operation_id)
+        )
         uow.register_external_evidence(())
         self._stage_attempts(uow, attempts)
         uow.publish()
 
     def _publish_final(
-        self, attempts: Mapping[str, DeliveryAttempt], delivered: DeliveryAttempt
+        self,
+        attempts: Mapping[str, DeliveryAttempt],
+        delivered: DeliveryAttempt,
+        *,
+        text: str,
     ) -> None:
-        uow = RepositoryUnitOfWork(self.root, operation_id=f"delivery:{delivered.job_id}:delivered")
+        uow = RepositoryUnitOfWork(
+            self.root,
+            operation_id=safe_operation_id(
+                f"delivery:{delivered.job_id}:delivered"
+            ),
+        )
         uow.register_external_evidence(())
         self._stage_attempts(uow, attempts)
         jobs = self._load_jobs_if_present()
         job = jobs.get(delivered.job_id)
+        if job is not None and job.trigger_kind in {
+            TriggerKind.MEMBER_WELCOME,
+            TriggerKind.MEMBER_INTRODUCTION,
+        }:
+            try:
+                job = self._require_active_member_intent(
+                    jobs,
+                    job_id=delivered.job_id,
+                    text=text,
+                    reply_to_message_id=delivered.reply_to_message_id,
+                    message_thread_id=delivered.message_thread_id,
+                    now=delivered.updated_at,
+                )
+            except DeliveryRejected:
+                job = None
         if job is not None:
-            jobs[delivered.job_id] = job.model_copy(
-                update={
+            delivered_payload = job.model_dump(mode="json")
+            delivered_payload.update(
+                {
                     "status": JobStatus.DELIVERED,
                     "updated_at": delivered.updated_at,
                     "safe_error_code": None,
                 }
             )
+            if job.trigger_kind is TriggerKind.MEMBER_WELCOME:
+                if (
+                    job.welcome_target_person_id is None
+                    or job.welcome_target_record_id is None
+                ):
+                    raise DeliveryRejected("member welcome evidence is incomplete")
+                records = {
+                    record.record_id: record
+                    for record in SourceQuery(self.root).records()
+                }
+                trigger = records.get(job.trigger_record_id)
+                target = records.get(job.welcome_target_record_id)
+                if trigger is None or target is None:
+                    raise DeliveryRejected("member welcome evidence is missing")
+                aliases = AliasRegistry.from_yaml(
+                    self.root / "knowledge/meta/aliases.yml"
+                )
+                changed_paths = stage_member_profile(
+                    self.root,
+                    uow,
+                    job=job,
+                    trigger=trigger,
+                    target=target,
+                    identity=aliases.people.get(job.welcome_target_person_id),
+                    now=delivered.updated_at,
+                )
+                delivered_payload.update(
+                    {
+                        "knowledge_mutation_paths": list(changed_paths),
+                        "knowledge_mutation_trigger_sha256": trigger.content_sha256,
+                    }
+                )
+            jobs[delivered.job_id] = PendingBotJob.model_validate(delivered_payload)
             uow.stage_json(
                 self._JOBS_PATH,
                 [jobs[job_id].persistence_payload() for job_id in sorted(jobs)],
             )
+        uow.publish()
+
+    def _require_active_member_intent(
+        self,
+        jobs: dict[str, PendingBotJob],
+        *,
+        job_id: str,
+        text: str,
+        reply_to_message_id: int | None,
+        message_thread_id: int | None,
+        now: datetime,
+    ) -> PendingBotJob:
+        job = jobs.get(job_id)
+        expected_kind = (
+            TriggerKind.MEMBER_WELCOME
+            if job_id.startswith("member-welcome:")
+            else TriggerKind.MEMBER_INTRODUCTION
+            if job_id.startswith("member-introduction:")
+            else None
+        )
+        if (
+            job is None
+            or expected_kind is None
+            or job.trigger_kind is not expected_kind
+            or job.status is not JobStatus.READY
+            or job.prepared_reply_text != text
+            or job.reply_to_message_id != reply_to_message_id
+            or job.message_thread_id != message_thread_id
+        ):
+            raise DeliveryRejected("member delivery requires an active tracked intent")
+        records = {
+            record.record_id: record for record in SourceQuery(self.root).records()
+        }
+        trigger = records.get(job.trigger_record_id)
+        target = records.get(job.welcome_target_record_id or "")
+        prerequisite = jobs.get(job.prerequisite_job_id or "")
+        if trigger is not None and member_welcome_is_expired(
+            job,
+            trigger,
+            now=now,
+            prerequisite=prerequisite,
+        ):
+            self._cancel_member_job(jobs, job, now=now)
+            raise DeliveryRejected("member welcome delivery window expired")
+        aliases = AliasRegistry.from_yaml(self.root / "knowledge/meta/aliases.yml")
+        resolved = (
+            resolve_member_welcome_target(
+                trigger=trigger,
+                aliases=aliases,
+                records=records,
+                message_thread_id=job.message_thread_id,
+            )
+            if trigger is not None
+            else None
+        )
+        if (
+            trigger is None
+            or target is None
+            or target.author_person_id != job.welcome_target_person_id
+            or resolved
+            != (job.welcome_target_person_id, job.welcome_target_record_id)
+        ):
+            raise DeliveryRejected("member delivery requires current identity evidence")
+        return job
+
+    def _cancel_member_job(
+        self,
+        jobs: dict[str, PendingBotJob],
+        job: PendingBotJob,
+        *,
+        now: datetime,
+    ) -> None:
+        payload = job.model_dump(mode="json")
+        payload.update(
+            {
+                "status": JobStatus.CANCELLED,
+                "prepared_reply_text": None,
+                "prepared_citations": [],
+                "prepared_language": None,
+                "refusal": False,
+                "classified_route": None,
+                "router_context_scope": None,
+                "router_context_sha256": None,
+                "router_version": None,
+                "routed_at": None,
+                "knowledge_mutation_paths": [],
+                "knowledge_mutation_trigger_sha256": None,
+                "updated_at": now,
+                "safe_error_code": "member_welcome_expired",
+            }
+        )
+        jobs[job.job_id] = PendingBotJob.model_validate(payload)
+        uow = RepositoryUnitOfWork(
+            self.root,
+            operation_id=safe_operation_id(f"delivery:{job.job_id}:cancelled"),
+        )
+        uow.register_external_evidence(())
+        uow.stage_json(
+            self._JOBS_PATH,
+            [jobs[job_id].persistence_payload() for job_id in sorted(jobs)],
+        )
         uow.publish()
 
     def _load_jobs_if_present(self) -> dict[str, PendingBotJob]:

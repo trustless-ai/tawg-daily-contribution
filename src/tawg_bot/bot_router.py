@@ -17,6 +17,7 @@ import yaml
 from pydantic import Field, ValidationError, field_validator
 
 from tawg_bot.ai_router import AiRouteRejected, ContextualAiRouter
+from tawg_bot.aliases import AliasRegistry
 from tawg_bot.claude_cli import ClaudeCliError
 from tawg_bot.context import ContextInputs, ContextPackBuilder, ContextRejected
 from tawg_bot.conversation_context import (
@@ -40,6 +41,11 @@ from tawg_bot.knowledge_mutation import (
     validate_knowledge_transaction,
 )
 from tawg_bot.live_evidence import EvidencePack
+from tawg_bot.member_welcome import (
+    build_member_reply,
+    member_profile_snapshot,
+    member_welcome_is_expired,
+)
 from tawg_bot.models import (
     BotRoute,
     DeliveryAttempt,
@@ -65,8 +71,9 @@ from tawg_bot.scan_targets import (
     ScanTargetVerifier,
 )
 from tawg_bot.source_registry import EvidenceKind
+from tawg_bot.telegram_intake import resolve_member_welcome_target
 from tawg_bot.telegram_text import TelegramTextSplitError, split_telegram_text
-from tawg_bot.unit_of_work import RepositoryUnitOfWork
+from tawg_bot.unit_of_work import RepositoryUnitOfWork, safe_operation_id
 from tawg_bot.vault import parse_frontmatter
 from tawg_bot.vault_transaction import CitationScope, VaultTransaction, VaultTransactionEngine
 
@@ -356,7 +363,7 @@ class _ReplyResult(StrictModel):
 @dataclass(frozen=True, slots=True)
 class PreparedReply:
     job_id: str
-    reply_to_message_id: int
+    reply_to_message_id: int | None
     message_thread_id: int | None
     reply_text: str
     citations: tuple[str, ...]
@@ -434,12 +441,68 @@ class BotReplyService:
             raise ReplyRejected("unknown reply job")
         if job.status is JobStatus.IGNORED:
             return None
-        if job.status in {JobStatus.READY, JobStatus.DELIVERED}:
+        member_kinds = {
+            TriggerKind.MEMBER_WELCOME,
+            TriggerKind.MEMBER_INTRODUCTION,
+        }
+        if job.status is JobStatus.DELIVERED:
             return self._prepared(job)
+        if job.status is JobStatus.READY and job.trigger_kind not in member_kinds:
+            return self._prepared(job)
+        if job.status is JobStatus.READY:
+            reset_payload = job.model_dump(mode="json")
+            reset_payload.update(
+                {
+                    "status": JobStatus.PENDING,
+                    "prepared_reply_text": None,
+                    "prepared_citations": [],
+                    "prepared_language": None,
+                    "refusal": False,
+                    "classified_route": None,
+                    "router_context_scope": None,
+                    "router_context_sha256": None,
+                    "router_version": None,
+                    "routed_at": None,
+                    "knowledge_mutation_paths": [],
+                    "knowledge_mutation_trigger_sha256": None,
+                    "updated_at": now,
+                }
+            )
+            job = PendingBotJob.model_validate(reset_payload)
+            jobs[job_id] = job
         records = {record.record_id: record for record in SourceQuery(self.root).records()}
         trigger = records.get(job.trigger_record_id)
         if trigger is None:
             raise ReplyRejected("reply trigger evidence is missing")
+        prerequisite = jobs.get(job.prerequisite_job_id or "")
+        if job.trigger_kind in member_kinds and member_welcome_is_expired(
+            job,
+            trigger,
+            now=now,
+            prerequisite=prerequisite,
+        ):
+            cancelled_payload = job.model_dump(mode="json")
+            cancelled_payload.update(
+                {
+                    "status": JobStatus.CANCELLED,
+                    "prepared_reply_text": None,
+                    "prepared_citations": [],
+                    "prepared_language": None,
+                    "refusal": False,
+                    "classified_route": None,
+                    "router_context_scope": None,
+                    "router_context_sha256": None,
+                    "router_version": None,
+                    "routed_at": None,
+                    "knowledge_mutation_paths": [],
+                    "knowledge_mutation_trigger_sha256": None,
+                    "updated_at": now,
+                    "safe_error_code": "member_welcome_expired",
+                }
+            )
+            jobs[job_id] = PendingBotJob.model_validate(cancelled_payload)
+            self._publish_jobs(jobs, f"{job_id}:cancelled")
+            return None
         records = self._with_audited_bot_parent(records, jobs, job, trigger)
         processing = job.model_copy(
             update={
@@ -456,6 +519,18 @@ class BotReplyService:
         scan_registry_changed = False
         failure_code = "reply_route_context_failed"
         try:
+            if processing.trigger_kind in {
+                TriggerKind.MEMBER_WELCOME,
+                TriggerKind.MEMBER_INTRODUCTION,
+            }:
+                failure_code = "member_welcome_failed"
+                return await self._prepare_member_welcome(
+                    processing,
+                    trigger,
+                    records,
+                    jobs,
+                    now=now,
+                )
             context_builder = ConversationContextBuilder(self.privacy)
             route_context = context_builder.build(
                 trigger=trigger,
@@ -726,7 +801,9 @@ class BotReplyService:
                     now=now,
                     operation_id=f"{job_id}:evidence",
                 )
-            uow = RepositoryUnitOfWork(self.root, operation_id=job_id)
+            uow = RepositoryUnitOfWork(
+                self.root, operation_id=safe_operation_id(job_id)
+            )
             external_texts = (
                 tuple(item.text for item in evidence_pack.evidence)
                 if evidence_pack is not None
@@ -830,7 +907,9 @@ class BotReplyService:
                     "safe_error_code": safe_error_code,
                 }
             )
-            failure_uow = RepositoryUnitOfWork(self.root, operation_id=f"{job_id}:failed")
+            failure_uow = RepositoryUnitOfWork(
+                self.root, operation_id=safe_operation_id(f"{job_id}:failed")
+            )
             failure_uow.register_external_evidence(())
             self._stage_jobs(failure_uow, failed_jobs)
             failure_uow.publish()
@@ -843,6 +922,83 @@ class BotReplyService:
             raise ReplyRejected(
                 "reply preparation failed safely", safe_code=safe_error_code
             ) from None
+
+    async def _prepare_member_welcome(
+        self,
+        job: PendingBotJob,
+        trigger: SourceRecord,
+        records: Mapping[str, SourceRecord],
+        jobs: dict[str, PendingBotJob],
+        *,
+        now: datetime,
+    ) -> PreparedReply:
+        if job.welcome_target_person_id is None or job.welcome_target_record_id is None:
+            raise ReplyRejected("member welcome target is incomplete")
+        target = records.get(job.welcome_target_record_id)
+        if target is None or target.author_person_id != job.welcome_target_person_id:
+            raise ReplyRejected("member welcome target evidence is missing")
+        aliases = AliasRegistry.from_yaml(self.root / "knowledge/meta/aliases.yml")
+        resolved_target = resolve_member_welcome_target(
+            trigger=trigger,
+            aliases=aliases,
+            records=dict(records),
+            message_thread_id=job.message_thread_id,
+        )
+        if (
+            resolved_target is None
+            or resolved_target
+            != (job.welcome_target_person_id, job.welcome_target_record_id)
+        ):
+            raise ReplyRejected("member welcome trigger is no longer valid")
+        identity = aliases.people.get(job.welcome_target_person_id)
+        handles = identity.get("handles", {}) if isinstance(identity, dict) else {}
+        telegram_handles = handles.get("telegram", []) if isinstance(handles, dict) else []
+        if (
+            not isinstance(telegram_handles, list)
+            or len(telegram_handles) != 1
+            or not isinstance(telegram_handles[0], str)
+        ):
+            raise ReplyRejected("member welcome target has no unique public handle")
+        if job.trigger_kind is TriggerKind.MEMBER_INTRODUCTION:
+            prerequisite = jobs.get(job.prerequisite_job_id or "")
+            if prerequisite is None or prerequisite.status is not JobStatus.DELIVERED:
+                raise ReplyRejected("member introduction prerequisite is not delivered")
+        existing_profile, existing_frontmatter = member_profile_snapshot(
+            self.root,
+            person_id=job.welcome_target_person_id,
+        )
+        reply_text, context_hash = build_member_reply(
+            job=job,
+            trigger=trigger,
+            target=target,
+            identity=identity,
+            existing_profile=existing_profile,
+            existing_frontmatter=existing_frontmatter,
+        )
+        self.privacy.assert_public(reply_text)
+        ready_payload = job.model_dump(mode="json")
+        ready_payload.update(
+            {
+                "status": JobStatus.READY,
+                "prepared_reply_text": reply_text,
+                "prepared_citations": [],
+                "prepared_language": (
+                    "zh" if re.search(r"[\u3400-\u9fff]", reply_text) else "en"
+                ),
+                "refusal": False,
+                "safe_error_code": None,
+                "classified_route": BotRoute.COORDINATION,
+                "router_context_scope": RouteContextScope.CONVERSATION,
+                "router_context_sha256": context_hash,
+                "router_version": "deterministic-member-welcome-v1",
+                "routed_at": now,
+                "updated_at": now,
+            }
+        )
+        ready = PendingBotJob.model_validate(ready_payload)
+        jobs[job.job_id] = ready
+        self._publish_jobs(jobs, f"{job.job_id}:ready")
+        return self._prepared(ready)
 
     @staticmethod
     def _retryable_route_failure(error: ClaudeCliError) -> bool:
@@ -2114,7 +2270,9 @@ class BotReplyService:
         operation_id: str,
     ) -> None:
         assert self.knowledge_state is not None
-        uow = RepositoryUnitOfWork(self.root, operation_id=operation_id)
+        uow = RepositoryUnitOfWork(
+            self.root, operation_id=safe_operation_id(operation_id)
+        )
         uow.register_external_evidence(item.text for item in evidence_pack.evidence)
         try:
             self.knowledge_state.stage_evidence_outcome(
@@ -2125,7 +2283,9 @@ class BotReplyService:
             pass
 
     def _publish_jobs(self, jobs: Mapping[str, PendingBotJob], operation_id: str) -> None:
-        uow = RepositoryUnitOfWork(self.root, operation_id=operation_id)
+        uow = RepositoryUnitOfWork(
+            self.root, operation_id=safe_operation_id(operation_id)
+        )
         uow.register_external_evidence(())
         self._stage_jobs(uow, jobs)
         uow.publish()
