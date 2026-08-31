@@ -4059,7 +4059,7 @@ async def test_verification_route_confirms_proof_and_replies(tmp_path: Path) -> 
 
     assert not prepared.refusal
     assert "invinoveritas verdict: approve" in prepared.reply_text
-    assert "independently confirmed" in prepared.reply_text
+    assert "confirmed via invinoveritas's own /verify-proof check" in prepared.reply_text
     # Only the router classification call happened -- VERIFICATION never calls the
     # knowledge-reply AI, matching REFUSE's own short-circuit shape.
     assert [call["job_type"] for call in ai.calls] == ["route"]
@@ -4133,14 +4133,15 @@ async def test_verification_route_fails_closed_on_valid_true_with_missing_check(
 
 
 @pytest.mark.asyncio
-async def test_verification_route_sends_only_trigger_text_not_reply_chain(
+async def test_verification_route_sends_only_the_extracted_artifact_not_reply_chain(
     tmp_path: Path,
 ) -> None:
     """No arbitrary egress, no silent chat-context sending (Pavlo, msg 3823) -- the seeded
     thread has real prior content ("We need verifiable validation.", "The open question is
-    how clients check it.") that must NOT appear in what gets sent to /review."""
-    trigger_text = "@bot verify: 2+2=4"
-    job = seed(tmp_path, trigger_text)
+    how clients check it.") that must NOT appear in what gets sent to /review. ALSO covers
+    Pavlo's msg 3830 follow-up: the artifact must be the mechanically-extracted claim
+    ("2+2=4"), not the whole trigger wrapper including the @mention and "verify:" framing."""
+    job = seed(tmp_path, "@bot verify: 2+2=4")
     ai = ContextualFakeAi("verification", reply_result(chinese=False))
     captured: dict[str, Any] = {}
 
@@ -4157,7 +4158,7 @@ async def test_verification_route_sends_only_trigger_text_not_reply_chain(
         invinoveritas_client=_fake_invinoveritas_client(handler),
     ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
 
-    assert captured["artifact"] == trigger_text
+    assert captured["artifact"] == "2+2=4"
     assert "verifiable validation" not in captured["artifact"]
     assert "how clients check it" not in captured["artifact"]
 

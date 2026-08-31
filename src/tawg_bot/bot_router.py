@@ -96,6 +96,24 @@ _INLINE_CITATION = re.compile(
 )
 _LOCAL_CITATION = re.compile(r"\[((?:[A-Za-z0-9_.-]+:){2,}[A-Za-z0-9_.:/@-]+)\]")
 _TELEGRAM_MENTION = re.compile(r"(?<![A-Za-z0-9_@])@[A-Za-z0-9_]{1,64}(?![A-Za-z0-9_])")
+# Pavlo (damon msg 3830): "@bot verify: 2+2=4" must not bind the proof to the whole command
+# wrapper -- the controller should mechanically extract the artifact rather than relying only
+# on classifier intent. Strips a leading @mention (unambiguous Telegram addressing syntax, never
+# artifact content) and, if present, one leading framing verb drawn directly from
+# route-system.md's own documented verification examples ("verify:", "check:", "confirm:"). This
+# is deliberately a small, explicit, testable set -- not general NLU -- so it stays honest about
+# its own scope: anything NOT matching one of these two mechanical patterns is left as-is, never
+# silently guessed at.
+_VERIFICATION_FRAMING_PREFIX = re.compile(r"^\s*(?:verify|check|confirm)\s*:\s*", re.IGNORECASE)
+
+
+def _extract_verification_artifact(text: str, bot_username: str) -> str:
+    mention = re.compile(rf"^\s*@{re.escape(bot_username)}\b\s*", re.IGNORECASE)
+    stripped = mention.sub("", text, count=1)
+    stripped = _VERIFICATION_FRAMING_PREFIX.sub("", stripped, count=1)
+    return stripped.strip()
+
+
 _UNSAFE_MEMBER_LOCATOR = re.compile(
     r"(?:\b(?:www\.|t\.me/|telegram\.me/)|"
     r"\[[^\]]+\]\([^)]+\)|"
@@ -680,7 +698,12 @@ class BotReplyService:
                 failure_code = "reply_verification_failed"
                 if self.invinoveritas_client is None:
                     raise ReplyRejected("invinoveritas verification is not configured")
-                artifact = trigger.text_original.strip()
+                # Mechanical extraction (Pavlo, msg 3830), not classifier-intent alone -- strips
+                # the @mention and one recognized framing verb, e.g. "@bot verify: 2+2=4" -> the
+                # artifact bound is "2+2=4", not the whole trigger text.
+                artifact = _extract_verification_artifact(
+                    trigger.text_original, self.router.bot_username
+                )
                 if not artifact:
                     raise ReplyRejected("verification trigger has no text to verify")
                 try:

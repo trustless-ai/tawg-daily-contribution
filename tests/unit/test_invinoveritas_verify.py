@@ -108,6 +108,21 @@ def test_missing_verdict_field_is_rejected_not_guessed() -> None:
     asyncio.run(run())
 
 
+def test_boolean_confidence_is_rejected_not_silently_coerced() -> None:
+    """Pavlo (damon msg 3830): bool is a subtype of int in Python, so a plain
+    isinstance(x, int | float) check silently accepts confidence: true/false as if it were a
+    real 1.0/0.0 score -- a wrong-typed field masquerading as valid data. Must be rejected."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json={"verdict": "approve", "confidence": True, "summary": "ok"})
+
+    async def run() -> None:
+        with pytest.raises(VerificationRejected):
+            await verify_artifact(_client(handler), artifact="claim")
+
+    asyncio.run(run())
+
+
 def test_non_2xx_status_is_rejected() -> None:
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(402, json={"detail": "payment required"})
@@ -439,7 +454,7 @@ def test_format_verification_reply_includes_proof_link_when_verified() -> None:
     assert "0.75" in text
     assert "decision_ref: sha256:deadbeef" in text
     assert "https://api.babyblueviper.com/verify-proof" in text
-    assert "independently confirmed" in text
+    assert "confirmed via invinoveritas's own /verify-proof check" in text
 
 
 def test_format_verification_reply_withholds_verdict_when_proof_unverified() -> None:

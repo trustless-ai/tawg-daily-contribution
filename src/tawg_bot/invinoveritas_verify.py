@@ -166,7 +166,11 @@ async def verify_artifact(
     summary = payload.get("summary")
     if not isinstance(verdict, str) or not verdict:
         raise VerificationRejected("invinoveritas response missing verdict")
-    if not isinstance(confidence, int | float):
+    # Pavlo (damon msg 3830): bool is a subtype of int in Python, so a plain `isinstance(x, int
+    # | float)` silently accepts a JSON `true`/`false` as a "valid" confidence and coerces it to
+    # 1.0/0.0 -- a real, wrong-typed field masquerading as a legitimate value. Reject bool
+    # explicitly before the int check.
+    if isinstance(confidence, bool) or not isinstance(confidence, int | float):
         raise VerificationRejected("invinoveritas response missing confidence")
     if not isinstance(summary, str):
         summary = ""
@@ -297,10 +301,21 @@ def format_verification_reply(result: VerificationResult, proof_status: ProofSta
     proof_status.verified is False, the verdict/summary/confidence are NOT surfaced at all --
     only the fact that verification failed and why, so a reader never mistakes an
     unauthenticated /review response for something Trusty is vouching for.
+
+    HONEST WORDING (Pavlo, msg 3830): the prior wording said "independently confirmed" / "no
+    trust required," but confirm_proof() calls invinoveritas's OWN /verify-proof endpoint --
+    that is invinoveritas checking its own signature server-side, not Trusty recomputing the
+    NIP-01 event id / BIP-340 schnorr signature locally against the pinned pubkey with no
+    network round-trip back to invinoveritas. This project has no crypto dependency today, so
+    real local recomputation is a genuine future step, not something to claim now. The wording
+    below says exactly what the mechanism establishes -- "confirmed via invinoveritas's own
+    check," not "independently confirmed" -- rather than overclaiming a trust boundary this
+    code does not yet cross.
     """
     if not proof_status.verified:
         lines = [
-            "invinoveritas verdict withheld -- the signed proof did not independently verify.",
+            "invinoveritas verdict withheld -- the signed proof did not pass "
+            "invinoveritas's own /verify-proof check.",
         ]
         if proof_status.error:
             lines.append(f"reason: {proof_status.error}")
@@ -312,8 +327,9 @@ def format_verification_reply(result: VerificationResult, proof_status: ProofSta
 
     lines = [
         f"invinoveritas verdict: {result.verdict} (confidence {result.confidence:.2f})",
-        "proof authenticity: independently confirmed via /verify-proof (signature + artifact "
-        "hash both checked, not just relayed)",
+        "proof authenticity: confirmed via invinoveritas's own /verify-proof check "
+        "(signature + artifact hash both verified server-side; not yet independently "
+        "recomputed locally by Trusty)",
     ]
     if result.summary:
         lines.append(result.summary)
