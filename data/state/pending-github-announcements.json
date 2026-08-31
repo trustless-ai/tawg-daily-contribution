@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_updated:7c1da737f4a157cbbb34c487",
-    "kind": "pr_updated",
-    "number": 90,
-    "occurred_at": "2026-08-31T12:57:06Z",
-    "repository": "trustless-ai/cross-reference-console",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "rung 4 — attribution recomputed under an independent semantic contract"
-  }
-]
+[]
