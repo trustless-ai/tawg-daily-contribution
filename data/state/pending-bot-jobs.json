@@ -2410,14 +2410,22 @@
     "welcome_target_record_id": null
   },
   {
-    "attempts": 2,
+    "attempts": 3,
     "classified_route": "knowledge_correction",
     "created_at": "2026-08-31T12:22:27.868433Z",
     "job_id": "reply:tg:tawg:3808",
+    "knowledge_mutation_paths": [
+      "knowledge/topics/erc-8404-recomputable-verification-receipts.md"
+    ],
+    "knowledge_mutation_trigger_sha256": "8cd26e083b15e6768ce55bf15043629f6974426d389b8e54921adf3bfd52f6ff",
     "message_thread_id": null,
-    "prepared_citations": [],
-    "prepared_language": null,
-    "prepared_reply_text": null,
+    "prepared_citations": [
+      "tg:tawg:3800",
+      "https://github.com/ethereum/ERCs/pull/1980",
+      "https://ethereum-magicians.org/t/erc-8404-recomputable-verification-receipts/29521"
+    ],
+    "prepared_language": "en",
+    "prepared_reply_text": "Done — knowledge updated. ERC-8404 (Recomputable Verification Receipts) is now recorded: the editors assigned this number to the RVR submission [tg:tawg:3800], exact-head CI is fully green, and the namespace-opacity / merge-conflict status from recompute-kit PR #36 is captured. ERC PR: https://github.com/ethereum/ERCs/pull/1980 · Discussion: https://ethereum-magicians.org/t/erc-8404-recomputable-verification-receipts/29521",
     "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
@@ -2427,12 +2435,12 @@
     "router_context_scope": "knowledge",
     "router_context_sha256": "d5271d63e86977fd06c02e7b8f5fdff8b51e7cbfcadf00f02039873137b2b2c5",
     "router_version": "contextual-ai-v5",
-    "safe_error_code": "reply_validation_failed",
+    "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "pending",
+    "status": "ready",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3808",
-    "updated_at": "2026-08-31T12:25:09.346677Z",
+    "updated_at": "2026-08-31T12:27:52.350259Z",
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   }
