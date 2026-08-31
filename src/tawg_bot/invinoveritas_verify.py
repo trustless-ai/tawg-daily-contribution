@@ -1,4 +1,5 @@
-"""Client for invinoveritas's /review verification endpoint.
+"""Client for invinoveritas's /review verification endpoint, plus independent proof
+authenticity confirmation via /verify-proof.
 
 Built 2026-08-31 in response to Jimmy Shi's invitation (Telegram, damon group, msg 3817):
 "give it some data to verify correctness, then have it call Fede's verify service... PRs
@@ -8,6 +9,15 @@ NOT decide when Trusty should invoke it (that's a routing/permission question fo
 bot_router.py and prompts/route-system.md, discussed in the PR description rather than
 guessed at here).
 
+EXTENDED same day (Telegram, damon group, msg 3823, Pavlo): "Trusty should not merely relay
+/review and point at /verify-proof; it should independently verify the returned signed proof
+first. The external judgment and proof authenticity are different claims." His proposed flow,
+built here exactly as named: explicit verification request -> /review -> verify returned
+proof via /verify-proof -> reply with external verdict + separate proof status. "A failed or
+unresolvable proof should fail closed rather than leave Trusty repeating an unverifiable
+verdict." -- see confirm_proof()/verify_and_confirm() and format_verification_reply()'s
+fail-closed branch below.
+
 invinoveritas's own thesis (api.babyblueviper.com): a pre-action verdict a caller can attach
 to an artifact, plus a free, no-auth /verify-proof endpoint any THIRD party can use to confirm
 the verdict is genuine without trusting the presenter or invinoveritas itself -- the same
@@ -16,12 +26,14 @@ the verdict is genuine without trusting the presenter or invinoveritas itself --
 
 from __future__ import annotations
 
+import hashlib
 import json
 from typing import Any
 
 from tawg_bot.http import SafeHttpError, SafeJsonHttpClient
 
 DEFAULT_REVIEW_URL = "https://api.babyblueviper.com/review"
+DEFAULT_VERIFY_PROOF_URL = "https://api.babyblueviper.com/verify-proof"
 
 
 class VerificationRejected(ValueError):
@@ -59,6 +71,20 @@ class VerificationResult:
         self.raw = raw
 
 
+class ProofStatus:
+    """Whether the signed proof attached to a VerificationResult is genuinely, independently
+    verifiable -- a SEPARATE claim from the verdict itself (Pavlo, msg 3823: "the external
+    judgment and proof authenticity are different claims"). Never inferred from the /review
+    response alone -- always the result of an actual /verify-proof round trip."""
+
+    __slots__ = ("checks", "error", "verified")
+
+    def __init__(self, *, verified: bool, checks: dict[str, Any], error: str | None = None) -> None:
+        self.verified = verified
+        self.checks = checks
+        self.error = error
+
+
 def _extract_decision_ref(payload: dict[str, Any]) -> str | None:
     proof = payload.get("proof")
     if not isinstance(proof, dict):
@@ -87,7 +113,7 @@ async def verify_artifact(
     artifact_type: str = "general",
     api_key: str | None = None,
     review_url: str = DEFAULT_REVIEW_URL,
-    verify_proof_url: str = "https://api.babyblueviper.com/verify-proof",
+    verify_proof_url: str = DEFAULT_VERIFY_PROOF_URL,
 ) -> VerificationResult:
     """Call invinoveritas /review with sign=true and return a parsed result.
 
@@ -104,6 +130,12 @@ async def verify_artifact(
     github_announcements.py/evidence_fetch.py) if the call fails, the response is
     malformed, or required fields are missing. Never silently returns a partial or
     guessed verdict -- an untrustworthy response is a rejection, not an approximation.
+
+    IMPORTANT: this function alone establishes what invinoveritas SAID, not that the reply
+    it gave us is genuinely, verifiably from invinoveritas. Callers who will surface the
+    verdict to a human (rather than just inspecting it themselves) should call
+    verify_and_confirm() instead, or call confirm_proof() on this result before relaying
+    anything -- see that function's docstring for why this distinction is load-bearing.
     """
     if not artifact.strip():
         raise VerificationRejected("artifact must be non-empty")
@@ -137,17 +169,127 @@ async def verify_artifact(
     )
 
 
-def format_verification_reply(result: VerificationResult) -> str:
-    """Render a VerificationResult as Telegram reply text. Separated from verify_artifact
-    so the formatting can be unit-tested without a network call, and so bot_router.py's
-    eventual integration can reuse this without re-deriving the format."""
+async def confirm_proof(
+    client: SafeJsonHttpClient,
+    result: VerificationResult,
+    *,
+    artifact: str,
+    verify_proof_url: str = DEFAULT_VERIFY_PROOF_URL,
+) -> ProofStatus:
+    """Independently confirm `result`'s signed proof is authentic AND covers `artifact`
+    exactly -- the boundary Pavlo named (damon group, msg 3823): "the external judgment and
+    proof authenticity are different claims." Never trusts /review's own verdict/signature
+    claims at face value; calls the free, no-auth /verify-proof endpoint (schnorr signature +
+    published-pubkey pin -- the same NIP-01 check any third party could run themselves) and
+    additionally asserts `expect_artifact_hash` (a locally-computed sha256 of `artifact`, not
+    taken from the /review response) so a proof that doesn't actually cover the artifact we
+    submitted flips `valid` to False server-side, not just something we'd have to notice
+    ourselves.
+
+    FAILS CLOSED (verified=False), never assumes-valid, on: no proof/event in the /review
+    response at all, an unreachable /verify-proof endpoint, or a genuine valid=False from the
+    verify call. `error` always carries a real, specific reason -- "unresolvable" per Pavlo's
+    framing is not a separate silent-pass state, it is verified=False with an explanatory
+    error, same as any other failure here.
+    """
+    proof = (result.raw or {}).get("proof")
+    event = proof.get("event") if isinstance(proof, dict) else None
+    if not isinstance(event, dict):
+        return ProofStatus(
+            verified=False,
+            checks={},
+            error="no signed proof event present in the /review response -- nothing to verify",
+        )
+    artifact_hash = hashlib.sha256(artifact.encode("utf-8")).hexdigest()
+    try:
+        payload = await client.post_json(
+            verify_proof_url,
+            {"event": event, "expect_artifact_hash": artifact_hash},
+        )
+    except SafeHttpError as exc:
+        return ProofStatus(verified=False, checks={}, error=f"verify-proof request failed: {exc}")
+
+    checks = payload.get("checks")
+    if not isinstance(checks, dict):
+        checks = {}
+    if payload.get("valid") is not True:
+        return ProofStatus(
+            verified=False,
+            checks=checks,
+            error=payload.get("error") or "proof did not independently verify (valid=false)",
+        )
+    return ProofStatus(verified=True, checks=checks, error=None)
+
+
+async def verify_and_confirm(
+    client: SafeJsonHttpClient,
+    *,
+    artifact: str,
+    artifact_type: str = "general",
+    api_key: str | None = None,
+    review_url: str = DEFAULT_REVIEW_URL,
+    verify_proof_url: str = DEFAULT_VERIFY_PROOF_URL,
+) -> tuple[VerificationResult, ProofStatus]:
+    """The full flow Pavlo named (msg 3823): /review -> independently verify the returned
+    proof via /verify-proof. Returns (result, proof_status) as a pair rather than folding
+    them into one object -- they ARE separate claims, and a caller (bot_router.py's eventual
+    VERIFICATION route handler) should have to look at proof_status explicitly rather than
+    assume a VerificationResult is trustworthy just because it exists.
+
+    Raises VerificationRejected only for the /review leg itself (matching verify_artifact's
+    existing contract -- a failed /review call has nothing to report). A failed proof
+    CONFIRMATION is not raised, it is returned as proof_status.verified=False: that is real,
+    reportable information (see format_verification_reply's fail-closed branch), not an
+    error condition to propagate as an exception.
+    """
+    result = await verify_artifact(
+        client,
+        artifact=artifact,
+        artifact_type=artifact_type,
+        api_key=api_key,
+        review_url=review_url,
+        verify_proof_url=verify_proof_url,
+    )
+    proof_status = await confirm_proof(
+        client, result, artifact=artifact, verify_proof_url=verify_proof_url
+    )
+    return result, proof_status
+
+
+def format_verification_reply(result: VerificationResult, proof_status: ProofStatus) -> str:
+    """Render a (VerificationResult, ProofStatus) pair as Telegram reply text. Separated from
+    verify_and_confirm so the formatting can be unit-tested without a network call, and so
+    bot_router.py's eventual integration can reuse this without re-deriving the format.
+
+    FAIL CLOSED (Pavlo, msg 3823, verbatim): "A failed or unresolvable proof should fail
+    closed rather than leave Trusty repeating an unverifiable verdict." When
+    proof_status.verified is False, the verdict/summary/confidence are NOT surfaced at all --
+    only the fact that verification failed and why, so a reader never mistakes an
+    unauthenticated /review response for something Trusty is vouching for.
+    """
+    if not proof_status.verified:
+        lines = [
+            "invinoveritas verdict withheld -- the signed proof did not independently verify.",
+        ]
+        if proof_status.error:
+            lines.append(f"reason: {proof_status.error}")
+        lines.append(
+            "This means the verdict cannot be confirmed as genuinely issued by invinoveritas, "
+            "so it is not being relayed."
+        )
+        return "\n".join(lines)
+
     lines = [
         f"invinoveritas verdict: {result.verdict} (confidence {result.confidence:.2f})",
+        "proof authenticity: independently confirmed via /verify-proof (signature + artifact "
+        "hash both checked, not just relayed)",
     ]
     if result.summary:
         lines.append(result.summary)
     if result.decision_ref:
         lines.append(f"decision_ref: {result.decision_ref}")
     if result.verify_proof_url:
-        lines.append(f"Independently checkable, no trust required: {result.verify_proof_url}")
+        lines.append(
+            f"Independently checkable yourself, no trust required: {result.verify_proof_url}"
+        )
     return "\n".join(lines)

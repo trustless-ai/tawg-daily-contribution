@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 
 import httpx
@@ -8,12 +9,16 @@ import pytest
 
 from tawg_bot.http import SafeJsonHttpClient
 from tawg_bot.invinoveritas_verify import (
+    ProofStatus,
     VerificationRejected,
+    confirm_proof,
     format_verification_reply,
+    verify_and_confirm,
     verify_artifact,
 )
 
 REVIEW_URL = "https://api.babyblueviper.com/review"
+VERIFY_PROOF_URL = "https://api.babyblueviper.com/verify-proof"
 
 
 def _client(handler) -> SafeJsonHttpClient:
@@ -141,7 +146,159 @@ def test_missing_decision_ref_degrades_gracefully_not_rejected() -> None:
     asyncio.run(run())
 
 
-def test_format_verification_reply_includes_proof_link() -> None:
+# --- confirm_proof / verify_and_confirm / fail-closed formatting ---------------------------
+# Added same day (Telegram, damon group, msg 3823, Pavlo): "Trusty should not merely relay
+# /review and point at /verify-proof; it should independently verify the returned signed
+# proof first. The external judgment and proof authenticity are different claims." These
+# tests cover that new boundary specifically, distinct from the verify_artifact tests above
+# which only ever tested the /review leg.
+
+
+def test_confirm_proof_calls_verify_proof_with_event_and_artifact_hash() -> None:
+    captured: dict = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        assert request.url == VERIFY_PROOF_URL
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(
+            200,
+            json={
+                "valid": True,
+                "checks": {
+                    "id_integrity": True,
+                    "signature_valid": True,
+                    "issued_by_invinoveritas": True,
+                },
+            },
+        )
+
+    async def run() -> ProofStatus:
+        from tawg_bot.invinoveritas_verify import VerificationResult
+
+        result = VerificationResult(
+            verdict="approve",
+            confidence=0.9,
+            summary="",
+            verify_proof_url=VERIFY_PROOF_URL,
+            decision_ref=None,
+            raw={"proof": {"event": {"id": "abc123"}}},
+        )
+        return await confirm_proof(_client(handler), result, artifact="the real artifact")
+
+    status = asyncio.run(run())
+    assert status.verified is True
+    assert captured["body"]["event"] == {"id": "abc123"}
+    assert (
+        captured["body"]["expect_artifact_hash"] == hashlib.sha256(b"the real artifact").hexdigest()
+    )
+
+
+def test_confirm_proof_fails_closed_on_valid_false() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "valid": False,
+                "checks": {"signature_valid": False},
+                "error": "signature mismatch",
+            },
+        )
+
+    async def run() -> ProofStatus:
+        from tawg_bot.invinoveritas_verify import VerificationResult
+
+        result = VerificationResult(
+            verdict="approve",
+            confidence=0.9,
+            summary="",
+            verify_proof_url=VERIFY_PROOF_URL,
+            decision_ref=None,
+            raw={"proof": {"event": {"id": "abc123"}}},
+        )
+        return await confirm_proof(_client(handler), result, artifact="claim")
+
+    status = asyncio.run(run())
+    assert status.verified is False
+    assert status.error == "signature mismatch"
+
+
+def test_confirm_proof_fails_closed_when_no_proof_event_present() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("must not call the network when there is no event to verify")
+
+    async def run() -> ProofStatus:
+        from tawg_bot.invinoveritas_verify import VerificationResult
+
+        result = VerificationResult(
+            verdict="approve",
+            confidence=0.9,
+            summary="",
+            verify_proof_url=VERIFY_PROOF_URL,
+            decision_ref=None,
+            raw={},  # no "proof" key at all
+        )
+        return await confirm_proof(_client(handler), result, artifact="claim")
+
+    status = asyncio.run(run())
+    assert status.verified is False
+    assert "no signed proof event" in status.error
+
+
+def test_confirm_proof_fails_closed_on_network_error() -> None:
+    def handler(request: httpx.Request) -> httpx.Response:
+        raise httpx.ConnectError("connection refused", request=request)
+
+    async def run() -> ProofStatus:
+        from tawg_bot.invinoveritas_verify import VerificationResult
+
+        result = VerificationResult(
+            verdict="approve",
+            confidence=0.9,
+            summary="",
+            verify_proof_url=VERIFY_PROOF_URL,
+            decision_ref=None,
+            raw={"proof": {"event": {"id": "abc123"}}},
+        )
+        return await confirm_proof(_client(handler), result, artifact="claim")
+
+    status = asyncio.run(run())
+    assert status.verified is False
+    assert "verify-proof request failed" in status.error
+
+
+def test_verify_and_confirm_calls_both_endpoints_in_order() -> None:
+    calls: list[str] = []
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        calls.append(str(request.url))
+        if request.url == REVIEW_URL:
+            return httpx.Response(200, json=_signed_payload())
+        return httpx.Response(200, json={"valid": True, "checks": {}})
+
+    async def run():
+        return await verify_and_confirm(_client(handler), artifact="1+1=2")
+
+    result, status = asyncio.run(run())
+    assert calls == [REVIEW_URL, VERIFY_PROOF_URL]
+    assert result.verdict == "approve"
+    assert status.verified is True
+
+
+def test_verify_and_confirm_still_raises_on_review_failure_not_swallowed() -> None:
+    """A failed /review call has nothing to confirm a proof for -- must still raise, not
+    silently degrade to an unverified ProofStatus."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(402, json={"detail": "payment required"})
+
+    async def run():
+        return await verify_and_confirm(_client(handler), artifact="claim")
+
+    with pytest.raises(VerificationRejected):
+        asyncio.run(run())
+
+
+def test_format_verification_reply_includes_proof_link_when_verified() -> None:
     result_dict = _signed_payload(verdict="approve_with_concerns", confidence=0.75)
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -149,10 +306,36 @@ def test_format_verification_reply_includes_proof_link() -> None:
 
     async def run() -> str:
         result = await verify_artifact(_client(handler), artifact="claim")
-        return format_verification_reply(result)
+        status = ProofStatus(verified=True, checks={"signature_valid": True})
+        return format_verification_reply(result, status)
 
     text = asyncio.run(run())
     assert "approve_with_concerns" in text
     assert "0.75" in text
     assert "decision_ref: sha256:deadbeef" in text
     assert "https://api.babyblueviper.com/verify-proof" in text
+    assert "independently confirmed" in text
+
+
+def test_format_verification_reply_withholds_verdict_when_proof_unverified() -> None:
+    """FAIL CLOSED (Pavlo, msg 3823, verbatim): 'A failed or unresolvable proof should fail
+    closed rather than leave Trusty repeating an unverifiable verdict.' The verdict/summary
+    must NOT appear anywhere in the withheld reply."""
+    from tawg_bot.invinoveritas_verify import VerificationResult
+
+    result = VerificationResult(
+        verdict="approve",
+        confidence=0.9,
+        summary="a summary that must not leak",
+        verify_proof_url=VERIFY_PROOF_URL,
+        decision_ref="sha256:deadbeef",
+        raw={},
+    )
+    status = ProofStatus(verified=False, checks={}, error="signature mismatch")
+
+    text = format_verification_reply(result, status)
+    assert "withheld" in text
+    assert "signature mismatch" in text
+    assert "approve" not in text
+    assert "a summary that must not leak" not in text
+    assert "sha256:deadbeef" not in text
