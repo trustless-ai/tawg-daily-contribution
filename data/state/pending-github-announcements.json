@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "Echo-Merlini",
-    "event_id": "github-announcement:issue_opened:128c7cad89c06f4862a654a5",
-    "kind": "issue_opened",
-    "number": 89,
-    "occurred_at": "2026-08-31T12:00:31Z",
-    "repository": "trustless-ai/cross-reference-console",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Attribution ladder rung 4 — an independent oracle (design proposal, reactions before building)"
-  }
-]
+[]
