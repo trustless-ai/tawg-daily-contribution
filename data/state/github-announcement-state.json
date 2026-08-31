@@ -2,7 +2,7 @@
   "initialized_at": "2026-08-29T15:45:00Z",
   "repositories": [
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/.github",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -11,7 +11,7 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/agent-contracts-examples",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -29,7 +29,7 @@
       ]
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/agent-ercs",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -57,7 +57,7 @@
       ]
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/agent-sdk",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -70,7 +70,7 @@
           "number": 25,
           "state": "merged",
           "title": "test(erc8354): real UltraHonk proof end to end, and close the CI gating hole",
-          "updated_at": "2026-08-31T20:53:07Z"
+          "updated_at": "2026-08-31T21:22:48Z"
         },
         {
           "author_login": null,
@@ -95,7 +95,7 @@
       ]
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/ccip-router",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -103,31 +103,31 @@
         {
           "author_login": "TMerlini",
           "head_sha": "b6b9754108fe876cadbe2807444c78d16bb7c314",
-          "merge_commit_sha": null,
-          "merged_at": null,
+          "merge_commit_sha": "b6b9754108fe876cadbe2807444c78d16bb7c314",
+          "merged_at": "2026-08-31T21:51:39Z",
           "number": 7,
-          "state": "open",
+          "state": "merged",
           "title": "feat(db): conformant encode-json-utf8-lf.v0 producer for unsigned-attestation identity",
-          "updated_at": "2026-08-28T23:42:46Z"
+          "updated_at": "2026-08-31T21:51:39Z"
         }
       ]
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/collapsed-state-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/composed-attestation-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/cross-reference-console",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -147,14 +147,14 @@
       ]
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/eip7702-rescue",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/observation-conditions-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -163,14 +163,14 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/pq-agent-binding",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/recompute-kit",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -278,14 +278,14 @@
       ]
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/recompute-lens",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/tawg-daily-contribution",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -297,27 +297,27 @@
           "merged_at": null,
           "number": 9,
           "state": "open",
-          "title": "Add tested invinoveritas /review client (verify_artifact) -- toward a VERIFICATION route",
-          "updated_at": "2026-08-31T20:54:14Z"
+          "title": "Add invinoveritas /review VERIFICATION route (client, routing, proof confirmation)",
+          "updated_at": "2026-08-31T21:32:31Z"
         }
       ]
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/trustless-agent-substrate",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/trustless-ai-landing",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-08-31T21:20:14.498863Z",
+      "checked_at": "2026-08-31T21:55:10.120755Z",
       "full_name": "trustless-ai/zkIE",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
