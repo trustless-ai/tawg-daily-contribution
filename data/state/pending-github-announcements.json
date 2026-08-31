@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:b7a573ea6b2c1fa762303052",
-    "kind": "pr_merged",
-    "number": 7,
-    "occurred_at": "2026-08-31T21:51:39Z",
-    "repository": "trustless-ai/ccip-router",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "feat(db): conformant encode-json-utf8-lf.v0 producer for unsigned-attestation identity"
-  }
-]
+[]
