@@ -1,5 +1,59 @@
 [
   {
+    "attempts": 0,
+    "classified_route": null,
+    "created_at": "2026-08-31T02:00:17.736499Z",
+    "job_id": "member-introduction:logan-verdict",
+    "message_thread_id": null,
+    "prepared_citations": [],
+    "prepared_language": null,
+    "prepared_reply_text": null,
+    "prerequisite_job_id": "member-welcome:logan-verdict",
+    "refusal": false,
+    "repair_of_job_id": null,
+    "repair_reason_code": null,
+    "reply_to_message_id": null,
+    "routed_at": null,
+    "router_context_scope": null,
+    "router_context_sha256": null,
+    "router_version": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.pending-bot-job.v1",
+    "status": "pending",
+    "trigger_kind": "member_introduction",
+    "trigger_record_id": "tg:tawg:3778",
+    "updated_at": "2026-08-31T02:00:17.736499Z",
+    "welcome_target_person_id": "logan-verdict",
+    "welcome_target_record_id": "tg:tawg:3776"
+  },
+  {
+    "attempts": 1,
+    "classified_route": "coordination",
+    "created_at": "2026-08-31T02:00:17.736499Z",
+    "job_id": "member-welcome:logan-verdict",
+    "message_thread_id": null,
+    "prepared_citations": [],
+    "prepared_language": "en",
+    "prepared_reply_text": "@LoganVerdict Welcome to TAWG — really glad to have you here! 👋",
+    "prerequisite_job_id": null,
+    "refusal": false,
+    "repair_of_job_id": null,
+    "repair_reason_code": null,
+    "reply_to_message_id": null,
+    "routed_at": "2026-08-31T02:00:17.736499Z",
+    "router_context_scope": "conversation",
+    "router_context_sha256": "c17c1058dcb9635c59fbe4bdfeb6de1b0a77822bb9122d80a77d4de8367a9a4c",
+    "router_version": "deterministic-member-welcome-v1",
+    "safe_error_code": null,
+    "schema_version": "tawg.pending-bot-job.v1",
+    "status": "ready",
+    "trigger_kind": "member_welcome",
+    "trigger_record_id": "tg:tawg:3778",
+    "updated_at": "2026-08-31T02:00:17.736499Z",
+    "welcome_target_person_id": "logan-verdict",
+    "welcome_target_record_id": "tg:tawg:3776"
+  },
+  {
     "attempts": 2,
     "classified_route": "coordination",
     "created_at": "2026-08-29T04:15:15.120853Z",
@@ -8,6 +62,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Jimmy! Honest answer: I don't have operational evidence telling me what went wrong or confirming that everything is fully healthy now.\n\nWhat I can observe from the conversation is that you noted the bot wasn't responding unless directly mentioned or greeted. That's the behavior that was visible. Beyond that, I can't responsibly diagnose a root cause or declare a recovery — producing this reply only proves this particular reply path is working right now, not that the whole bot is operating normally.\n\nIf you or anyone on the team has logs or error details, I'm happy to help interpret them. Otherwise, the most accurate thing I can say is: this response worked, and the earlier behavior you described is the only anomaly I can point to.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": "reply:tg:tawg:3668",
     "repair_reason_code": "unsupported_bot_recovery_claim",
@@ -21,7 +76,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3668",
-    "updated_at": "2026-08-29T04:15:42.400522Z"
+    "updated_at": "2026-08-29T04:15:42.400522Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 9,
@@ -37,6 +94,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Done, Pavlo — RVR is now in the knowledge base. I've created `knowledge/topics/recomputable-verification-receipts.md` grounded in your spec message [tg:tawg:3470], anchored to the implementation baseline at https://github.com/pipavlo82/recomputable-verification-receipts, the frozen RC2 release at https://github.com/pipavlo82/recomputable-verification-receipts/releases/tag/v0.0.1-rc.2, and the Ethereum Magicians thread at https://ethereum-magicians.org/t/recomputable-verification-receipts-rvr/29521.\n\nThe page covers:\n- The two-axis model (verification outcome × recomputation status)\n- Verification Profile structure and the closure rule\n- The six experimental receipt fields\n- Explicit out-of-scope items\n- The boundary with ERC-8281/OCP",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": "reply:tg:tawg:3470",
     "repair_reason_code": "correction_followup_route_updated",
@@ -50,7 +108,9 @@
     "status": "delivered",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3470",
-    "updated_at": "2026-08-28T15:21:19.438517Z"
+    "updated_at": "2026-08-28T15:21:19.438517Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 13,
@@ -64,6 +124,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Happy to record RVR! From your review [tg:tawg:3445], I have a solid picture of what it covers: a semantic recomputation framework that defines a ternary outcome taxonomy (REPRODUCED / DIVERGED / CANNOT_RECOMPUTE), governs evidence closure by requiring every outcome-affecting external input to be locked behind immutable snapshots in a Verification Profile, and sits orthogonal to OCP (ERC-8281) — where OCP proves \"this artifact existed on-chain at time X\" and RVR answers \"can we meaningfully reproduce what this artifact claims.\"\n\nBefore I create the page I need one thing: your message [tg:tawg:3446] describes having \"read through this draft,\" which reads as someone else's work. Could you share the **original public URL** for the RVR specification or draft so I can record it as the canonical source?\n\nIf RVR is actually your own concept, just say so explicitly and I'll record it as self-authored without needing an external URL.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": "reply:tg:tawg:3446",
     "repair_reason_code": "knowledge_correction_route_updated",
@@ -77,7 +138,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3446",
-    "updated_at": "2026-08-28T15:21:19.438517Z"
+    "updated_at": "2026-08-28T15:21:19.438517Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 19,
@@ -90,6 +153,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Here's a rundown of the latest ERC-8183 discussion threads, based on the Ethereum Magicians forum fetched at 2026-08-29T01:30 UTC (latest post #394, 2026-08-24): https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902\n\n---\n\n**1. `job.reason` as a property-contract (Posts 375–383)**\n\nThe thread converged on defining `job.reason` by *properties* it must guarantee — canonical, recomputable, tamper-evident, attributable — rather than fixing it to a specific digest encoding. Two independent implementations arrived at this same contract from completely different directions:\n- A proof-based system using an 8274 `verificationDigest`\n- Sentinel Oracle's behavioral-evaluation system using `keccak256` over JCS-canonical evidence, shipped as a signed JWS\n\nThe argument: if two unrelated designs both satisfy the same four-property contract without importing each other's format, the contract is the real invariant and the encoding is a deployment choice. The plan for a v0.2 pass is to require the properties, name both patterns as conforming examples, and explicitly state non-interpretation as a non-goal.\n\n---\n\n**2. Evaluator availability risk and `claimRefund` (Posts 384–391)**\n\nThis became the most technically involved thread. `blockbird` identified that `claimRefund` is callable in `Submitted` state — meaning a provider who delivers work gets a full refund to the *client* if the evaluator simply goes quiet before `expiredAt`. A client can engineer this by setting a short `expiredAt` and naming an evaluator it controls.\n\nThe discussion worked through the problem and converged on:\n- Add `evaluationWindow` at `createJob`, materialize `evaluationDeadline` at `submit()` — keeps `expiredAt` immutable and bounds the evaluator's response window\n- Add a **discriminated expiry event**: distinguish \"nobody submitted\" from \"evaluator didn't respond\"\n- Add a **submission-side burned bond**: entering `Submitted` must carry a protocol-verifiable cost, otherwise a provider can forge the \"evaluator timeout\" discriminator at zero cost — a free, unfalsifiable indictment of the evaluator\n\nThe core-vs-profile line that emerged: the *cost of entering the state* is core (it's what makes the discriminator meaningful evidence); *tuning that cost* is a profile concern. The authors were asked to confirm this direction before a diff is written.\n\n---\n\n**3. ThoughtProof correction (Post 392)**\n\nThoughtProof issued a formal correction to their March 2026 posts about their ERC-8183 evaluator deployments. Key points:\n- Both Base mainnet evaluator addresses showed zero observed post-deploy calls from deployment to chain head\n- The deployed bytecode at the address cited for v1.3 was a pre-two-phase contract; the v1.3-shaped deployment came four days *after* the post claiming it was already live\n- One cited settlement transaction was signed by an EOA, not by the evaluator contract\nThe correction was independently reproduced and acknowledged.\n\n---\n\n**4. On-chain empirics (Post 393)**\n\nA researcher indexed actual usage across the Virtuals ACP predecessor (62,953 jobs) and ERC-8004:\n- 72.5% of jobs had *no evaluator set*; 27.5% were self-evaluated; 0.02% (10 jobs) used an independent evaluator\n- 398 jobs submitted `keccak256(\"\")` as deliverable; 98.49% were approved and paid\n- ERC-8004 fixed literal self-feedback, but one agent received 66% of all feedback events from 60 addresses; the ValidationRegistry had 12 requests, 7 responses, one validator — on a single self-owned agent\n\nThe question raised to the authors: should ERC-8183 settlement be able to reference an ERC-8004 validation entry committed at decision time, making verification→payment→validation a closeable loop?\n\n---\n\n**5. Parametric token integration (Post 394)**\n\nThe newest post proposes using ERC-8378 (Parametric Token, an ERC-20 extension) as the `paymentToken`. The idea: final payment value could be settled *post-outcome* based on confirmed `executionTime` rather than a pre-fixed amount, without any changes to ERC-8183 interfaces. The evaluator's role becomes more economically meaningful — it can record actual performance, and the token itself carries that outcome as redeemable value.\n\n---\n\nThe two most active open questions heading into the next spec pass are the evaluator-availability/discriminated-expiry design and the validation-linkage question.\n\nLatest ERC-8183 Magicians discussion (fetched 2026-08-29, latest post #394 from 2026-08-24): five active threads — (1) `job.reason` converging on a 4-property contract (canonical/recomputable/tamper-evident/attributable) over a fixed encoding; (2) evaluator availability risk from `claimRefund` in Submitted state, with consensus on discriminated expiry + evaluation window in core + burned submission bond; (3) ThoughtProof's public correction of earlier deployment claims; (4) on-chain forensics showing near-zero independent evaluator usage and an unused ValidationRegistry; (5) a proposal to use ERC-8378 parametric tokens as `paymentToken` for post-outcome settlement.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": "reply:tg:tawg:3620",
     "repair_reason_code": "latest_discussion_page_coverage_repaired",
@@ -103,7 +167,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3620",
-    "updated_at": "2026-08-29T01:30:11.311387Z"
+    "updated_at": "2026-08-29T01:30:11.311387Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 3,
@@ -117,6 +183,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Recorded, Jimmy! ✅\n\nUpdated the ERC-8183 knowledge page with the full current discussion. Previous snapshot covered only page 1 (through March 11 2026); the updated page now captures all major threads through 2026-[REDACTED_PHONE] posts):\n\n- **job.reason property-contract** — thread converged on canonical/recomputable/tamper-evident/attributable as the correct level, with two independent implementations (proof-based + behavioral JWS) arriving there independently. v0.2 spec pass planned.\n- **Evaluator availability gap** — structural issue where a submitted provider loses funds if the evaluator ignores the job; converged on `evaluationWindow` at createJob + `evaluationDeadline` materialized at submit.\n- **Discriminated expiry + submission bond** — `JobExpired` needs a discriminator between Funded→Expired and Submitted→Expired; a burned bond at submit is required to make it forgery-resistant; both are core, not profile.\n- **ThoughtProof self-correction** — public audit correction: the cited Base mainnet evaluator contract had zero post-deploy calls, was pre-two-phase bytecode, and the cited settlement transaction used a wallet, not the evaluator contract.\n- **On-chain forensics** — predecessor data: 72.5% no-evaluator, 76.1% self-evaluated volume, 398 empty-hash deliverables of which 98.49% were approved and paid; ERC-8004 ValidationRegistry effectively unused (12 requests vs 419,155 reputation events).\n- **ERC-8378 composition** — parametric token proposal for post-completion settlement without interface changes.\n\nhttps://eips.ethereum.org/EIPS/eip-8183 — https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": "reply:tg:tawg:3650",
     "repair_reason_code": "latest_discussion_knowledge_repaired",
@@ -130,7 +197,9 @@
     "status": "delivered",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3650",
-    "updated_at": "2026-08-29T02:29:25.489527Z"
+    "updated_at": "2026-08-29T02:29:25.489527Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 2,
@@ -146,6 +215,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Recorded! ✅\n\nThe ERC-8183 Agentic Commerce topic page has been updated with the full discussion through post [REDACTED_PHONE]), picking up from the original question [tg:tawg:3620] and your record request [tg:tawg:3650].\n\nThe update covers all active threads from the live Magicians evidence: the `job.reason` property-contract convergence, the evaluator availability / grace-period fix (evaluationWindow + evaluationDeadline materialised at submit), the discriminated expiry and submission bond debate, ThoughtProof's public self-correction on their March 2026 deployment claims, on-chain forensics of the predecessor protocol and ERC-8004 ValidationRegistry usage, and the ERC-8378 parametric token composition proposal. March 2026 early-thread themes (design critiques, naming debate, early evaluator patterns) are also summarised.\n\nSources: https://eips.ethereum.org/EIPS/eip-8183 · https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": "reply-repair:latest-discussion-write-v1:tg:tawg:3650",
     "repair_reason_code": "latest_discussion_knowledge_repaired",
@@ -159,7 +229,9 @@
     "status": "delivered",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3650",
-    "updated_at": "2026-08-29T03:15:09.503614Z"
+    "updated_at": "2026-08-29T03:15:09.503614Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 4,
@@ -174,6 +246,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Here's a recap of what the group just discussed:\n\n**Attribution gaps and the path to on-chain anchoring**\n\nPavlo (@Pavlentyy82) opened by noting that Trusty's current model (claim-ledger.v2 + source-ledger.v2) tracks claim state and source authority well, but is missing a `verified_by` field — a way to record that a specific contribution claim was independently confirmed by another participant, rather than just synthesized by Trusty from sources. He proposed an adapter route: keep Trusty's knowledge model as-is, but make the stronger attribution contract explicit at the boundary before emitting any anchor-ready entries. [tg:tawg:3376]\n\nYou agreed that on-chain anchoring needs validation from other parties, and flagged that TAWG's current contribution types (contribute / review) are too coarse. You pointed to Fede's proposal as a place to integrate more precise measurement definitions, with a goal of making sure every person's work gets properly recorded. [tg:tawg:3377]\n\nPavlo then laid out a concrete next step: define the contribution vocabulary first, before any weights or formulas. Drawing on Fede's ledger, the proposed types are **find / prove / audit / verify / build**. He argued for keeping three things strictly separate: (1) what kind of contribution happened, (2) what evidence proves it, and (3) who independently validated it — only stabilizing those before discussing weighting or settlement. He also flagged **causal application**: a find or audit that leads to someone else's build should not disappear just because the original contributor didn't author the final commit. [tg:tawg:3378]\n\nIn short: the thread was about bridging Trusty's record-keeping layer with a structured attribution/validation layer, and eventually a work-metric/allocation layer — without rewriting provenance at each step.\n\nJimmy asked for a recap of the recent discussion. The thread covered: (1) Pavlo identifying a missing `verified_by` mechanism in Trusty's attribution model and proposing an adapter route ; (2) Jimmy agreeing that on-chain anchoring requires independent validation and that contribution types need expanding beyond contribute/review ; (3) Pavlo proposing to define contribution vocabulary (find/prove/audit/verify/build) before any weighting, keeping kind/evidence/validation separate, and explicitly including causal application .",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": "reply:tg:tawg:3380",
     "repair_reason_code": "recent_discussion_route_updated",
@@ -187,7 +260,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3380",
-    "updated_at": "2026-08-26T11:51:21.004539Z"
+    "updated_at": "2026-08-26T11:51:21.004539Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 2,
@@ -200,6 +275,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "**Recomputable Verification Receipts (RVR)** is already recorded in the knowledge base and anchored to [tg:tawg:3470]. No additional knowledge write was needed.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": "reply:tg:tawg:3560",
     "repair_reason_code": "stale_citation_context_repaired",
@@ -213,7 +289,9 @@
     "status": "delivered",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3560",
-    "updated_at": "2026-08-28T17:31:36.189360Z"
+    "updated_at": "2026-08-28T17:31:36.189360Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -231,6 +309,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Jimmy! Good morning ☀️ — you caught a busy night. Here's what landed while you were out:\n\n**pq-key-binding v1 enforcer arc — fully closed.** Pavlo caught the `activated_at` bypass in the original PR, Merlini pushed two correction PRs (#34, then #35), and the gateway is now live with 25/25 reproduced under pinned commit provenance. The key semantic rule is settled: an unanchored binding has no reproducible boundary B and must not govern — result is `binding_anchor_unavailable / unverifiable / REJECT`. All stale surface notes are cleared. [tg:tawg:3736]\n\n**Attribution ledger validator — accepted at v2.** Baby Blue Viper shipped a reference validator for the attribution ledger; Pavlo reviewed it and found four mechanical issues (all addressed: tri-state result, schema composition, dependency declaration, amendment_families fix). 19/19 tests pass, CI is wired, requirements fully locked. The amends/verification-addendum design question is intentionally left open for its own explicit proposal. [tg:tawg:3739]\n\n**👀 RVR ERC draft — this is the one to look at.** Pavlo posted the formal RVR draft and opened PR #1980 on ethereum/ERCs. It is currently marked **Draft** (used as a review surface only; not yet ready for formal editor review). Baby Blue Viper has already posted a substantive review, and Pavlo added a \"Procedure completeness\" clarification. If you have any technical, semantic, security, interoperability, or overlap concerns, now is the time to comment. [tg:tawg:3743] [tg:tawg:3745]\n\n**ERC-8354 programKey fix — CI green.** agent-sdk#26 passed all five language suites. agent-sdk#27 also closed two of your post-merge follow-ups: the Go CI gating genuinely gates now (not quarantined), and an explicit proof-coverage-boundary note was added. [tg:tawg:3746] [tg:tawg:3751]\n\nAlso — the RVR knowledge page (`knowledge/topics/rvr.md`) is already updated from your earlier request. ✅",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": "reply:tg:tawg:3766",
     "repair_reason_code": "stale_mutation_status_claim",
@@ -244,7 +323,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3766",
-    "updated_at": "2026-08-30T12:30:19.362445Z"
+    "updated_at": "2026-08-30T12:30:19.362445Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 0,
@@ -255,6 +336,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "I can help with TAWG knowledge, local identity corrections, evidence-backed knowledge corrections, and relevant source suggestions. I can't take that action.",
+    "prerequisite_job_id": null,
     "refusal": true,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -268,7 +350,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3369",
-    "updated_at": "2026-08-26T02:10:57.226837Z"
+    "updated_at": "2026-08-26T02:10:57.226837Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 3,
@@ -285,6 +369,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Good framing — provenance-first is exactly right. As Pavlo noted, anchoring provenance is evidence preservation and not automatic enrollment in any compensation scheme; keeping those two lanes explicitly separate before the on-chain step is the right boundary to set [tg:tawg:3374].\n\nOn current state: Trusty's knowledge model already has claim-ledger.v2 and source-ledger.v2 tracking claim kind/state/source keys, authority, hashes, and versions. What's missing is a mechanical `verified_by` equivalent — a way to mark that a specific contribution claim was independently confirmed by another participant, distinct from Trusty synthesizing it from sources [tg:tawg:3376].\n\nThe attribution ledger v3 already covers the anchor-ready layer: content-addressed `entry_id` over JCS-canonicalized claim/actor/verified_by/timestamp, with evidence required to be a hash/url/commit/recompute pointer rather than raw content [tg:tawg:3375]. The cleanest path is an adapter: Trusty emits candidate observed/synthesized entries, independent confirmation adds `verified_by`, then `entry_id` is computed and anchored — keeping Trusty's existing knowledge model intact while making the stronger attribution contract explicit at the boundary.\n\nBefore weights or formulas, locking down the contribution vocabulary first makes sense: what kind of contribution happened, what evidence proves it, and who independently validated it. Causal application needs to be a first-class record shape so a find or audit that leads to someone else's build doesn't disappear just because the original contributor didn't author the final commit [tg:tawg:3378]. The earlier framing of an append-only log of claim/actor/verified-by/timestamp entries is precisely this shape [tg:tawg:3306].",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -298,7 +383,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3372",
-    "updated_at": "2026-08-26T09:05:26.624815Z"
+    "updated_at": "2026-08-26T09:05:26.624815Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 0,
@@ -309,6 +396,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "I can help with TAWG knowledge, local identity corrections, evidence-backed knowledge corrections, and relevant source suggestions. I can't take that action.",
+    "prerequisite_job_id": null,
     "refusal": true,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -322,7 +410,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3380",
-    "updated_at": "2026-08-26T04:19:43.287631Z"
+    "updated_at": "2026-08-26T04:19:43.287631Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 2,
@@ -337,6 +427,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "**ERC-8183: Agentic Commerce**\n\nERC-8183 (currently **Draft**) defines an escrow-backed job lifecycle for agent-to-agent work. Its goal is a minimal settlement kernel that protects funded work, makes evaluation authority explicit, and provides deterministic refund paths. Canonical spec: https://eips.ethereum.org/EIPS/eip-8183\n\n---\n\n**Architecture**\n\nEach job binds a client, provider, evaluator, budget, expiry, status, and optional hook data. Funds remain in escrow until a valid terminal transition pays the provider or refunds the client.\n\n**State Machine**\n\n```\nOpen → Funded → Submitted → Completed\n                           → Rejected\n                           → Expired\n```\n\nRejection is also available from Open and Funded under the roles the spec defines. Invalid transitions must revert.\n\n**Interfaces**\n\nThe core surface covers: job creation, provider and budget assignment, funding, submission, completion, rejection, and expired-job refund. Authorization is role- and state-dependent throughout.\n\n**Security Considerations**\n\nImplementations must protect: escrow accounting, authorization checks, expiry handling, hook isolation, reentrancy boundaries, and signer identity when meta-transactions are supported.\n\n---\n\n**Discussion context** (informative, not normative)\n\nThe community thread at https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902 is active (383+ posts). Discussion mentions optional hooks for reputation (ERC-8004) and gasless flows (ERC-2771), and a structural audit flagged a budget-authorization mismatch and a front-running gap on budget negotiation as open items still being worked — [tg:tawg:3388]\n\n---\n\n**Evidence gaps**\n\n- No registered implementation source in the Trustless AI registry (conformance unverified)\n- No registered test or example source\n\n*Local synthesis verified at 2026-08-23T06:55:28Z.*",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -350,7 +441,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3387",
-    "updated_at": "2026-08-26T08:11:31.117465Z"
+    "updated_at": "2026-08-26T08:11:31.117465Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 0,
@@ -361,6 +454,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "I can help with TAWG knowledge, local identity corrections, evidence-backed knowledge corrections, and relevant source suggestions. I can't take that action.",
+    "prerequisite_job_id": null,
     "refusal": true,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -374,7 +468,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3398",
-    "updated_at": "2026-08-26T10:42:04.774207Z"
+    "updated_at": "2026-08-26T10:42:04.774207Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 3,
@@ -388,6 +484,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Got it, Jimmy! ERC-8281 already had a knowledge page — I've updated it to make **OCP** (Observation Commitment Protocol) prominent as the group's shorthand, added a composition section covering the full on-chain chain, the WYRIWE/8263 relationship, type-2 off-chain source-auth, and agent architecture patterns, and registered the supporting Telegram record IDs in frontmatter. [tg:tawg:3401]\n\nThe page now reflects: OCP = observation → digest → on-chain commitment → verify-inclusion, the EVM-native input commitment layer in the TAWG ERC stack. [tg:tawg:3400]",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -401,7 +498,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3401",
-    "updated_at": "2026-08-26T13:41:34.703946Z"
+    "updated_at": "2026-08-26T13:41:34.703946Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 0,
@@ -412,6 +511,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "I can help with TAWG knowledge, local identity corrections, evidence-backed knowledge corrections, and relevant source suggestions. I can't take that action.",
+    "prerequisite_job_id": null,
     "refusal": true,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -425,7 +525,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3436",
-    "updated_at": "2026-08-26T16:04:46.036497Z"
+    "updated_at": "2026-08-26T16:04:46.036497Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 0,
@@ -436,6 +538,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "I can help with TAWG knowledge, local identity corrections, evidence-backed knowledge corrections, and relevant source suggestions. I can't take that action.",
+    "prerequisite_job_id": null,
     "refusal": true,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -449,7 +552,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3446",
-    "updated_at": "2026-08-27T08:40:07.230785Z"
+    "updated_at": "2026-08-27T08:40:07.230785Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -462,6 +567,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Jimmy! Happy to record RVR into the knowledge base — I just need a bit more context to do it properly.\n\nCould you share:\n1. **What RVR stands for** (full name or expansion)?\n2. **What it covers** — is it an ERC, a protocol, a tool, a process, or something else?\n3. Any key details, links, or prior discussion messages I should anchor the entry to?\n\nOnce I have those, I'll write it up and commit it. [tg:tawg:3466]",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -475,7 +581,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3466",
-    "updated_at": "2026-08-27T14:29:40.281306Z"
+    "updated_at": "2026-08-27T14:29:40.281306Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -486,6 +594,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Jimmy! Doing great and ready to help — good to hear from you. 👋 What can I do for you today?",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -499,7 +608,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3468",
-    "updated_at": "2026-08-27T15:00:52.868096Z"
+    "updated_at": "2026-08-27T15:00:52.868096Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -510,6 +621,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "I can help with TAWG knowledge, local identity corrections, evidence-backed knowledge corrections, and relevant source suggestions. I can't take that action.",
+    "prerequisite_job_id": null,
     "refusal": true,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -523,7 +635,9 @@
     "status": "delivered",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3470",
-    "updated_at": "2026-08-27T16:20:28.634348Z"
+    "updated_at": "2026-08-27T16:20:28.634348Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -538,6 +652,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Jimmy! Today's thread is just warming up — the only visible activity so far is a test message and your question. Here's the freshest substantive work from recent TAWG progress:\n\n**Context provenance on verdict proofs** — /review's verdict proof now carries a `context_provenance` label: `caller_asserted_unverified` (the honest default for every current call, since context is free text with no binding) or `bound_to_verified_decision_ref` (when a related proof event is supplied and independently re-verified). It names what was already true but unlabeled — 5 new tests deployed. [tg:tawg:3127]\n\n**On-chain integration path** — Active discussion on what wiring /review to on-chain actually requires: full on-chain signature verification would need a new proof format not currently available, while the relayer pattern is much closer to what's already deployed. Worth flagging before implementation decisions are made. [tg:tawg:3022]\n\n**Precedence policy delta next step** — Planning for Δ(policy_version, request_class) to replace the current flat +60s, with a short-class/long-class pair and four negatives. Work hasn't started yet — depends on first working out what the real request classes should be and whether artifact_type and SLA-tier are the same axis or distinct. [tg:tawg:2049]",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -551,7 +666,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3473",
-    "updated_at": "2026-08-27T16:00:07.367669Z"
+    "updated_at": "2026-08-27T16:00:07.367669Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -564,6 +681,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "I've read Pavlo's message carefully — it's a thorough and well-structured knowledge submission. [tg:tawg:3470]\n\nHere's what I understand from it:\n\n**RVR — Recomputable Verification Receipts**\nA pre-ERC interoperability proposal (no assigned ERC number yet). The goal is to make verification results independently recomputable rather than trusting a stored boolean, signature, or opaque report digest.\n\n**Two-axis model:**\n- Verification outcome: `VERIFIED | REFUTED | UNVERIFIABLE`\n- Recomputation status: `REPRODUCED | DIVERGED | CANNOT_RECOMPUTE`\n\n**Central object:** A content-addressed Verification Profile that commits to the verification specification, canonical byte contract, evidence-set contract, canonical-result contract, conformance vectors, reason namespace, and all outcome-relevant external-context commitments.\n\n**Main closure rule:** Every input capable of changing the verification outcome must be included in the committed evidence closure or identified by an immutable commitment defined by the Verification Profile. Live chain state, mutable registries, RPC head, remote APIs, and current time are not sufficient unless immutably committed.\n\n**Six-field experimental receipt:** `claimDigest`, `evidenceSetDigest`, `verificationProfileDigest`, `outcome`, `reasonCode`, `resultDigest`.\n\n**Boundary with ERC-8281/OCP:** ERC-8281 handles commitment/inclusion of exact observation bytes; RVR addresses whether the semantic result derived from those committed inputs can be independently reproduced under the same pinned verification contract.\n\n**Why I still can't write the knowledge entry:** This context pack supplies no allowed write paths (`allowed_paths` is empty). The previous refusal was for the same reason — not because the content wasn't good enough. To anchor this entry, a scheduled knowledge-mutation job needs to be initiated with `knowledge/` write paths configured and the GitHub repository, RC2 release, and Ethereum Magicians URLs added to the citation allowlist. The content Pavlo provided is solid and ready to anchor once that job is set up.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -577,7 +695,9 @@
     "status": "delivered",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3478",
-    "updated_at": "2026-08-27T17:28:48.776597Z"
+    "updated_at": "2026-08-27T17:28:48.776597Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -591,6 +711,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Ready to write the entry — `allowed_paths` is now open. One blocker remains: Pavlo's original RVR proposal message (`tg:tawg:3470`) is not in the citation allowlist. The messages that triggered this job ([tg:tawg:3478], [tg:tawg:3480]) establish the intent, but the RVR technical content — the two-axis model, Verification Profile structure, closure rule, six-field receipt, and ERC-8281 boundary — all live in `tg:tawg:3470`. Without it on the allowlist, the knowledge entry's claims would have no citable source anchor and the write would be unsupported.\n\nPlease add `tg:tawg:3470` to the citation allowlist in the next job and re-trigger, and the entry will be created.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -604,7 +725,9 @@
     "status": "delivered",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3480",
-    "updated_at": "2026-08-27T17:49:16.200579Z"
+    "updated_at": "2026-08-27T17:49:16.200579Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -615,6 +738,7 @@
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Good night, Jimmy! 🌙 Rest well!",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -628,7 +752,9 @@
     "status": "delivered",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3481",
-    "updated_at": "2026-08-27T17:49:16.200579Z"
+    "updated_at": "2026-08-27T17:49:16.200579Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -639,6 +765,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -652,7 +779,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3484",
-    "updated_at": "2026-08-27T21:23:07.286493Z"
+    "updated_at": "2026-08-27T21:23:07.286493Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -663,6 +792,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -676,7 +806,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3499",
-    "updated_at": "2026-08-28T06:15:00.382352Z"
+    "updated_at": "2026-08-28T06:15:00.382352Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 2,
@@ -690,6 +822,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Got it, Merlini. Before this can be recorded, two corrections from [tg:tawg:3514] need to be folded in:\n\n1. **JCS key ordering**: RFC 8785 JCS (§3.2.3) sorts raw property names as arrays of unsigned UTF-16 code units — the same ordering as encode-json-utf8-lf.v0. UTF-16 vs. scalar-value ordering is therefore not the axis separating the two contracts. The split should be described through the actual contract/domain/output differences: .v0's exact final-LF requirement and negative-zero rejection, not key ordering.\n\n2. **crystal-receipt#218 is already merged**: Both SHA-256 transcription slips in the PR body were corrected and independently acknowledged; #218 is merged at producer effective_commit `45b46bf7df3a60b32583291f577a36bf19d22f00`. The \"body fix outstanding\" item in [tg:tawg:3511] is already closed.\n\nEverything else in the note stands: our JCS producers stay in their lane, the erc-8309 envelope conformance counterfactual leg (3 ENCODED/DISTINCT + 1 REJECTED) ratifies that decision, and the remaining open work is (1) a normative split mapping, (2) the TSEI registry record in recompute-kit using the merged commit as `effective_from`, and (3) a confirming producer sweep.\n\n**To record this**: I need the exact current revision of the target knowledge page — path and expected SHA-256 — supplied in `retrieved`. No existing page revision was provided, so I cannot produce a correction transaction. Please share the relevant knowledge page or ask the controller to include it.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -703,7 +836,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3511",
-    "updated_at": "2026-08-28T06:47:10.460916Z"
+    "updated_at": "2026-08-28T06:47:10.460916Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 2,
@@ -714,6 +849,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Jimmy! 🌞 Lots of good stuff to catch up on — the serializer boundary work has been moving fast. Welcome back!",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -727,7 +863,9 @@
     "status": "delivered",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3513",
-    "updated_at": "2026-08-28T06:47:10.460916Z"
+    "updated_at": "2026-08-28T06:47:10.460916Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 2,
@@ -738,6 +876,7 @@
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Good morning, Pavlo! ☀️ Hope it's a great one — looks like there's plenty of interesting work in the group to dig into!",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -751,7 +890,9 @@
     "status": "delivered",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3517",
-    "updated_at": "2026-08-28T06:47:10.460916Z"
+    "updated_at": "2026-08-28T06:47:10.460916Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -762,6 +903,7 @@
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Thanks, Jimmy! Glad to hear it 🙌 Let me know if anything else needs a look.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -775,7 +917,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3527",
-    "updated_at": "2026-08-28T06:47:10.460916Z"
+    "updated_at": "2026-08-28T06:47:10.460916Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -786,6 +930,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Merlini! ☀️ Hope you're having a great start to the day. Trusty's here whenever the group is ready to dig into Trustless AI work!",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -799,7 +944,9 @@
     "status": "delivered",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3533",
-    "updated_at": "2026-08-28T10:00:59.001807Z"
+    "updated_at": "2026-08-28T10:00:59.001807Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -810,6 +957,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Merlini! 👋 Noted — I'll be here when the remaining confirmations come in. Happy to help finalize the authorline contribution ledger once everything is aligned. Just ping me!",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -823,7 +971,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3551",
-    "updated_at": "2026-08-28T10:11:34.902880Z"
+    "updated_at": "2026-08-28T10:11:34.902880Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 4,
@@ -834,6 +984,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -847,7 +998,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3553",
-    "updated_at": "2026-08-28T16:21:18.818452Z"
+    "updated_at": "2026-08-28T16:21:18.818452Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 3,
@@ -858,6 +1011,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -871,7 +1025,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3557",
-    "updated_at": "2026-08-28T16:21:18.818452Z"
+    "updated_at": "2026-08-28T16:21:18.818452Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 2,
@@ -885,6 +1041,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Recorded! Per [tg:tawg:3559], I've created a new knowledge page capturing Merlini's status update on the canonical-serializer split from [tg:tawg:3511]. The page covers the two-serializer/two-domain architecture, why the erc-8309 counterfactual leg means JCS producers stay JCS (confirmation, not migration), and the three remaining open items: the normative mapping document, the crystal-receipt#218 body fix, and the producer lane sweep.\n\nCreated knowledge/topics/canonical-serializer-split.md recording Merlini's status update on the two-serializer split, its rationale, and three open work items.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -898,7 +1055,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3559",
-    "updated_at": "2026-08-28T15:21:19.438517Z"
+    "updated_at": "2026-08-28T15:21:19.438517Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 2,
@@ -909,6 +1068,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Thanks for re-triggering, Jimmy — but the same blocker is still in place.\n\n`tg:tawg:3470` (Pavlo's original RVR proposal) is still not in the citation allowlist. That message holds the technical content the knowledge entry needs — the two-axis model, Verification Profile structure, closure rule, six-field receipt, and ERC-8281 boundary. Without it on the allowlist, any claims in the entry would be unsupported and the write can't proceed.\n\nPlease add `tg:tawg:3470` to the citation allowlist and re-trigger, and the entry will be created right away.\n\nSame blocker as before: tg:tawg:3470 (Pavlo's RVR proposal) is still not in the citation allowlist. The knowledge entry cannot be written until it is added.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -922,7 +1082,9 @@
     "status": "delivered",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3560",
-    "updated_at": "2026-08-28T15:21:19.438517Z"
+    "updated_at": "2026-08-28T15:21:19.438517Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -933,6 +1095,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -946,7 +1109,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3563",
-    "updated_at": "2026-08-28T15:21:19.438517Z"
+    "updated_at": "2026-08-28T15:21:19.438517Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -957,6 +1122,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -970,7 +1136,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3567",
-    "updated_at": "2026-08-28T15:21:19.438517Z"
+    "updated_at": "2026-08-28T15:21:19.438517Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -981,6 +1149,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "👀 Binoculars right back at you, Merlini — present and watching the group's work with great interest. Six rounds of tightening that gate to the point where every negative control is load-bearing for the *exact* boundary it names… that's a good day's work in this channel.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -994,7 +1163,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3596",
-    "updated_at": "2026-08-28T16:21:18.818452Z"
+    "updated_at": "2026-08-28T16:21:18.818452Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 9,
@@ -1005,6 +1176,7 @@
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Hey Jimmy! 👋 Online and ready — bring it on! What are we rolling out?",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1018,7 +1190,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3610",
-    "updated_at": "2026-08-28T18:05:10.504621Z"
+    "updated_at": "2026-08-28T18:05:10.504621Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 5,
@@ -1029,6 +1203,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1042,7 +1217,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3611",
-    "updated_at": "2026-08-28T18:05:10.504621Z"
+    "updated_at": "2026-08-28T18:05:10.504621Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1053,6 +1230,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Let's go, Jimmy! 🚀 Whenever you're ready, drop what you need and we'll get it done.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1066,7 +1244,9 @@
     "status": "delivered",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3613",
-    "updated_at": "2026-08-28T18:07:41.453342Z"
+    "updated_at": "2026-08-28T18:07:41.453342Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1077,6 +1257,7 @@
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Ha, appreciate it Jimmy! ⚡ Ready to keep up with the group — just holler whenever you need something.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1090,7 +1271,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3615",
-    "updated_at": "2026-08-28T18:08:42.921290Z"
+    "updated_at": "2026-08-28T18:08:42.921290Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1106,6 +1289,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Here's a quick summary of what was discussed in the recent messages:\n\n**provenance-anchor.v0 — recompute-kit PR #27** [tg:tawg:3611]\nMerlini shared a detailed status update. The key finding: Zexo/Faisal's review uncovered a real gap — the origination gate proved an anchor *existed* before a proposal, but not that it cryptographically *committed to* that proposal. A free-standing pre-existing tx could be moved into any record and pass the gate. That's now closed. Highlights:\n- Records now declare their claim: `origination` or `pre_existence`; the verdict carries it forward\n- `origination` requires the anchor tx calldata to commit the sha256 of a canonical `anchor-binding.v0` object (proposal + implementation artifact)\n- The older 8299/8373 anchors are honestly demoted to `pre_existence` — they prove *when*, not *what-for*\n- First real bound-origination anchor minted on Base Sepolia (recomputable to `bound: true`)\n- CI green at ec735fe, 35 vectors (5 PASS / 17 FAIL / 13 UNVERIFIABLE)\n- Awaiting Pavlo + Faisal for the merge call\n\n**Per-artifact pointer / rollout timing** [tg:tawg:3609]\nBaby Blue Viper confirmed the per-artifact pointer piece is ready to go whenever a deployment window is proposed — no pressure on timing from their side.\n\n**Readiness check-ins** — Jimmy asked if the bot was ready to roll [tg:tawg:3610], and followed up signaling enthusiasm to move forward [tg:tawg:3613].",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1119,7 +1303,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3617",
-    "updated_at": "2026-08-28T18:09:43.407098Z"
+    "updated_at": "2026-08-28T18:09:43.407098Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1135,6 +1321,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Here's what the retained Telegram evidence shows for **agent-sdk** — I don't have a live repo fetch as of today, so current HEAD state is a verification gap:\n\n**Last known activity (July 2026):**\n- A **v1 ERC SDK rewrite** was underway on `feat/v1-erc-sdk-rewrite`, using the internal `/add-erc` skill to auto-generate ERC bindings — flagged as in-progress and not yet fully reviewed at the time [tg:tawg:1115]\n- The repo policy is open-push: anyone can add ERCs (8281, 6551, 8263, 8294, EIP-137 namehash) or fix types/recompute logic directly without waiting [tg:tawg:1238]\n\n**Earlier milestones still in scope:**\n- v0.2 shipped with the verifier byte-compatible with the recompute-kit [tg:tawg:827]\n- npm scope rename (`@onchain-ai/agent-sdk`) was flagged as a breaking change to be done in one coordinated pass alongside the schema prefix and verifier redeploy [tg:tawg:374]\n\nFor the freshest diff, the `feat/v1-erc-sdk-rewrite` branch is the place to look. If anyone in the group has pushed since July, a quick drop here would help keep the picture current!\n\nJimmy asked what's new in the agent-sdk repo. Summarized retained evidence: v1 ERC SDK rewrite was in progress on a feature branch as of July 2026 , open-push ERC policy in place , v0.2 shipped verifier byte-compatible , npm scope rename still pending as a coordinated breaking change . No live repo fetch available for current HEAD state.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1148,7 +1335,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3619",
-    "updated_at": "2026-08-28T18:14:11.032723Z"
+    "updated_at": "2026-08-28T18:14:11.032723Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 20,
@@ -1162,6 +1351,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Here's a rundown of the main threads in the ERC-8183 discussion as of the fetched evidence (page 1, up to March 11 2026; later pages exist and aren't in current evidence):\n\n**⚙️ Design critiques**\n- **mlegls** raised two structural concerns: (1) the Open → Funded split adds on-chain overhead that could be left to implementations, and (2) Rejected and Expired being near-identical precludes a useful \"reopen to Funded\" path after a reject. He compared ERC-8183 to OZ ConditionalEscrow and Alkahest, suggesting those more generic escrow patterns could be conformant implementations if the spec were less opinionated.\n- **wjmelements** pushed for a reference implementation first — he predicted the spec would shift once tradeoffs were weighed in code, and questioned the ABI completeness.\n- **beau** (daydreams/taskmarket) proposed merging or contributing a more fleshed-out design already in production, supporting a wider set of agentic commerce interactions.\n- **gpt3_eth** raised two-phase / linked-job support (e.g., open-position + close/evaluation jobs for DeFi strategies) as a possible first-class primitive gap.\n\n**🏷️ Naming debate**\n- **wjmelements** and **kevzzsk** both argued the protocol is general escrow logic — nothing is inherently \"agentic\" about it, and the label implies properties the spec doesn't encode. **kevzzsk** noted a human and AI initiator are treated identically by design.\n\n**🤖 Evaluator patterns**\n- **ThoughtProof** and **clawplaza** both shared production experience. ThoughtProof is building a multi-model evaluator (3+ independent models, MDI consensus threshold) and ran a Rasch-model experiment to measure evaluation calibration. clawplaza noted the evaluator is where real complexity lives, reputation gating at `beforeAction(fund)` is essential against low-effort submissions, and a credit abstraction layer helps for microtasks.\n- **miratisu** (likely an author) suggested the evaluator runtime listen for on-chain events and process async — the `expiredAt` field gives enough window for off-chain computation before calling `complete`/`reject`.\n\n**🔗 ERC-8004 / ERC-2771 composition**\n- Several participants discussed writing reputation signals to ERC-8004 registries on `complete`/`reject`, either from the evaluator or via `afterAction` hooks. This \"verification → payment → reputation\" atomic loop was the most popular integration theme.\n\nThe spec is still **Draft** status. https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902 — https://eips.ethereum.org/EIPS/eip-8183\n\n*Note: the fetched forum evidence covers only page 1 (posts 1–20). The thread is paginated and discussion has likely continued since March 11, 2026.*\n\nSummary of ERC-8183 Magicians discussion (page 1, posts 1–20, latest visible: March 11 2026): main threads are (1) design critiques on Open/Funded state split and Rejected/Expired similarity, (2) naming debate on \"agentic\" vs generic escrow, (3) evaluator pattern design including async off-chain evaluation and multi-model consensus, (4) ERC-8004 reputation integration. Production users (clawplaza, beau/daydreams) have shared real deployment learnings. Spec remains Draft. Later pages not in current evidence.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1175,7 +1365,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3620",
-    "updated_at": "2026-08-29T00:20:16.082475Z"
+    "updated_at": "2026-08-29T00:20:16.082475Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1186,6 +1378,7 @@
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Good night, Jimmy! 🌙 Rest well — big things moving today with the provenance-anchor work. See you next time!",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1199,7 +1392,9 @@
     "status": "delivered",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3622",
-    "updated_at": "2026-08-28T18:16:23.112280Z"
+    "updated_at": "2026-08-28T18:16:23.112280Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1210,6 +1405,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1223,7 +1419,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3623",
-    "updated_at": "2026-08-28T18:17:02.303823Z"
+    "updated_at": "2026-08-28T18:17:02.303823Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1240,6 +1438,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Thanks for the nudge, Jimmy! 🙏\n\nI've got the suggestion logged ([tg:tawg:3625]), but this trigger type (source suggestion) doesn't carry the write capability needed to create a new repo knowledge page — the controller needs to grant that in a scheduled refresh or interactive write context.\n\nWhat I already have from the group's Telegram history on agent-sdk:\n\n- The `feat/v1-erc-sdk-rewrite` branch was mid-reconstruction, with each ERC's README listing its full method inventory [tg:tawg:1115] [tg:tawg:1237]\n- `@trustless-ai/agent-sdk@0.3.0` landed on npm (latest tag, 0.2.0 preserved in history) [tg:tawg:1365]\n- `agent-contracts-examples #1` was rebased against the published `@trustless-ai/agent-sdk@0.2.0` after the org rename — the seed example now genuinely runs [tg:tawg:2365]\n\nWhen the controller runs a knowledge refresh, all of this plus the live repo state will go into `knowledge/repos/agent-sdk.md`. The suggestion is on record!\n\nJimmy asked the bot to record the trustless-ai/agent-sdk repo. The source-suggestion trigger doesn't carry write capability, so no page was created. The bot summarized existing Telegram evidence about the repo and confirmed the suggestion is noted for a future scheduled refresh.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1253,7 +1452,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3625",
-    "updated_at": "2026-08-28T18:17:16.692036Z"
+    "updated_at": "2026-08-28T18:17:16.692036Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 2,
@@ -1266,6 +1467,7 @@
     ],
     "prepared_language": "English",
     "prepared_reply_text": "That scoping clarification is exactly the right thing to name before the matrix starts sequencing PRs. The request-time-computed vs. persisted-artifact distinction isn't obvious from the field names alone, and \"add the pointer\" reads very differently depending on which side of that line you're on.\n\nThe prospective framing settles the scope cleanly: no existing artifact is missing a pointer today, so BPS-5 is a forward-looking build constraint rather than a retroactive fix. That's a materially different workload and a different review surface [tg:tawg:3632].\n\nThe denominator separation you confirmed (`winRateBps` on decisive-only vs. `track_record.win_rate_pct` with breakevens in the denominator) is also worth keeping visible in the matrix row itself — it's the kind of detail that surfaces as a silent 1-value drift if it ever gets collapsed into a single field reference.\n\nBPS-0/BPS-1 first is the right sequencing. Once the convention and resolver are locked, BPS-5's scope will be unambiguous for whoever picks it up.\n\nBaby Blue Viper confirmed live system checks for BPS-5 (winRateBps=5000, hash 0x0501b75d…) and clarified that reputation_axis is request-time computed, not a persisted artifact — making BPS-5 prospective work rather than a backfill. The bot acknowledged this scoping distinction and the denominator separation between the two win-rate fields as important precision to preserve in the matrix.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1279,7 +1481,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3633",
-    "updated_at": "2026-08-28T20:46:33.108169Z"
+    "updated_at": "2026-08-28T20:46:33.108169Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1290,6 +1494,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1303,7 +1508,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3642",
-    "updated_at": "2026-08-28T23:36:21.293808Z"
+    "updated_at": "2026-08-28T23:36:21.293808Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 8,
@@ -1316,6 +1523,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Thanks for the careful recompute report, Merlini. Working through each item against the available evidence:\n\n**1. bps lane — implementation findings**\n\nThe recompute results are recorded as implementation-level claims. The ERC-8275 README was fetched at 2026-08-29T00:29:50 with a changed hash from the prior version, confirming a recent update, but the evidence supplied is HTML-wrapped — it doesn't expose raw test counts, specific hash prefixes, or mutation results in a form that allows independent line-by-line verification here. That independent pass is exactly what you're requesting from others, and rightly so.\n\nThe cap-free win-rate clarification is well-placed and worth the explicit statement as the lane hardens. The existing implementation description separates outcome rate, volume caps, counterparty diversity, and attester weighting as distinct composite dimensions. Your explicit statement that cap/volume weighting belongs in `f(attestationCount × counterpartyDiversity × winRate × volumeCap)` and not inside win-rate itself removes a real ambiguity — the old prose conflation was a documentation hazard, not a computation error. The historical vector at 16/31 = 0.5161 confirms the cap-free reading was always the intended value.\n\nThe two nits — stale head SHA in #23's PR body, and the missing governing-spec pointer in `convention_spec.source` — both trace directly to item 2.\n\n**2. Canonical home — the normative gap is real**\n\nThe registered knowledge page already flags `normative_spec` as unregistered for ERC-8275, and the provenance nit you identify in the lane source is the downstream consequence of that gap. Having substantive, growing work — attester-diversity fix, win_rate.bps.v0 convention, two conformance lanes, the SDK — without a governing spec to cite is an increasingly concrete operational problem, not just a housekeeping one. The lanes and the SDK literally have nowhere normative to point.\n\nThe conditions that justified the July stay-on-#1774 decision have materially changed: that PR has been idle since 2026-07-30, with no response from the author or on the attester-diversity follow-up, and the 8275 body it was hosting has grown past what reasonably rides as a passenger. The proposal to give ERC-8275 a standalone canonical home is well-reasoned and the timing argument holds. This is flagged for Fede as the original decision-maker. Normative status will remain not-verified here until a standalone spec is registered.\n\n**3. encode-json-utf8-lf.v0 injectivity fix**\n\nThe collision classes — Infinity/null coercion and values differing only past 2^53 — are genuine injectivity failures for a dedup identity preimage, not theoretical edge cases. An identity function that silently maps two distinct values to the same preimage is a correctness defect regardless of how rare the inputs are in practice. Replacing the naive encoder with a producer bound to an immutable contract, qualified against 48 pinned vectors, with the collision case as a load-bearing red negative test, is the correct fix shape. ccip-router #7 is flagged for independent recompute per your request.\n\n**Overall status**: implementation findings noted across all three items. No normative spec is registered or available, so normative compliance cannot be assessed. Registered implementation source: https://github.com/trustless-ai/agent-ercs/blob/main/contracts/reputation/ERC8275/README.md",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1329,7 +1537,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3644",
-    "updated_at": "2026-08-29T00:29:50.832297Z"
+    "updated_at": "2026-08-29T00:29:50.832297Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1340,6 +1550,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Logged. All five controls Pavlo specifically flagged — exact-body hashing, no-key/no-write refusal, attestation retention, byte-divergence behavior, and resolution-hook bypass — independently verified from the real source at exact head, with the suite confirming it (89/89, tsc clean, docker clean). Clean, no-objection finding on record.\n\nBaby Blue Viper independently verified ccip-router PR #6 at exact head 4da3de6ebcc3a941e03ff13cfa5bac2d27a858b4, covering all five flagged controls from real source and full suite runs. Clean, no-objection verdict acknowledged.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1353,7 +1564,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3647",
-    "updated_at": "2026-08-29T00:29:50.832297Z"
+    "updated_at": "2026-08-29T00:29:50.832297Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 3,
@@ -1364,6 +1577,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Decision noted and makes sense — independently verified staleness + a spec surface that's clearly outgrown its host is a solid basis for the call. The reasoning holds: a standalone spec doesn't close the door on cross-referencing #1774 if Panini resurfaces, so there's no downside to moving now.\n\nWhen the spin-out starts, happy to help track the provenance cleanup work (the `convention_spec.source` pointer nit Merlini flagged is a clean first task once there's a canonical home to point at). Just ping here when someone's ready to draft.\n\nBaby Blue Viper confirmed the decision to spin ERC-8275 out to a standalone spec, independently verifying that PR #1774 has been idle 30 days with no response. Trusty acknowledged the decision and noted readiness to help with provenance cleanup when drafting begins.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1377,7 +1591,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3648",
-    "updated_at": "2026-08-29T00:40:10.552840Z"
+    "updated_at": "2026-08-29T00:40:10.552840Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 6,
@@ -1393,6 +1609,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Done! I've created `knowledge/topics/erc-8183-agentic-commerce.md` to record the ERC-8183 discussion summary originally requested at [tg:tawg:3620]. The page captures the four main threads from the Magicians forum: the Open/Funded state-split debate, the naming critique around \"agentic\" vs general escrow, evaluator design patterns (multi-model consensus, async off-chain evaluation, reputation gating), and ERC-8004 reputation integration. Sources: https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902 and https://eips.ethereum.org/EIPS/eip-8183. [tg:tawg:3650]",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1406,7 +1623,9 @@
     "status": "delivered",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3650",
-    "updated_at": "2026-08-29T00:52:34.798221Z"
+    "updated_at": "2026-08-29T00:52:34.798221Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1417,6 +1636,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1430,7 +1650,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3661",
-    "updated_at": "2026-08-29T03:05:45.182306Z"
+    "updated_at": "2026-08-29T03:05:45.182306Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1441,6 +1663,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "All good now, Jimmy! 👋 I'm back and responding normally. Sorry for the trouble earlier — looks like things are working as expected now. If anything seems off again, just ping me!",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1454,7 +1677,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3668",
-    "updated_at": "2026-08-29T03:49:29.825662Z"
+    "updated_at": "2026-08-29T03:49:29.825662Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 2,
@@ -1468,6 +1693,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Recorded! Here's what's now captured in knowledge:\n\n- **Bot identity:** Trusty is the name of this bot (@trustless_ai_bot), the TAWG group's AI assistant.\n- **Repository:** https://github.com/trustless-ai/tawg-daily-contribution\n\nNew page created at `knowledge/topics/trusty.md` [tg:tawg:3671], \n\nJimmy asked to record that the bot's name is Trusty and its repository is . A new knowledge page was created at knowledge/topics/trusty.md. ,",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1481,7 +1707,9 @@
     "status": "delivered",
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3671",
-    "updated_at": "2026-08-29T04:30:12.173444Z"
+    "updated_at": "2026-08-29T04:30:12.173444Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1492,6 +1720,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1505,7 +1734,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3677",
-    "updated_at": "2026-08-29T11:57:04.508229Z"
+    "updated_at": "2026-08-29T11:57:04.508229Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1516,6 +1747,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1529,7 +1761,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3678",
-    "updated_at": "2026-08-29T11:57:42.081856Z"
+    "updated_at": "2026-08-29T11:57:42.081856Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1540,6 +1774,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1553,7 +1788,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3680",
-    "updated_at": "2026-08-29T12:08:33.723137Z"
+    "updated_at": "2026-08-29T12:08:33.723137Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1564,6 +1801,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1577,7 +1815,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3732",
-    "updated_at": "2026-08-29T21:00:48.208063Z"
+    "updated_at": "2026-08-29T21:00:48.208063Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1588,6 +1828,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "That's a real one. 🎉\n\n`pq_key_binding.v1` landing complete and hardened — the unanchored rule, the tri-state evidence, the activation boundary defined once and held — that's the kind of closure that stays closed. And the way it got there is worth naming: a fork surfaced, got argued on merits, every claim was independently recomputed before anyone agreed to it, and the result is more honest than what any single person would have shipped alone.\n\nThe process working exactly as designed *is* the win. Onward. 🤝",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1601,7 +1842,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3734",
-    "updated_at": "2026-08-29T21:04:47.810654Z"
+    "updated_at": "2026-08-29T21:04:47.810654Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1612,6 +1855,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1625,7 +1869,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3745",
-    "updated_at": "2026-08-30T00:01:45.698054Z"
+    "updated_at": "2026-08-30T00:01:45.698054Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1636,6 +1882,7 @@
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Jimmy! ☀️ Hope the day is off to a great start for you and the rest of the group!",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1649,7 +1896,9 @@
     "status": "delivered",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3753",
-    "updated_at": "2026-08-30T02:21:09.070521Z"
+    "updated_at": "2026-08-30T02:21:09.070521Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1669,6 +1918,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Done — I've created `knowledge/topics/rvr.md` to record RVR's proposal PR [tg:tawg:3755]. The PR https://github.com/ethereum/ERCs/pull/1980, shared at [tg:tawg:3743], is now the recorded proposal location. A review note at [tg:tawg:3744] confirms the proposal reached formal-draft stage as of August 2026, with the profile-authority boundary design noted alongside a cross-reference to ERC-8354. The PR content itself wasn't fetched, so the full specification details and assigned ERC number aren't confirmed in this write.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1682,7 +1932,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3755",
-    "updated_at": "2026-08-30T02:53:16.677719Z"
+    "updated_at": "2026-08-30T02:53:16.677719Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1693,6 +1945,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1706,7 +1959,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3756",
-    "updated_at": "2026-08-30T02:54:44.189968Z"
+    "updated_at": "2026-08-30T02:54:44.189968Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 2,
@@ -1717,6 +1972,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1730,7 +1986,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3759",
-    "updated_at": "2026-08-30T05:44:59.025885Z"
+    "updated_at": "2026-08-30T05:44:59.025885Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1741,6 +1999,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1754,7 +2013,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3760",
-    "updated_at": "2026-08-30T05:53:33.466961Z"
+    "updated_at": "2026-08-30T05:53:33.466961Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1765,6 +2026,7 @@
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Good morning, Merlini! ☀️ Hope you're ready for a great day of Trustless AI work. Let me know if you need anything!",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1778,7 +2040,9 @@
     "status": "delivered",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3762",
-    "updated_at": "2026-08-30T10:19:53.317775Z"
+    "updated_at": "2026-08-30T10:19:53.317775Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 16,
@@ -1800,6 +2064,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Merlini! 🙂 Here's your catch-up from the last ~16 hours — it was a productive night for the WG:\n\n---\n\n**pq-key-binding.v1 — complete and deployed**\nThe main arc was a multi-round correction of the v1 enforcer. Pavlo's exact-head recompute found that the `activated_at` bypass was still present in PR #34 — the implementation was retroactively granting authority in ways the spec explicitly forbids [tg:tawg:3714]. A corrected PR #35 was accepted (25/25) with the bypass removed, fail-closed empty-chain behavior, and the unanchored-key rule pinned: no immutable anchor means `binding_anchor_unavailable / unverifiable / REJECT`, never authority-from-always [tg:tawg:3723]. The gateway was deployed with consumer audit [tg:tawg:3729], stale surface notes cleaned up and independently verified [tg:tawg:3736], and the whole thing — enforcer, vectors, ERC-8373 asset, live gateway — now says the same thing, recomputable by anyone from public data [tg:tawg:3734].\n\n**Attribution ledger validator — v2 accepted**\nBaby Blue Viper's ledger validator went through a full review loop: tri-state exit codes (VALID/UNRESOLVED/INVALID), schema composition, fully locked transitive dependency file, GitHub CI wired and green, and correct amendment_families classification (verifier growth/shrink/replace). Pavlo confirmed it at exact commit [tg:tawg:3739]. The open design question about an explicit `amends` pointer vs. content-addressing-as-append-only is deliberately held for a separate proposal.\n\n**RVR ERC — draft PR open for WG review**\nPavlo submitted the formal RVR ERC as a draft PR to ethereum/ERCs (#1980) [tg:tawg:3743]. It is explicitly marked Draft — the current ask is substantive WG feedback before it moves to formal editor review [tg:tawg:3745]. Baby Blue Viper reviewed it on the PR and used the ERC-8354 programKey fix as a concrete boundary example; Pavlo added a Security Considerations clarification: REPRODUCED establishes stability under the profile-defined procedure, not completeness of that procedure against any broader unstated claim [tg:tawg:3748].\n\n**agent-sdk PR #27 open**\nBaby Blue Viper opened agent-sdk#27 closing two of Jimmy's post-merge follow-ups from #25 — proper Go CI gating (genuinely gates now, not just quarantined) and an explicit proof-coverage-boundary note. All suites green [tg:tawg:3751].\n\n---\n\nThat's the shape of it — big night! Happy to dig into any of these threads with you.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1813,7 +2078,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3764",
-    "updated_at": "2026-08-30T10:46:37.168606Z"
+    "updated_at": "2026-08-30T10:46:37.168606Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1832,6 +2099,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Jimmy! Here's a quick catch-up — quite a bit landed overnight:\n\n**pq_key_binding.v1 — fully closed** 🎉\nThe whole enforcer arc is done. The unanchored-binding rule (no immutable anchor → no authority, fail-closed) was pinned as PR #35, independently recomputed, merged, and the gateway went live at 25/25 selftest. Every surface — enforcer, conformance vectors, ERC-8373 asset, and live gateway — now agrees. [tg:tawg:3734] [tg:tawg:3736]\n\n**RVR ERC draft — open for WG review**\nPavlo submitted the formal RVR draft as ethereum/ERCs PR #1980. It's explicitly marked Draft and is collecting substantive feedback before formal editor review. Baby Blue Viper already posted a real review, and Pavlo added a Security Considerations clarification (REPRODUCED = stability under the profile-defined procedure, not completeness of that procedure). Pavlo is looking for any technical, semantic, security, interoperability, or overlap concerns. [tg:tawg:3743] [tg:tawg:3745]\n\n**agent-sdk#27 — your post-merge follow-ups closed**\nBaby Blue Viper opened #27 closing two of your remaining items from #25: Go CI now genuinely gates (not just quarantined), plus an explicit proof-coverage-boundary note. All suites green. [tg:tawg:3751]\n\n**Attribution ledger validator v2 — accepted**\nBaby Blue Viper addressed all four mechanical issues Pavlo raised (tri-state result, schema composition, amendment_families, full transitive dependency lock, and CI wiring), and Pavlo accepted the validator lane at exact main. The amends/verification-addendum design question remains intentionally open for a future proposal. [tg:tawg:3739]\n\n**Your RVR knowledge-update request** [tg:tawg:3755] is noted — the controller will need to run that as a separate mutation job.\n\n**Where to look first:** The RVR draft PR #1980 and agent-sdk#27 are probably the two items most directly relevant to you.",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1845,7 +2113,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3766",
-    "updated_at": "2026-08-30T11:35:28.670042Z"
+    "updated_at": "2026-08-30T11:35:28.670042Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1866,6 +2136,7 @@
     ],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Jimmy! Here's what landed since you were last on:\n\n**1. pq_key_binding.v1 — fully closed 🏁**\nMerlini opened the normative fork on whether the baseline binding's authority extends back to key creation [tg:tawg:3705]. The group worked through it on merits: Pavlo identified a third shape already in ERC-8373 §states — pre-anchor artifacts are `pre_baseline`, admitted classical-only but *not governed* by the baseline. Merlini confirmed he had conflated his enforcer's code comment with the actual spec prose. The enforcer, v1 vectors, ERC-8373 reference asset, and the live gateway were all corrected together; a separate unanchored-baseline rule was added (fail-closed — derivability is not anchored authority), independently recomputed by Pavlo. Selftest landed at 25/25, every closure verified independently. [tg:tawg:3734]\n\n**2. RVR ERC — formal draft PR is up**\nPavlo filed the RVR proposal as a draft PR on ethereum/ERCs. It is explicitly marked Draft and is currently the review surface — not ready for formal editor review yet [tg:tawg:3743] [tg:tawg:3745]. Baby Blue Viper posted a substantive review cross-referencing the ERC-8354 programKey case as a worked example of the profile-authority boundary. Pavlo incorporated a Security Considerations clarification: REPRODUCED signals stability under the profile-defined procedure, not completeness relative to any broader unstated claim [tg:tawg:3748]. Your earlier request to update the RVR knowledge page is already persisted. [tg:tawg:3755]\n\n**3. Attribution ledger validator — v2 accepted**\nBaby Blue Viper shipped a reference validator covering JCS entry_id recomputation, referential integrity, actor-equals-sole-verifier rejection, and amendment-family detection [tg:tawg:3725]. Pavlo reviewed and raised four mechanical gaps; all were addressed plus a factual retraction on a CrewAI comment lookup. Now at 19/19 tests, full transitive dependency lock, and GitHub Actions CI wired. [tg:tawg:3739]\n\n**4. agent-sdk#27 — your follow-up items from #25**\nBaby Blue Viper opened `trustless-ai/agent-sdk#27` closing two of your post-merge follow-ups: Go CI now genuinely gates the full `go/test` package (not just quarantined), and an explicit proof-coverage-boundary note was added. CI is green across all suites. [tg:tawg:3751]\n\n**Worth your eyes:**\n- RVR draft PR #1980 is open for technical/semantic/security review before formal submission — your input welcome\n- agent-sdk#27 closes the items you flagged on #25 — worth a confirm",
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1879,7 +2150,9 @@
     "status": "delivered",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3771",
-    "updated_at": "2026-08-30T16:23:39.197479Z"
+    "updated_at": "2026-08-30T16:23:39.197479Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1890,6 +2163,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1903,7 +2177,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3778",
-    "updated_at": "2026-08-30T22:12:12.223960Z"
+    "updated_at": "2026-08-30T22:12:12.223960Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1914,6 +2190,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1927,7 +2204,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3781",
-    "updated_at": "2026-08-30T22:54:30.419279Z"
+    "updated_at": "2026-08-30T22:54:30.419279Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1938,6 +2217,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1951,7 +2231,9 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3783",
-    "updated_at": "2026-08-30T23:06:15.672004Z"
+    "updated_at": "2026-08-30T23:06:15.672004Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   },
   {
     "attempts": 1,
@@ -1962,6 +2244,7 @@
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
+    "prerequisite_job_id": null,
     "refusal": false,
     "repair_of_job_id": null,
     "repair_reason_code": null,
@@ -1975,6 +2258,8 @@
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3784",
-    "updated_at": "2026-08-30T23:22:23.698383Z"
+    "updated_at": "2026-08-30T23:22:23.698383Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   }
 ]
