@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_opened:42c6981b1b60c1a1bae8e65a",
-    "kind": "pr_opened",
-    "number": 9,
-    "occurred_at": "2026-08-31T15:48:05Z",
-    "repository": "trustless-ai/tawg-daily-contribution",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Add tested invinoveritas /review client (verify_artifact) -- toward a VERIFICATION route"
-  }
-]
+[]
