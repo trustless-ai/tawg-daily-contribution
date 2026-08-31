@@ -152,6 +152,7 @@ class BotRoute(StrEnum):
     KNOWLEDGE_CORRECTION = "knowledge_correction"
     SOURCE_SUGGESTION = "source_suggestion"
     COORDINATION = "coordination"
+    VERIFICATION = "verification"
     REFUSE = "refuse"
     IGNORE = "ignore"
 
@@ -178,9 +179,7 @@ class PendingBotJob(StrictModel):
     safe_error_code: str | None = Field(default=None, max_length=64)
     classified_route: BotRoute | None = None
     router_context_scope: RouteContextScope | None = None
-    router_context_sha256: str | None = Field(
-        default=None, pattern=r"^[a-f0-9]{64}$"
-    )
+    router_context_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     router_version: str | None = Field(default=None, max_length=64)
     routed_at: datetime | None = None
     repair_of_job_id: str | None = Field(default=None, max_length=128)
@@ -189,9 +188,7 @@ class PendingBotJob(StrictModel):
     welcome_target_record_id: str | None = Field(default=None, max_length=256)
     prerequisite_job_id: str | None = Field(default=None, max_length=256)
     knowledge_mutation_paths: list[str] = Field(default_factory=list, max_length=3)
-    knowledge_mutation_trigger_sha256: str | None = Field(
-        default=None, pattern=r"^[a-f0-9]{64}$"
-    )
+    knowledge_mutation_trigger_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     created_at: datetime
     updated_at: datetime
 
@@ -215,10 +212,7 @@ class PendingBotJob(StrictModel):
                 or path.is_absolute()
                 or path.as_posix() != value
                 or ".." in path.parts
-                or (
-                    len(path.parts) < 3
-                    and path.parts != ("knowledge", "index.md")
-                )
+                or (len(path.parts) < 3 and path.parts != ("knowledge", "index.md"))
                 or path.parts[0] != "knowledge"
                 or path.suffix.casefold() != ".md"
             ):
@@ -268,18 +262,14 @@ class PendingBotJob(StrictModel):
             ):
                 raise ValueError("member welcome metadata is incomplete")
         elif has_member_metadata or self.reply_to_message_id is None:
-            raise ValueError(
-                "member welcome metadata is not allowed on an ordinary reply"
-            )
+            raise ValueError("member welcome metadata is not allowed on an ordinary reply")
         routing = (
             self.classified_route,
             self.router_context_sha256,
             self.router_version,
             self.routed_at,
         )
-        if any(value is not None for value in routing) and any(
-            value is None for value in routing
-        ):
+        if any(value is not None for value in routing) and any(value is None for value in routing):
             raise ValueError("reply routing metadata must be complete")
         has_mutation_paths = bool(self.knowledge_mutation_paths)
         has_mutation_hash = self.knowledge_mutation_trigger_sha256 is not None
@@ -297,9 +287,7 @@ class PendingBotJob(StrictModel):
             )
             or self.router_context_scope is None
         ):
-            raise ValueError(
-                "knowledge mutation receipt requires a completed correction route"
-            )
+            raise ValueError("knowledge mutation receipt requires a completed correction route")
         if self.status is JobStatus.IGNORED and (
             self.trigger_kind is not TriggerKind.GREETING_CANDIDATE
             or self.classified_route is not BotRoute.IGNORE
@@ -329,9 +317,7 @@ class SourceCursors(StrictModel):
 
 class TelegramWebhookReceipts(StrictModel):
     schema_version: Literal["tawg.telegram-webhook-receipts.v1"]
-    update_ids: list[Annotated[int, Field(strict=True, ge=0)]] = Field(
-        default_factory=list
-    )
+    update_ids: list[Annotated[int, Field(strict=True, ge=0)]] = Field(default_factory=list)
 
     @field_validator("update_ids")
     @classmethod

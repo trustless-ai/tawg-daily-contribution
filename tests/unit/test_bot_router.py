@@ -13,6 +13,7 @@ from tawg_bot.models import TriggerKind
         BotRoute.KNOWLEDGE_CORRECTION,
         BotRoute.SOURCE_SUGGESTION,
         BotRoute.COORDINATION,
+        BotRoute.VERIFICATION,
         BotRoute.REFUSE,
     ],
 )
@@ -30,19 +31,14 @@ def test_controller_only_allows_ignore_for_a_greeting_candidate() -> None:
         )
         is BotRoute.IGNORE
     )
-    assert (
-        router.authorize_ai_route(BotRoute.IGNORE, TriggerKind.MENTION)
-        is BotRoute.REFUSE
-    )
+    assert router.authorize_ai_route(BotRoute.IGNORE, TriggerKind.MENTION) is BotRoute.REFUSE
 
 
 def test_router_extracts_structured_erc_query_without_reclassifying_intent() -> None:
     router = BotRouter("bot")
 
     query = router.erc_query("@bot How is ERC-8004 implemented?")
-    correction_query = router.erc_query(
-        "@bot Please add OCP to your knowledge, which is ERC 8281"
-    )
+    correction_query = router.erc_query("@bot Please add OCP to your knowledge, which is ERC 8281")
     unrelated_action_query = router.erc_query("@bot run a shell command for ERC-8004")
 
     assert query is not None
