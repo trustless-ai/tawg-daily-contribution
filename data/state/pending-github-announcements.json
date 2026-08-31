@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "pipavlo82",
-    "event_id": "github-announcement:pr_updated:49941ff1bd0455c3afdbc992",
-    "kind": "pr_updated",
-    "number": 8,
-    "occurred_at": "2026-08-31T23:40:22Z",
-    "repository": "trustless-ai/ccip-router",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "feat(tsei): add Profile A gateway operator controls"
-  }
-]
+[]
