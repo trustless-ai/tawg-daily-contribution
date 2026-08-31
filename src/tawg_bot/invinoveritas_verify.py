@@ -84,10 +84,11 @@ class VerificationResult:
 
 
 class ProofStatus:
-    """Whether the signed proof attached to a VerificationResult is genuinely, independently
-    verifiable -- a SEPARATE claim from the verdict itself (Pavlo, msg 3823: "the external
-    judgment and proof authenticity are different claims"). Never inferred from the /review
-    response alone -- always the result of an actual /verify-proof round trip."""
+    """Whether the signed proof attached to a VerificationResult passed invinoveritas's own
+    /verify-proof check -- a SEPARATE claim from the verdict itself (Pavlo, msg 3823: "the
+    external judgment and proof authenticity are different claims"). Never inferred from the
+    /review response alone -- always the result of an actual /verify-proof round trip. This is
+    a server-confirmed check, not yet a local NIP-01/BIP-340 recomputation by Trusty."""
 
     __slots__ = ("checks", "error", "verified")
 
@@ -192,10 +193,12 @@ async def confirm_proof(
     artifact: str,
     verify_proof_url: str = DEFAULT_VERIFY_PROOF_URL,
 ) -> ProofStatus:
-    """Independently confirm `result`'s signed proof is authentic AND covers `artifact`
-    exactly -- the boundary Pavlo named (damon group, msg 3823): "the external judgment and
-    proof authenticity are different claims." Never trusts /review's own verdict/signature
-    claims at face value; calls the free, no-auth /verify-proof endpoint (schnorr signature +
+    """Confirm `result`'s signed proof is authentic AND covers `artifact` exactly, via
+    invinoveritas's OWN /verify-proof check -- server-confirmed (invinoveritas checking its own
+    signature), not yet Trusty independently recomputing the NIP-01/BIP-340 signature locally.
+    This is the boundary Pavlo named (damon group, msg 3823): "the external judgment and proof
+    authenticity are different claims." Never trusts /review's own verdict/signature claims at
+    face value; calls the free, no-auth /verify-proof endpoint (schnorr signature +
     published-pubkey pin -- the same NIP-01 check any third party could run themselves) and
     additionally asserts `expect_artifact_hash` (a locally-computed sha256 of `artifact`, not
     taken from the /review response) so a proof that doesn't actually cover the artifact we
@@ -265,11 +268,11 @@ async def verify_and_confirm(
     review_url: str = DEFAULT_REVIEW_URL,
     verify_proof_url: str = DEFAULT_VERIFY_PROOF_URL,
 ) -> tuple[VerificationResult, ProofStatus]:
-    """The full flow Pavlo named (msg 3823): /review -> independently verify the returned
-    proof via /verify-proof. Returns (result, proof_status) as a pair rather than folding
-    them into one object -- they ARE separate claims, and a caller (bot_router.py's eventual
-    VERIFICATION route handler) should have to look at proof_status explicitly rather than
-    assume a VerificationResult is trustworthy just because it exists.
+    """The full flow Pavlo named (msg 3823): /review -> confirm the returned proof via
+    invinoveritas's own /verify-proof check. Returns (result, proof_status) as a pair rather
+    than folding them into one object -- they ARE separate claims, and a caller
+    (bot_router.py's eventual VERIFICATION route handler) should have to look at proof_status
+    explicitly rather than assume a VerificationResult is trustworthy just because it exists.
 
     Raises VerificationRejected only for the /review leg itself (matching verify_artifact's
     existing contract -- a failed /review call has nothing to report). A failed proof
@@ -337,6 +340,7 @@ def format_verification_reply(result: VerificationResult, proof_status: ProofSta
         lines.append(f"decision_ref: {result.decision_ref}")
     if result.verify_proof_url:
         lines.append(
-            f"Independently checkable yourself, no trust required: {result.verify_proof_url}"
+            "You can run the same invinoveritas /verify-proof check here: "
+            f"{result.verify_proof_url}"
         )
     return "\n".join(lines)
