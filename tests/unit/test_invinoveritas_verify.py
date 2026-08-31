@@ -263,9 +263,46 @@ def test_confirm_proof_fails_closed_on_valid_true_with_missing_required_check() 
     assert "artifact_hash_matches" in status.error
 
 
+def test_confirm_proof_fails_closed_on_valid_true_with_signature_valid_false() -> None:
+    """Pavlo's own named negative vector (msg 3825, verbatim): "Add one negative vector:
+    valid=true + signature_valid=false -> verified=false." Tested by exact field name, not
+    just a generic stand-in check, since he asked for this one specifically."""
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            json={
+                "valid": True,
+                "checks": {
+                    "signature_valid": False,
+                    "id_integrity": True,
+                    "issued_by_invinoveritas": True,
+                    "artifact_hash_matches": True,
+                },
+            },
+        )
+
+    async def run() -> ProofStatus:
+        from tawg_bot.invinoveritas_verify import VerificationResult
+
+        result = VerificationResult(
+            verdict="approve",
+            confidence=0.9,
+            summary="",
+            verify_proof_url=VERIFY_PROOF_URL,
+            decision_ref=None,
+            raw={"proof": {"event": {"id": "abc123"}}},
+        )
+        return await confirm_proof(_client(handler), result, artifact="claim")
+
+    status = asyncio.run(run())
+    assert status.verified is False
+    assert "signature_valid" in status.error
+
+
 def test_confirm_proof_fails_closed_on_valid_true_with_a_false_required_check() -> None:
-    """Same guard, contradictory-not-just-missing case: valid: true at the top level while one
-    named required check is explicitly False."""
+    """Same guard, a DIFFERENT check false (issued_by_invinoveritas) -- confirms the pinned
+    contract is enforced generically across every named field, not just signature_valid."""
 
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(
