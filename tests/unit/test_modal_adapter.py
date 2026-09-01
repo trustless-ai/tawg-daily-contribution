@@ -410,6 +410,7 @@ def test_image_and_secret_cover_the_complete_runtime_without_source_secrets(
         "ANTHROPIC_BASE_URL",
         "ANTHROPIC_MODEL",
         "GITHUB_TOKEN",
+        "TAWG_INVINOVERITAS_API_KEY",
     }
     assert secrets["tawg-github-announcements"] == {
         "TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID"
