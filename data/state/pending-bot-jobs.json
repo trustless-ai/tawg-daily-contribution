@@ -2713,5 +2713,32 @@
     "updated_at": "2026-09-01T15:30:41.125086Z",
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
+  },
+  {
+    "attempts": 0,
+    "classified_route": null,
+    "created_at": "2026-09-01T16:42:43.115863Z",
+    "job_id": "reply:tg:tawg:3934",
+    "message_thread_id": null,
+    "prepared_citations": [],
+    "prepared_language": null,
+    "prepared_reply_text": null,
+    "prerequisite_job_id": null,
+    "refusal": false,
+    "repair_of_job_id": null,
+    "repair_reason_code": null,
+    "reply_to_message_id": 3934,
+    "routed_at": null,
+    "router_context_scope": null,
+    "router_context_sha256": null,
+    "router_version": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.pending-bot-job.v1",
+    "status": "pending",
+    "trigger_kind": "greeting_candidate",
+    "trigger_record_id": "tg:tawg:3934",
+    "updated_at": "2026-09-01T16:42:43.115863Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   }
 ]
