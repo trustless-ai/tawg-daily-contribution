@@ -86,19 +86,18 @@ class RepositorySession:
             try:
                 with TemporaryDirectory(prefix="tawg-repository-") as temporary_directory:
                     checkout = Path(temporary_directory) / "repository"
+                    clone_argv = [
+                        "git",
+                        "clone",
+                        "--branch",
+                        self.branch,
+                        "--single-branch",
+                    ]
+                    if self.merge_branch is None:
+                        clone_argv.extend(("--depth", "1"))
+                    clone_argv.extend(("--", self.remote, str(checkout)))
                     await self._run_command(
-                        argv=(
-                            "git",
-                            "clone",
-                            "--branch",
-                            self.branch,
-                            "--single-branch",
-                            "--depth",
-                            "1",
-                            "--",
-                            self.remote,
-                            str(checkout),
-                        ),
+                        argv=tuple(clone_argv),
                         cwd=checkout.parent,
                         failure_code="repository_checkout_failed",
                     )
@@ -108,9 +107,7 @@ class RepositorySession:
                                 "git",
                                 "fetch",
                                 "origin",
-                                self.merge_branch,
-                                "--depth",
-                                "1",
+                                f"{self.merge_branch}:refs/remotes/origin/{self.merge_branch}",
                             ),
                             cwd=checkout,
                             failure_code="repository_merge_failed",

@@ -185,10 +185,11 @@ async def test_merge_branch_fetches_and_merges_before_operation() -> None:
     await session.run(operation_id="webhook:42", operation=_return_root)
 
     commands = [argv for argv, _cwd in runner.calls]
-    assert ("git", "fetch", "origin", "main", "--depth", "1") in commands
+    assert ("git", "fetch", "origin", "main:refs/remotes/origin/main") in commands
     assert ("git", "merge", "--no-edit", "origin/main") in commands
     # fetch/merge must run after clone and before the checkpoint
     clone_index = next(i for i, argv in enumerate(commands) if argv[:2] == ("git", "clone"))
+    assert "--depth" not in commands[clone_index]
     fetch_index = next(i for i, argv in enumerate(commands) if argv[:2] == ("git", "fetch"))
     merge_index = next(i for i, argv in enumerate(commands) if argv[:2] == ("git", "merge"))
     bash_index = next(i for i, argv in enumerate(commands) if argv[:1] == ("bash",))
