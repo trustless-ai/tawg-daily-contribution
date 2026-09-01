@@ -950,6 +950,12 @@ class BotReplyService:
             return self._prepared(ready)
         except Exception as error:
             safe_error_code = self._safe_failure_code(failure_code, error)
+            print(
+                "tawg_event=reply_prepare_error "
+                f"type={type(error).__name__} code={safe_error_code} "
+                f"detail={str(error)[:240]!r}",
+                flush=True,
+            )
             failed_jobs = self._load_jobs()
             current = failed_jobs[job_id]
             failed_jobs[job_id] = current.model_copy(
