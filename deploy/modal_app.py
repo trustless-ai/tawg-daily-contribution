@@ -17,7 +17,6 @@ from tawg_bot.bot_identity import configured_bot_id
 from tawg_bot.privacy import PrivacyFilter
 from tawg_bot.repository_session import RepositorySession
 from tawg_bot.runtime import ProductionRuntime
-from tawg_bot.runtime_env import require_env, resolve_env
 from tawg_bot.telegram_webhook import (
     MAX_BODY_BYTES,
     TelegramWebhookConfig,
@@ -34,7 +33,7 @@ _REPOSITORY_PERSIST_MODE = os.environ.get(
     "TAWG_REPOSITORY_PERSIST_MODE",
     "none" if os.environ.get("TAWG_REPOSITORY_PERSIST_ENABLED", "true") == "false" else "full",
 )
-_DEV_MODE = os.environ.get("TAWG_DEV_MODE", "false")
+_DEV_MODE = os.environ.get("TAWG_DEV_MODE", "false") == "true"
 _RUNTIME_ROOT = Path("/opt/tawg")
 _PRIVACY_CONFIG = _RUNTIME_ROOT / "config/privacy.yml"
 _LOCAL_PRIVACY_CONFIG = Path(__file__).parents[1] / "config/privacy.yml"
@@ -72,6 +71,11 @@ _GITHUB_ANNOUNCEMENT_SECRET_KEYS = [
     "TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID",
 ]
 _MAINTENANCE_SECRET_KEYS = ["TAWG_MODAL_MAINTENANCE_ENABLED"]
+_DEV_SECRET_KEYS = [
+    "TELEGRAM_BOT_TOKEN",
+    "TAWG_TELEGRAM_BOT_USERNAME",
+    "TAWG_TELEGRAM_WEBHOOK_SECRET",
+]
 
 image = (
     modal.Image.from_registry(_IMAGE_REFERENCE, add_python="3.12")
@@ -109,7 +113,6 @@ image = (
         {
             "PYTHONPATH": str(_RUNTIME_ROOT / "src"),
             "TAWG_REPOSITORY_PERSIST_MODE": _REPOSITORY_PERSIST_MODE,
-            "TAWG_DEV_MODE": _DEV_MODE,
         }
     )
     .workdir(str(_RUNTIME_ROOT))
@@ -130,6 +133,16 @@ maintenance_secret = modal.Secret.from_name(
     "tawg-maintenance",
     required_keys=_MAINTENANCE_SECRET_KEYS,
 )
+dev_secret = (
+    modal.Secret.from_name("tawg-dev", required_keys=_DEV_SECRET_KEYS)
+    if _DEV_MODE
+    else None
+)
+worker_secrets = [worker_secret, github_announcement_secret]
+webhook_secrets = [webhook_secret]
+if dev_secret is not None:
+    worker_secrets.append(dev_secret)
+    webhook_secrets.append(dev_secret)
 app = modal.App(_APP_NAME)
 
 
@@ -137,10 +150,10 @@ def _normalizer() -> TelegramWebhookNormalizer:
     privacy_config = _PRIVACY_CONFIG if _PRIVACY_CONFIG.is_file() else _LOCAL_PRIVACY_CONFIG
     return TelegramWebhookNormalizer(
         config=TelegramWebhookConfig(
-            secret_token=require_env("TAWG_TELEGRAM_WEBHOOK_SECRET"),
-            chat_id=int(require_env("TAWG_TELEGRAM_CHAT_ID")),
+            secret_token=os.environ["TAWG_TELEGRAM_WEBHOOK_SECRET"],
+            chat_id=int(os.environ["TAWG_TELEGRAM_CHAT_ID"]),
             group_slug="tawg",
-            bot_username=require_env("TAWG_TELEGRAM_BOT_USERNAME"),
+            bot_username=os.environ["TAWG_TELEGRAM_BOT_USERNAME"],
         ),
         privacy=PrivacyFilter.from_yaml(privacy_config),
     )
@@ -185,7 +198,7 @@ async def _bounded_body(stream: AsyncIterator[bytes]) -> bytes | None:
 
 @app.function(
     image=image,
-    secrets=[worker_secret, github_announcement_secret],
+    secrets=worker_secrets,
     max_containers=1,
     timeout=_WORKER_TIMEOUT_SECONDS,
     retries=modal.Retries(max_retries=_WORKER_RETRIES),
@@ -259,13 +272,13 @@ async def scheduled_dev_sync() -> None:
 
 @app.function(
     image=image,
-    secrets=[webhook_secret],
+    secrets=webhook_secrets,
     timeout=_ENDPOINT_TIMEOUT_SECONDS,
 )
 @modal.fastapi_endpoint(method="POST")
 async def telegram_webhook(request: Request) -> Response:
     """Authenticate, normalize, and durably accept one Telegram update."""
-    expected_secret = resolve_env("TAWG_TELEGRAM_WEBHOOK_SECRET")
+    expected_secret = os.environ.get("TAWG_TELEGRAM_WEBHOOK_SECRET")
     if expected_secret is None or not is_valid_telegram_webhook_secret(expected_secret):
         return Response(status_code=503)
     supplied_secret = request.headers.get(_WEBHOOK_SECRET_HEADER)

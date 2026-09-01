@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 from tawg_bot.models import TelegramWebhookReceipts
 from tawg_bot.persist_mode import PersistMode
-from tawg_bot.runtime_env import resolve_env
 
 _STATE_DIR = "data/state"
 _LEGACY_FILENAME = "telegram-webhook-receipts.json"
@@ -23,7 +23,7 @@ def bot_id_from_token(token: str) -> int:
 
 
 def configured_bot_id() -> int | None:
-    token = resolve_env("TELEGRAM_BOT_TOKEN")
+    token = os.environ.get("TELEGRAM_BOT_TOKEN")
     if not token:
         return None
     return bot_id_from_token(token)

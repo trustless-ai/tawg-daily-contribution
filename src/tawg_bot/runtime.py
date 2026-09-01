@@ -63,7 +63,6 @@ from tawg_bot.models import (
 from tawg_bot.persist_mode import PersistMode, configured_persist_mode
 from tawg_bot.persistence_guard import PersistenceRejected
 from tawg_bot.repository_session import RepositoryConflict
-from tawg_bot.runtime_env import resolve_env
 from tawg_bot.scan_targets import ScanTargetStore, ScanTargetVerifier
 from tawg_bot.scheduler import IntakePolicy, Scheduler
 from tawg_bot.scoped_scanner import ScopedScanResult, ScopedSourceScanner
@@ -724,7 +723,7 @@ class _LivePipeline:
             )
 
     async def _prepare_pending_replies(self) -> None:
-        username = resolve_env("TAWG_TELEGRAM_BOT_USERNAME")
+        username = os.environ.get("TAWG_TELEGRAM_BOT_USERNAME")
         if self.member_introductions_enabled:
             MemberWelcomeReconciler(self.root).reconcile(now=self.now)
         if username:
@@ -860,7 +859,7 @@ def _require_utc(value: datetime, label: str) -> None:
 
 
 def _configured_bot_username() -> str:
-    username = resolve_env("TAWG_TELEGRAM_BOT_USERNAME")
+    username = os.environ.get("TAWG_TELEGRAM_BOT_USERNAME")
     if not username:
         raise RuntimeFailure("TAWG_TELEGRAM_BOT_USERNAME is not configured")
     return username

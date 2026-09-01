@@ -435,6 +435,41 @@ def test_image_and_secret_cover_the_complete_runtime_without_source_secrets(
     assert GITHUB_TOKEN not in all_steps
 
 
+def test_dev_mode_mounts_tawg_dev_secret_after_shared_secrets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    FakeApp.created.clear()
+    FakeImage.created.clear()
+    FakeSecret.calls.clear()
+    monkeypatch.setitem(sys.modules, "modal", _fake_modal_module())
+    monkeypatch.setitem(sys.modules, "fastapi", _fake_fastapi_module())
+    monkeypatch.setenv("TAWG_DEV_MODE", "true")
+    sys.modules.pop("deploy.modal_app", None)
+    module = importlib.import_module("deploy.modal_app")
+
+    secrets = {name: set(required_keys) for name, required_keys in FakeSecret.calls}
+    assert secrets["tawg-dev"] == {
+        "TELEGRAM_BOT_TOKEN",
+        "TAWG_TELEGRAM_BOT_USERNAME",
+        "TAWG_TELEGRAM_WEBHOOK_SECRET",
+    }
+    assert [secret.name for secret in module.repository_worker.config["secrets"]] == [
+        "tawg-worker",
+        "tawg-github-announcements",
+        "tawg-dev",
+    ]
+    assert [secret.name for secret in module.telegram_webhook.config["secrets"]] == [
+        "tawg-webhook",
+        "tawg-dev",
+    ]
+    assert [secret.name for secret in module.scheduled_dev_sync.config["secrets"]] == [
+        "tawg-worker",
+    ]
+    assert [secret.name for secret in module.scheduled_maintenance.config["secrets"]] == [
+        "tawg-maintenance",
+    ]
+
+
 @pytest.mark.asyncio
 async def test_endpoint_spawns_only_the_sanitized_json_envelope(
     modal_adapter: types.ModuleType,
