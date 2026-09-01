@@ -72,4 +72,5 @@ jobs:
           TAWG_MODAL_APP_NAME: tawg-development
           TAWG_MODAL_BRANCH: dev
           TAWG_REPOSITORY_PERSIST_MODE: receipt-only
+          TAWG_DEV_MODE: "true"
         run: modal deploy deploy/modal_app.py

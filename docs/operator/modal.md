@@ -316,10 +316,15 @@ state, or layer markers.
 Deployment contract:
 
 - The dev Modal app is `tawg-development`, deployed from `.github/workflows/modal-deploy-dev.yml`
-  with `TAWG_MODAL_BRANCH=dev` and `TAWG_REPOSITORY_PERSIST_MODE=receipt-only`.
-- The dev workspace must bind `tawg-worker`, `tawg-webhook`, `tawg-maintenance`, and
-  `tawg-github-announcements` to the dev bot token, dev chat id, dev bot username, and a
-  `GITHUB_TOKEN` scoped to push to `dev` only. These secrets must not share production values.
+  with `TAWG_MODAL_BRANCH=dev`, `TAWG_REPOSITORY_PERSIST_MODE=receipt-only`, and
+  `TAWG_DEV_MODE=true`. Production (`modal-deploy.yml`) sets `TAWG_DEV_MODE=false`.
+- Dev and production share the same Modal workspace and the same secrets (`tawg-worker`,
+  `tawg-webhook`, `tawg-maintenance`, `tawg-github-announcements`). Only the bot-specific values
+  differ, carried as optional `dev_`-prefixed keys on the shared secrets:
+  - `tawg-worker`: `dev_TELEGRAM_BOT_TOKEN`, `dev_TAWG_TELEGRAM_BOT_USERNAME`
+  - `tawg-webhook`: `dev_TAWG_TELEGRAM_BOT_USERNAME`, `dev_TAWG_TELEGRAM_WEBHOOK_SECRET`
+  These optional keys are not in `required_keys`, so production secrets are unaffected. In dev
+  mode the runtime resolves `dev_<name>` before falling back to the shared `<name>` value.
 - The dev bot's numeric identity is derived from its token prefix. In `receipt-only` mode the dev
   bot deduplicates on its own namespaced receipt `data/state/telegram-webhook-receipts.<bot_id>.json`
   and never falls back to the production legacy receipt.

@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
-import os
 from dataclasses import dataclass
 from html import escape
 from typing import Any, Literal, cast
 
 import httpx
+
+from tawg_bot.runtime_env import resolve_env
 
 _LEGACY_TEXT_LIMIT = 4096
 
@@ -51,7 +52,7 @@ class TelegramApi:
 
     @classmethod
     def from_env(cls, *, client: httpx.AsyncClient) -> TelegramApi:
-        token = os.environ.get("TELEGRAM_BOT_TOKEN")
+        token = resolve_env("TELEGRAM_BOT_TOKEN")
         if not token:
             raise TelegramApiError("TELEGRAM_BOT_TOKEN is not configured")
         return cls(token=token, client=client)

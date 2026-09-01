@@ -34,6 +34,7 @@ from tawg_bot.models import (
 from tawg_bot.persist_mode import PersistMode
 from tawg_bot.privacy import PrivacyFilter
 from tawg_bot.query import TelegramQuery
+from tawg_bot.runtime_env import resolve_env
 from tawg_bot.storage import partition_stable_records
 from tawg_bot.telegram_webhook import (
     TelegramWebhookEnvelope,
@@ -873,7 +874,7 @@ class TelegramIntake:
         uow_factory: UnitOfWorkFactory = _default_uow_factory,
     ) -> TelegramIntake:
         raw_chat_id = os.environ.get("TAWG_TELEGRAM_CHAT_ID")
-        bot_username = os.environ.get("TAWG_TELEGRAM_BOT_USERNAME")
+        bot_username = resolve_env("TAWG_TELEGRAM_BOT_USERNAME")
         if not raw_chat_id or not bot_username:
             raise ValueError("Telegram group identity environment is not configured")
         try:

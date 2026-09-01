@@ -17,6 +17,7 @@ from tawg_bot.bot_identity import configured_bot_id
 from tawg_bot.privacy import PrivacyFilter
 from tawg_bot.repository_session import RepositorySession
 from tawg_bot.runtime import ProductionRuntime
+from tawg_bot.runtime_env import require_env, resolve_env
 from tawg_bot.telegram_webhook import (
     MAX_BODY_BYTES,
     TelegramWebhookConfig,
@@ -33,6 +34,7 @@ _REPOSITORY_PERSIST_MODE = os.environ.get(
     "TAWG_REPOSITORY_PERSIST_MODE",
     "none" if os.environ.get("TAWG_REPOSITORY_PERSIST_ENABLED", "true") == "false" else "full",
 )
+_DEV_MODE = os.environ.get("TAWG_DEV_MODE", "false")
 _RUNTIME_ROOT = Path("/opt/tawg")
 _PRIVACY_CONFIG = _RUNTIME_ROOT / "config/privacy.yml"
 _LOCAL_PRIVACY_CONFIG = Path(__file__).parents[1] / "config/privacy.yml"
@@ -107,6 +109,7 @@ image = (
         {
             "PYTHONPATH": str(_RUNTIME_ROOT / "src"),
             "TAWG_REPOSITORY_PERSIST_MODE": _REPOSITORY_PERSIST_MODE,
+            "TAWG_DEV_MODE": _DEV_MODE,
         }
     )
     .workdir(str(_RUNTIME_ROOT))
@@ -134,10 +137,10 @@ def _normalizer() -> TelegramWebhookNormalizer:
     privacy_config = _PRIVACY_CONFIG if _PRIVACY_CONFIG.is_file() else _LOCAL_PRIVACY_CONFIG
     return TelegramWebhookNormalizer(
         config=TelegramWebhookConfig(
-            secret_token=os.environ["TAWG_TELEGRAM_WEBHOOK_SECRET"],
-            chat_id=int(os.environ["TAWG_TELEGRAM_CHAT_ID"]),
+            secret_token=require_env("TAWG_TELEGRAM_WEBHOOK_SECRET"),
+            chat_id=int(require_env("TAWG_TELEGRAM_CHAT_ID")),
             group_slug="tawg",
-            bot_username=os.environ["TAWG_TELEGRAM_BOT_USERNAME"],
+            bot_username=require_env("TAWG_TELEGRAM_BOT_USERNAME"),
         ),
         privacy=PrivacyFilter.from_yaml(privacy_config),
     )
@@ -262,7 +265,7 @@ async def scheduled_dev_sync() -> None:
 @modal.fastapi_endpoint(method="POST")
 async def telegram_webhook(request: Request) -> Response:
     """Authenticate, normalize, and durably accept one Telegram update."""
-    expected_secret = os.environ.get("TAWG_TELEGRAM_WEBHOOK_SECRET")
+    expected_secret = resolve_env("TAWG_TELEGRAM_WEBHOOK_SECRET")
     if expected_secret is None or not is_valid_telegram_webhook_secret(expected_secret):
         return Response(status_code=503)
     supplied_secret = request.headers.get(_WEBHOOK_SECRET_HEADER)
