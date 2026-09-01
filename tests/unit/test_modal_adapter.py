@@ -739,9 +739,13 @@ async def test_worker_reconstructs_envelope_and_runs_ingestion_in_fresh_session(
     assert FakeRuntime.maintenance_calls == []
     worker_environment = session.environments[0]
     assert worker_environment["GITHUB_REF_NAME"] == "main"
-    assert worker_environment["GIT_CONFIG_COUNT"] == "1"
+    assert worker_environment["GIT_CONFIG_COUNT"] == "3"
     assert worker_environment["GIT_CONFIG_KEY_0"] == "http.https://github.com/.extraheader"
     assert GITHUB_TOKEN not in worker_environment["GIT_CONFIG_VALUE_0"]
+    assert worker_environment["GIT_CONFIG_KEY_1"] == "user.name"
+    assert worker_environment["GIT_CONFIG_VALUE_1"] == "TAWG Knowledge Bot"
+    assert worker_environment["GIT_CONFIG_KEY_2"] == "user.email"
+    assert worker_environment["GIT_CONFIG_VALUE_2"] == "tawg-knowledge-bot@users.noreply.github.com"
     assert not any(
         key.startswith("GIT_CONFIG_") or key == "GITHUB_REF_NAME" for key in os.environ
     )
@@ -769,7 +773,7 @@ async def test_worker_restores_inherited_git_environment_after_session(
 
     worker_environment = FakeRepositorySession.instances[0].environments[0]
     assert worker_environment["GITHUB_REF_NAME"] == "main"
-    assert worker_environment["GIT_CONFIG_COUNT"] == "1"
+    assert worker_environment["GIT_CONFIG_COUNT"] == "3"
     assert worker_environment["GIT_CONFIG_KEY_0"] == "http.https://github.com/.extraheader"
     assert "GIT_CONFIG_KEY_8" not in worker_environment
     assert "GIT_CONFIG_VALUE_8" not in worker_environment

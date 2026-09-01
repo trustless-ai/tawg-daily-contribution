@@ -175,9 +175,13 @@ def _repository_environment() -> Iterator[None]:
     try:
         for key in managed_keys:
             del os.environ[key]
-        os.environ["GIT_CONFIG_COUNT"] = "1"
+        os.environ["GIT_CONFIG_COUNT"] = "3"
         os.environ["GIT_CONFIG_KEY_0"] = "http.https://github.com/.extraheader"
         os.environ["GIT_CONFIG_VALUE_0"] = f"AUTHORIZATION: basic {credentials}"
+        os.environ["GIT_CONFIG_KEY_1"] = "user.name"
+        os.environ["GIT_CONFIG_VALUE_1"] = "TAWG Knowledge Bot"
+        os.environ["GIT_CONFIG_KEY_2"] = "user.email"
+        os.environ["GIT_CONFIG_VALUE_2"] = "tawg-knowledge-bot@users.noreply.github.com"
         os.environ["GITHUB_REF_NAME"] = _BRANCH
         if bot_id is not None:
             os.environ["TAWG_BOT_ID"] = str(bot_id)
