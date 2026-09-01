@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_opened:0f148c01ef8524ef4ee1b970",
-    "kind": "pr_opened",
-    "number": 28,
-    "occurred_at": "2026-09-01T20:51:18Z",
-    "repository": "trustless-ai/agent-sdk",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Repin ERC-8354 verifier to pick up the expiry fix"
-  }
-]
+[]
