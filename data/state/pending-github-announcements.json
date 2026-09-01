@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_opened:b8d41a0935236e9ef7004b20",
+    "kind": "pr_opened",
+    "number": 9,
+    "occurred_at": "2026-09-01T09:06:19Z",
+    "repository": "trustless-ai/ccip-router",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "chore: bump 0.8.0 (TSEI gateway) + resync drifted lockfile version"
+  }
+]
