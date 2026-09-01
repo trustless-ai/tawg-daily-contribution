@@ -114,6 +114,7 @@ image = (
             "PYTHONPATH": str(_RUNTIME_ROOT / "src"),
             "TAWG_REPOSITORY_PERSIST_MODE": _REPOSITORY_PERSIST_MODE,
             "TAWG_MODAL_BRANCH": _BRANCH,
+            "TAWG_DEV_MODE": "true" if _DEV_MODE else "false",
         }
     )
     .workdir(str(_RUNTIME_ROOT))

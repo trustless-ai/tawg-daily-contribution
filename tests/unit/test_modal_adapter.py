@@ -431,6 +431,14 @@ def test_image_and_secret_cover_the_complete_runtime_without_source_secrets(
     ]
     assert WEBHOOK_SECRET not in all_steps
     assert GITHUB_TOKEN not in all_steps
+    env_steps = [step for step in image.steps if step[0] == "env"]
+    assert len(env_steps) == 1
+    assert env_steps[0][1][0] == {
+        "PYTHONPATH": "/opt/tawg/src",
+        "TAWG_REPOSITORY_PERSIST_MODE": "full",
+        "TAWG_MODAL_BRANCH": "main",
+        "TAWG_DEV_MODE": "false",
+    }
 
 
 def test_dev_mode_mounts_tawg_dev_secret_after_shared_secrets(
@@ -463,6 +471,9 @@ def test_dev_mode_mounts_tawg_dev_secret_after_shared_secrets(
     assert [secret.name for secret in module.scheduled_maintenance.config["secrets"]] == [
         "tawg-maintenance",
     ]
+    image = FakeImage.created[0]
+    env_step = next(step for step in image.steps if step[0] == "env")
+    assert env_step[1][0]["TAWG_DEV_MODE"] == "true"
 
 
 @pytest.mark.asyncio
