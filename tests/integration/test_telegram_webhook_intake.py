@@ -16,6 +16,7 @@ from tawg_bot.models import (
     TelegramWebhookReceipts,
     TriggerKind,
 )
+from tawg_bot.persist_mode import PersistMode
 from tawg_bot.privacy import PrivacyFilter
 from tawg_bot.telegram_intake import MemberWelcomeReconciler, ingest_envelopes
 from tawg_bot.telegram_webhook import (
@@ -197,6 +198,70 @@ def test_bot_command_cannot_fall_through_to_greeting_candidate(tmp_path: Path) -
     assert json.loads(
         (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
     ) == []
+
+
+def test_ingest_envelopes_namespaces_receipt_by_bot(tmp_path: Path) -> None:
+    seed_repository(tmp_path)
+    ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(envelope(update_id=1001, message_id=60, text="hi"),),
+        now=NOW,
+        bot_id=77,
+        persist_mode=PersistMode.RECEIPT_ONLY,
+    )
+    assert (tmp_path / "data/state/telegram-webhook-receipts.77.json").exists()
+    assert not (tmp_path / "data/state/telegram-webhook-receipts.json").exists()
+
+
+def test_receipt_only_creates_bot_local_job_even_when_record_exists(tmp_path: Path) -> None:
+    seed_repository(tmp_path)
+    # Production ingests first in full mode with a higher update_id.
+    ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(
+            envelope(
+                update_id=999999,
+                message_id=70,
+                text="@tawg_bot hi",
+                triggers_reply=True,
+                entities=(
+                    TelegramWebhookEntity(
+                        entity_type="mention", offset=0, length=9, value="@tawg_bot"
+                    ),
+                ),
+            ),
+        ),
+        now=NOW,
+    )
+    # Dev ingests the same message with a lower update_id in receipt-only mode.
+    result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(
+            envelope(
+                update_id=100,
+                message_id=70,
+                text="@tawg_bot hi",
+                triggers_reply=True,
+                entities=(
+                    TelegramWebhookEntity(
+                        entity_type="mention", offset=0, length=9, value="@tawg_bot"
+                    ),
+                ),
+            ),
+        ),
+        now=NOW,
+        bot_id=77,
+        persist_mode=PersistMode.RECEIPT_ONLY,
+    )
+    assert result.jobs_created == 1
+    jobs = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())
+    assert [job["job_id"] for job in jobs] == ["reply:77:tg:tawg:70", "reply:tg:tawg:70"]
 
 
 def test_redacted_bot_command_marker_survives_webhook_to_intake(tmp_path: Path) -> None:

@@ -71,5 +71,5 @@ jobs:
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
           TAWG_MODAL_APP_NAME: tawg-development
           TAWG_MODAL_BRANCH: dev
-          TAWG_REPOSITORY_PERSIST_ENABLED: "false"
+          TAWG_REPOSITORY_PERSIST_MODE: receipt-only
         run: modal deploy deploy/modal_app.py

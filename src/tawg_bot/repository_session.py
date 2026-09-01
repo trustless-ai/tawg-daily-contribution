@@ -13,6 +13,7 @@ RepositoryErrorCode = Literal[
     "repository_checkpoint_failed",
     "repository_checkout_failed",
     "repository_command_failed",
+    "repository_merge_failed",
 ]
 
 
@@ -68,10 +69,12 @@ class RepositorySession:
         remote: str,
         branch: str,
         runner: CommandRunner | None = None,
+        merge_branch: str | None = None,
     ) -> None:
         self.remote = remote
         self.branch = branch
         self.runner = runner or AsyncioCommandRunner()
+        self.merge_branch = merge_branch
 
     async def run(
         self,
@@ -99,6 +102,29 @@ class RepositorySession:
                         cwd=checkout.parent,
                         failure_code="repository_checkout_failed",
                     )
+                    if self.merge_branch is not None and self.branch != self.merge_branch:
+                        await self._run_command(
+                            argv=(
+                                "git",
+                                "fetch",
+                                "origin",
+                                self.merge_branch,
+                                "--depth",
+                                "1",
+                            ),
+                            cwd=checkout,
+                            failure_code="repository_merge_failed",
+                        )
+                        await self._run_command(
+                            argv=(
+                                "git",
+                                "merge",
+                                "--no-edit",
+                                f"origin/{self.merge_branch}",
+                            ),
+                            cwd=checkout,
+                            failure_code="repository_merge_failed",
+                        )
                     result = await operation(checkout)
                     checkpoint = await self._run_command(
                         argv=(

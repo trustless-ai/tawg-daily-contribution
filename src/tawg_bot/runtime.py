@@ -15,6 +15,7 @@ from time import monotonic
 import httpx
 from pydantic import ValidationError
 
+from tawg_bot.bot_identity import configured_bot_id
 from tawg_bot.bot_router import (
     BotReplyService,
     PreparedReply,
@@ -59,6 +60,7 @@ from tawg_bot.models import (
     PendingBotJob,
     TriggerKind,
 )
+from tawg_bot.persist_mode import PersistMode, configured_persist_mode
 from tawg_bot.persistence_guard import PersistenceRejected
 from tawg_bot.repository_session import RepositoryConflict
 from tawg_bot.scan_targets import ScanTargetStore, ScanTargetVerifier
@@ -229,12 +231,16 @@ class ProductionRuntime:
     ) -> WebhookIntakeResult:
         _require_utc(now, "webhook ingestion time")
         bot_username = _configured_bot_username()
+        bot_id = configured_bot_id()
+        persist_mode = configured_persist_mode()
         async with httpx.AsyncClient(timeout=30) as client:
             pipeline = _LivePipeline(
                 self.root,
                 client=client,
                 checkpoint=self.checkpoint,
                 now=now,
+                bot_id=bot_id,
+                persist_mode=persist_mode,
             )
             result = ingest_envelopes(
                 root=self.root,
@@ -243,6 +249,8 @@ class ProductionRuntime:
                 envelopes=(envelope,),
                 now=now,
                 telegram_chat_id=pipeline._chat_id(),
+                bot_id=bot_id,
+                persist_mode=persist_mode,
             )
             pipeline.telegram_synced_at = now
             await self.checkpoint.publish(f"telegram-webhook:{envelope.update_id}", self.root)
@@ -359,6 +367,8 @@ class _LivePipeline:
         now: datetime,
         ai: ClaudeCli | None = None,
         member_introductions_enabled: bool = False,
+        bot_id: int | None = None,
+        persist_mode: PersistMode = PersistMode.FULL,
     ) -> None:
         self.root = root.resolve()
         self.client = client
@@ -404,6 +414,8 @@ class _LivePipeline:
         self.prepared_replies: list[PreparedReply] = []
         self.reply_failures: list[str] = []
         self.member_introductions_enabled = member_introductions_enabled
+        self.bot_id = bot_id
+        self.persist_mode = persist_mode
 
     async def telegram_intake(self, now: datetime) -> None:
         api = TelegramApi.from_env(client=self.client)
@@ -761,6 +773,11 @@ class _LivePipeline:
                 job.job_id,
             )
         )
+        actionable = _filter_bot_local_jobs(
+            actionable,
+            bot_id=self.bot_id,
+            persist_mode=self.persist_mode,
+        )
         if not actionable:
             self.prepared_replies = []
             return
@@ -846,6 +863,18 @@ def _configured_bot_username() -> str:
     if not username:
         raise RuntimeFailure("TAWG_TELEGRAM_BOT_USERNAME is not configured")
     return username
+
+
+def _filter_bot_local_jobs(
+    jobs: list[PendingBotJob],
+    *,
+    bot_id: int | None,
+    persist_mode: PersistMode,
+) -> list[PendingBotJob]:
+    if persist_mode is PersistMode.RECEIPT_ONLY and bot_id is not None:
+        prefix = f"reply:{bot_id}:"
+        return [job for job in jobs if job.job_id.startswith(prefix)]
+    return jobs
 
 
 def _authorized_rich_daily_preview_job_id(root: Path, window: DailyWindow) -> str:

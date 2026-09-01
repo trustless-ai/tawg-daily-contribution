@@ -306,3 +306,25 @@ Rollback is an operator action, not a redeploy side effect:
 Telegram retains incoming updates for no longer than 24 hours, so execute an unhealthy-runtime
 rollback promptly. Diagnose and re-run the full shadow/cutover gates before another webhook
 attempt.
+
+## Dev bot mirror
+
+The `dev` branch hosts a second, developer-facing bot ("dev bot") that shares the production
+Python core but must never write canonical message history, knowledge, pending jobs, delivery
+state, or layer markers.
+
+Deployment contract:
+
+- The dev Modal app is `tawg-development`, deployed from `.github/workflows/modal-deploy-dev.yml`
+  with `TAWG_MODAL_BRANCH=dev` and `TAWG_REPOSITORY_PERSIST_MODE=receipt-only`.
+- The dev workspace must bind `tawg-worker`, `tawg-webhook`, `tawg-maintenance`, and
+  `tawg-github-announcements` to the dev bot token, dev chat id, dev bot username, and a
+  `GITHUB_TOKEN` scoped to push to `dev` only. These secrets must not share production values.
+- The dev bot's numeric identity is derived from its token prefix. In `receipt-only` mode the dev
+  bot deduplicates on its own namespaced receipt `data/state/telegram-webhook-receipts.<bot_id>.json`
+  and never falls back to the production legacy receipt.
+- Production runs `full` mode, which is the only mode that falls back to the legacy unnamed
+  receipt for the one-time migration to the namespaced path.
+- Each dev run merges `origin/main` into `dev` first and fails closed on conflict (no receipt
+  write, no Telegram send). A 30-minute Modal schedule (`scheduled_dev_sync`) keeps `dev` advancing
+  when the dev bot is idle; it never runs the Daily digest, L1–L4, a model, or a send.

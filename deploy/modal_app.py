@@ -13,6 +13,7 @@ from pathlib import Path
 import modal
 from fastapi import Request, Response
 
+from tawg_bot.bot_identity import configured_bot_id
 from tawg_bot.privacy import PrivacyFilter
 from tawg_bot.repository_session import RepositorySession
 from tawg_bot.runtime import ProductionRuntime
@@ -28,8 +29,9 @@ from tawg_bot.telegram_webhook import (
 _APP_NAME = os.environ.get("TAWG_MODAL_APP_NAME", "tawg-production")
 _REMOTE = "https://github.com/trustless-ai/tawg-daily-contribution.git"
 _BRANCH = os.environ.get("TAWG_MODAL_BRANCH", "main")
-_REPOSITORY_PERSIST_ENABLED = os.environ.get(
-    "TAWG_REPOSITORY_PERSIST_ENABLED", "true"
+_REPOSITORY_PERSIST_MODE = os.environ.get(
+    "TAWG_REPOSITORY_PERSIST_MODE",
+    "none" if os.environ.get("TAWG_REPOSITORY_PERSIST_ENABLED", "true") == "false" else "full",
 )
 _RUNTIME_ROOT = Path("/opt/tawg")
 _PRIVACY_CONFIG = _RUNTIME_ROOT / "config/privacy.yml"
@@ -104,7 +106,7 @@ image = (
     .env(
         {
             "PYTHONPATH": str(_RUNTIME_ROOT / "src"),
-            "TAWG_REPOSITORY_PERSIST_ENABLED": _REPOSITORY_PERSIST_ENABLED,
+            "TAWG_REPOSITORY_PERSIST_MODE": _REPOSITORY_PERSIST_MODE,
         }
     )
     .workdir(str(_RUNTIME_ROOT))
@@ -144,11 +146,14 @@ def _normalizer() -> TelegramWebhookNormalizer:
 @contextmanager
 def _repository_environment() -> Iterator[None]:
     managed_keys = {
-        key for key in os.environ if key.startswith("GIT_CONFIG_") or key == "GITHUB_REF_NAME"
+        key
+        for key in os.environ
+        if key.startswith("GIT_CONFIG_") or key in {"GITHUB_REF_NAME", "TAWG_BOT_ID"}
     }
     previous = {key: os.environ[key] for key in managed_keys}
     token = os.environ["GITHUB_TOKEN"]
     credentials = base64.b64encode(f"x-access-token:{token}".encode()).decode("ascii")
+    bot_id = configured_bot_id()
     try:
         for key in managed_keys:
             del os.environ[key]
@@ -156,10 +161,12 @@ def _repository_environment() -> Iterator[None]:
         os.environ["GIT_CONFIG_KEY_0"] = "http.https://github.com/.extraheader"
         os.environ["GIT_CONFIG_VALUE_0"] = f"AUTHORIZATION: basic {credentials}"
         os.environ["GITHUB_REF_NAME"] = _BRANCH
+        if bot_id is not None:
+            os.environ["TAWG_BOT_ID"] = str(bot_id)
         yield
     finally:
         for key in tuple(os.environ):
-            if key.startswith("GIT_CONFIG_") or key == "GITHUB_REF_NAME":
+            if key.startswith("GIT_CONFIG_") or key in {"GITHUB_REF_NAME", "TAWG_BOT_ID"}:
                 del os.environ[key]
         os.environ.update(previous)
 
@@ -201,11 +208,17 @@ async def repository_worker(envelope_payload: dict[str, object] | None = None) -
             runtime = ProductionRuntime.from_environment(root)
             if envelope is not None:
                 await runtime.ingest_webhook_envelope(envelope, now=now)
-            else:
+            elif _BRANCH == "main":
                 await runtime.maintenance_tick(now, observe_only=False)
+            # dev maintenance is sync-only; the merge already happened above
 
+        merge_branch = None if _BRANCH == "main" else "main"
         with _repository_environment():
-            await RepositorySession(remote=_REMOTE, branch=_BRANCH).run(
+            await RepositorySession(
+                remote=_REMOTE,
+                branch=_BRANCH,
+                merge_branch=merge_branch,
+            ).run(
                 operation_id=operation_id,
                 operation=run_runtime,
             )
@@ -224,6 +237,19 @@ async def repository_worker(envelope_payload: dict[str, object] | None = None) -
 async def scheduled_maintenance() -> None:
     """Dispatch maintenance only after an explicit production enablement."""
     if os.environ.get("TAWG_MODAL_MAINTENANCE_ENABLED") != "true":
+        return
+    await repository_worker.spawn.aio(None)
+
+
+@app.function(
+    image=image,
+    secrets=[worker_secret],
+    schedule=modal.Cron("*/30 * * * *"),
+    timeout=_ENDPOINT_TIMEOUT_SECONDS,
+)
+async def scheduled_dev_sync() -> None:
+    """Merge main into dev on a lightweight cadence; no tick, no model, no send."""
+    if _BRANCH == "main":
         return
     await repository_worker.spawn.aio(None)
 

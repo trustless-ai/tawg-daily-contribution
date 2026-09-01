@@ -521,6 +521,36 @@ def run_checkpoint_with_push_failure(
     return completed
 
 
+def test_checkpoint_script_receipt_only_requires_bot_id(tmp_path: Path) -> None:
+    completed = subprocess.run(
+        ["bash", str(ROOT / "scripts/commit_operation.sh"), "test:op"],
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "TAWG_REPOSITORY_PERSIST_MODE": "receipt-only",
+            "GITHUB_REF_NAME": "dev",
+        },
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 6
+
+
+def test_checkpoint_script_none_mode_is_noop(tmp_path: Path) -> None:
+    completed = subprocess.run(
+        ["bash", str(ROOT / "scripts/commit_operation.sh"), "test:op"],
+        cwd=tmp_path,
+        env={
+            **os.environ,
+            "TAWG_REPOSITORY_PERSIST_MODE": "none",
+            "GITHUB_REF_NAME": "dev",
+        },
+        capture_output=True,
+        check=False,
+    )
+    assert completed.returncode == 0
+
+
 @pytest.mark.parametrize("reason", ["non-fast-forward", "fetch first"])
 def test_checkpoint_script_classifies_non_fast_forward_push_as_conflict(
     tmp_path: Path, reason: str

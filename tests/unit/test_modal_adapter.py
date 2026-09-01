@@ -334,6 +334,7 @@ def test_adapter_separates_scheduled_trigger_from_single_writer_and_endpoint(
 ) -> None:
     worker = modal_adapter.repository_worker
     maintenance = modal_adapter.scheduled_maintenance
+    dev_sync = modal_adapter.scheduled_dev_sync
     endpoint = modal_adapter.telegram_webhook
 
     assert "schedule" not in worker.config
@@ -341,11 +342,12 @@ def test_adapter_separates_scheduled_trigger_from_single_writer_and_endpoint(
     assert 1 <= worker.config["timeout"] <= 3_600
     assert 1 <= worker.config["retries"].max_retries <= 3
     assert maintenance.config["schedule"].expression == "*/5 * * * *"
+    assert dev_sync.config["schedule"].expression == "*/30 * * * *"
     assert "max_containers" not in maintenance.config
     assert endpoint.config["timeout"] <= 30
     assert endpoint.raw_f.modal_web_config == {"method": "POST"}
     assert len(FakeApp.created) == 1
-    assert FakeApp.created[0].functions == [worker, maintenance, endpoint]
+    assert FakeApp.created[0].functions == [worker, maintenance, dev_sync, endpoint]
 
 
 def test_image_and_secret_cover_the_complete_runtime_without_source_secrets(
@@ -637,9 +639,10 @@ class FakeRuntime:
 class FakeRepositorySession:
     instances: ClassVar[list[FakeRepositorySession]] = []
 
-    def __init__(self, *, remote: str, branch: str) -> None:
+    def __init__(self, *, remote: str, branch: str, merge_branch: str | None = None) -> None:
         self.remote = remote
         self.branch = branch
+        self.merge_branch = merge_branch
         self.operation_ids: list[str] = []
         self.environments: list[dict[str, str]] = []
         self.instances.append(self)
@@ -831,6 +834,49 @@ async def test_scheduled_maintenance_spawns_shared_worker_only_when_exactly_true
     assert modal_adapter.repository_worker.sync_spawned == []
     assert modal_adapter.repository_worker.async_spawned == [None]
     assert modal_adapter.repository_worker.spawned == [None]
+
+
+@pytest.mark.asyncio
+async def test_scheduled_dev_sync_is_noop_on_main(
+    modal_adapter: types.ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(modal_adapter, "_BRANCH", "main")
+
+    await modal_adapter.scheduled_dev_sync.raw_f()
+
+    assert modal_adapter.repository_worker.spawned == []
+
+
+@pytest.mark.asyncio
+async def test_scheduled_dev_sync_spawns_worker_on_dev(
+    modal_adapter: types.ModuleType,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(modal_adapter, "_BRANCH", "dev")
+
+    await modal_adapter.scheduled_dev_sync.raw_f()
+
+    assert modal_adapter.repository_worker.async_spawned == [None]
+    assert modal_adapter.repository_worker.spawned == [None]
+
+
+@pytest.mark.asyncio
+async def test_dev_worker_merges_main_and_skips_maintenance_tick(
+    modal_adapter: types.ModuleType,
+    fake_worker_dependencies: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    del fake_worker_dependencies
+    monkeypatch.setattr(modal_adapter, "_BRANCH", "dev")
+
+    await modal_adapter.repository_worker.raw_f()
+
+    session = FakeRepositorySession.instances[0]
+    assert session.branch == "dev"
+    assert session.merge_branch == "main"
+    assert FakeRuntime.envelopes == []
+    assert FakeRuntime.maintenance_calls == []
 
 
 def test_claude_runtime_lock_is_exact_and_integrity_pinned() -> None:
