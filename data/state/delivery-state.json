@@ -158,6 +158,26 @@
     "updated_at": "2026-08-31T23:07:44.327010Z"
   },
   {
+    "content_sha256": "655a0d6f57535970c68e04cc079b26bfae8f59c7dcd493690252dc3ff747037e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-09-01T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-09-01T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-01T23:28:15.986049Z",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-01T23:28:15.986049Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      3958
+    ],
+    "updated_at": "2026-09-01T23:28:15.986049Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
@@ -296,6 +316,26 @@
       3936
     ],
     "updated_at": "2026-09-01T17:05:15.222360Z"
+  },
+  {
+    "content_sha256": "4fcb3796a5bdfd4ea417ed3a7d7d2ccb76a1b6bfc94d9a221d3ad5cdda869da8",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:76db4dde68fb15d1209d5e38",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:76db4dde68fb15d1209d5e38",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-01T23:32:48.403032Z",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-01T23:32:48.403032Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      3959
+    ],
+    "updated_at": "2026-09-01T23:32:48.403032Z"
   },
   {
     "content_sha256": "44a211d12aaa7af84aaa9be5dbb87e583142d502f3fc9f2341d24e89423adf3a",
