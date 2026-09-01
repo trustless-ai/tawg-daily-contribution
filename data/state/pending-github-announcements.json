@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_merged:76db4dde68fb15d1209d5e38",
-    "kind": "pr_merged",
-    "number": 10,
-    "occurred_at": "2026-09-01T23:09:48Z",
-    "repository": "trustless-ai/tawg-daily-contribution",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "fix(runtime): wire the invinoveritas VERIFICATION client into BotReplyService"
-  }
-]
+[]
