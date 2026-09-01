@@ -334,7 +334,6 @@ def test_adapter_separates_scheduled_trigger_from_single_writer_and_endpoint(
 ) -> None:
     worker = modal_adapter.repository_worker
     maintenance = modal_adapter.scheduled_maintenance
-    dev_sync = modal_adapter.scheduled_dev_sync
     endpoint = modal_adapter.telegram_webhook
 
     assert "schedule" not in worker.config
@@ -342,12 +341,11 @@ def test_adapter_separates_scheduled_trigger_from_single_writer_and_endpoint(
     assert 1 <= worker.config["timeout"] <= 3_600
     assert 1 <= worker.config["retries"].max_retries <= 3
     assert maintenance.config["schedule"].expression == "*/5 * * * *"
-    assert dev_sync.config["schedule"].expression == "*/30 * * * *"
     assert "max_containers" not in maintenance.config
     assert endpoint.config["timeout"] <= 30
     assert endpoint.raw_f.modal_web_config == {"method": "POST"}
     assert len(FakeApp.created) == 1
-    assert FakeApp.created[0].functions == [worker, maintenance, dev_sync, endpoint]
+    assert FakeApp.created[0].functions == [worker, maintenance, endpoint]
 
 
 def test_image_and_secret_cover_the_complete_runtime_without_source_secrets(
@@ -461,9 +459,6 @@ def test_dev_mode_mounts_tawg_dev_secret_after_shared_secrets(
     assert [secret.name for secret in module.telegram_webhook.config["secrets"]] == [
         "tawg-webhook",
         "tawg-dev",
-    ]
-    assert [secret.name for secret in module.scheduled_dev_sync.config["secrets"]] == [
-        "tawg-worker",
     ]
     assert [secret.name for secret in module.scheduled_maintenance.config["secrets"]] == [
         "tawg-maintenance",
@@ -867,31 +862,6 @@ async def test_scheduled_maintenance_spawns_shared_worker_only_when_exactly_true
     await modal_adapter.scheduled_maintenance.raw_f()
 
     assert modal_adapter.repository_worker.sync_spawned == []
-    assert modal_adapter.repository_worker.async_spawned == [None]
-    assert modal_adapter.repository_worker.spawned == [None]
-
-
-@pytest.mark.asyncio
-async def test_scheduled_dev_sync_is_noop_on_main(
-    modal_adapter: types.ModuleType,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(modal_adapter, "_BRANCH", "main")
-
-    await modal_adapter.scheduled_dev_sync.raw_f()
-
-    assert modal_adapter.repository_worker.spawned == []
-
-
-@pytest.mark.asyncio
-async def test_scheduled_dev_sync_spawns_worker_on_dev(
-    modal_adapter: types.ModuleType,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(modal_adapter, "_BRANCH", "dev")
-
-    await modal_adapter.scheduled_dev_sync.raw_f()
-
     assert modal_adapter.repository_worker.async_spawned == [None]
     assert modal_adapter.repository_worker.spawned == [None]
 

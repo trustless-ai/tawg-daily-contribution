@@ -113,6 +113,7 @@ image = (
         {
             "PYTHONPATH": str(_RUNTIME_ROOT / "src"),
             "TAWG_REPOSITORY_PERSIST_MODE": _REPOSITORY_PERSIST_MODE,
+            "TAWG_MODAL_BRANCH": _BRANCH,
         }
     )
     .workdir(str(_RUNTIME_ROOT))
@@ -253,19 +254,6 @@ async def repository_worker(envelope_payload: dict[str, object] | None = None) -
 async def scheduled_maintenance() -> None:
     """Dispatch maintenance only after an explicit production enablement."""
     if os.environ.get("TAWG_MODAL_MAINTENANCE_ENABLED") != "true":
-        return
-    await repository_worker.spawn.aio(None)
-
-
-@app.function(
-    image=image,
-    secrets=[worker_secret],
-    schedule=modal.Cron("*/30 * * * *"),
-    timeout=_ENDPOINT_TIMEOUT_SECONDS,
-)
-async def scheduled_dev_sync() -> None:
-    """Merge main into dev on a lightweight cadence; no tick, no model, no send."""
-    if _BRANCH == "main":
         return
     await repository_worker.spawn.aio(None)
 

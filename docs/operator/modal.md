@@ -333,5 +333,6 @@ Deployment contract:
 - Production runs `full` mode, which is the only mode that falls back to the legacy unnamed
   receipt for the one-time migration to the namespaced path.
 - Each dev run merges `origin/main` into `dev` first and fails closed on conflict (no receipt
-  write, no Telegram send). A 30-minute Modal schedule (`scheduled_dev_sync`) keeps `dev` advancing
-  when the dev bot is idle; it never runs the Daily digest, L1–L4, a model, or a send.
+  write, no Telegram send). The shared five-minute `scheduled_maintenance` schedule keeps `dev`
+  advancing when the dev bot is idle (gated by `TAWG_MODAL_MAINTENANCE_ENABLED`); on the dev branch
+  the worker only merges and never runs the Daily digest, L1–L4, a model, or a send.
