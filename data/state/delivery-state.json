@@ -278,6 +278,26 @@
     "updated_at": "2026-08-29T19:45:14.936877Z"
   },
   {
+    "content_sha256": "2305c0ce9184a4473bebb0416b08519f244fb30cc0e58236706cf4ecb799e705",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:502488b8b48e6c57fa811a66",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:502488b8b48e6c57fa811a66",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-01T17:05:15.222360Z",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-01T17:05:15.222360Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      3936
+    ],
+    "updated_at": "2026-09-01T17:05:15.222360Z"
+  },
+  {
     "content_sha256": "44a211d12aaa7af84aaa9be5dbb87e583142d502f3fc9f2341d24e89423adf3a",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:7cb0cd2444c1e60e8869071e",
@@ -496,6 +516,26 @@
       3822
     ],
     "updated_at": "2026-08-31T15:55:11.595175Z"
+  },
+  {
+    "content_sha256": "9046765efa0a209d3c92d29adc4455be1d78064d6479c9e232343f92fbdca821",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:69604c44febdf62be3d92ba4",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:69604c44febdf62be3d92ba4",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-01T17:05:15.222360Z",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-01T17:05:15.222360Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      3937
+    ],
+    "updated_at": "2026-09-01T17:05:15.222360Z"
   },
   {
     "content_sha256": "546b9be29e26c602fed30fc8744da7ade335f83413cef1ec191191b16cc6b5cf",
