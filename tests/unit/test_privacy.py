@@ -26,6 +26,21 @@ def test_privacy_cases_are_deterministic(redactor: PrivacyFilter) -> None:
             assert result.reason_code == case["reason"], case["name"]
 
 
+def test_dash_delimited_unix_timestamp_is_not_redacted_as_phone(
+    redactor: PrivacyFilter,
+) -> None:
+    """A Nostr proof `d` tag carries a 10-digit unix timestamp bounded by dashes (not JSON
+    punctuation). It must stay intact, not be misread as a phone number."""
+    value = (
+        "invinoveritas-proof-"
+        "e0b0dc557bb89124b8edfe53e86ad08b42ae28004746f9cf801206d527cafe24"
+        "-1786889259-5ec66c8f"
+    )
+    result = redactor.inspect(value)
+    assert result.accepted is True
+    assert result.sanitized_text == value
+
+
 def test_rejected_text_is_not_copied_into_failure_record(redactor: PrivacyFilter) -> None:
     source = "seed phrase: alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima"
     result = redactor.inspect(source)
