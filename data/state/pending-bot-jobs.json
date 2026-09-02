@@ -90,6 +90,11 @@
     "classified_route": "coordination",
     "created_at": "2026-09-02T14:58:33.449564Z",
     "job_id": "member-welcome:ryan-veteze",
+    "knowledge_mutation_paths": [
+      "knowledge/acknowledgements/ryan-veteze.md",
+      "knowledge/index.md"
+    ],
+    "knowledge_mutation_trigger_sha256": "fc340fd354240333e0c07f29373dbdf025f25f2ea3cd074e4e7a01ee92d2bdfd",
     "message_thread_id": null,
     "prepared_citations": [],
     "prepared_language": "en",
@@ -105,7 +110,7 @@
     "router_version": "template-member-welcome-v1",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "ready",
+    "status": "delivered",
     "trigger_kind": "member_welcome",
     "trigger_record_id": "tg:tawg:4051",
     "updated_at": "2026-09-02T14:58:33.449564Z",
