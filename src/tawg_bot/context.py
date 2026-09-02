@@ -6,7 +6,7 @@ import copy
 import hashlib
 import json
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, cast
 
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 
@@ -109,7 +109,7 @@ class ContextPackBuilder:
             "output_schema": self._canonical(safe.output_schema),
             "budgets": self._canonical(safe.budgets),
         }
-        self._assert_public(payload)
+        payload = cast(dict[str, Any], self._sanitize_public(payload))
         self._sync_citation_authority(payload)
         text = self._encode(payload)
         prune_order = (
@@ -216,21 +216,20 @@ class ContextPackBuilder:
                     parent_key=parent_key,
                 )
 
-    def _assert_public(self, value: object, *, parent_key: str | None = None) -> None:
+    def _sanitize_public(self, value: Any, *, parent_key: str | None = None) -> Any:
         if isinstance(value, str):
             try:
-                self.privacy.assert_public_value(value, parent_key=parent_key)
+                return self.privacy.sanitize_public_value(value, parent_key=parent_key)
             except PrivacyViolation as error:
                 raise ContextRejected(f"context privacy rejection: {error}") from None
-            return
         if isinstance(value, dict):
-            for key, item in value.items():
-                self._assert_public(str(key))
-                self._assert_public(item, parent_key=str(key))
-            return
+            return {
+                str(key): self._sanitize_public(item, parent_key=str(key))
+                for key, item in value.items()
+            }
         if isinstance(value, list):
-            for item in value:
-                self._assert_public(item, parent_key=parent_key)
+            return [self._sanitize_public(item, parent_key=parent_key) for item in value]
+        return value
 
     @staticmethod
     def _prune(value: object) -> bool:

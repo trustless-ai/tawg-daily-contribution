@@ -302,6 +302,19 @@ class PrivacyFilter:
             return
         self.assert_public(value)
 
+    def sanitize_public_value(self, value: str, *, parent_key: str | None) -> str:
+        """Redact sensitive substrings while preserving exact SHA-256 fields."""
+
+        if (
+            parent_key in self._SHA256_KEYS
+            and self._SHA256_VALUE.fullmatch(value) is not None
+        ):
+            return value
+        inspected = self.inspect(value)
+        if not inspected.accepted or inspected.sanitized_text is None:
+            raise PrivacyViolation(inspected.reason_code or "unsafe_text")
+        return inspected.sanitized_text
+
     def assert_public_numeric(self, value: int | float, *, parent_key: str | None) -> None:
         if parent_key in self._drop_numeric_id_keys:
             raise PrivacyViolation("unredacted_numeric_id")
