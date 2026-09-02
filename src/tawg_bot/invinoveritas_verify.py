@@ -294,53 +294,133 @@ async def verify_and_confirm(
     return result, proof_status
 
 
-def format_verification_reply(result: VerificationResult, proof_status: ProofStatus) -> str:
-    """Render a (VerificationResult, ProofStatus) pair as Telegram reply text. Separated from
-    verify_and_confirm so the formatting can be unit-tested without a network call, and so
-    bot_router.py's eventual integration can reuse this without re-deriving the format.
+def _markdown_escape(value: str) -> str:
+    """Escape Markdown-special characters so supplied text renders literally.
+
+    Mirrors the Rich Markdown escaping convention already used for GitHub announcement labels,
+    so a claim containing `*`, `_`, `[`, backticks, etc. cannot break out of the fixed reply
+    layout or be misread as formatting.
+    """
+    escaped = value.replace("\\", "\\\\")
+    for character in "[]()_*`~<>&":
+        escaped = escaped.replace(character, f"\\{character}")
+    return escaped
+
+
+def _proof_event(raw: dict[str, Any] | None) -> dict[str, Any] | None:
+    """Return the signed proof event from a raw /review payload, or None when absent."""
+    proof = (raw or {}).get("proof")
+    event = proof.get("event") if isinstance(proof, dict) else None
+    return event if isinstance(event, dict) else None
+
+
+def format_verification_reply(
+    result: VerificationResult,
+    proof_status: ProofStatus,
+    *,
+    artifact: str,
+) -> str:
+    """Render a (VerificationResult, ProofStatus) pair as a fixed Rich Markdown reply.
+
+    Follow-up (Fede): the reply should explicitly state WHAT was verified, WHAT the proof
+    artifact is, and HOW to use that proof object to call the endpoint for independent
+    validation -- not merely relay the verdict plus a bare link. The artifact is therefore now
+    a required argument, echoed back (escaped) so the reader sees the exact claim that was
+    checked, alongside the verdict, proof identity, and the exact /verify-proof request shape.
 
     FAIL CLOSED (Pavlo, msg 3823, verbatim): "A failed or unresolvable proof should fail
     closed rather than leave Trusty repeating an unverifiable verdict." When
-    proof_status.verified is False, the verdict/summary/confidence are NOT surfaced at all --
-    only the fact that verification failed and why, so a reader never mistakes an
-    unauthenticated /review response for something Trusty is vouching for.
+    proof_status.verified is False, the verdict/summary/confidence/decision_ref are NOT
+    surfaced at all -- only the fact that verification failed, why, and which claim could not
+    be confirmed.
 
     HONEST WORDING (Pavlo, msg 3830): the prior wording said "independently confirmed" / "no
     trust required," but confirm_proof() calls invinoveritas's OWN /verify-proof endpoint --
     that is invinoveritas checking its own signature server-side, not Trusty recomputing the
     NIP-01 event id / BIP-340 schnorr signature locally against the pinned pubkey with no
     network round-trip back to invinoveritas. This project has no crypto dependency today, so
-    real local recomputation is a genuine future step, not something to claim now. The wording
-    below says exactly what the mechanism establishes -- "confirmed via invinoveritas's own
-    check," not "independently confirmed" -- rather than overclaiming a trust boundary this
-    code does not yet cross.
+    real local recomputation is a genuine future step, not something to claim now. The reply
+    below keeps that caveat rather than overclaiming a trust boundary this code does not yet
+    cross.
     """
+    claim = _markdown_escape(artifact)
+    artifact_hash = hashlib.sha256(artifact.encode("utf-8")).hexdigest()
+
     if not proof_status.verified:
         lines = [
-            "invinoveritas verdict withheld -- the signed proof did not pass "
-            "invinoveritas's own /verify-proof check.",
+            "🔒 **Verification withheld**",
+            "",
+            "The signed proof did not pass invinoveritas's own /verify-proof check, so the "
+            "verdict was not relayed.",
         ]
         if proof_status.error:
-            lines.append(f"reason: {proof_status.error}")
-        lines.append(
-            "This means the verdict cannot be confirmed as genuinely issued by invinoveritas, "
-            "so it is not being relayed."
+            lines.append(f"reason: {_markdown_escape(proof_status.error)}")
+        lines.extend(
+            [
+                "",
+                "**Claim not verified:**",
+                f"> {claim}",
+            ]
         )
         return "\n".join(lines)
 
     lines = [
-        f"invinoveritas verdict: {result.verdict} (confidence {result.confidence:.2f})",
-        "proof authenticity: confirmed via invinoveritas's own /verify-proof check "
-        "(signature + artifact hash both verified server-side; not yet independently "
-        "recomputed locally by Trusty)",
+        "🔍 **Verification result**",
+        "",
+        "**Claim verified:**",
+        f"> {claim}",
+        "",
+        f"**Verdict:** {_markdown_escape(result.verdict)} (confidence {result.confidence:.2f})",
     ]
     if result.summary:
-        lines.append(result.summary)
+        lines.extend(["", _markdown_escape(result.summary)])
+    proof_lines = [
+        "",
+        "**Proof artifact:**",
+    ]
     if result.decision_ref:
-        lines.append(f"decision_ref: {result.decision_ref}")
+        proof_lines.append(f"- decision_ref: `{_markdown_escape(result.decision_ref)}`")
+    proof_lines.append(f"- artifact sha256: `{artifact_hash}`")
+    lines.extend(proof_lines)
     if result.verify_proof_url:
-        lines.append(
-            "You can run the same invinoveritas /verify-proof check here: "
-            f"{result.verify_proof_url}"
+        lines.extend(
+            [
+                "",
+                "**Independent check (free, no auth):**",
+                f"POST the signed proof event to `{_markdown_escape(result.verify_proof_url)}` "
+                f"with `expect_artifact_hash` = `{artifact_hash}`.",
+            ]
         )
+    event = _proof_event(result.raw)
+    if event is not None:
+        lines.extend(
+            [
+                "",
+                "**Signed proof event:**",
+                json.dumps(event, ensure_ascii=False, separators=(",", ":")),
+            ]
+        )
+        if result.verify_proof_url:
+            verify_body = json.dumps(
+                {"event": event, "expect_artifact_hash": artifact_hash},
+                ensure_ascii=False,
+                separators=(",", ":"),
+            )
+            lines.extend(
+                [
+                    "",
+                    "```bash",
+                    f"curl -sS -X POST '{result.verify_proof_url}' \\",
+                    "  -H 'Content-Type: application/json' \\",
+                    f"  -d '{verify_body}'",
+                    "```",
+                ]
+            )
+    lines.extend(
+        [
+            "",
+            "Note: proof authenticity is confirmed via invinoveritas's own /verify-proof "
+            "check; the signature is not yet independently recomputed locally by Trusty.",
+        ]
+    )
     return "\n".join(lines)

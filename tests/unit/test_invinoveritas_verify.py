@@ -438,29 +438,58 @@ def test_verify_and_confirm_still_raises_on_review_failure_not_swallowed() -> No
         asyncio.run(run())
 
 
-def test_format_verification_reply_includes_proof_link_when_verified() -> None:
+def test_format_verification_reply_states_claim_proof_and_independent_check() -> None:
+    """Follow-up (Fede): a verified reply must state WHAT was verified, WHAT the proof
+    artifact is, and HOW to re-run the check independently -- not just relay the verdict."""
     result_dict = _signed_payload(verdict="approve_with_concerns", confidence=0.75)
 
     def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json=result_dict)
 
     async def run() -> str:
-        result = await verify_artifact(_client(handler), artifact="claim")
+        result = await verify_artifact(_client(handler), artifact="1+1=2")
         status = ProofStatus(verified=True, checks={"signature_valid": True})
-        return format_verification_reply(result, status)
+        return format_verification_reply(result, status, artifact="1+1=2")
 
     text = asyncio.run(run())
+    artifact_hash = hashlib.sha256(b"1+1=2").hexdigest()
     assert "approve_with_concerns" in text
     assert "0.75" in text
-    assert "decision_ref: sha256:deadbeef" in text
+    assert "**Claim verified:**" in text
+    assert "1+1=2" in text
+    assert artifact_hash in text
+    assert "sha256:deadbeef" in text
     assert "https://api.babyblueviper.com/verify-proof" in text
+    assert "expect_artifact_hash" in text
+    assert "**Signed proof event:**" in text
+    assert "curl -sS -X POST" in text
+    assert "Content-Type: application/json" in text
+    assert f'"expect_artifact_hash":"{artifact_hash}"' in text
     assert "confirmed via invinoveritas's own /verify-proof check" in text
+
+
+def test_format_verification_reply_escapes_claim_markdown() -> None:
+    """A claim containing Markdown-special characters must render literally, not break the
+    fixed reply layout or be reinterpreted as formatting."""
+    result_dict = _signed_payload(verdict="approve", confidence=0.9)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=result_dict)
+
+    async def run() -> str:
+        result = await verify_artifact(_client(handler), artifact="a*b [c]")
+        status = ProofStatus(verified=True, checks={"signature_valid": True})
+        return format_verification_reply(result, status, artifact="a*b [c]")
+
+    text = asyncio.run(run())
+    assert "a\\*b \\[c\\]" in text
+    assert "a*b [c]" not in text
 
 
 def test_format_verification_reply_withholds_verdict_when_proof_unverified() -> None:
     """FAIL CLOSED (Pavlo, msg 3823, verbatim): 'A failed or unresolvable proof should fail
-    closed rather than leave Trusty repeating an unverifiable verdict.' The verdict/summary
-    must NOT appear anywhere in the withheld reply."""
+    closed rather than leave Trusty repeating an unverifiable verdict.' The verdict/summary/
+    decision_ref must NOT appear anywhere in the withheld reply."""
     from tawg_bot.invinoveritas_verify import VerificationResult
 
     result = VerificationResult(
@@ -473,9 +502,10 @@ def test_format_verification_reply_withholds_verdict_when_proof_unverified() -> 
     )
     status = ProofStatus(verified=False, checks={}, error="signature mismatch")
 
-    text = format_verification_reply(result, status)
+    text = format_verification_reply(result, status, artifact="the claim")
     assert "withheld" in text
     assert "signature mismatch" in text
+    assert "the claim" in text
     assert "approve" not in text
     assert "a summary that must not leak" not in text
     assert "sha256:deadbeef" not in text
