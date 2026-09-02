@@ -182,6 +182,7 @@ class PendingBotJob(StrictModel):
     router_context_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
     router_version: str | None = Field(default=None, max_length=64)
     routed_at: datetime | None = None
+    verification_artifact: str | None = Field(default=None, max_length=4096)
     repair_of_job_id: str | None = Field(default=None, max_length=128)
     repair_reason_code: str | None = Field(default=None, max_length=64)
     welcome_target_person_id: str | None = Field(default=None, max_length=128)

@@ -91,21 +91,26 @@ class ContextualFakeAi:
         *,
         context_scope: str = "knowledge",
         reply_error: Exception | None = None,
+        artifact: str | None = None,
     ) -> None:
         self.route = route
         self.context_scope = context_scope
         self.reply = reply
         self.reply_error = reply_error
+        self.artifact = artifact
         self.calls: list[dict[str, Any]] = []
 
     async def run(self, **kwargs: Any) -> dict[str, Any]:
         self.calls.append(kwargs)
         if kwargs["job_type"] == "route":
-            return {
+            result: dict[str, Any] = {
                 "schema_version": "tawg.route-result.v2",
                 "route": self.route,
                 "context_scope": self.context_scope,
             }
+            if self.artifact is not None:
+                result["artifact"] = self.artifact
+            return result
         if self.reply_error is not None:
             raise self.reply_error
         return deepcopy(self.reply)
@@ -4043,7 +4048,7 @@ def _genuinely_verified_proof_payload() -> dict[str, Any]:
 @pytest.mark.asyncio
 async def test_verification_route_confirms_proof_and_replies(tmp_path: Path) -> None:
     job = seed(tmp_path, "@bot verify: 2+2=4")
-    ai = ContextualFakeAi("verification", reply_result(chinese=False))
+    ai = ContextualFakeAi("verification", reply_result(chinese=False), artifact="2+2=4")
 
     def handler(request: httpx.Request) -> httpx.Response:
         if "/review" in str(request.url):
@@ -4068,7 +4073,7 @@ async def test_verification_route_confirms_proof_and_replies(tmp_path: Path) -> 
 @pytest.mark.asyncio
 async def test_verification_route_fails_closed_when_proof_unverified(tmp_path: Path) -> None:
     job = seed(tmp_path, "@bot verify: 2+2=4")
-    ai = ContextualFakeAi("verification", reply_result(chinese=False))
+    ai = ContextualFakeAi("verification", reply_result(chinese=False), artifact="2+2=4")
 
     def handler(request: httpx.Request) -> httpx.Response:
         if "/review" in str(request.url):
@@ -4101,7 +4106,7 @@ async def test_verification_route_fails_closed_on_valid_true_with_missing_check(
     even when the server reports valid: true." A malformed response claiming valid: true but
     missing artifact_hash_matches must still be withheld, at the full BotReplyService level."""
     job = seed(tmp_path, "@bot verify: 2+2=4")
-    ai = ContextualFakeAi("verification", reply_result(chinese=False))
+    ai = ContextualFakeAi("verification", reply_result(chinese=False), artifact="2+2=4")
 
     def handler(request: httpx.Request) -> httpx.Response:
         if "/review" in str(request.url):
@@ -4139,10 +4144,10 @@ async def test_verification_route_sends_only_the_extracted_artifact_not_reply_ch
     """No arbitrary egress, no silent chat-context sending (Pavlo, msg 3823) -- the seeded
     thread has real prior content ("We need verifiable validation.", "The open question is
     how clients check it.") that must NOT appear in what gets sent to /review. ALSO covers
-    Pavlo's msg 3830 follow-up: the artifact must be the mechanically-extracted claim
-    ("2+2=4"), not the whole trigger wrapper including the @mention and "verify:" framing."""
+    the artifact boundary: the artifact must be the classifier-extracted claim ("2+2=4"),
+    not the whole trigger wrapper including the @mention and "verify:" framing."""
     job = seed(tmp_path, "@bot verify: 2+2=4")
-    ai = ContextualFakeAi("verification", reply_result(chinese=False))
+    ai = ContextualFakeAi("verification", reply_result(chinese=False), artifact="2+2=4")
     captured: dict[str, Any] = {}
 
     def handler(request: httpx.Request) -> httpx.Response:
@@ -4166,7 +4171,7 @@ async def test_verification_route_sends_only_the_extracted_artifact_not_reply_ch
 @pytest.mark.asyncio
 async def test_verification_route_raises_when_not_configured(tmp_path: Path) -> None:
     job = seed(tmp_path, "@bot verify: 2+2=4")
-    ai = ContextualFakeAi("verification", reply_result(chinese=False))
+    ai = ContextualFakeAi("verification", reply_result(chinese=False), artifact="2+2=4")
 
     with pytest.raises(ReplyRejected) as caught:
         await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(

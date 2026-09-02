@@ -31,6 +31,7 @@ class _RouteResult(StrictModel):
     schema_version: Literal["tawg.route-result.v2"]
     route: BotRoute
     context_scope: RouteContextScope
+    artifact: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -38,6 +39,7 @@ class RouteDecision:
     route: BotRoute
     context_scope: RouteContextScope
     context_sha256: str
+    artifact: str | None
 
 
 class ContextualAiRouter:
@@ -70,8 +72,11 @@ class ContextualAiRouter:
             BotRoute.KNOWLEDGE_CORRECTION,
         }:
             raise AiRouteRejected("invalid AI route output")
+        if result.route is BotRoute.VERIFICATION and not (result.artifact or "").strip():
+            raise AiRouteRejected("verification route requires a non-empty artifact")
         return RouteDecision(
             route=result.route,
             context_scope=result.context_scope,
             context_sha256=context.sha256,
+            artifact=result.artifact,
         )

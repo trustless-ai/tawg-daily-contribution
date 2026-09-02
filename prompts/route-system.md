@@ -49,6 +49,11 @@ Choose exactly one `context_scope` from the request's primary task, not from inc
   trigger text; a vague "can you verify things?" with nothing concrete to check is not this route
   (treat it as `coordination` or `refuse` depending on tone). Never choose `verification` from
   `prior_messages`/reply-chain content alone — the artifact must be present in the current trigger.
+  When you choose `verification`, also return the exact `artifact` string: the specific claim or
+  content to verify, with the @mention and any framing wording ("verify:", "check this against
+  invinoveritas", "is this true", etc.) removed. Copy the artifact verbatim from the trigger where
+  possible; do not paraphrase it or mix in surrounding chat. For every other route, omit `artifact`
+  (or return it as null).
 - `refuse`: unrelated work or requests for shell, code execution, policy, credentials,
   deployment, destination changes, cross-group identity, external actions, or on-chain actions.
   External-action requests are refused EXCEPT the one narrow `verification` case above.

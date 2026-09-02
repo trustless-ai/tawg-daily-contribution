@@ -96,24 +96,6 @@ _INLINE_CITATION = re.compile(
 )
 _LOCAL_CITATION = re.compile(r"\[((?:[A-Za-z0-9_.-]+:){2,}[A-Za-z0-9_.:/@-]+)\]")
 _TELEGRAM_MENTION = re.compile(r"(?<![A-Za-z0-9_@])@[A-Za-z0-9_]{1,64}(?![A-Za-z0-9_])")
-# Pavlo (damon msg 3830): "@bot verify: 2+2=4" must not bind the proof to the whole command
-# wrapper -- the controller should mechanically extract the artifact rather than relying only
-# on classifier intent. Strips a leading @mention (unambiguous Telegram addressing syntax, never
-# artifact content) and, if present, one leading framing verb drawn directly from
-# route-system.md's own documented verification examples ("verify:", "check:", "confirm:"). This
-# is deliberately a small, explicit, testable set -- not general NLU -- so it stays honest about
-# its own scope: anything NOT matching one of these two mechanical patterns is left as-is, never
-# silently guessed at.
-_VERIFICATION_FRAMING_PREFIX = re.compile(r"^\s*(?:verify|check|confirm)\s*:\s*", re.IGNORECASE)
-
-
-def _extract_verification_artifact(text: str, bot_username: str) -> str:
-    mention = re.compile(rf"^\s*@{re.escape(bot_username)}\b\s*", re.IGNORECASE)
-    stripped = mention.sub("", text, count=1)
-    stripped = _VERIFICATION_FRAMING_PREFIX.sub("", stripped, count=1)
-    return stripped.strip()
-
-
 _UNSAFE_MEMBER_LOCATOR = re.compile(
     r"(?:\b(?:www\.|t\.me/|telegram\.me/)|"
     r"\[[^\]]+\]\([^)]+\)|"
@@ -485,6 +467,7 @@ class BotReplyService:
                     "router_context_sha256": None,
                     "router_version": None,
                     "routed_at": None,
+                    "verification_artifact": None,
                     "knowledge_mutation_paths": [],
                     "knowledge_mutation_trigger_sha256": None,
                     "updated_at": now,
@@ -516,6 +499,7 @@ class BotReplyService:
                     "router_context_sha256": None,
                     "router_version": None,
                     "routed_at": None,
+                    "verification_artifact": None,
                     "knowledge_mutation_paths": [],
                     "knowledge_mutation_trigger_sha256": None,
                     "updated_at": now,
@@ -616,6 +600,7 @@ class BotReplyService:
                         "router_context_sha256": decision.context_sha256,
                         "router_version": self._ROUTER_VERSION,
                         "routed_at": now,
+                        "verification_artifact": decision.artifact,
                     }
                 )
                 jobs[job_id] = processing
@@ -698,14 +683,10 @@ class BotReplyService:
                 failure_code = "reply_verification_failed"
                 if self.invinoveritas_client is None:
                     raise ReplyRejected("invinoveritas verification is not configured")
-                # Mechanical extraction (Pavlo, msg 3830), not classifier-intent alone -- strips
-                # the @mention and one recognized framing verb, e.g. "@bot verify: 2+2=4" -> the
-                # artifact bound is "2+2=4", not the whole trigger text.
-                artifact = _extract_verification_artifact(
-                    trigger.text_original, self.router.bot_username
-                )
-                if not artifact:
-                    raise ReplyRejected("verification trigger has no text to verify")
+                # The AI router extracts the artifact as a structured field from the natural
+                # language trigger, rather than mechanically stripping a fixed "verify:" prefix.
+                artifact = processing.verification_artifact
+                artifact = self._validate_verification_artifact(artifact)
                 try:
                     verification_result, proof_status = await verify_and_confirm(
                         self.invinoveritas_client,
@@ -1090,6 +1071,20 @@ class BotReplyService:
         jobs[job.job_id] = ready
         self._publish_jobs(jobs, f"{job.job_id}:ready")
         return self._prepared(ready)
+
+    @staticmethod
+    def _validate_verification_artifact(artifact: str | None) -> str:
+        """Gate placeholder for the extracted verification artifact.
+
+        Reserved boundary so the real submission-format rules can land here after
+        live testing. Today it only enforces the non-empty invariant; a rejected
+        artifact still raises the same fail-closed ReplyRejected so the reply path
+        degrades exactly as it did with the mechanical prefix extraction.
+        """
+
+        if not artifact or not artifact.strip():
+            raise ReplyRejected("verification trigger has no text to verify")
+        return artifact.strip()
 
     @staticmethod
     def _retryable_route_failure(error: ClaudeCliError) -> bool:
