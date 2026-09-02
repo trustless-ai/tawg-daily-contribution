@@ -695,7 +695,11 @@ class BotReplyService:
                     )
                 except VerificationRejected as error:
                     raise ReplyRejected(str(error)) from error
-                text = format_verification_reply(verification_result, proof_status)
+                text = format_verification_reply(
+                    verification_result,
+                    proof_status,
+                    artifact=artifact,
+                )
                 ready = processing.model_copy(
                     update={
                         "status": JobStatus.READY,

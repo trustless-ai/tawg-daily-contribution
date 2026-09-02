@@ -4063,7 +4063,9 @@ async def test_verification_route_confirms_proof_and_replies(tmp_path: Path) -> 
     ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
 
     assert not prepared.refusal
-    assert "invinoveritas verdict: approve" in prepared.reply_text
+    assert "**Verdict:** approve" in prepared.reply_text
+    assert "**Claim verified:**" in prepared.reply_text
+    assert "2+2=4" in prepared.reply_text
     assert "confirmed via invinoveritas's own /verify-proof check" in prepared.reply_text
     # Only the router classification call happened -- VERIFICATION never calls the
     # knowledge-reply AI, matching REFUSE's own short-circuit shape.
