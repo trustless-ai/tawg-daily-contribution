@@ -1038,6 +1038,24 @@
     "updated_at": "2026-08-31T02:05:11.853171Z"
   },
   {
+    "content_sha256": "2d95e85dfef64ab14337a94c02e7a0cc7fb24de127b0e55aab4009b9b47c5df5",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "member-introduction:ryan-veteze",
+    "destination": "tawg",
+    "job_id": "member-introduction:ryan-veteze",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-02T15:00:38.254404Z",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-02T15:00:38.254404Z"
+  },
+  {
     "content_sha256": "1cea4014855a74728349a315984c24b43b8fb14d854c3979970bf38ebbf52e6e",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "member-welcome:logan-verdict",
