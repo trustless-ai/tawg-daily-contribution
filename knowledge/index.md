@@ -72,6 +72,7 @@ This vault compiles current, source-cited knowledge for the Daily Contribution a
 - [[acknowledgements/petchevere|Petchevere]]
 - [[acknowledgements/ramiro|Ramiro]]
 - [[acknowledgements/raul-thoughtproof|Raul ThoughtProof]]
+- [[acknowledgements/ryan-veteze|Ryan VETEZE]]
 - [[acknowledgements/tracie|Tracie]]
 - [[acknowledgements/trusty|Trusty]]
 - [[acknowledgements/vw|VW]]

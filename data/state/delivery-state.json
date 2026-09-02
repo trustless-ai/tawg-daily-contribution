@@ -1058,6 +1058,26 @@
     "updated_at": "2026-08-31T02:00:17.736499Z"
   },
   {
+    "content_sha256": "3c0725122092b3d75097d136a857828585dc6f0dcc24077578f382e8b023510b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "member-welcome:ryan-veteze",
+    "destination": "tawg",
+    "job_id": "member-welcome:ryan-veteze",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-02T14:58:33.449564Z",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-02T14:58:33.449564Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4052
+    ],
+    "updated_at": "2026-09-02T14:58:33.449564Z"
+  },
+  {
     "content_sha256": "67de787179e0a05f221c44389cc42a5a2d18415de282d75a5bd0a555e492e945",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "reply-repair:bot-health-evidence-v1:tg:tawg:3668",
