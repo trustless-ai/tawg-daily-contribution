@@ -2365,10 +2365,12 @@
     "reply_to_message_id": 4003,
     "safe_error_code": null,
     "schema_version": "tawg.delivery-attempt.v1",
-    "sent_at": null,
-    "status": "prepared",
-    "telegram_chat_id": null,
-    "telegram_message_ids": [],
+    "sent_at": "2026-09-02T08:39:46.081947Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4005
+    ],
     "updated_at": "2026-09-02T08:39:46.081947Z"
   }
 ]
