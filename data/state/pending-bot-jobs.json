@@ -2963,7 +2963,7 @@
     "welcome_target_record_id": null
   },
   {
-    "attempts": 106,
+    "attempts": 107,
     "classified_route": "source_suggestion",
     "created_at": "2026-09-02T16:14:38.540906Z",
     "job_id": "reply:tg:tawg:4064",
@@ -2980,12 +2980,12 @@
     "router_context_scope": "knowledge",
     "router_context_sha256": "1fa498c5a90893b93823257d1ddeb3f00ef3636cae904e576d162353a4736548",
     "router_version": "contextual-ai-v5",
-    "safe_error_code": "reply_model_output_invalid",
+    "safe_error_code": "reply_model_process_failed",
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "pending",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:4064",
-    "updated_at": "2026-09-02T18:45:19.614866Z",
+    "updated_at": "2026-09-02T18:45:44.649836Z",
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   }
