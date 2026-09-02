@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_merged:12db88347751a953d0b848a1",
-    "kind": "pr_merged",
-    "number": 12,
-    "occurred_at": "2026-09-02T16:10:43Z",
-    "repository": "trustless-ai/tawg-daily-contribution",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Privacy: keep dash-delimited unix timestamps intact (Nostr proof d-tag)"
-  }
-]
+[]
