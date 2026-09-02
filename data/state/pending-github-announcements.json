@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_opened:c80ff8f1ec57114056758ba2",
+    "kind": "pr_opened",
+    "number": 11,
+    "occurred_at": "2026-09-02T13:51:04Z",
+    "repository": "trustless-ai/tawg-daily-contribution",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Sync gist: verification reply format (claim + proof + independent check)"
+  }
+]
