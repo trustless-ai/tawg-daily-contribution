@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_merged:9596bae01c3d02e033393f72",
+    "kind": "pr_merged",
+    "number": 11,
+    "occurred_at": "2026-09-02T14:08:28Z",
+    "repository": "trustless-ai/tawg-daily-contribution",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "verification reply format (claim + proof + independent check)"
+  }
+]
