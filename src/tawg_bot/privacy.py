@@ -190,9 +190,16 @@ class PrivacyFilter:
                     return value
             if value.isdigit():
                 context = sanitized[max(0, match.start() - 40) : match.start()]
-                surrounding = sanitized[
-                    max(0, match.start() - 2) : min(len(sanitized), match.end() + 2)
-                ]
+                before = sanitized[match.start() - 1] if match.start() > 0 else ""
+                after = sanitized[match.end()] if match.end() < len(sanitized) else ""
+                # A ten-digit integer inside the valid Unix epoch range (year 2000..2100) is a
+                # timestamp, not a phone number. Recognise the common contexts: JSON punctuation,
+                # a "timestamp"/"epoch" label, or a signed-proof `d` tag where the timestamp is
+                # dash-delimited between hashes, e.g.
+                # `invinoveritas-proof-<sha256>-<created_at>-<nonce>`. A phone-shaped suffix at
+                # the end of a word (e.g. `knowledge-refresh-1415555012`) stays redacted because
+                # it is not bounded by a trailing dash or JSON punctuation.
+                json_punctuation = frozenset('{}[],=:"')
                 is_unix_timestamp = (
                     len(value) == 10
                     and 946_684_800 <= int(value) <= 4_102_444_800
@@ -203,7 +210,9 @@ class PrivacyFilter:
                             re.I,
                         )
                         is not None
-                        or any(character in surrounding for character in '{}[],=:"')
+                        or before in json_punctuation
+                        or after in json_punctuation
+                        or (before == "-" and after == "-")
                     )
                 )
                 if is_unix_timestamp:
