@@ -14,5 +14,21 @@
     "suggested_at": "2026-08-28T18:17:16.692036Z",
     "trigger_record_id": "tg:tawg:3625",
     "url": "https://github.com/trustless-ai/agent-sdk"
+  },
+  {
+    "candidate_key": "candidate:864b4eb9595c595d8177e78eb4429e15",
+    "last_suggested_at": "2026-09-02T20:40:45.265773Z",
+    "schema_version": "tawg.source-candidate.v1",
+    "suggested_at": "2026-09-02T20:40:45.265773Z",
+    "trigger_record_id": "tg:tawg:4064",
+    "url": "https://ethereum-magicians.org/t/erc-8380-unclonable-agent-execution-credentials/29274/17"
+  },
+  {
+    "candidate_key": "candidate:935814ec0db57f9fdce9f58a008616c3",
+    "last_suggested_at": "2026-09-02T20:40:45.265773Z",
+    "schema_version": "tawg.source-candidate.v1",
+    "suggested_at": "2026-09-02T20:40:45.265773Z",
+    "trigger_record_id": "tg:tawg:4064",
+    "url": "https://github.com/ethereum/ERCs/pull/1953"
   }
 ]
