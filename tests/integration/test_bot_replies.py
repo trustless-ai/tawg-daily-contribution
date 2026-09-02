@@ -434,6 +434,36 @@ async def test_real_greeting_candidate_gets_a_coordination_reply(tmp_path: Path)
 
 
 @pytest.mark.asyncio
+async def test_non_correction_route_drops_invalid_scan_registration(
+    tmp_path: Path,
+) -> None:
+    """A model occasionally misreads a non-correction request as a scan registration and
+    returns a scan_registration whose URL fails its field validator. That must not abort
+    the whole reply; the controller strips scan_registration outside the correction
+    route before validating the reply."""
+    job = seed(
+        tmp_path,
+        "Good morning everyone!",
+        trigger_kind=TriggerKind.GREETING_CANDIDATE,
+    )
+    result = coordination_result()
+    result["scan_registration"] = {
+        "erc_number": 8380,
+        "magicians_topic_url": "https://example.com/not-magicians",
+        "proposal_pr_url": None,
+    }
+    ai = ContextualFakeAi("coordination", result)
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is not None
+    assert prepared.reply_text.startswith("Good morning")
+    assert [call["job_type"] for call in ai.calls] == ["route", "reply"]
+
+
+@pytest.mark.asyncio
 async def test_direct_member_welcome_is_short_template_without_model_call(
     tmp_path: Path,
 ) -> None:

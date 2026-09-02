@@ -1954,6 +1954,16 @@ class BotReplyService:
         required_revision_paths: tuple[str, ...],
         now: datetime,
     ) -> _ReplyResult:
+        # `scan_registration` is only valid on the knowledge-correction route. A model
+        # occasionally misreads a source suggestion (e.g. "add ERC 8380 to the follow-up
+        # list") as a scan registration and returns a `scan_registration` whose
+        # magicians_topic_url fails the ScanRegistrationProposal field validator, which
+        # then aborts the whole reply as an "invalid reply model output". Drop that field
+        # before validation on every non-correction route; the controller separately
+        # rejects a scan_registration outside the correction route anyway.
+        if route is not BotRoute.KNOWLEDGE_CORRECTION:
+            raw = dict(raw)
+            raw.pop("scan_registration", None)
         try:
             result = _ReplyResult.model_validate(raw)
         except ValidationError as error:
