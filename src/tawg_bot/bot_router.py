@@ -1940,6 +1940,15 @@ class BotReplyService:
         try:
             result = _ReplyResult.model_validate(raw)
         except ValidationError as error:
+            errors = [
+                {"type": item["type"], "loc": item["loc"], "msg": item["msg"]}
+                for item in error.errors()
+            ]
+            print(
+                "tawg_event=reply_model_validation_error "
+                f"errors={errors!r}",
+                flush=True,
+            )
             raise ReplyRejected("invalid reply model output") from error
         requester_non_english = bool(_NON_ENGLISH.search(trigger.text_original))
         if (
