@@ -2506,7 +2506,7 @@
     "safe_error_code": null,
     "schema_version": "tawg.delivery-attempt.v1",
     "sent_at": null,
-    "status": "prepared",
+    "status": "sending",
     "telegram_chat_id": null,
     "telegram_message_ids": [],
     "updated_at": "2026-09-02T20:40:45.265773Z"
