@@ -463,7 +463,6 @@ def test_format_verification_reply_states_claim_proof_and_independent_check() ->
     assert "https://api.babyblueviper.com/verify-proof" in text
     assert "expect_artifact_hash" in text
     assert "confirmed via invinoveritas's own /verify-proof check" in text
-    # The raw proof event and curl are no longer inline -- they moved to an attachment.
     assert "**Signed proof event:**" not in text
     assert "curl -sS -X POST" not in text
 
