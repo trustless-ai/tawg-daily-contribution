@@ -362,6 +362,7 @@ class DeliveryAttempt(StrictModel):
     destination: str = "tawg"
     status: DeliveryStatus = DeliveryStatus.PREPARED
     content_sha256: str | None = Field(default=None, pattern=r"^[a-f0-9]{64}$")
+    reply_text: str | None = Field(default=None, max_length=70_000)
     message_count: int = Field(default=0, ge=0, le=2)
     delivery_format: str | None = Field(
         default=None,

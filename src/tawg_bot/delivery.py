@@ -164,6 +164,7 @@ class DeliveryService:
             job_id=job_id,
             status=DeliveryStatus.PREPARED,
             content_sha256=content_sha,
+            reply_text=text,
             message_count=len(messages),
             delivery_format="rich_markdown_v1",
             reply_to_message_id=reply_to_message_id,

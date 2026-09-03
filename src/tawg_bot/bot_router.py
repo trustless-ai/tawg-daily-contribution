@@ -1818,6 +1818,15 @@ class BotReplyService:
             ):
                 raise ReplyRejected("direct reply target failed delivery audit binding")
             return delivered_text
+        if attempt.reply_text is not None:
+            # A receipt-only mirror worker does not persist its pending-bot-jobs, so the
+            # audited reply text is carried on the delivery attempt itself. Verify it
+            # against the recorded hash before trusting it.
+            if attempt.content_sha256 != hashlib.sha256(
+                attempt.reply_text.encode("utf-8")
+            ).hexdigest():
+                raise ReplyRejected("direct reply target failed delivery audit binding")
+            return attempt.reply_text
         if not attempt.job_id.startswith("daily:"):
             return None
         path = self.root / "data/state/prepared-daily.json"

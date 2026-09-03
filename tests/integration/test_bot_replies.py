@@ -1397,25 +1397,12 @@ async def test_direct_reply_reads_audited_bot_message_from_bot_scoped_state(
         trigger_reply_to="tg:tawg:900",
     )
     bot_text = "The validation proof must bind to the exact request identifier."
-    delivered_job = PendingBotJob(
-        job_id="reply:8750877254:tg:tawg:11",
-        trigger_record_id="tg:tawg:11",
-        reply_to_message_id=11,
-        status=JobStatus.DELIVERED,
-        prepared_reply_text=bot_text,
-        prepared_language="en",
-        created_at=NOW - timedelta(minutes=4),
-        updated_at=NOW - timedelta(minutes=3),
-    )
-    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
-    jobs = json.loads(jobs_path.read_text(encoding="utf-8"))
-    jobs.append(delivered_job.model_dump(mode="json"))
-    jobs_path.write_text(json.dumps(jobs) + "\n", encoding="utf-8")
     attempt = DeliveryAttempt(
         delivery_id="reply:8750877254:tg:tawg:11",
         job_id="reply:8750877254:tg:tawg:11",
         status=DeliveryStatus.DELIVERED,
         content_sha256=hashlib.sha256(bot_text.encode("utf-8")).hexdigest(),
+        reply_text=bot_text,
         message_count=1,
         reply_to_message_id=11,
         telegram_chat_id=-1001,
