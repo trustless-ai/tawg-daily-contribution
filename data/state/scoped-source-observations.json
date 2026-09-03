@@ -77,11 +77,11 @@
     "updated_at": "2026-08-27T21:35:34Z"
   },
   {
-    "metadata_sha256": "132e10b0b7e6c0db6a5031be94d6948c1fa6944ec2a4c1c068fe69248e9c37af",
+    "metadata_sha256": "9cb517bfc8b8be08ad9cc2d06d1d5c84d665f372c0dd4d7a88d67705f8e5ecbb",
     "source_key": "primitives",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/primitives",
-    "updated_at": "2026-09-03T20:32:33Z"
+    "updated_at": "2026-09-03T21:10:21Z"
   },
   {
     "metadata_sha256": "5ac3e570e20cc95f0256c84186a723979f66572f19600f756627c5cd6d56de98",
@@ -98,11 +98,11 @@
     "updated_at": "2026-07-19T09:39:18Z"
   },
   {
-    "metadata_sha256": "6427d7abbed31e392e3f7e286a727b226ab5e4f0633cdffe47c67b843645627e",
+    "metadata_sha256": "8b7cd8171f14600faa47d264b9a579bcb8be86827ea7d9c511e561dc804340b6",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-09-03T20:40:21Z"
+    "updated_at": "2026-09-03T21:12:33Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
