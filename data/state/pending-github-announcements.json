@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "Echo-Merlini",
-    "event_id": "github-announcement:issue_opened:e197badcc48c12b495565a2a",
-    "kind": "issue_opened",
-    "number": 1,
-    "occurred_at": "2026-09-03T11:04:17Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Soundness: DotProduct/EltwiseMul don't range-check operands a/b (EltwiseAdd does) — out-of-range operand accepted"
-  }
-]
+[]
