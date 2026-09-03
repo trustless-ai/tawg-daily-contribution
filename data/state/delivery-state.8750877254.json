@@ -22,7 +22,7 @@
   },
   {
     "content_sha256": "0cf533497a277b7fe4730b3a1a8131b5d7bb44b62ebde87d877475a3221c37f3",
-    "delivery_format": "rich_markdown_v1",
+    "delivery_format": "mixed_v1",
     "delivery_id": "reply:8750877254:tg:tawg:4105",
     "destination": "tawg",
     "job_id": "reply:8750877254:tg:tawg:4105",
@@ -32,10 +32,13 @@
     "reply_to_message_id": 4105,
     "safe_error_code": null,
     "schema_version": "tawg.delivery-attempt.v1",
-    "sent_at": null,
-    "status": "sending",
-    "telegram_chat_id": null,
-    "telegram_message_ids": [],
+    "sent_at": "2026-09-03T11:37:16.747201Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4106,
+      4107
+    ],
     "updated_at": "2026-09-03T11:37:16.747201Z"
   }
 ]
