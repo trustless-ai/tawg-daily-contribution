@@ -85,5 +85,24 @@
       4193
     ],
     "updated_at": "2026-09-03T22:50:35.855169Z"
+  },
+  {
+    "content_sha256": "21b502c03138217a057ae25e2aae747fa2a4ee1cf143c1ea1e9319cc7321369b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4195",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4195",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-09-03T22:51:23.680048Z",
+    "reply_text": "🔍 **Verification result**\n\n**Claim verified:**\n> If all Bloops are Razzles, all Razzles are Lazzles, and Toves are defined as a category disjoint from Lazzles, then no Bloop can be a Tove.\n\n**Verdict:** approve (confidence 0.99)\n\nThe conclusion follows by transitivity: every Bloop is a Lazzle, while Toves are disjoint from Lazzles; therefore no Bloop can be a Tove.\n\n**Proof artifact:**\n- decision_ref: `sha256:6f36830999808cf660ccc772d63e92922c262ebfe64c8629955d2bb0de06f392`\n- artifact sha256: `eeadba6029d946779d2cbed36832d1d93b51ee15acc8c2323855b4a95272518f`\n\n**Independent check (free, no auth):**\nThe signed proof is attached as a JSON file; POST its `event` and `expect_artifact_hash` to `https://api.babyblueviper.com/verify-proof` to re-run the check.\n\nNote: proof authenticity is confirmed via invinoveritas's own /verify-proof check; the signature is not yet independently recomputed locally by Trusty.",
+    "reply_to_message_id": 4195,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-03T22:51:23.680048Z"
   }
 ]
