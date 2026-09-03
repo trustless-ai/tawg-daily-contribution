@@ -370,6 +370,13 @@ class DeliveryService:
 
     def _load_attempts(self) -> dict[str, DeliveryAttempt]:
         path = self.root / self._state_path
+        if not path.exists():
+            # No delivery-state file means "no prior attempt has been made yet". This is
+            # the normal first-run case for a receipt-only mirror worker, whose
+            # bot-id-scoped ``delivery-state.<bot_id>.json`` is only created by the worker
+            # itself after its first successful delivery. Treat it as an empty intent map
+            # rather than a hard failure, so the very first delivery is not rejected.
+            return {}
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
             if not isinstance(raw, list):
