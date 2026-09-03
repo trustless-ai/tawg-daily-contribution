@@ -1837,24 +1837,25 @@ class BotReplyService:
         return delivered_text
 
     def _load_delivery_attempts(self) -> tuple[DeliveryAttempt, ...]:
-        path = self.root / "data/state/delivery-state.json"
-        try:
-            raw = json.loads(path.read_text(encoding="utf-8"))
-            if not isinstance(raw, list):
-                raise ValueError
-            attempts = tuple(DeliveryAttempt.model_validate(item) for item in raw)
-        except (
-            OSError,
-            UnicodeError,
-            ValueError,
-            ValidationError,
-            json.JSONDecodeError,
-        ) as error:
-            raise ReplyRejected("invalid delivery state for direct reply") from error
+        attempts: list[DeliveryAttempt] = []
+        for path in sorted((self.root / "data/state").glob("delivery-state*.json")):
+            try:
+                raw = json.loads(path.read_text(encoding="utf-8"))
+                if not isinstance(raw, list):
+                    raise ValueError
+                attempts.extend(DeliveryAttempt.model_validate(item) for item in raw)
+            except (
+                OSError,
+                UnicodeError,
+                ValueError,
+                ValidationError,
+                json.JSONDecodeError,
+            ) as error:
+                raise ReplyRejected("invalid delivery state for direct reply") from error
         delivery_ids = {attempt.delivery_id for attempt in attempts}
         if len(delivery_ids) != len(attempts):
             raise ReplyRejected("duplicate delivery audit for direct reply")
-        return attempts
+        return tuple(attempts)
 
     def _local_erc_context(
         self,

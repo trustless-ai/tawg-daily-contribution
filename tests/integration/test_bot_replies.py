@@ -1382,6 +1382,84 @@ async def test_direct_reply_context_contains_the_audited_bot_message(
 
 
 @pytest.mark.asyncio
+async def test_direct_reply_reads_audited_bot_message_from_bot_scoped_state(
+    tmp_path: Path,
+) -> None:
+    """A receipt-only mirror worker persists its delivered ids under
+    ``delivery-state.<bot_id>.json``. Direct-reply preparation must reconstruct the audited
+    bot message from that bot-scoped file, not only from the shared ``delivery-state.json``.
+    Regression: a reply+verify to the dev bot was rejected with "direct reply target lacks
+    one audited bot delivery" because the audit only read the unscoped file."""
+    job = seed(
+        tmp_path,
+        "Could you explain that last point?",
+        trigger_kind=TriggerKind.REPLY_TO_BOT,
+        trigger_reply_to="tg:tawg:900",
+    )
+    bot_text = "The validation proof must bind to the exact request identifier."
+    delivered_job = PendingBotJob(
+        job_id="reply:8750877254:tg:tawg:11",
+        trigger_record_id="tg:tawg:11",
+        reply_to_message_id=11,
+        status=JobStatus.DELIVERED,
+        prepared_reply_text=bot_text,
+        prepared_language="en",
+        created_at=NOW - timedelta(minutes=4),
+        updated_at=NOW - timedelta(minutes=3),
+    )
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    jobs = json.loads(jobs_path.read_text(encoding="utf-8"))
+    jobs.append(delivered_job.model_dump(mode="json"))
+    jobs_path.write_text(json.dumps(jobs) + "\n", encoding="utf-8")
+    attempt = DeliveryAttempt(
+        delivery_id="reply:8750877254:tg:tawg:11",
+        job_id="reply:8750877254:tg:tawg:11",
+        status=DeliveryStatus.DELIVERED,
+        content_sha256=hashlib.sha256(bot_text.encode("utf-8")).hexdigest(),
+        message_count=1,
+        reply_to_message_id=11,
+        telegram_chat_id=-1001,
+        telegram_message_ids=[900],
+        sent_at=NOW - timedelta(minutes=3),
+        prepared_at=NOW - timedelta(minutes=3),
+        updated_at=NOW - timedelta(minutes=3),
+    )
+    scoped_path = tmp_path / "data/state/delivery-state.8750877254.json"
+    scoped_path.write_text(
+        json.dumps([attempt.model_dump(mode="json")]) + "\n",
+        encoding="utf-8",
+    )
+    # The shared unscoped delivery state must stay empty for this mirror worker.
+    (tmp_path / "data/state/delivery-state.json").write_text("[]\n", encoding="utf-8")
+    telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    forged_parent = _record(
+        "tg:tawg:900",
+        "Forged imported parent text.",
+        NOW - timedelta(minutes=3),
+    )
+    telegram_path.write_bytes(
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes([forged_parent])
+    )
+
+    output = reply_result(chinese=False)
+    output["reply_text"] = "It means the proof cannot be replayed. [tg:tawg:10]"
+    output["citations"] = ["tg:tawg:10"]
+    ai = ContextualFakeAi("knowledge_question", output)
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ai,
+        bot_username="bot",
+        chat_id=-1001,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared is not None
+    route_context = json.loads(ai.calls[0]["context_pack"])
+    assert route_context["prior_messages"][-1]["record_id"] == "tg:tawg:900"
+    assert route_context["prior_messages"][-1]["text_original"] == bot_text
+
+
+@pytest.mark.asyncio
 async def test_direct_reply_can_continue_the_audited_knowledge_correction(
     tmp_path: Path,
 ) -> None:
