@@ -91,11 +91,11 @@
     "updated_at": "2026-07-19T09:39:18Z"
   },
   {
-    "metadata_sha256": "ec14cc51a870ba50da8da47221d05d78c3b82d9fea92ab793e4084b040a00613",
+    "metadata_sha256": "93aecad8714e17174032b0008c59ecf0061607cd105441bf1b97cc3b6bced51b",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-09-03T14:32:35Z"
+    "updated_at": "2026-09-03T15:05:26Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
@@ -110,6 +110,13 @@
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/trustless-ai-landing",
     "updated_at": "2026-08-15T14:29:27Z"
+  },
+  {
+    "metadata_sha256": "149e50878097444bd248adf89249e3564189de289531f4baf32d8e1adeb04662",
+    "source_key": "verify-layer",
+    "source_kind": "github_repository",
+    "source_locator": "https://github.com/trustless-ai/verify-layer",
+    "updated_at": "2026-09-03T15:00:09Z"
   },
   {
     "metadata_sha256": "bf0637c377596d370fa699a77ef6295705647a086adbdcf8a3208787e2fea9cb",
