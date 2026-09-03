@@ -711,6 +711,7 @@ class _LivePipeline:
                     text=reply.reply_text,
                     reply_to_message_id=reply.reply_to_message_id,
                     message_thread_id=reply.message_thread_id,
+                    attachments=reply.attachments,
                     now=self.now,
                 )
             except (DeliveryAmbiguous, DeliveryFailed):

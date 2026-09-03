@@ -163,6 +163,13 @@ class RouteContextScope(StrEnum):
     ERC = "erc"
 
 
+class PreparedAttachment(StrictModel):
+    """A file the controller should deliver alongside a reply as a Telegram document."""
+
+    filename: str = Field(min_length=1, max_length=255)
+    content: str = Field(min_length=1, max_length=1_000_000)
+
+
 class PendingBotJob(StrictModel):
     schema_version: str = "tawg.pending-bot-job.v1"
     job_id: str
@@ -173,6 +180,7 @@ class PendingBotJob(StrictModel):
     status: JobStatus = JobStatus.PENDING
     attempts: int = Field(default=0, ge=0)
     prepared_reply_text: str | None = Field(default=None, max_length=10_500)
+    prepared_attachments: list[PreparedAttachment] = Field(default_factory=list, max_length=8)
     prepared_citations: list[str] = Field(default_factory=list)
     prepared_language: str | None = Field(default=None, max_length=32)
     refusal: bool = False

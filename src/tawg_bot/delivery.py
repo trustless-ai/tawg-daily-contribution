@@ -19,6 +19,7 @@ from tawg_bot.models import (
     DeliveryStatus,
     JobStatus,
     PendingBotJob,
+    PreparedAttachment,
     TriggerKind,
 )
 from tawg_bot.persist_mode import PersistMode
@@ -51,6 +52,17 @@ class DeliveryApi(Protocol):
         self,
         chat_id: int,
         text: str,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
+    ) -> SentMessage: ...
+
+    async def send_document(
+        self,
+        chat_id: int,
+        *,
+        filename: str,
+        document: bytes,
+        caption: str | None = None,
         reply_to_message_id: int | None = None,
         message_thread_id: int | None = None,
     ) -> SentMessage: ...
@@ -99,6 +111,7 @@ class DeliveryService:
         text: str,
         reply_to_message_id: int | None,
         message_thread_id: int | None = None,
+        attachments: tuple[PreparedAttachment, ...] = (),
         now: datetime,
     ) -> DeliveryAttempt:
         self._require_utc(now)
@@ -192,6 +205,74 @@ class DeliveryService:
                     message,
                     reply_to_message_id if index == 0 else None,
                     message_thread_id,
+                )
+            except TelegramApiError as error:
+                ambiguous_error = isinstance(error, TelegramApiAmbiguousError)
+                status = (
+                    DeliveryStatus.AMBIGUOUS
+                    if sent or ambiguous_error
+                    else DeliveryStatus.FAILED
+                )
+                error_code = (
+                    "partial_telegram_failure"
+                    if sent
+                    else "telegram_outcome_unknown"
+                    if ambiguous_error
+                    else "telegram_api_failure"
+                )
+                failed = sending.model_copy(
+                    update={
+                        "status": status,
+                        "telegram_chat_id": self.chat_id if sent else None,
+                        "telegram_message_ids": [item.message_id for item in sent],
+                        "delivery_format": (
+                            self._actual_delivery_format(sent)
+                            if sent
+                            else sending.delivery_format
+                        ),
+                        "updated_at": now,
+                        "safe_error_code": error_code,
+                    }
+                )
+                attempts[job_id] = failed
+                self._publish_attempts(attempts, f"delivery:{job_id}:{status.value}")
+                await self.checkpoint.publish(
+                    safe_operation_id(f"delivery:{job_id}:{status.value}"), self.root
+                )
+                if status is DeliveryStatus.AMBIGUOUS:
+                    raise DeliveryAmbiguous("Telegram delivery outcome is unknown") from None
+                raise DeliveryFailed("Telegram explicitly rejected the delivery") from None
+            if response.chat_id != self.chat_id:
+                ambiguous = sending.model_copy(
+                    update={
+                        "status": DeliveryStatus.AMBIGUOUS,
+                        "telegram_chat_id": response.chat_id,
+                        "telegram_message_ids": [
+                            *[item.message_id for item in sent],
+                            response.message_id,
+                        ],
+                        "delivery_format": self._actual_delivery_format(
+                            [*sent, response]
+                        ),
+                        "updated_at": now,
+                        "safe_error_code": "destination_mismatch",
+                    }
+                )
+                attempts[job_id] = ambiguous
+                self._publish_attempts(attempts, f"delivery:{job_id}:ambiguous")
+                await self.checkpoint.publish(
+                    safe_operation_id(f"delivery:{job_id}:ambiguous"), self.root
+                )
+                raise DeliveryAmbiguous("Telegram returned an unexpected destination")
+            sent.append(response)
+
+        for attachment in attachments:
+            try:
+                response = await self.api.send_document(
+                    self.chat_id,
+                    filename=attachment.filename,
+                    document=attachment.content.encode("utf-8"),
+                    message_thread_id=message_thread_id,
                 )
             except TelegramApiError as error:
                 ambiguous_error = isinstance(error, TelegramApiAmbiguousError)

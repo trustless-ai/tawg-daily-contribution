@@ -11,6 +11,7 @@ from tawg_bot.http import SafeJsonHttpClient
 from tawg_bot.invinoveritas_verify import (
     ProofStatus,
     VerificationRejected,
+    build_verification_proof_attachment,
     confirm_proof,
     format_verification_reply,
     verify_and_confirm,
@@ -453,7 +454,7 @@ def test_format_verification_reply_states_claim_proof_and_independent_check() ->
 
     text = asyncio.run(run())
     artifact_hash = hashlib.sha256(b"1+1=2").hexdigest()
-    assert "approve_with_concerns" in text
+    assert "approve\\_with\\_concerns" in text
     assert "0.75" in text
     assert "**Claim verified:**" in text
     assert "1+1=2" in text
@@ -461,11 +462,10 @@ def test_format_verification_reply_states_claim_proof_and_independent_check() ->
     assert "sha256:deadbeef" in text
     assert "https://api.babyblueviper.com/verify-proof" in text
     assert "expect_artifact_hash" in text
-    assert "**Signed proof event:**" in text
-    assert "curl -sS -X POST" in text
-    assert "Content-Type: application/json" in text
-    assert f'"expect_artifact_hash":"{artifact_hash}"' in text
     assert "confirmed via invinoveritas's own /verify-proof check" in text
+    # The raw proof event and curl are no longer inline -- they moved to an attachment.
+    assert "**Signed proof event:**" not in text
+    assert "curl -sS -X POST" not in text
 
 
 def test_format_verification_reply_escapes_claim_markdown() -> None:
@@ -484,6 +484,42 @@ def test_format_verification_reply_escapes_claim_markdown() -> None:
     text = asyncio.run(run())
     assert "a\\*b \\[c\\]" in text
     assert "a*b [c]" not in text
+
+
+def test_build_verification_proof_attachment_bundles_event_and_artifact_hash() -> None:
+    """The proof attachment is a self-contained /verify-proof request body, so the reader can
+    download one file and POST it without reconstructing anything."""
+    result_dict = _signed_payload(verdict="approve", confidence=0.9)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(200, json=result_dict)
+
+    async def run():
+        result = await verify_artifact(_client(handler), artifact="1+1=2")
+        return build_verification_proof_attachment(result, artifact="1+1=2")
+
+    attachment = asyncio.run(run())
+    assert attachment is not None
+    filename, content = attachment
+    assert filename.endswith(".json")
+    payload = json.loads(content)
+    assert payload["verify_url"] == "https://api.babyblueviper.com/verify-proof"
+    assert payload["expect_artifact_hash"] == hashlib.sha256(b"1+1=2").hexdigest()
+    assert payload["event"]["content"] == result_dict["proof"]["event"]["content"]
+
+
+def test_build_verification_proof_attachment_none_without_event() -> None:
+    from tawg_bot.invinoveritas_verify import VerificationResult
+
+    result = VerificationResult(
+        verdict="approve",
+        confidence=0.9,
+        summary="",
+        verify_proof_url=REVIEW_URL,
+        decision_ref=None,
+        raw={},
+    )
+    assert build_verification_proof_attachment(result, artifact="claim") is None
 
 
 def test_format_verification_reply_withholds_verdict_when_proof_unverified() -> None:

@@ -387,35 +387,11 @@ def format_verification_reply(
             [
                 "",
                 "**Independent check (free, no auth):**",
-                f"POST the signed proof event to `{_markdown_escape(result.verify_proof_url)}` "
-                f"with `expect_artifact_hash` = `{artifact_hash}`.",
+                "The signed proof is attached as a JSON file; POST its `event` and "
+                "`expect_artifact_hash` to "
+                f"`{_markdown_escape(result.verify_proof_url)}` to re-run the check.",
             ]
         )
-    event = _proof_event(result.raw)
-    if event is not None:
-        lines.extend(
-            [
-                "",
-                "**Signed proof event:**",
-                json.dumps(event, ensure_ascii=False, separators=(",", ":")),
-            ]
-        )
-        if result.verify_proof_url:
-            verify_body = json.dumps(
-                {"event": event, "expect_artifact_hash": artifact_hash},
-                ensure_ascii=False,
-                separators=(",", ":"),
-            )
-            lines.extend(
-                [
-                    "",
-                    "```bash",
-                    f"curl -sS -X POST '{result.verify_proof_url}' \\",
-                    "  -H 'Content-Type: application/json' \\",
-                    f"  -d '{verify_body}'",
-                    "```",
-                ]
-            )
     lines.extend(
         [
             "",
@@ -424,3 +400,29 @@ def format_verification_reply(
         ]
     )
     return "\n".join(lines)
+
+
+def build_verification_proof_attachment(
+    result: VerificationResult,
+    *,
+    artifact: str,
+) -> tuple[str, str] | None:
+    """Build a self-contained proof file for independent re-verification.
+
+    Returns ``(filename, json_content)``, or ``None`` when the /review response carried no
+    signed proof event. The file holds the exact /verify-proof request body (event plus the
+    locally computed artifact hash) so a reader can download it and POST it to the endpoint
+    without reconstructing anything.
+    """
+    event = _proof_event(result.raw)
+    if event is None:
+        return None
+    artifact_hash = hashlib.sha256(artifact.encode("utf-8")).hexdigest()
+    payload = {
+        "verify_url": result.verify_proof_url,
+        "expect_artifact_hash": artifact_hash,
+        "event": event,
+    }
+    suffix = (result.decision_ref or artifact_hash).split(":")[-1][:12]
+    filename = f"invinoveritas-proof-{suffix}.json"
+    return filename, json.dumps(payload, ensure_ascii=False, indent=2)

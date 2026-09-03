@@ -34,6 +34,7 @@ from tawg_bot.github_announcements import (
 from tawg_bot.http import SafeJsonHttpClient
 from tawg_bot.invinoveritas_verify import (
     VerificationRejected,
+    build_verification_proof_attachment,
     format_verification_reply,
     verify_and_confirm,
 )
@@ -59,6 +60,7 @@ from tawg_bot.models import (
     DeliveryStatus,
     JobStatus,
     PendingBotJob,
+    PreparedAttachment,
     Relation,
     RouteContextScope,
     SourceRecord,
@@ -365,6 +367,7 @@ class PreparedReply:
     citations: tuple[str, ...]
     language: str
     refusal: bool
+    attachments: tuple[PreparedAttachment, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -459,6 +462,7 @@ class BotReplyService:
                 {
                     "status": JobStatus.PENDING,
                     "prepared_reply_text": None,
+                    "prepared_attachments": [],
                     "prepared_citations": [],
                     "prepared_language": None,
                     "refusal": False,
@@ -491,6 +495,7 @@ class BotReplyService:
                 {
                     "status": JobStatus.CANCELLED,
                     "prepared_reply_text": None,
+                    "prepared_attachments": [],
                     "prepared_citations": [],
                     "prepared_language": None,
                     "refusal": False,
@@ -626,6 +631,7 @@ class BotReplyService:
                     update={
                         "status": JobStatus.IGNORED,
                         "prepared_reply_text": None,
+                        "prepared_attachments": [],
                         "prepared_language": None,
                         "prepared_citations": [],
                         "refusal": False,
@@ -700,10 +706,22 @@ class BotReplyService:
                     proof_status,
                     artifact=artifact,
                 )
+                prepared_attachments: list[PreparedAttachment] = []
+                if proof_status.verified:
+                    proof_attachment = build_verification_proof_attachment(
+                        verification_result,
+                        artifact=artifact,
+                    )
+                    if proof_attachment is not None:
+                        filename, content = proof_attachment
+                        prepared_attachments.append(
+                            PreparedAttachment(filename=filename, content=content)
+                        )
                 ready = processing.model_copy(
                     update={
                         "status": JobStatus.READY,
                         "prepared_reply_text": text,
+                        "prepared_attachments": prepared_attachments,
                         "prepared_language": "en",
                         "prepared_citations": [],
                         # Not a "refusal" in the REFUSE-route sense (the request itself was in
@@ -2337,6 +2355,7 @@ class BotReplyService:
             citations=tuple(job.prepared_citations),
             language=job.prepared_language,
             refusal=job.refusal,
+            attachments=tuple(job.prepared_attachments),
         )
 
     @staticmethod
