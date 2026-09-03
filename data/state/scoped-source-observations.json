@@ -49,11 +49,11 @@
     "updated_at": "2026-08-09T13:10:53Z"
   },
   {
-    "metadata_sha256": "8c15672a4e6afcffa2949ab132d51cc12c1741c3951e22ea434d72ad717cd90a",
+    "metadata_sha256": "3c09152d369a8116636ed7e14d534dc8503b4d161e229efbc17483dbff2b853d",
     "source_key": "cross-reference-console",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/cross-reference-console",
-    "updated_at": "2026-08-23T08:19:00Z"
+    "updated_at": "2026-09-03T09:58:56Z"
   },
   {
     "metadata_sha256": "77d86bd328cd492589e2a35a2fb265ad74beb397d3869ec76a3baedee7ce0610",
@@ -91,11 +91,11 @@
     "updated_at": "2026-07-19T09:39:18Z"
   },
   {
-    "metadata_sha256": "e2d0b38871cd0bd49bb98497de297f905792124c0123151e319e847714ad5836",
+    "metadata_sha256": "00539f19fccd094c4f849049eda3f12872c2f259e09f7e0113aa02176b03b311",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-09-03T09:40:25Z"
+    "updated_at": "2026-09-03T10:12:00Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
