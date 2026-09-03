@@ -12,6 +12,7 @@ from typing import Protocol
 from pydantic import ValidationError
 
 from tawg_bot.aliases import AliasRegistry
+from tawg_bot.bot_identity import delivery_state_relative_path
 from tawg_bot.member_welcome import member_welcome_is_expired, stage_member_profile
 from tawg_bot.models import (
     DeliveryAttempt,
@@ -20,6 +21,7 @@ from tawg_bot.models import (
     PendingBotJob,
     TriggerKind,
 )
+from tawg_bot.persist_mode import PersistMode
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 from tawg_bot.query import SourceQuery
 from tawg_bot.telegram_api import (
@@ -74,6 +76,8 @@ class DeliveryService:
         chat_id: int,
         checkpoint: DeliveryCheckpoint,
         after_send_hook: Callable[[], None] | None = None,
+        bot_id: int | None = None,
+        persist_mode: PersistMode = PersistMode.FULL,
     ) -> None:
         if isinstance(chat_id, bool) or not isinstance(chat_id, int):
             raise ValueError("configured Telegram chat ID must be an integer")
@@ -82,6 +86,10 @@ class DeliveryService:
         self.chat_id = chat_id
         self.checkpoint = checkpoint
         self.after_send_hook = after_send_hook or (lambda: None)
+        self._state_path = delivery_state_relative_path(
+            bot_id,
+            persist_mode=persist_mode,
+        )
         self.privacy = PrivacyFilter.from_yaml(self.root / "config/privacy.yml")
 
     async def deliver(
@@ -280,7 +288,7 @@ class DeliveryService:
         return next(iter(delivery_formats)) if len(delivery_formats) == 1 else "mixed_v1"
 
     def _load_attempts(self) -> dict[str, DeliveryAttempt]:
-        path = self.root / self._STATE_PATH
+        path = self.root / self._state_path
         try:
             raw = json.loads(path.read_text(encoding="utf-8"))
             if not isinstance(raw, list):
@@ -495,8 +503,9 @@ class DeliveryService:
             raise DeliveryRejected("invalid pending job state") from error
         return {job.job_id: job for job in jobs}
 
-    @staticmethod
-    def _stage_attempts(uow: RepositoryUnitOfWork, attempts: Mapping[str, DeliveryAttempt]) -> None:
+    def _stage_attempts(
+        self, uow: RepositoryUnitOfWork, attempts: Mapping[str, DeliveryAttempt]
+    ) -> None:
         serialized: list[dict[str, object]] = []
         for key in sorted(attempts):
             item = attempts[key].model_dump(mode="json")
@@ -504,7 +513,7 @@ class DeliveryService:
                 item.pop("delivery_format", None)
             serialized.append(item)
         uow.stage_json(
-            DeliveryService._STATE_PATH,
+            self._state_path,
             serialized,
         )
 

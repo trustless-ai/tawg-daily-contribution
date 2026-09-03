@@ -24,6 +24,10 @@ if [[ "$persist_mode" == "receipt-only" ]]; then
   if [[ -f "$receipt_file" ]]; then
     git add -- "$receipt_file"
   fi
+  delivery_file="data/state/delivery-state.${bot_id}.json"
+  if [[ -f "$delivery_file" ]]; then
+    git add -- "$delivery_file"
+  fi
   if ! git diff --cached --quiet; then
     git config user.name "TAWG Knowledge Bot"
     git config user.email "tawg-knowledge-bot@users.noreply.github.com"

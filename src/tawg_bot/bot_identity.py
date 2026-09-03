@@ -8,6 +8,7 @@ from tawg_bot.persist_mode import PersistMode
 
 _STATE_DIR = "data/state"
 _LEGACY_FILENAME = "telegram-webhook-receipts.json"
+_DELIVERY_FILENAME = "delivery-state.json"
 _SCHEMA = "tawg.telegram-webhook-receipts.v1"
 
 
@@ -34,6 +35,18 @@ def webhook_receipt_relative_path(bot_id: int | None) -> str:
         return f"{_STATE_DIR}/{_LEGACY_FILENAME}"
     return f"{_STATE_DIR}/telegram-webhook-receipts.{bot_id}.json"
 
+
+def delivery_state_relative_path(bot_id: int | None, *, persist_mode: PersistMode) -> str:
+    """Return the delivery-state path for this worker.
+
+    Receipt-only workers (the dev mirror) keep their delivered message ids in a
+    bot-id-scoped file so they never overwrite the authoritative main worker's
+    ``delivery-state.json``, while still letting the intake layer recognise a
+    reply to one of the mirror bot's own messages as ``REPLY_TO_BOT``.
+    """
+    if persist_mode is PersistMode.RECEIPT_ONLY and bot_id is not None:
+        return f"{_STATE_DIR}/delivery-state.{bot_id}.json"
+    return f"{_STATE_DIR}/{_DELIVERY_FILENAME}"
 
 def load_webhook_receipts(
     root: Path,

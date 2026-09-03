@@ -478,6 +478,27 @@ def test_webhook_direct_reply_and_greeting_use_the_shared_trigger_classifier(
     assert jobs[0]["message_thread_id"] == 16
 
 
+def test_delivered_bot_message_ids_reads_bot_scoped_state(tmp_path: Path) -> None:
+    """A receipt-only worker persists its delivered ids under
+    ``delivery-state.<bot_id>.json``. The intake layer must recognise a reply to that
+    worker's own message as REPLY_TO_BOT, not only replies to the shared worker."""
+    from tawg_bot.telegram_intake import _delivered_bot_message_ids
+
+    (tmp_path / "data/state").mkdir(parents=True, exist_ok=True)
+    seed_delivered_bot_message(tmp_path, 900)
+    bot_scoped = tmp_path / "data/state/delivery-state.8750877254.json"
+    bot_scoped.write_text(
+        (tmp_path / "data/state/delivery-state.json").read_text(),
+        encoding="utf-8",
+    )
+    payload = json.loads(bot_scoped.read_text())
+    payload[0]["telegram_message_ids"] = [901]
+    bot_scoped.write_text(json.dumps(payload) + "\n", encoding="utf-8")
+
+    ids = _delivered_bot_message_ids(tmp_path, chat_id=-100424242)
+    assert ids == {900, 901}
+
+
 def test_member_welcome_creates_one_immediate_job_and_one_l1_introduction_job(
     tmp_path: Path,
 ) -> None:

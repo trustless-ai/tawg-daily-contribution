@@ -674,6 +674,8 @@ class _LivePipeline:
             api=api,
             chat_id=chat_id,
             checkpoint=self.checkpoint,
+            bot_id=self.bot_id,
+            persist_mode=self.persist_mode,
         )
         pending_announcements = self.github_announcements.pending()
         announcement_topic_id: int | None = None

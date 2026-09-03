@@ -15,6 +15,8 @@ from pathlib import Path
 from typing import Any, Protocol
 from uuid import uuid4
 
+from pydantic import ValidationError
+
 from tawg_bot.aliases import AliasError, AliasRegistry
 from tawg_bot.bot_identity import load_webhook_receipts, webhook_receipt_relative_path
 from tawg_bot.ids import telegram_id
@@ -1192,20 +1194,28 @@ def _delivered_bot_message_ids(
 ) -> frozenset[int]:
     if chat_id is None:
         return frozenset()
-    path = root / "data/state/delivery-state.json"
-    if not path.exists():
-        return frozenset()
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(raw, list):
-        raise ValueError("invalid Telegram delivery state")
-    attempts = [DeliveryAttempt.model_validate(item) for item in raw]
-    return frozenset(
-        message_id
-        for attempt in attempts
-        if attempt.status is DeliveryStatus.DELIVERED
-        and attempt.telegram_chat_id == chat_id
-        for message_id in attempt.telegram_message_ids
-    )
+    message_ids: set[int] = set()
+    for path in sorted((root / "data/state").glob("delivery-state*.json")):
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(raw, list):
+                continue
+            attempts = [DeliveryAttempt.model_validate(item) for item in raw]
+        except (
+            OSError,
+            UnicodeError,
+            ValueError,
+            ValidationError,
+            json.JSONDecodeError,
+        ):
+            continue
+        for attempt in attempts:
+            if (
+                attempt.status is DeliveryStatus.DELIVERED
+                and attempt.telegram_chat_id == chat_id
+            ):
+                message_ids.update(attempt.telegram_message_ids)
+    return frozenset(message_ids)
 
 
 def _authorized_legacy_backfill(
