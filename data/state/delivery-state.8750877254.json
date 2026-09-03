@@ -8,6 +8,7 @@
     "message_count": 1,
     "message_thread_id": 3981,
     "prepared_at": "2026-09-03T11:32:06.151256Z",
+    "reply_text": null,
     "reply_to_message_id": 4101,
     "safe_error_code": null,
     "schema_version": "tawg.delivery-attempt.v1",
@@ -29,6 +30,7 @@
     "message_count": 1,
     "message_thread_id": 3981,
     "prepared_at": "2026-09-03T11:37:16.747201Z",
+    "reply_text": null,
     "reply_to_message_id": 4105,
     "safe_error_code": null,
     "schema_version": "tawg.delivery-attempt.v1",
@@ -50,6 +52,7 @@
     "message_count": 1,
     "message_thread_id": 3981,
     "prepared_at": "2026-09-03T11:40:26.169525Z",
+    "reply_text": null,
     "reply_to_message_id": 4109,
     "safe_error_code": null,
     "schema_version": "tawg.delivery-attempt.v1",
@@ -61,5 +64,24 @@
       4111
     ],
     "updated_at": "2026-09-03T11:40:26.169525Z"
+  },
+  {
+    "content_sha256": "00827593afb1865c7d0cc4dcf560135fef0ebf673e955d2a3765f99148573732",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4192",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4192",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-09-03T22:50:35.855169Z",
+    "reply_text": "Hey Jimmy! 👋 Trusty's here and ready to help. What's on your mind?",
+    "reply_to_message_id": 4192,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-03T22:50:35.855169Z"
   }
 ]
