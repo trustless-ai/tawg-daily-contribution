@@ -900,6 +900,22 @@ class BotReplyService:
                 if not urls:
                     raise ReplyRejected("source suggestion has no safe URL")
                 self.knowledge_state.add_candidates(uow, urls, trigger.record_id, now)
+                proposal = self._proposed_scan_target(trigger.text_original)
+                if proposal is not None:
+                    if self.scan_target_verifier is None:
+                        raise ReplyRejected("scan target verification is unavailable")
+                    try:
+                        target = await self.scan_target_verifier.verify(
+                            proposal,
+                            trigger_record_id=trigger.record_id,
+                            now=now,
+                        )
+                        scan_registry, scan_registry_changed = ScanTargetStore(
+                            self.root
+                        ).merged(target)
+                    except ScanTargetRejected:
+                        scan_registry = None
+                        scan_registry_changed = False
             if result.correction_transaction is not None:
                 if (
                     route is BotRoute.KNOWLEDGE_CORRECTION
@@ -2181,6 +2197,38 @@ class BotReplyService:
         return frozenset(
             int(value)
             for value in re.findall(r"\b(?:ERC|EIP)[-\s]?#?([1-9][0-9]{0,4})\b", text, re.I)
+        )
+
+    def _proposed_scan_target(self, text: str) -> ScanRegistrationProposal | None:
+        """Deterministically parse a single "add ERC N + Magicians topic (+ PR)" request.
+
+        The AI router is not reliable enough to emit ``scan_registration`` on the
+        ``source_suggestion`` route, so the controller parses the trigger text itself. Returns
+        None unless exactly one ERC number and one Magicians topic URL are present. A trailing
+        Discourse post id (``/29274/17``) is stripped so the registry stores the canonical topic
+        URL. The result is still passed through ``ScanTargetVerifier`` before it is persisted.
+        """
+        erc_numbers = self._explicit_erc_numbers(text)
+        if len(erc_numbers) != 1:
+            return None
+        magicians = re.search(
+            r"https://ethereum-magicians\.org/t/[a-z0-9][a-z0-9-]{0,199}/[1-9][0-9]{0,9}"
+            r"(?:/[0-9]+)?",
+            text,
+            re.IGNORECASE,
+        )
+        if magicians is None:
+            return None
+        topic_url = re.sub(r"/\d+$", "", magicians.group(0))
+        pr = re.search(
+            r"https://github\.com/ethereum/ERCs/pull/[1-9][0-9]{0,9}",
+            text,
+            re.IGNORECASE,
+        )
+        return ScanRegistrationProposal(
+            erc_number=next(iter(erc_numbers)),
+            magicians_topic_url=topic_url,
+            proposal_pr_url=pr.group(0) if pr is not None else None,
         )
 
     @staticmethod
