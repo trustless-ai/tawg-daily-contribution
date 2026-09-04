@@ -1,7 +1,7 @@
 {
   "github": {
     "repo:.github:metadata_sha256": "c6bfd3ca24dcb872062084a0a8863babaf6719a4d787a12b08b8e9f878f48a38",
-    "repo:agent-contracts-examples:metadata_sha256": "f9697499d5bc0c84069d8cb8fb40b04654f967d792f4a4bd1c9bd4dcf608d4c1",
+    "repo:agent-contracts-examples:metadata_sha256": "0ec12b7455e62b90412c83e847f262ff3ed6fde4af6286ef8c878787fb0440b6",
     "repo:agent-ercs:metadata_sha256": "89b269945cb74597c252367f5dd0e0d78c5da806ea3bb5579a8008a947f6b12d",
     "repo:agent-sdk:metadata_sha256": "4571b21905c23b13c7b7c6b259af9966f48b06d865a93cc89632ef117e4713b5",
     "repo:ccip-router:metadata_sha256": "b80b130620d4033bc16694ff906e1b969c59c623d59269deac859b4ac2e8177c",
@@ -11,10 +11,10 @@
     "repo:eip7702-rescue:metadata_sha256": "77d86bd328cd492589e2a35a2fb265ad74beb397d3869ec76a3baedee7ce0610",
     "repo:observation-conditions-note:metadata_sha256": "8f584058b935d11bd58556e6b4845a9adb312621c1aef40ba2b1e963fcdf281e",
     "repo:pq-agent-binding:metadata_sha256": "bb162c3af447014b189b38c1bd78fdfda65805b44e6fdeb42734fc24a1331588",
-    "repo:primitives:metadata_sha256": "691dabb88bd94d9d4e2b6fad9ead9276f2b23ee2c2c42a17f7db6fb32c64537d",
+    "repo:primitives:metadata_sha256": "2b11e3fe0429e6540f366774ee6d4bc3e32921bcf307fdcc7fd4096a992619e7",
     "repo:recompute-kit:metadata_sha256": "5ac3e570e20cc95f0256c84186a723979f66572f19600f756627c5cd6d56de98",
     "repo:recompute-lens:metadata_sha256": "3ca70fe18e4e62e8ea690138da610229ebfa681c3a23d3ddbfe9cd9112091551",
-    "repo:tawg-daily-contribution:metadata_sha256": "18eed632941153ce8c376416e72a0d8cc4423ca89cb702515e889b8be650ccd3",
+    "repo:tawg-daily-contribution:metadata_sha256": "e29c55c8e5281026c8b0055ef86ccffeb55fcad732b7a822469d3cf17302ad86",
     "repo:trustless-agent-substrate:metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
     "repo:trustless-ai-landing:metadata_sha256": "7a57b0fceec9cd7150d2b697d3ef577c7fdb3eb227916765de296850833c7421",
     "repo:verify-layer:metadata_sha256": "0e893941906b396322aafbe1c6a769a1c18d8809eee8fc443b7d3bbcb7d8a897",
