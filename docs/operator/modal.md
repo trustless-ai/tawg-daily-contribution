@@ -306,3 +306,33 @@ Rollback is an operator action, not a redeploy side effect:
 Telegram retains incoming updates for no longer than 24 hours, so execute an unhealthy-runtime
 rollback promptly. Diagnose and re-run the full shadow/cutover gates before another webhook
 attempt.
+
+## Dev bot mirror
+
+The `dev` branch hosts a second, developer-facing bot ("dev bot") that shares the production
+Python core but must never write canonical message history, knowledge, pending jobs, delivery
+state, or layer markers.
+
+Deployment contract:
+
+- The dev Modal app is `tawg-development`, deployed from `.github/workflows/modal-deploy-dev.yml`
+  with `TAWG_MODAL_BRANCH=dev`, `TAWG_REPOSITORY_PERSIST_MODE=receipt-only`, and
+  `TAWG_DEV_MODE=true`. Production (`modal-deploy.yml`) sets `TAWG_DEV_MODE=false`.
+- Dev and production share the same Modal workspace and the same shared secrets (`tawg-worker`,
+  `tawg-webhook`, `tawg-maintenance`, `tawg-github-announcements`). The three bot-specific values
+  differ and live in one extra secret `tawg-dev` under their production-matching names:
+  - `TELEGRAM_BOT_TOKEN` (dev bot token)
+  - `TAWG_TELEGRAM_BOT_USERNAME` (dev bot username, without `@`)
+  - `TAWG_TELEGRAM_WEBHOOK_SECRET` (dev webhook secret)
+  In dev mode `tawg-dev` is mounted after the shared secret on `repository_worker` and
+  `telegram_webhook`; Modal applies secrets in order, so the dev values override the shared ones.
+  Production never mounts `tawg-dev`.
+- The dev bot's numeric identity is derived from its token prefix. In `receipt-only` mode the dev
+  bot deduplicates on its own namespaced receipt `data/state/telegram-webhook-receipts.<bot_id>.json`
+  and never falls back to the production legacy receipt.
+- Production runs `full` mode, which is the only mode that falls back to the legacy unnamed
+  receipt for the one-time migration to the namespaced path.
+- Each dev run merges `origin/main` into `dev` first and fails closed on conflict (no receipt
+  write, no Telegram send). The shared five-minute `scheduled_maintenance` schedule keeps `dev`
+  advancing when the dev bot is idle (gated by `TAWG_MODAL_MAINTENANCE_ENABLED`); on the dev branch
+  the worker only merges and never runs the Daily digest, L1–L4, a model, or a send.

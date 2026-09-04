@@ -15,7 +15,10 @@ from pathlib import Path
 from typing import Any, Protocol
 from uuid import uuid4
 
+from pydantic import ValidationError
+
 from tawg_bot.aliases import AliasError, AliasRegistry
+from tawg_bot.bot_identity import load_webhook_receipts, webhook_receipt_relative_path
 from tawg_bot.ids import telegram_id
 from tawg_bot.models import (
     AttachmentMetadata,
@@ -30,6 +33,7 @@ from tawg_bot.models import (
     TelegramWebhookReceipts,
     TriggerKind,
 )
+from tawg_bot.persist_mode import PersistMode
 from tawg_bot.privacy import PrivacyFilter
 from tawg_bot.query import TelegramQuery
 from tawg_bot.storage import partition_stable_records
@@ -94,6 +98,7 @@ class _TelegramMessage:
     public_username: str | None
     display_name: str
     reply_to_message_id: int | None
+    reply_to_message_text: str | None
     message_thread_id: int | None
     attachments: tuple[AttachmentMetadata, ...]
     edited: bool
@@ -138,6 +143,8 @@ class _TelegramPersistence:
         now: datetime,
         cursors: SourceCursors | None = None,
         receipts: TelegramWebhookReceipts | None = None,
+        bot_id: int | None = None,
+        persist_mode: PersistMode = PersistMode.FULL,
     ) -> _PersistenceResult:
         all_messages = tuple(messages)
         incoming_by_id: dict[str, _TelegramMessage] = {}
@@ -155,11 +162,16 @@ class _TelegramPersistence:
         persisted_by_id = {
             record.record_id: record for record in TelegramQuery(self.root).records()
         }
-        fresh_messages = tuple(
-            message
-            for message in incoming_by_id.values()
-            if _message_supersedes_record(message, persisted_by_id.get(message.record_id))
-        )
+        if persist_mode is PersistMode.RECEIPT_ONLY:
+            fresh_messages = tuple(incoming_by_id.values())
+        else:
+            fresh_messages = tuple(
+                message
+                for message in incoming_by_id.values()
+                if _message_supersedes_record(
+                    message, persisted_by_id.get(message.record_id)
+                )
+            )
 
         records_by_id: dict[str, SourceRecord] = {}
         jobs_by_id = self._load_jobs()
@@ -191,6 +203,8 @@ class _TelegramPersistence:
                 source_payload["author_is_bot"] = message.author_is_bot
             if message.persist_thread_metadata:
                 source_payload["message_thread_id"] = message.message_thread_id
+            if message.reply_to_message_text is not None:
+                source_payload["reply_to_message_text"] = message.reply_to_message_text
             record = SourceRecord.from_text(
                 record_id=message.record_id,
                 source_type=SourceType.TELEGRAM_MESSAGE,
@@ -210,7 +224,11 @@ class _TelegramPersistence:
                 source_payload=source_payload,
             )
             records_by_id[record.record_id] = record
-            job_id = f"reply:{record.record_id}"
+            job_id = (
+                f"reply:{bot_id}:{record.record_id}"
+                if persist_mode is PersistMode.RECEIPT_ONLY and bot_id is not None
+                else f"reply:{record.record_id}"
+            )
             existing = jobs_by_id.get(job_id)
             previous_record = persisted_by_id.get(record.record_id)
             if (
@@ -335,7 +353,7 @@ class _TelegramPersistence:
             uow.stage_json("data/state/source-cursors.json", cursors.model_dump(mode="json"))
         if receipts is not None:
             uow.stage_json(
-                "data/state/telegram-webhook-receipts.json",
+                webhook_receipt_relative_path(bot_id),
                 receipts.model_dump(mode="json"),
             )
         uow.stage_bytes("knowledge/meta/aliases.yml", self.aliases.to_yaml_bytes())
@@ -741,6 +759,8 @@ def ingest_envelopes(
     now: datetime,
     uow_factory: UnitOfWorkFactory = _default_uow_factory,
     telegram_chat_id: int | None = None,
+    bot_id: int | None = None,
+    persist_mode: PersistMode = PersistMode.FULL,
 ) -> WebhookIntakeResult:
     """Verify and atomically ingest sanitized webhook envelopes without polling."""
     _require_utc(now, "ingestion time")
@@ -752,15 +772,10 @@ def ingest_envelopes(
             bot_username=bot_username,
         )
 
-    receipts_path = root / "data/state/telegram-webhook-receipts.json"
-    receipts = (
-        TelegramWebhookReceipts.model_validate_json(
-            receipts_path.read_text(encoding="utf-8")
-        )
-        if receipts_path.exists()
-        else TelegramWebhookReceipts(
-            schema_version="tawg.telegram-webhook-receipts.v1"
-        )
+    receipts = load_webhook_receipts(
+        root,
+        bot_id=bot_id,
+        persist_mode=persist_mode,
     )
     seen = set(receipts.update_ids)
     unseen: list[TelegramWebhookEnvelope] = []
@@ -802,6 +817,8 @@ def ingest_envelopes(
         ),
         now=now,
         receipts=updated_receipts,
+        bot_id=bot_id,
+        persist_mode=persist_mode,
     )
     return WebhookIntakeResult(
         received=len(batch),
@@ -967,6 +984,11 @@ class TelegramIntake:
             if isinstance(reply, dict) and isinstance(reply.get("message_id"), int)
             else None
         )
+        reply_to_message_text = None
+        if isinstance(reply, dict):
+            raw_reply_text = reply.get("text") or reply.get("caption")
+            if isinstance(raw_reply_text, str):
+                reply_to_message_text = raw_reply_text
         return _TelegramMessage(
             update_id=update_id,
             record_id=telegram_id(self.group_slug, message_id),
@@ -977,6 +999,7 @@ class TelegramIntake:
             public_username=public_username,
             display_name=self._display_name(author_mapping),
             reply_to_message_id=reply_to_message_id,
+            reply_to_message_text=reply_to_message_text,
             message_thread_id=self._message_thread_id(message),
             attachments=tuple(self._attachment_metadata(message, bool(text))),
             edited=edited,
@@ -1160,6 +1183,7 @@ def _message_from_envelope(
         public_username=envelope.public_username,
         display_name=envelope.display_name,
         reply_to_message_id=envelope.reply_to_message_id,
+        reply_to_message_text=envelope.reply_to_message_text,
         message_thread_id=envelope.message_thread_id,
         attachments=tuple(
             AttachmentMetadata(
@@ -1180,20 +1204,28 @@ def _delivered_bot_message_ids(
 ) -> frozenset[int]:
     if chat_id is None:
         return frozenset()
-    path = root / "data/state/delivery-state.json"
-    if not path.exists():
-        return frozenset()
-    raw = json.loads(path.read_text(encoding="utf-8"))
-    if not isinstance(raw, list):
-        raise ValueError("invalid Telegram delivery state")
-    attempts = [DeliveryAttempt.model_validate(item) for item in raw]
-    return frozenset(
-        message_id
-        for attempt in attempts
-        if attempt.status is DeliveryStatus.DELIVERED
-        and attempt.telegram_chat_id == chat_id
-        for message_id in attempt.telegram_message_ids
-    )
+    message_ids: set[int] = set()
+    for path in sorted((root / "data/state").glob("delivery-state*.json")):
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(raw, list):
+                continue
+            attempts = [DeliveryAttempt.model_validate(item) for item in raw]
+        except (
+            OSError,
+            UnicodeError,
+            ValueError,
+            ValidationError,
+            json.JSONDecodeError,
+        ):
+            continue
+        for attempt in attempts:
+            if (
+                attempt.status is DeliveryStatus.DELIVERED
+                and attempt.telegram_chat_id == chat_id
+            ):
+                message_ids.update(attempt.telegram_message_ids)
+    return frozenset(message_ids)
 
 
 def _authorized_legacy_backfill(

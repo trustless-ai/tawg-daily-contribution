@@ -6,6 +6,47 @@ if [[ ! "$operation_id" =~ ^[A-Za-z0-9._:-]{1,180}$ ]]; then
   exit 2
 fi
 
+persist_mode="${TAWG_REPOSITORY_PERSIST_MODE:-full}"
+case "$persist_mode" in
+  full) ;;
+  receipt-only) ;;
+  none) exit 0 ;;
+  *) exit 7 ;;
+esac
+
+# Dev/observe workers commit only the merge commit and their own receipt.
+if [[ "$persist_mode" == "receipt-only" ]]; then
+  bot_id="${TAWG_BOT_ID:-}"
+  if [[ ! "$bot_id" =~ ^[0-9]+$ ]]; then
+    exit 6
+  fi
+  receipt_file="data/state/telegram-webhook-receipts.${bot_id}.json"
+  if [[ -f "$receipt_file" ]]; then
+    git add -- "$receipt_file"
+  fi
+  delivery_file="data/state/delivery-state.${bot_id}.json"
+  if [[ -f "$delivery_file" ]]; then
+    git add -- "$delivery_file"
+  fi
+  if ! git diff --cached --quiet; then
+    git config user.name "TAWG Knowledge Bot"
+    git config user.email "tawg-knowledge-bot@users.noreply.github.com"
+    git commit -m "bot: checkpoint ${operation_id}"
+  fi
+  push_output_file="$(mktemp "${TMPDIR:-/tmp}/tawg-push.XXXXXX")"
+  chmod 600 "$push_output_file"
+  if LC_ALL=C git push --porcelain origin \
+    "HEAD:${GITHUB_REF_NAME:?GITHUB_REF_NAME is required}" >"$push_output_file" 2>&1; then
+    exit 0
+  fi
+  if grep -Eq \
+    '^![[:space:]]+[^[:space:]]+[[:space:]]+\[rejected\][[:space:]]+\((non-fast-forward|fetch first)\)$' \
+    "$push_output_file"; then
+    exit 75
+  fi
+  exit 1
+fi
+
 allowed_path() {
   local path="$1"
   case "$path" in

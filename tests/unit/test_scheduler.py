@@ -49,6 +49,10 @@ class Pipeline:
     async def telegram_delivery(self) -> None:
         await self._event("delivery")
 
+    async def maybe_ask_busy_question(self, now: datetime) -> None:
+        del now
+        await self._event("busy_question")
+
 
 def scheduler(root: Path, pipeline: Pipeline, success: LayerSuccess) -> Scheduler:
     state = root / "data/state"
@@ -107,6 +111,7 @@ async def test_daily_tick_prioritizes_current_daily_over_deferred_heavy_work(
         "validate",
         "daily",
         "repo_publish",
+        "busy_question",
         "delivery",
     ]
 
@@ -125,7 +130,13 @@ async def test_failed_source_is_logged_safely_and_later_work_continues(
     success = service.load_success()
     assert success.l1 == NOW
     assert success.l2 == old
-    assert pipeline.events == ["telegram", "source_check", "repo_publish", "delivery"]
+    assert pipeline.events == [
+        "telegram",
+        "source_check",
+        "repo_publish",
+        "busy_question",
+        "delivery",
+    ]
     captured = capsys.readouterr().out
     assert "phase=source_check" in captured
     assert "code=source_check_failed" in captured
@@ -168,7 +179,14 @@ async def test_failed_daily_stays_retryable_but_replies_can_still_deliver(
 
     assert not result.delivered
     assert service.load_success().l4 == old
-    assert pipeline.events == ["telegram", "validate", "daily", "repo_publish", "delivery"]
+    assert pipeline.events == [
+        "telegram",
+        "validate",
+        "daily",
+        "repo_publish",
+        "busy_question",
+        "delivery",
+    ]
 
 
 @pytest.mark.asyncio
@@ -181,7 +199,13 @@ async def test_l2_and_l3_runs_each_do_only_their_bounded_heavy_phase(tmp_path: P
         LayerSuccess(l1=old, l2=old, l3=NOW, l4=NOW),
     )
     await l2.tick(NOW)
-    assert l2_pipeline.events == ["telegram", "source_check", "repo_publish", "delivery"]
+    assert l2_pipeline.events == [
+        "telegram",
+        "source_check",
+        "repo_publish",
+        "busy_question",
+        "delivery",
+    ]
 
     l3_pipeline = Pipeline()
     l3 = scheduler(
@@ -190,7 +214,14 @@ async def test_l2_and_l3_runs_each_do_only_their_bounded_heavy_phase(tmp_path: P
         LayerSuccess(l1=old, l2=NOW, l3=old, l4=NOW),
     )
     await l3.tick(NOW)
-    assert l3_pipeline.events == ["telegram", "knowledge", "validate", "repo_publish", "delivery"]
+    assert l3_pipeline.events == [
+        "telegram",
+        "knowledge",
+        "validate",
+        "repo_publish",
+        "busy_question",
+        "delivery",
+    ]
 
 
 @pytest.mark.asyncio
@@ -211,7 +242,7 @@ async def test_observe_only_keeps_daily_window_retryable(tmp_path: Path) -> None
     [
         (
             LayerSuccess(l1=NOW, l2=NOW, l3=NOW, l4=NOW),
-            ["repo_publish", "delivery"],
+            ["repo_publish", "busy_question", "delivery"],
         ),
         (
             LayerSuccess(
@@ -220,7 +251,7 @@ async def test_observe_only_keeps_daily_window_retryable(tmp_path: Path) -> None
                 l3=NOW,
                 l4=NOW,
             ),
-            ["source_check", "repo_publish", "delivery"],
+            ["source_check", "repo_publish", "busy_question", "delivery"],
         ),
         (
             LayerSuccess(
@@ -229,7 +260,7 @@ async def test_observe_only_keeps_daily_window_retryable(tmp_path: Path) -> None
                 l3=NOW - timedelta(hours=2, seconds=1),
                 l4=NOW,
             ),
-            ["knowledge", "validate", "repo_publish", "delivery"],
+            ["knowledge", "validate", "repo_publish", "busy_question", "delivery"],
         ),
         (
             LayerSuccess(
@@ -238,7 +269,7 @@ async def test_observe_only_keeps_daily_window_retryable(tmp_path: Path) -> None
                 l3=NOW,
                 l4=datetime(2026, 8, 22, 23, tzinfo=UTC),
             ),
-            ["validate", "daily", "repo_publish", "delivery"],
+            ["validate", "daily", "repo_publish", "busy_question", "delivery"],
         ),
     ],
 )

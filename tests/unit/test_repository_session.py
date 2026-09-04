@@ -170,3 +170,67 @@ async def test_non_conflict_checkpoint_failure_is_not_retried() -> None:
     assert captured.value.code == "repository_checkpoint_failed"
     assert len(roots) == 1
     assert not roots[0].exists()
+
+
+@pytest.mark.asyncio
+async def test_merge_branch_fetches_and_merges_before_operation() -> None:
+    runner = FakeRunner()
+    session = RepositorySession(
+        remote="https://example.invalid/tawg/repository.git",
+        branch="dev",
+        runner=runner,
+        merge_branch="main",
+    )
+
+    await session.run(operation_id="webhook:42", operation=_return_root)
+
+    commands = [argv for argv, _cwd in runner.calls]
+    assert ("git", "fetch", "origin", "main:refs/remotes/origin/main") in commands
+    assert ("git", "merge", "--no-edit", "origin/main") in commands
+    # fetch/merge must run after clone and before the checkpoint
+    clone_index = next(i for i, argv in enumerate(commands) if argv[:2] == ("git", "clone"))
+    assert "--depth" not in commands[clone_index]
+    fetch_index = next(i for i, argv in enumerate(commands) if argv[:2] == ("git", "fetch"))
+    merge_index = next(i for i, argv in enumerate(commands) if argv[:2] == ("git", "merge"))
+    bash_index = next(i for i, argv in enumerate(commands) if argv[:1] == ("bash",))
+    assert clone_index < fetch_index < merge_index < bash_index
+
+
+@pytest.mark.asyncio
+async def test_merge_conflict_fails_closed_with_merge_error() -> None:
+    def result_for(argv: Sequence[str]) -> CommandResult:
+        return CommandResult(returncode=1 if argv[:2] == ("git", "merge") else 0)
+
+    runner = FakeRunner(result_for)
+    roots: list[Path] = []
+
+    async def operation(root: Path) -> None:
+        roots.append(root)
+
+    with pytest.raises(RepositorySessionError) as captured:
+        await RepositorySession(
+            remote="https://example.invalid/tawg/repository.git",
+            branch="dev",
+            runner=runner,
+            merge_branch="main",
+        ).run(operation_id="webhook:43", operation=operation)
+
+    assert captured.value.code == "repository_merge_failed"
+    assert roots == []
+
+
+@pytest.mark.asyncio
+async def test_no_merge_when_branch_equals_merge_branch() -> None:
+    runner = FakeRunner()
+    session = RepositorySession(
+        remote="https://example.invalid/tawg/repository.git",
+        branch="main",
+        runner=runner,
+        merge_branch="main",
+    )
+
+    await session.run(operation_id="webhook:44", operation=_return_root)
+
+    commands = [argv for argv, _cwd in runner.calls]
+    assert not any(argv[:2] == ("git", "fetch") for argv in commands)
+    assert not any(argv[:2] == ("git", "merge") for argv in commands)

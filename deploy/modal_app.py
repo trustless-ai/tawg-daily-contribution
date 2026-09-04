@@ -13,6 +13,7 @@ from pathlib import Path
 import modal
 from fastapi import Request, Response
 
+from tawg_bot.bot_identity import configured_bot_id
 from tawg_bot.privacy import PrivacyFilter
 from tawg_bot.repository_session import RepositorySession
 from tawg_bot.runtime import ProductionRuntime
@@ -25,9 +26,14 @@ from tawg_bot.telegram_webhook import (
     is_valid_telegram_webhook_secret,
 )
 
-_APP_NAME = "tawg-production"
+_APP_NAME = os.environ.get("TAWG_MODAL_APP_NAME", "tawg-production")
 _REMOTE = "https://github.com/trustless-ai/tawg-daily-contribution.git"
-_BRANCH = "main"
+_BRANCH = os.environ.get("TAWG_MODAL_BRANCH", "main")
+_REPOSITORY_PERSIST_MODE = os.environ.get(
+    "TAWG_REPOSITORY_PERSIST_MODE",
+    "none" if os.environ.get("TAWG_REPOSITORY_PERSIST_ENABLED", "true") == "false" else "full",
+)
+_DEV_MODE = os.environ.get("TAWG_DEV_MODE", "false") == "true"
 _RUNTIME_ROOT = Path("/opt/tawg")
 _PRIVACY_CONFIG = _RUNTIME_ROOT / "config/privacy.yml"
 _LOCAL_PRIVACY_CONFIG = Path(__file__).parents[1] / "config/privacy.yml"
@@ -60,11 +66,17 @@ _WORKER_SECRET_KEYS = [
     "CLAUDE_CODE_EFFORT_LEVEL",
     "CLAUDE_CODE_AUTO_COMPACT_WINDOW",
     "GITHUB_TOKEN",
+    "TAWG_INVINOVERITAS_API_KEY",
 ]
 _GITHUB_ANNOUNCEMENT_SECRET_KEYS = [
     "TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID",
 ]
 _MAINTENANCE_SECRET_KEYS = ["TAWG_MODAL_MAINTENANCE_ENABLED"]
+_DEV_SECRET_KEYS = [
+    "TELEGRAM_BOT_TOKEN",
+    "TAWG_TELEGRAM_BOT_USERNAME",
+    "TAWG_TELEGRAM_WEBHOOK_SECRET",
+]
 
 image = (
     modal.Image.from_registry(_IMAGE_REFERENCE, add_python="3.12")
@@ -98,7 +110,14 @@ image = (
     )
     .add_local_dir("src", str(_RUNTIME_ROOT / "src"), copy=True)
     .add_local_file("config/privacy.yml", str(_PRIVACY_CONFIG), copy=True)
-    .env({"PYTHONPATH": str(_RUNTIME_ROOT / "src")})
+    .env(
+        {
+            "PYTHONPATH": str(_RUNTIME_ROOT / "src"),
+            "TAWG_REPOSITORY_PERSIST_MODE": _REPOSITORY_PERSIST_MODE,
+            "TAWG_MODAL_BRANCH": _BRANCH,
+            "TAWG_DEV_MODE": "true" if _DEV_MODE else "false",
+        }
+    )
     .workdir(str(_RUNTIME_ROOT))
 )
 webhook_secret = modal.Secret.from_name(
@@ -117,6 +136,16 @@ maintenance_secret = modal.Secret.from_name(
     "tawg-maintenance",
     required_keys=_MAINTENANCE_SECRET_KEYS,
 )
+dev_secret = (
+    modal.Secret.from_name("tawg-dev", required_keys=_DEV_SECRET_KEYS)
+    if _DEV_MODE
+    else None
+)
+worker_secrets = [worker_secret, github_announcement_secret]
+webhook_secrets = [webhook_secret]
+if dev_secret is not None:
+    worker_secrets.append(dev_secret)
+    webhook_secrets.append(dev_secret)
 app = modal.App(_APP_NAME)
 
 
@@ -136,22 +165,31 @@ def _normalizer() -> TelegramWebhookNormalizer:
 @contextmanager
 def _repository_environment() -> Iterator[None]:
     managed_keys = {
-        key for key in os.environ if key.startswith("GIT_CONFIG_") or key == "GITHUB_REF_NAME"
+        key
+        for key in os.environ
+        if key.startswith("GIT_CONFIG_") or key in {"GITHUB_REF_NAME", "TAWG_BOT_ID"}
     }
     previous = {key: os.environ[key] for key in managed_keys}
     token = os.environ["GITHUB_TOKEN"]
     credentials = base64.b64encode(f"x-access-token:{token}".encode()).decode("ascii")
+    bot_id = configured_bot_id()
     try:
         for key in managed_keys:
             del os.environ[key]
-        os.environ["GIT_CONFIG_COUNT"] = "1"
+        os.environ["GIT_CONFIG_COUNT"] = "3"
         os.environ["GIT_CONFIG_KEY_0"] = "http.https://github.com/.extraheader"
         os.environ["GIT_CONFIG_VALUE_0"] = f"AUTHORIZATION: basic {credentials}"
+        os.environ["GIT_CONFIG_KEY_1"] = "user.name"
+        os.environ["GIT_CONFIG_VALUE_1"] = "TAWG Knowledge Bot"
+        os.environ["GIT_CONFIG_KEY_2"] = "user.email"
+        os.environ["GIT_CONFIG_VALUE_2"] = "tawg-knowledge-bot@users.noreply.github.com"
         os.environ["GITHUB_REF_NAME"] = _BRANCH
+        if bot_id is not None:
+            os.environ["TAWG_BOT_ID"] = str(bot_id)
         yield
     finally:
         for key in tuple(os.environ):
-            if key.startswith("GIT_CONFIG_") or key == "GITHUB_REF_NAME":
+            if key.startswith("GIT_CONFIG_") or key in {"GITHUB_REF_NAME", "TAWG_BOT_ID"}:
                 del os.environ[key]
         os.environ.update(previous)
 
@@ -167,7 +205,7 @@ async def _bounded_body(stream: AsyncIterator[bytes]) -> bytes | None:
 
 @app.function(
     image=image,
-    secrets=[worker_secret, github_announcement_secret],
+    secrets=worker_secrets,
     max_containers=1,
     timeout=_WORKER_TIMEOUT_SECONDS,
     retries=modal.Retries(max_retries=_WORKER_RETRIES),
@@ -193,11 +231,17 @@ async def repository_worker(envelope_payload: dict[str, object] | None = None) -
             runtime = ProductionRuntime.from_environment(root)
             if envelope is not None:
                 await runtime.ingest_webhook_envelope(envelope, now=now)
-            else:
+            elif _BRANCH == "main":
                 await runtime.maintenance_tick(now, observe_only=False)
+            # dev maintenance is sync-only; the merge already happened above
 
+        merge_branch = None if _BRANCH == "main" else "main"
         with _repository_environment():
-            await RepositorySession(remote=_REMOTE, branch=_BRANCH).run(
+            await RepositorySession(
+                remote=_REMOTE,
+                branch=_BRANCH,
+                merge_branch=merge_branch,
+            ).run(
                 operation_id=operation_id,
                 operation=run_runtime,
             )
@@ -222,7 +266,7 @@ async def scheduled_maintenance() -> None:
 
 @app.function(
     image=image,
-    secrets=[webhook_secret],
+    secrets=webhook_secrets,
     timeout=_ENDPOINT_TIMEOUT_SECONDS,
 )
 @modal.fastapi_endpoint(method="POST")

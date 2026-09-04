@@ -8,6 +8,7 @@ from typing import Any
 import pytest
 
 from tawg_bot.bot_router import BotReplyService
+from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.scan_targets import (
     ErcScanTarget,
     ScanRegistrationProposal,
@@ -15,10 +16,12 @@ from tawg_bot.scan_targets import (
     ScanTargetStore,
     ScanTargetVerifier,
 )
+from tawg_bot.source_registry import SourceRegistry
 from tests.integration.test_bot_replies import NOW, FakeAi, seed
 
 MAGICIANS = "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902"
 PROPOSAL_PR = "https://github.com/ethereum/ERCs/pull/1081"
+PROJECT = Path(__file__).parents[2]
 
 
 class FakeVerifier:
@@ -75,6 +78,13 @@ def _seed_registry(root: Path) -> None:
         "ercs: []\n",
         encoding="utf-8",
     )
+
+
+def _seed_knowledge_state(root: Path) -> KnowledgeStateStore:
+    sources = root / "knowledge/meta/sources.yml"
+    sources.parent.mkdir(parents=True, exist_ok=True)
+    sources.write_bytes((PROJECT / "knowledge/meta/sources.yml").read_bytes())
+    return KnowledgeStateStore(root, registry=SourceRegistry.from_yaml(sources))
 
 
 def _registration_result(
@@ -195,6 +205,58 @@ async def test_invalid_registration_does_not_block_valid_knowledge(tmp_path: Pat
         (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
     )[0]
     assert state["status"] == "ready"
+
+
+@pytest.mark.asyncio
+async def test_source_suggestion_registers_erc_scan_target(tmp_path: Path) -> None:
+    """A source suggestion that names exactly one ERC plus its Magicians topic (and an
+    optional proposal PR) must register the ERC scan target, not just store source
+    candidates. The Discourse post id in the URL is normalised away before the registry
+    write."""
+    text = (
+        "@bot please add ERC 8380 to your ERC follow up list. "
+        "Magician: https://ethereum-magicians.org/t/"
+        "erc-8380-unclonable-agent-execution-credentials/29274/17 "
+        "Proposal: https://github.com/ethereum/ERCs/pull/1953"
+    )
+    job = seed(tmp_path, text)
+    _seed_registry(tmp_path)
+    knowledge_state = _seed_knowledge_state(tmp_path)
+    verifier = FakeVerifier()
+    normalized = (
+        "https://ethereum-magicians.org/t/"
+        "erc-8380-unclonable-agent-execution-credentials/29274"
+    )
+    result = {
+        "schema_version": "tawg.reply-result.v3",
+        "reply_text": "Recorded ERC-8380 as a recurring scan target.",
+        "language": "en",
+        "english_recap": None,
+        "citations": [],
+        "evidence_status": "verified",
+        "verification_gaps": [],
+        "correction_transaction": None,
+        "knowledge_write": None,
+        "scan_registration": None,
+        "refusal": False,
+    }
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(result, route="source_suggestion"),
+        bot_username="bot",
+        scan_target_verifier=verifier,
+        knowledge_state=knowledge_state,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.refusal is False
+    targets = ScanTargetStore(tmp_path).load().ercs
+    assert len(targets) == 1
+    assert targets[0].erc_number == 8380
+    assert targets[0].magicians_topic_url == normalized
+    assert targets[0].proposal_pr_url == "https://github.com/ethereum/ERCs/pull/1953"
+    assert targets[0].registered_from_record_id == job.trigger_record_id
+    assert [call.erc_number for call in verifier.calls] == [8380]
 
 
 @pytest.mark.asyncio

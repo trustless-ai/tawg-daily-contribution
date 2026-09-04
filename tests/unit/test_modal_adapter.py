@@ -410,6 +410,7 @@ def test_image_and_secret_cover_the_complete_runtime_without_source_secrets(
         "ANTHROPIC_BASE_URL",
         "ANTHROPIC_MODEL",
         "GITHUB_TOKEN",
+        "TAWG_INVINOVERITAS_API_KEY",
     }
     assert secrets["tawg-github-announcements"] == {
         "TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID"
@@ -431,6 +432,49 @@ def test_image_and_secret_cover_the_complete_runtime_without_source_secrets(
     ]
     assert WEBHOOK_SECRET not in all_steps
     assert GITHUB_TOKEN not in all_steps
+    env_steps = [step for step in image.steps if step[0] == "env"]
+    assert len(env_steps) == 1
+    assert env_steps[0][1][0] == {
+        "PYTHONPATH": "/opt/tawg/src",
+        "TAWG_REPOSITORY_PERSIST_MODE": "full",
+        "TAWG_MODAL_BRANCH": "main",
+        "TAWG_DEV_MODE": "false",
+    }
+
+
+def test_dev_mode_mounts_tawg_dev_secret_after_shared_secrets(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    FakeApp.created.clear()
+    FakeImage.created.clear()
+    FakeSecret.calls.clear()
+    monkeypatch.setitem(sys.modules, "modal", _fake_modal_module())
+    monkeypatch.setitem(sys.modules, "fastapi", _fake_fastapi_module())
+    monkeypatch.setenv("TAWG_DEV_MODE", "true")
+    sys.modules.pop("deploy.modal_app", None)
+    module = importlib.import_module("deploy.modal_app")
+
+    secrets = {name: set(required_keys) for name, required_keys in FakeSecret.calls}
+    assert secrets["tawg-dev"] == {
+        "TELEGRAM_BOT_TOKEN",
+        "TAWG_TELEGRAM_BOT_USERNAME",
+        "TAWG_TELEGRAM_WEBHOOK_SECRET",
+    }
+    assert [secret.name for secret in module.repository_worker.config["secrets"]] == [
+        "tawg-worker",
+        "tawg-github-announcements",
+        "tawg-dev",
+    ]
+    assert [secret.name for secret in module.telegram_webhook.config["secrets"]] == [
+        "tawg-webhook",
+        "tawg-dev",
+    ]
+    assert [secret.name for secret in module.scheduled_maintenance.config["secrets"]] == [
+        "tawg-maintenance",
+    ]
+    image = FakeImage.created[0]
+    env_step = next(step for step in image.steps if step[0] == "env")
+    assert env_step[1][0]["TAWG_DEV_MODE"] == "true"
 
 
 @pytest.mark.asyncio
@@ -637,9 +681,10 @@ class FakeRuntime:
 class FakeRepositorySession:
     instances: ClassVar[list[FakeRepositorySession]] = []
 
-    def __init__(self, *, remote: str, branch: str) -> None:
+    def __init__(self, *, remote: str, branch: str, merge_branch: str | None = None) -> None:
         self.remote = remote
         self.branch = branch
+        self.merge_branch = merge_branch
         self.operation_ids: list[str] = []
         self.environments: list[dict[str, str]] = []
         self.instances.append(self)
@@ -695,9 +740,13 @@ async def test_worker_reconstructs_envelope_and_runs_ingestion_in_fresh_session(
     assert FakeRuntime.maintenance_calls == []
     worker_environment = session.environments[0]
     assert worker_environment["GITHUB_REF_NAME"] == "main"
-    assert worker_environment["GIT_CONFIG_COUNT"] == "1"
+    assert worker_environment["GIT_CONFIG_COUNT"] == "3"
     assert worker_environment["GIT_CONFIG_KEY_0"] == "http.https://github.com/.extraheader"
     assert GITHUB_TOKEN not in worker_environment["GIT_CONFIG_VALUE_0"]
+    assert worker_environment["GIT_CONFIG_KEY_1"] == "user.name"
+    assert worker_environment["GIT_CONFIG_VALUE_1"] == "TAWG Knowledge Bot"
+    assert worker_environment["GIT_CONFIG_KEY_2"] == "user.email"
+    assert worker_environment["GIT_CONFIG_VALUE_2"] == "tawg-knowledge-bot@users.noreply.github.com"
     assert not any(
         key.startswith("GIT_CONFIG_") or key == "GITHUB_REF_NAME" for key in os.environ
     )
@@ -725,7 +774,7 @@ async def test_worker_restores_inherited_git_environment_after_session(
 
     worker_environment = FakeRepositorySession.instances[0].environments[0]
     assert worker_environment["GITHUB_REF_NAME"] == "main"
-    assert worker_environment["GIT_CONFIG_COUNT"] == "1"
+    assert worker_environment["GIT_CONFIG_COUNT"] == "3"
     assert worker_environment["GIT_CONFIG_KEY_0"] == "http.https://github.com/.extraheader"
     assert "GIT_CONFIG_KEY_8" not in worker_environment
     assert "GIT_CONFIG_VALUE_8" not in worker_environment
@@ -831,6 +880,24 @@ async def test_scheduled_maintenance_spawns_shared_worker_only_when_exactly_true
     assert modal_adapter.repository_worker.sync_spawned == []
     assert modal_adapter.repository_worker.async_spawned == [None]
     assert modal_adapter.repository_worker.spawned == [None]
+
+
+@pytest.mark.asyncio
+async def test_dev_worker_merges_main_and_skips_maintenance_tick(
+    modal_adapter: types.ModuleType,
+    fake_worker_dependencies: None,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    del fake_worker_dependencies
+    monkeypatch.setattr(modal_adapter, "_BRANCH", "dev")
+
+    await modal_adapter.repository_worker.raw_f()
+
+    session = FakeRepositorySession.instances[0]
+    assert session.branch == "dev"
+    assert session.merge_branch == "main"
+    assert FakeRuntime.envelopes == []
+    assert FakeRuntime.maintenance_calls == []
 
 
 def test_claude_runtime_lock_is_exact_and_integrity_pinned() -> None:

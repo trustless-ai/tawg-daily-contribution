@@ -121,6 +121,31 @@ class TelegramApi:
                 method = "sendMessage"
         return self._sent_message(result, method=method, delivery_format=delivery_format)
 
+    async def send_document(
+        self,
+        chat_id: int,
+        *,
+        filename: str,
+        document: bytes,
+        caption: str | None = None,
+        reply_to_message_id: int | None = None,
+        message_thread_id: int | None = None,
+    ) -> SentMessage:
+        data: dict[str, object] = {"chat_id": chat_id}
+        if caption is not None:
+            data["caption"] = caption
+        self._add_reply_context(data, reply_to_message_id, message_thread_id)
+        result = await self._call(
+            "sendDocument",
+            data,
+            files={"document": (filename, document, "application/json")},
+        )
+        return self._sent_message(
+            result,
+            method="sendDocument",
+            delivery_format="document_v1",
+        )
+
     @staticmethod
     def _add_reply_context(
         data: dict[str, object],
@@ -152,9 +177,19 @@ class TelegramApi:
             delivery_format=delivery_format,
         )
 
-    async def _call(self, method: str, data: dict[str, object]) -> list[dict[str, Any]]:
+    async def _call(
+        self,
+        method: str,
+        data: dict[str, object],
+        *,
+        files: dict[str, tuple[str, bytes, str]] | None = None,
+    ) -> list[dict[str, Any]]:
         try:
-            response = await self._client.post(f"{self._base_url}/{method}", data=data)
+            response = await self._client.post(
+                f"{self._base_url}/{method}",
+                data=data,
+                files=files,
+            )
         except httpx.HTTPError:
             raise TelegramApiAmbiguousError("Telegram request outcome is unknown") from None
         try:
