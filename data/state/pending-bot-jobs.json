@@ -3298,5 +3298,32 @@
     "updated_at": "2026-09-04T12:33:26.812705Z",
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
+  },
+  {
+    "attempts": 1,
+    "classified_route": "ignore",
+    "created_at": "2026-09-04T12:54:03.666232Z",
+    "job_id": "reply:tg:tawg:4248",
+    "message_thread_id": 16,
+    "prepared_citations": [],
+    "prepared_language": null,
+    "prepared_reply_text": null,
+    "prerequisite_job_id": null,
+    "refusal": false,
+    "repair_of_job_id": null,
+    "repair_reason_code": null,
+    "reply_to_message_id": 4248,
+    "routed_at": "2026-09-04T12:54:03.666232Z",
+    "router_context_scope": "conversation",
+    "router_context_sha256": "94b2b125beea4b54c12db6476abb92a5dbf5229ea471f539070f427b9052dcd0",
+    "router_version": "contextual-ai-v5",
+    "safe_error_code": null,
+    "schema_version": "tawg.pending-bot-job.v1",
+    "status": "ignored",
+    "trigger_kind": "greeting_candidate",
+    "trigger_record_id": "tg:tawg:4248",
+    "updated_at": "2026-09-04T12:54:03.666232Z",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   }
 ]
