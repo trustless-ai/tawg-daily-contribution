@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trustless-ai.example/schemas/ask_question-result.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "question_text"],
+  "properties": {
+    "schema_version": {
+      "const": "tawg.ask_question-result.v1"
+    },
+    "question_text": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 4096
+    }
+  }
+}

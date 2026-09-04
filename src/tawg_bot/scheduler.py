@@ -44,6 +44,8 @@ class LayerPipeline(Protocol):
 
     async def telegram_delivery(self) -> None: ...
 
+    async def maybe_ask_busy_question(self, now: datetime) -> None: ...
+
 
 @dataclass(frozen=True, slots=True)
 class TickResult:
@@ -123,6 +125,12 @@ class Scheduler:
         repository_ok = await self._phase(
             "publish_repository", self.pipeline.publish_repository(), failed_phases
         )
+        if not observe_only:
+            await self._phase(
+                "busy_question",
+                self.pipeline.maybe_ask_busy_question(now),
+                failed_phases,
+            )
         delivery_ok = True
         if not observe_only:
             delivery_ok = await self._phase(
