@@ -21,6 +21,11 @@ from tawg_bot.bot_router import (
     ReplyRejected,
     ReplyRepairReconciler,
 )
+from tawg_bot.busy_question import (
+    AskQuestionResult,
+    BusyQuestionConfig,
+    BusyQuestionService,
+)
 from tawg_bot.claude_cli import ClaudeCli, ClaudeCliError
 from tawg_bot.daily import (
     DailyReadiness,
@@ -88,6 +93,8 @@ _DAILY_EVIDENCE_TIMEOUT_SECONDS = 60
 _DAILY_TIMEOUT_SECONDS = 900
 _REPLY_TIMEOUT_SECONDS = 300
 _REPLY_PHASE_BUDGET_SECONDS = 1_200
+_BUSY_QUESTION_TIMEOUT_SECONDS = 60
+_BUSY_QUESTION_BUDGET_USD = "0.05"
 _PROCESSING_LEASE = timedelta(minutes=10)
 _MAX_REPLIES_PER_TICK = 10
 _TELEGRAM_GROUP_SLUG = "tawg"
@@ -709,6 +716,61 @@ class _LivePipeline:
                 message_thread_id=None,
                 now=self.now,
             )
+
+    async def maybe_ask_busy_question(self, now: datetime) -> None:
+        """Ask another bot a short "what happened" question when the group got busy.
+
+        Runs the deterministic message-count / cooldown check first, then (only when it
+        decides to ask) makes one bounded AI call for a playful question and sends it. The
+        trigger state is staged only after a successful delivery, so a transient Telegram
+        failure retries on the next tick instead of silently skipping the window.
+        """
+        _require_utc(now, "busy question time")
+        config = BusyQuestionConfig.from_env()
+        service = BusyQuestionService(self.root, config=config)
+        decision = service.decide(now)
+        if not decision.should_ask:
+            return
+        context_pack = json.dumps(
+            {
+                "context_schema": "tawg.ask-question-context.v1",
+                "target": config.target,
+                "recent_message_count": decision.recent_count,
+                "window_seconds": config.window_seconds,
+            }
+        )
+        raw = await self.ai.run(
+            job_type="ask_question",
+            context_pack=context_pack,
+            operation_id=f"busy-question:{int(now.timestamp())}",
+            max_budget_usd=_BUSY_QUESTION_BUDGET_USD,
+            timeout_seconds=_BUSY_QUESTION_TIMEOUT_SECONDS,
+        )
+        result = AskQuestionResult.model_validate(raw)
+        text = f"{config.target} {result.question_text}".strip()
+        api = TelegramApi.from_env(client=self.client)
+        delivery = DeliveryService(
+            self.root,
+            api=api,
+            chat_id=self._chat_id(),
+            checkpoint=self.checkpoint,
+        )
+        try:
+            await delivery.deliver(
+                job_id=f"busy-question:{int(now.timestamp())}",
+                text=text,
+                reply_to_message_id=None,
+                message_thread_id=None,
+                now=now,
+            )
+        except (DeliveryAmbiguous, DeliveryFailed):
+            return
+        uow = RepositoryUnitOfWork(
+            self.root, operation_id=f"busy-question:{int(now.timestamp())}"
+        )
+        uow.register_external_evidence(())
+        service.stage_triggered(uow, now)
+        uow.publish()
 
     async def _prepare_pending_replies(self) -> None:
         username = os.environ.get("TAWG_TELEGRAM_BOT_USERNAME")
