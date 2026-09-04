@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_updated:4ff91ab2a0b833debbc4a70f",
-    "kind": "pr_updated",
-    "number": 13,
-    "occurred_at": "2026-09-04T17:10:22Z",
-    "repository": "trustless-ai/tawg-daily-contribution",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "release: dev → main (验证路由 + ERC 扫描注册 + 隐私增强)"
-  }
-]
+[]
