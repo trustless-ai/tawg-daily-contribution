@@ -319,6 +319,7 @@ def format_verification_reply(
     proof_status: ProofStatus,
     *,
     artifact: str,
+    proof_filename: str | None = None,
 ) -> str:
     """Render a (VerificationResult, ProofStatus) pair as a fixed Rich Markdown reply.
 
@@ -382,23 +383,21 @@ def format_verification_reply(
         proof_lines.append(f"- decision_ref: `{_markdown_escape(result.decision_ref)}`")
     proof_lines.append(f"- artifact sha256: `{artifact_hash}`")
     lines.extend(proof_lines)
-    if result.verify_proof_url:
+    if result.verify_proof_url and proof_filename:
         lines.extend(
             [
                 "",
-                "**Independent check (free, no auth):**",
-                "The signed proof is attached as a JSON file; POST its `event` and "
-                "`expect_artifact_hash` to "
-                f"`{_markdown_escape(result.verify_proof_url)}` to re-run the check.",
+                "**Verify it yourself (free, no auth):**",
+                f"Download the attached proof file `{_markdown_escape(proof_filename)}` and "
+                "run this command to re-check the signed proof against this exact claim:",
+                "",
+                "```bash",
+                f"curl -sS -X POST '{result.verify_proof_url}' \\",
+                "  -H 'Content-Type: application/json' \\",
+                f"  -d @{proof_filename}",
+                "```",
             ]
         )
-    lines.extend(
-        [
-            "",
-            "Note: proof authenticity is confirmed via invinoveritas's own /verify-proof "
-            "check; the signature is not yet independently recomputed locally by Trusty.",
-        ]
-    )
     return "\n".join(lines)
 
 
@@ -419,7 +418,6 @@ def build_verification_proof_attachment(
         return None
     artifact_hash = hashlib.sha256(artifact.encode("utf-8")).hexdigest()
     payload = {
-        "verify_url": result.verify_proof_url,
         "expect_artifact_hash": artifact_hash,
         "event": event,
     }

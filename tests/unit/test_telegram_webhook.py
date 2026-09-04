@@ -84,6 +84,7 @@ def test_group_message_dispatches_a_minimal_sanitized_envelope() -> None:
         "display_name": "Alice",
         "author_is_bot": False,
         "reply_to_message_id": None,
+        "reply_to_message_text": None,
         "message_thread_id": None,
         "entities": (),
         "has_bot_command": False,
@@ -187,6 +188,7 @@ def test_caption_media_preserves_safe_metadata_and_utf16_reply_trigger(
         "has_caption": True,
     }
     assert decision.envelope.reply_to_message_id == 41
+    assert decision.envelope.reply_to_message_text == "discard me"
     assert decision.envelope.message_thread_id == 13
     assert decision.envelope.triggers_reply is triggers_reply
 

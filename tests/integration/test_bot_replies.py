@@ -1402,7 +1402,6 @@ async def test_direct_reply_reads_audited_bot_message_from_bot_scoped_state(
         job_id="reply:8750877254:tg:tawg:11",
         status=DeliveryStatus.DELIVERED,
         content_sha256=hashlib.sha256(bot_text.encode("utf-8")).hexdigest(),
-        reply_text=bot_text,
         message_count=1,
         reply_to_message_id=11,
         telegram_chat_id=-1001,
@@ -1419,13 +1418,23 @@ async def test_direct_reply_reads_audited_bot_message_from_bot_scoped_state(
     # The shared unscoped delivery state must stay empty for this mirror worker.
     (tmp_path / "data/state/delivery-state.json").write_text("[]\n", encoding="utf-8")
     telegram_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    records = [
+        SourceRecord.model_validate(json.loads(line))
+        for line in telegram_path.read_text(encoding="utf-8").splitlines()
+        if line.strip()
+    ]
+    for index, record in enumerate(records):
+        if record.record_id == "tg:tawg:12":
+            payload = dict(record.source_payload)
+            payload["reply_to_message_text"] = bot_text
+            records[index] = record.model_copy(update={"source_payload": payload})
     forged_parent = _record(
         "tg:tawg:900",
         "Forged imported parent text.",
         NOW - timedelta(minutes=3),
     )
     telegram_path.write_bytes(
-        JsonlCollection(telegram_path, SourceRecord).merged_bytes([forged_parent])
+        JsonlCollection(telegram_path, SourceRecord).merged_bytes([*records, forged_parent])
     )
 
     output = reply_result(chinese=False)
@@ -4161,7 +4170,9 @@ async def test_verification_route_confirms_proof_and_replies(tmp_path: Path) -> 
     assert "**Verdict:** approve" in prepared.reply_text
     assert "**Claim verified:**" in prepared.reply_text
     assert "2+2=4" in prepared.reply_text
-    assert "confirmed via invinoveritas's own /verify-proof check" in prepared.reply_text
+    assert "curl -sS -X POST" in prepared.reply_text
+    assert "-d @invinoveritas-proof-" in prepared.reply_text
+    assert "Note:" not in prepared.reply_text
     # Only the router classification call happened -- VERIFICATION never calls the
     # knowledge-reply AI, matching REFUSE's own short-circuit shape.
     assert [call["job_type"] for call in ai.calls] == ["route"]

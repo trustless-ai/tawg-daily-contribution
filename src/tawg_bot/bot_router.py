@@ -701,22 +701,27 @@ class BotReplyService:
                     )
                 except VerificationRejected as error:
                     raise ReplyRejected(str(error)) from error
-                text = format_verification_reply(
-                    verification_result,
-                    proof_status,
-                    artifact=artifact,
-                )
-                prepared_attachments: list[PreparedAttachment] = []
+                proof_attachment = None
                 if proof_status.verified:
                     proof_attachment = build_verification_proof_attachment(
                         verification_result,
                         artifact=artifact,
                     )
-                    if proof_attachment is not None:
-                        filename, content = proof_attachment
-                        prepared_attachments.append(
-                            PreparedAttachment(filename=filename, content=content)
-                        )
+                proof_filename = (
+                    proof_attachment[0] if proof_attachment is not None else None
+                )
+                text = format_verification_reply(
+                    verification_result,
+                    proof_status,
+                    artifact=artifact,
+                    proof_filename=proof_filename,
+                )
+                prepared_attachments: list[PreparedAttachment] = []
+                if proof_attachment is not None:
+                    filename, content = proof_attachment
+                    prepared_attachments.append(
+                        PreparedAttachment(filename=filename, content=content)
+                    )
                 ready = processing.model_copy(
                     update={
                         "status": JobStatus.READY,
@@ -1705,6 +1710,11 @@ class BotReplyService:
                     jobs,
                     child_created_at=current.created_at,
                     message_thread_id=job.message_thread_id,
+                    webhook_text=(
+                        current.source_payload.get("reply_to_message_text")
+                        if depth == 0
+                        else None
+                    ),
                 )
                 if audited is None:
                     break
@@ -1729,27 +1739,34 @@ class BotReplyService:
         *,
         child_created_at: datetime,
         message_thread_id: int | None,
+        webhook_text: str | None = None,
     ) -> SourceRecord | None:
         if attempt.message_thread_id != message_thread_id:
             raise ReplyRejected("direct reply target failed thread audit binding")
         target_message_id = target_record_id.rsplit(":", 1)[-1]
         if not target_message_id.isdigit():
             raise ReplyRejected("direct reply target is invalid")
-        delivered_text = self._audited_delivery_text(attempt, jobs)
-        if delivered_text is None:
-            return None
-        try:
-            delivered_messages = split_telegram_text(
-                delivered_text,
-                limit=32_768,
-                max_messages=2,
-            )
-        except TelegramTextSplitError as error:
-            raise ReplyRejected("audited bot delivery text cannot be reconstructed") from error
-        if len(delivered_messages) != len(attempt.telegram_message_ids):
-            raise ReplyRejected("audited bot delivery message count does not match")
-        target_index = attempt.telegram_message_ids.index(int(target_message_id))
-        target_text = delivered_messages[target_index]
+        if webhook_text is not None and webhook_text.strip():
+            # The incoming webhook carries the replied-to message's text directly
+            # (Telegram's `reply_to_message`), so a mirror worker can use it without
+            # having to reconstruct it from the delivery state it does not persist.
+            target_text = webhook_text
+        else:
+            delivered_text = self._audited_delivery_text(attempt, jobs)
+            if delivered_text is None:
+                return None
+            try:
+                delivered_messages = split_telegram_text(
+                    delivered_text,
+                    limit=32_768,
+                    max_messages=2,
+                )
+            except TelegramTextSplitError as error:
+                raise ReplyRejected("audited bot delivery text cannot be reconstructed") from error
+            if len(delivered_messages) != len(attempt.telegram_message_ids):
+                raise ReplyRejected("audited bot delivery message count does not match")
+            target_index = attempt.telegram_message_ids.index(int(target_message_id))
+            target_text = delivered_messages[target_index]
         group_parts = target_record_id.split(":", 2)
         if len(group_parts) != 3 or group_parts[0] != "tg" or not group_parts[1]:
             raise ReplyRejected("direct reply target is outside Telegram scope")

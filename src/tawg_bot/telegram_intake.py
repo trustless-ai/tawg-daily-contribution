@@ -98,6 +98,7 @@ class _TelegramMessage:
     public_username: str | None
     display_name: str
     reply_to_message_id: int | None
+    reply_to_message_text: str | None
     message_thread_id: int | None
     attachments: tuple[AttachmentMetadata, ...]
     edited: bool
@@ -202,6 +203,8 @@ class _TelegramPersistence:
                 source_payload["author_is_bot"] = message.author_is_bot
             if message.persist_thread_metadata:
                 source_payload["message_thread_id"] = message.message_thread_id
+            if message.reply_to_message_text is not None:
+                source_payload["reply_to_message_text"] = message.reply_to_message_text
             record = SourceRecord.from_text(
                 record_id=message.record_id,
                 source_type=SourceType.TELEGRAM_MESSAGE,
@@ -981,6 +984,11 @@ class TelegramIntake:
             if isinstance(reply, dict) and isinstance(reply.get("message_id"), int)
             else None
         )
+        reply_to_message_text = None
+        if isinstance(reply, dict):
+            raw_reply_text = reply.get("text") or reply.get("caption")
+            if isinstance(raw_reply_text, str):
+                reply_to_message_text = raw_reply_text
         return _TelegramMessage(
             update_id=update_id,
             record_id=telegram_id(self.group_slug, message_id),
@@ -991,6 +999,7 @@ class TelegramIntake:
             public_username=public_username,
             display_name=self._display_name(author_mapping),
             reply_to_message_id=reply_to_message_id,
+            reply_to_message_text=reply_to_message_text,
             message_thread_id=self._message_thread_id(message),
             attachments=tuple(self._attachment_metadata(message, bool(text))),
             edited=edited,
@@ -1174,6 +1183,7 @@ def _message_from_envelope(
         public_username=envelope.public_username,
         display_name=envelope.display_name,
         reply_to_message_id=envelope.reply_to_message_id,
+        reply_to_message_text=envelope.reply_to_message_text,
         message_thread_id=envelope.message_thread_id,
         attachments=tuple(
             AttachmentMetadata(

@@ -65,6 +65,7 @@ class TelegramWebhookEnvelope(_FrozenStrictModel):
     display_name: str = Field(min_length=1, max_length=256)
     author_is_bot: bool = False
     reply_to_message_id: int | None = Field(default=None, ge=0)
+    reply_to_message_text: str | None = Field(default=None, max_length=4096)
     message_thread_id: int | None = Field(default=None, ge=0)
     entities: tuple[TelegramWebhookEntity, ...] = ()
     has_bot_command: bool = False
@@ -243,6 +244,11 @@ class TelegramWebhookNormalizer:
             and not isinstance(reply.get("message_id"), bool)
             else None
         )
+        reply_to_message_text = None
+        if isinstance(reply, dict):
+            raw_reply_text = reply.get("text") or reply.get("caption")
+            if isinstance(raw_reply_text, str):
+                reply_to_message_text = raw_reply_text
         message_thread_id = message.get("message_thread_id")
         if not isinstance(message_thread_id, int) or isinstance(message_thread_id, bool):
             message_thread_id = None
@@ -262,6 +268,7 @@ class TelegramWebhookNormalizer:
             "display_name": display_result.sanitized_text,
             "author_is_bot": author_mapping.get("is_bot") is True,
             "reply_to_message_id": reply_to_message_id,
+            "reply_to_message_text": reply_to_message_text,
             "message_thread_id": message_thread_id,
             "entities": entities,
             "has_bot_command": has_bot_command,

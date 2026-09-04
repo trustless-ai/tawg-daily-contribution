@@ -450,7 +450,12 @@ def test_format_verification_reply_states_claim_proof_and_independent_check() ->
     async def run() -> str:
         result = await verify_artifact(_client(handler), artifact="1+1=2")
         status = ProofStatus(verified=True, checks={"signature_valid": True})
-        return format_verification_reply(result, status, artifact="1+1=2")
+        return format_verification_reply(
+            result,
+            status,
+            artifact="1+1=2",
+            proof_filename="invinoveritas-proof-abc123.json",
+        )
 
     text = asyncio.run(run())
     artifact_hash = hashlib.sha256(b"1+1=2").hexdigest()
@@ -461,10 +466,12 @@ def test_format_verification_reply_states_claim_proof_and_independent_check() ->
     assert artifact_hash in text
     assert "sha256:deadbeef" in text
     assert "https://api.babyblueviper.com/verify-proof" in text
-    assert "expect_artifact_hash" in text
-    assert "confirmed via invinoveritas's own /verify-proof check" in text
+    assert "invinoveritas-proof-abc123.json" in text
+    assert "curl -sS -X POST" in text
+    assert "-d @invinoveritas-proof-abc123.json" in text
     assert "**Signed proof event:**" not in text
-    assert "curl -sS -X POST" not in text
+    assert "Note:" not in text
+    assert "not yet independently recomputed" not in text
 
 
 def test_format_verification_reply_escapes_claim_markdown() -> None:
@@ -502,7 +509,7 @@ def test_build_verification_proof_attachment_bundles_event_and_artifact_hash() -
     filename, content = attachment
     assert filename.endswith(".json")
     payload = json.loads(content)
-    assert payload["verify_url"] == "https://api.babyblueviper.com/verify-proof"
+    assert "verify_url" not in payload
     assert payload["expect_artifact_hash"] == hashlib.sha256(b"1+1=2").hexdigest()
     assert payload["event"]["content"] == result_dict["proof"]["event"]["content"]
 
