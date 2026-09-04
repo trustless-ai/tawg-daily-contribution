@@ -2,7 +2,7 @@
   "initialized_at": "2026-08-29T15:45:00Z",
   "repositories": [
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/.github",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -11,7 +11,7 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/agent-contracts-examples",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -29,7 +29,7 @@
       ]
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/agent-ercs",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -57,7 +57,7 @@
       ]
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/agent-sdk",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -105,7 +105,7 @@
       ]
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/ccip-router",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -153,21 +153,21 @@
       ]
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/collapsed-state-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/composed-attestation-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/cross-reference-console",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -187,14 +187,14 @@
       ]
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/eip7702-rescue",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/observation-conditions-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -203,21 +203,21 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/pq-agent-binding",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/primitives",
       "initialized_at": "2026-09-03T20:45:07.910077Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/recompute-kit",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -325,14 +325,14 @@
       ]
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/recompute-lens",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/tawg-daily-contribution",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -380,28 +380,28 @@
       ]
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/trustless-agent-substrate",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/trustless-ai-landing",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/verify-layer",
       "initialized_at": "2026-09-03T15:10:15.931759Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-04T13:20:21.366913Z",
+      "checked_at": "2026-09-04T13:55:10.291958Z",
       "full_name": "trustless-ai/zkIE",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
