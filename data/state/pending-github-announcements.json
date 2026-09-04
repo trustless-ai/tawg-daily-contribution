@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:c1afd9075e89600e8f05699c",
-    "kind": "pr_merged",
-    "number": 4,
-    "occurred_at": "2026-09-04T09:34:16Z",
-    "repository": "trustless-ai/agent-contracts-examples",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "genesis-self-source: list both mainnet deployments, both now Sourcify-verified"
-  }
-]
+[]
