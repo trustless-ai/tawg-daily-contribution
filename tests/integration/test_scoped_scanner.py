@@ -324,6 +324,45 @@ async def test_repository_page_backfill_skips_when_index_is_missing(tmp_path: Pa
 
 
 @pytest.mark.asyncio
+async def test_repository_page_backfill_matches_existing_pages_case_insensitively(
+    tmp_path: Path,
+) -> None:
+    _scaffold(tmp_path)
+    repos_root = tmp_path / "knowledge/repos"
+    repos_root.mkdir(parents=True, exist_ok=True)
+    (repos_root / "zkie.md").write_text(
+        "---\ntitle: zkie\ntype: repository\ncreated: '2026-08-23'\n"
+        "updated: '2026-08-23'\nprovenance_status: verified\n---\n\n# zkie\n",
+        encoding="utf-8",
+    )
+    index = tmp_path / "knowledge/index.md"
+    index.write_text(
+        _repository_index("- [[repos/zkie|zkie]]"),
+        encoding="utf-8",
+    )
+    scanner = ScopedSourceScanner(
+        tmp_path,
+        github_client=None,
+        topic_client=TopicClient(),
+    )
+    descriptors = (
+        RepositoryDescriptor(
+            name="zkIE",
+            full_name="trustless-ai/zkIE",
+            description="Zero-Knowledge Inference Engine",
+        ),
+    )
+    uow = RepositoryUnitOfWork(tmp_path, operation_id="repo-backfill-case")
+    uow.register_external_evidence(())
+
+    scanner.stage_repository_pages(uow, descriptors, now=NOW)
+    changed = uow.publish().changed_paths
+
+    assert changed == ()
+    assert sorted(p.name for p in (tmp_path / "knowledge/repos").iterdir()) == ["zkie.md"]
+
+
+@pytest.mark.asyncio
 async def test_partial_scan_retains_last_verified_metadata_for_failed_source(
     tmp_path: Path,
 ) -> None:

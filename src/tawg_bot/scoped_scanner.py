@@ -239,14 +239,15 @@ class ScopedSourceScanner:
             raise ScopedScanRejected("repository index is not readable") from None
         new_links: list[str] = []
         for repository in repositories:
-            page_path = f"knowledge/repos/{repository.name}.md"
+            page_stem = repository.name.casefold()
+            page_path = f"knowledge/repos/{page_stem}.md"
             if (self.root / page_path).is_file():
                 continue
             uow.stage_bytes(
                 page_path,
                 self._repository_page(repository, now=now).encode("utf-8"),
             )
-            new_links.append(f"- [[repos/{repository.name}|{repository.name}]]")
+            new_links.append(f"- [[repos/{page_stem}|{page_stem}]]")
         if not new_links:
             return
         for link in new_links:
@@ -255,7 +256,7 @@ class ScopedSourceScanner:
 
     @staticmethod
     def _repository_page(repository: RepositoryDescriptor, *, now: datetime) -> str:
-        title = repository.name
+        title = repository.name.casefold()
         html_url = f"https://github.com/{repository.full_name}"
         purpose = (repository.description or "").strip() or (
             "Repository under the trustless-ai organization."
