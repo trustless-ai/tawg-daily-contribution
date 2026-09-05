@@ -1,5 +1,12 @@
 [
   {
+    "metadata_sha256": "9fd84017d2d23936734258380ab653bcf2b3939cb064ae5f4943c490af724160",
+    "source_key": "ethereum-ercs-pr-1953",
+    "source_kind": "ethereum_ercs_pr",
+    "source_locator": "https://github.com/ethereum/ERCs/pull/1953",
+    "updated_at": "2026-09-04T02:06:55Z"
+  },
+  {
     "metadata_sha256": "c6bfd3ca24dcb872062084a0a8863babaf6719a4d787a12b08b8e9f878f48a38",
     "source_key": ".github",
     "source_kind": "github_repository",
@@ -98,11 +105,11 @@
     "updated_at": "2026-07-19T09:39:18Z"
   },
   {
-    "metadata_sha256": "97e026098d040c855032c385556ef156ba5d9c7d70c4313c1612c754c7804ec0",
+    "metadata_sha256": "1ca89248d676951cd8902e95e8c7d18dbcd1e0b88fadf4ea422f475d16f5b0e9",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-09-05T02:50:26Z"
+    "updated_at": "2026-09-05T03:25:18Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
@@ -159,5 +166,12 @@
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8323-source-token-agent-binding-for-erc-8004/28920",
     "updated_at": "2026-08-06T00:28:58.582000Z"
+  },
+  {
+    "metadata_sha256": "a481323b8853fcc5396a4044881d5e50874e78db372d544273394068ebc3d386",
+    "source_key": "magicians-29274",
+    "source_kind": "magicians_topic",
+    "source_locator": "https://ethereum-magicians.org/t/erc-8380-unclonable-agent-execution-credentials/29274",
+    "updated_at": "2026-09-03T16:44:11.804000Z"
   }
 ]
