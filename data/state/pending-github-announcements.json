@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_opened:4b60b1a5e937808cdeeb2343",
+    "kind": "pr_opened",
+    "number": 3,
+    "occurred_at": "2026-09-05T19:19:00Z",
+    "repository": "trustless-ai/semantic-abi",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Defer horizon-shield to post-ETHOnline (team decision)"
+  }
+]
