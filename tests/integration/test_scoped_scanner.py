@@ -10,6 +10,7 @@ from pydantic import ValidationError
 
 from tawg_bot.models import SourceCursors
 from tawg_bot.scoped_scanner import (
+    RepositoryDescriptor,
     ScopedObservation,
     ScopedScanRejected,
     ScopedScanResult,
@@ -182,6 +183,144 @@ async def test_scanner_persists_only_metadata_and_cursors(tmp_path: Path) -> Non
     assert "must not persist" not in rendered
     assert not (tmp_path / "data/github").exists()
     assert not (tmp_path / "data/magicians").exists()
+
+
+class _DescribingGitHubClient(GitHubClient):
+    async def get_json(self, path: str, params=None) -> list[Any] | dict[str, Any]:
+        if path == "/orgs/trustless-ai/repos":
+            if params["page"] > 1:
+                return []
+            return [
+                {
+                    "id": 1,
+                    "name": "existing",
+                    "full_name": "trustless-ai/existing",
+                    "default_branch": "main",
+                    "private": False,
+                    "archived": False,
+                    "updated_at": "2026-08-28T02:00:00Z",
+                    "description": "An existing repository.",
+                },
+                {
+                    "id": 2,
+                    "name": "primitives",
+                    "full_name": "trustless-ai/primitives",
+                    "default_branch": "main",
+                    "private": False,
+                    "archived": False,
+                    "updated_at": "2026-08-28T02:00:00Z",
+                    "description": "Primitive contracts.",
+                },
+            ]
+        return await super().get_json(path, params)
+
+
+def _repository_index(*links: str) -> str:
+    return (
+        "---\n"
+        "title: TAWG Knowledge Index\n"
+        "type: index\n"
+        "created: '2026-08-23'\n"
+        "updated: '2026-08-23'\n"
+        "---\n\n"
+        "# TAWG Knowledge Index\n\n"
+        "## Repositories\n\n"
+        + "".join(f"{link}\n" for link in links)
+        + "\n## Topics\n\n"
+    )
+
+
+@pytest.mark.asyncio
+async def test_scan_captures_repository_descriptors(tmp_path: Path) -> None:
+    _scaffold(tmp_path)
+    scanner = ScopedSourceScanner(
+        tmp_path,
+        github_client=_DescribingGitHubClient(),
+        topic_client=TopicClient(),
+    )
+
+    result = await scanner.scan(since=NOW - timedelta(minutes=30), now=NOW)
+
+    assert {repo.name for repo in result.repositories} == {"existing", "primitives"}
+    primitives = next(repo for repo in result.repositories if repo.name == "primitives")
+    assert primitives.full_name == "trustless-ai/primitives"
+    assert primitives.description == "Primitive contracts."
+
+
+@pytest.mark.asyncio
+async def test_repository_page_backfill_adds_missing_pages_and_index_links(
+    tmp_path: Path,
+) -> None:
+    _scaffold(tmp_path)
+    repos_root = tmp_path / "knowledge/repos"
+    repos_root.mkdir(parents=True, exist_ok=True)
+    (repos_root / "existing.md").write_text(
+        "---\ntitle: existing\ntype: repository\ncreated: '2026-08-23'\n"
+        "updated: '2026-08-23'\nprovenance_status: verified\n---\n\n# existing\n",
+        encoding="utf-8",
+    )
+    index = tmp_path / "knowledge/index.md"
+    index.write_text(
+        _repository_index("- [[repos/existing|existing]]"),
+        encoding="utf-8",
+    )
+    scanner = ScopedSourceScanner(
+        tmp_path,
+        github_client=None,
+        topic_client=TopicClient(),
+    )
+    descriptors = (
+        RepositoryDescriptor(
+            name="existing",
+            full_name="trustless-ai/existing",
+            description="An existing repository.",
+        ),
+        RepositoryDescriptor(
+            name="primitives",
+            full_name="trustless-ai/primitives",
+            description="Primitive contracts.",
+        ),
+    )
+    uow = RepositoryUnitOfWork(tmp_path, operation_id="repo-backfill")
+    uow.register_external_evidence(())
+
+    scanner.stage_repository_pages(uow, descriptors, now=NOW)
+    changed = uow.publish().changed_paths
+
+    assert "knowledge/repos/primitives.md" in changed
+    assert "knowledge/index.md" in changed
+    assert "knowledge/repos/existing.md" not in changed
+    primitives_page = (tmp_path / "knowledge/repos/primitives.md").read_text()
+    assert 'title: "primitives"' in primitives_page
+    assert "type: repository" in primitives_page
+    assert "Primitive contracts." in primitives_page
+    assert "https://github.com/trustless-ai/primitives" in primitives_page
+    assert "[[repos/primitives|primitives]]" in index.read_text()
+
+
+@pytest.mark.asyncio
+async def test_repository_page_backfill_skips_when_index_is_missing(tmp_path: Path) -> None:
+    _scaffold(tmp_path)
+    scanner = ScopedSourceScanner(
+        tmp_path,
+        github_client=None,
+        topic_client=TopicClient(),
+    )
+    descriptors = (
+        RepositoryDescriptor(
+            name="primitives",
+            full_name="trustless-ai/primitives",
+            description="Primitive contracts.",
+        ),
+    )
+    uow = RepositoryUnitOfWork(tmp_path, operation_id="repo-backfill-missing-index")
+    uow.register_external_evidence(())
+
+    scanner.stage_repository_pages(uow, descriptors, now=NOW)
+    changed = uow.publish().changed_paths
+
+    assert changed == ()
+    assert not (tmp_path / "knowledge/repos/primitives.md").exists()
 
 
 @pytest.mark.asyncio

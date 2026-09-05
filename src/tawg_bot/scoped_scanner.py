@@ -24,8 +24,46 @@ from tawg_bot.unit_of_work import RepositoryUnitOfWork
 _MAX_GITHUB_PAGES = 10
 
 
+def _index_with_repository(index: str, link: str) -> str:
+    """Insert a repository wikilink into the index's Repositories section."""
+
+    if link in index:
+        return index
+    heading = "## Repositories"
+    if heading not in index:
+        return f"{index.rstrip()}\n\n{heading}\n\n{link}\n"
+    lines = index.splitlines()
+    start = lines.index(heading) + 1
+    end = next(
+        (
+            position
+            for position in range(start, len(lines))
+            if lines[position].startswith("## ")
+        ),
+        len(lines),
+    )
+    section = lines[start:end]
+    links = sorted({item for item in section if item.startswith("- [[")} | {link})
+    remainder = [item for item in section if not item.startswith("- [[")]
+    while remainder and not remainder[-1].strip():
+        remainder.pop()
+    replacement = ["", *links]
+    if remainder:
+        replacement.extend(["", *remainder])
+    lines[start:end] = replacement
+    return "\n".join(lines).rstrip() + "\n"
+
+
 class ScopedScanRejected(ValueError):
     """Raised when scanner inputs or repository state violate the bounded contract."""
+
+
+class RepositoryDescriptor(StrictModel):
+    """The bounded public-repository metadata needed to maintain a repository page."""
+
+    name: str = Field(min_length=1, max_length=256)
+    full_name: str = Field(min_length=1, max_length=512)
+    description: str | None = Field(default=None, max_length=1024)
 
 
 class ScopedObservation(StrictModel):
@@ -49,6 +87,7 @@ class ScopedObservation(StrictModel):
 
 class ScopedScanResult(StrictModel):
     observations: tuple[ScopedObservation, ...]
+    repositories: tuple[RepositoryDescriptor, ...] = ()
     github_cursors: dict[str, str | int | None]
     magicians_cursors: dict[str, str | int | None]
     failed_sources: tuple[str, ...]
@@ -88,6 +127,7 @@ class ScopedSourceScanner:
             raise ValueError("scoped scan cutoff cannot be in the future")
         registry = ScanTargetStore(self.root).load()
         observations: list[ScopedObservation] = []
+        repo_descriptors: list[RepositoryDescriptor] = []
         github_cursors: dict[str, str | int | None] = {}
         magicians_cursors: dict[str, str | int | None] = {}
         failures: list[str] = []
@@ -105,6 +145,7 @@ class ScopedSourceScanner:
                         continue
                     observation = self._repository_observation(repository, now=now)
                     observations.append(observation)
+                    repo_descriptors.append(self._repository_descriptor(repository))
                     github_cursors[
                         f"repo:{observation.source_key}:metadata_sha256"
                     ] = observation.metadata_sha256
@@ -152,6 +193,9 @@ class ScopedSourceScanner:
         )
         return ScopedScanResult(
             observations=ordered,
+            repositories=tuple(
+                sorted(repo_descriptors, key=lambda item: item.name)
+            ),
             github_cursors=github_cursors,
             magicians_cursors=magicians_cursors,
             failed_sources=tuple(sorted(set(failures))),
@@ -171,6 +215,77 @@ class ScopedSourceScanner:
             ],
         )
         uow.stage_json(self.CURSORS_PATH, cursors.model_dump(mode="json"))
+
+    def stage_repository_pages(
+        self,
+        uow: RepositoryUnitOfWork,
+        repositories: tuple[RepositoryDescriptor, ...],
+        now: datetime,
+    ) -> None:
+        """Backfill a deterministic repository page for each observed repo missing one."""
+
+        if uow.root != self.root:
+            raise ScopedScanRejected("scanner and unit of work roots differ")
+        self._require_utc(now)
+        if not repositories:
+            return
+        index_path = "knowledge/index.md"
+        index_file = self.root / index_path
+        if index_file.is_symlink() or not index_file.is_file():
+            return
+        try:
+            index = index_file.read_text(encoding="utf-8")
+        except (OSError, UnicodeError):
+            raise ScopedScanRejected("repository index is not readable") from None
+        new_links: list[str] = []
+        for repository in repositories:
+            page_path = f"knowledge/repos/{repository.name}.md"
+            if (self.root / page_path).is_file():
+                continue
+            uow.stage_bytes(
+                page_path,
+                self._repository_page(repository, now=now).encode("utf-8"),
+            )
+            new_links.append(f"- [[repos/{repository.name}|{repository.name}]]")
+        if not new_links:
+            return
+        for link in new_links:
+            index = _index_with_repository(index, link)
+        uow.stage_bytes(index_path, index.encode("utf-8"))
+
+    @staticmethod
+    def _repository_page(repository: RepositoryDescriptor, *, now: datetime) -> str:
+        title = repository.name
+        html_url = f"https://github.com/{repository.full_name}"
+        purpose = (repository.description or "").strip() or (
+            "Repository under the trustless-ai organization."
+        )
+        date = now.date().isoformat()
+        lines = [
+            "---",
+            f"title: {json.dumps(title, ensure_ascii=False)}",
+            "type: repository",
+            f"created: {json.dumps(date)}",
+            f"updated: {json.dumps(date)}",
+            "source_urls:",
+            f"- {json.dumps(html_url)}",
+            "provenance_status: verified",
+            "---",
+            "",
+            f"# {title}",
+            "",
+            "## Purpose",
+            "",
+            purpose,
+            "",
+            "## Evidence snapshot",
+            "",
+            f"- Canonical source: [{repository.name}]({html_url})",
+            "",
+            f"Public repository activity is preserved under "
+            f"`data/github/{repository.name}/` for exact retrieval.",
+        ]
+        return "\n".join(lines).rstrip() + "\n"
 
     async def _proposal_observation(
         self,
@@ -263,6 +378,19 @@ class ScopedSourceScanner:
             source_locator=f"https://github.com/{full_name}",
             updated_at=cls._timestamp_or_now(payload.get("updated_at"), now),
             metadata_sha256=cls._metadata_sha256(metadata),
+        )
+
+    @staticmethod
+    def _repository_descriptor(payload: dict[str, Any]) -> RepositoryDescriptor:
+        name = payload.get("name")
+        full_name = payload.get("full_name")
+        if not isinstance(name, str) or not isinstance(full_name, str):
+            raise ScopedScanRejected("GitHub repository metadata is invalid")
+        description = payload.get("description")
+        return RepositoryDescriptor(
+            name=name,
+            full_name=full_name,
+            description=description if isinstance(description, str) else None,
         )
 
     @classmethod

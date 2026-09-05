@@ -59,11 +59,19 @@ async def test_source_check_stages_scoped_and_announcement_state_atomically(
     class Scoped:
         async def scan(self, **kwargs: Any) -> object:
             del kwargs
-            return SimpleNamespace(failed_sources=())
+            return SimpleNamespace(failed_sources=(), repositories=())
 
         def stage(self, result: object, uow: Any) -> None:
             del result
             uow.stage_json("data/state/scoped-source-observations.json", [])
+
+        def stage_repository_pages(
+            self,
+            uow: Any,
+            repositories: object,
+            now: object,
+        ) -> None:
+            del uow, repositories, now
 
     class Announcements:
         async def scan(self, **kwargs: Any) -> object:
