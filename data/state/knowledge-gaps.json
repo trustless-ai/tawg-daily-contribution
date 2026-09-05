@@ -207,5 +207,16 @@
     "safe_error_code": "unregistered_source",
     "schema_version": "tawg.knowledge-gap.v1",
     "source_key": null
+  },
+  {
+    "bucket": "normative_spec",
+    "erc_number": 8380,
+    "first_observed_at": "2026-09-05T03:10:10.119230Z",
+    "gap_key": "gap:erc-8380:overview:normative_spec:unregistered",
+    "intent": "overview",
+    "last_observed_at": "2026-09-05T03:10:10.119230Z",
+    "safe_error_code": "unregistered_source",
+    "schema_version": "tawg.knowledge-gap.v1",
+    "source_key": null
   }
 ]

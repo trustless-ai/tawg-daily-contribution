@@ -5,8 +5,10 @@ created: "2026-09-05"
 updated: "2026-09-05"
 source_ids:
 - "tg:tawg:4310"
+- "tg:tawg:4313"
 telegram_record_ids:
 - "tg:tawg:4310"
+- "tg:tawg:4313"
 source_urls:
 - "https://github.com/ethereum/ERCs/pull/1953"
 - "https://ethereum-magicians.org/t/erc-8380-unclonable-agent-execution-credentials/29274/17"

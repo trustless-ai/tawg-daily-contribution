@@ -22,3 +22,8 @@ ercs:
   proposal_pr_url: null
   registered_from_record_id: source:magicians-8323
   registered_at: '2026-08-28T00:00:00Z'
+- erc_number: 8380
+  magicians_topic_url: https://ethereum-magicians.org/t/erc-8380-unclonable-agent-execution-credentials/29274
+  proposal_pr_url: https://github.com/ethereum/ERCs/pull/1953
+  registered_from_record_id: tg:tawg:4313
+  registered_at: '2026-09-05T03:10:10.119230Z'
