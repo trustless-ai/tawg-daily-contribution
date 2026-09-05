@@ -21,6 +21,8 @@ from tests.integration.test_bot_replies import NOW, FakeAi, seed
 
 MAGICIANS = "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902"
 PROPOSAL_PR = "https://github.com/ethereum/ERCs/pull/1081"
+MAGICIANS_8380 = "https://ethereum-magicians.org/t/erc-8380-unclonable-agent-execution-credentials/29274"
+PROPOSAL_PR_8380 = "https://github.com/ethereum/ERCs/pull/1953"
 PROJECT = Path(__file__).parents[2]
 
 
@@ -396,5 +398,75 @@ async def test_verifier_rejects_mismatched_topic_metadata(
                 proposal_pr_url=None,
             ),
             trigger_record_id="tg:tawg:6000",
+            now=NOW,
+        )
+
+
+@pytest.mark.asyncio
+async def test_verifier_accepts_proposal_pr_referencing_same_topic_without_erc_number() -> None:
+    topic = TopicClient(
+        {
+            "id": 29274,
+            "slug": "erc-8380-unclonable-agent-execution-credentials",
+            "title": "ERC-8380: Unclonable Agent Execution Credentials",
+        }
+    )
+    github = GitHubClient(
+        {
+            "number": 1953,
+            "title": "Add ERC: Unclonable Agent Execution Credentials",
+            "body": (
+                "This proposal defines a capability token for delegated agent "
+                "execution. The idea was discussed on Ethereum Magicians before "
+                "this PR was opened:\n\n"
+                "https://ethereum-magicians.org/t/"
+                "idea-draft-erc-unclonable-agent-execution-credentials-via-zero-knowledge-nullifiers/29274\n"
+            ),
+        }
+    )
+    verifier = ScanTargetVerifier(topic_client=topic, github_client=github)
+
+    target = await verifier.verify(
+        ScanRegistrationProposal(
+            erc_number=8380,
+            magicians_topic_url=MAGICIANS_8380,
+            proposal_pr_url=PROPOSAL_PR_8380,
+        ),
+        trigger_record_id="tg:tawg:4310",
+        now=NOW,
+    )
+
+    assert target.erc_number == 8380
+    assert target.proposal_pr_url == PROPOSAL_PR_8380
+    assert topic.paths == ["/t/29274.json"]
+    assert github.paths == ["/repos/ethereum/ERCs/pulls/1953"]
+
+
+@pytest.mark.asyncio
+async def test_verifier_rejects_proposal_pr_with_neither_erc_number_nor_topic_reference() -> None:
+    topic = TopicClient(
+        {
+            "id": 29274,
+            "slug": "erc-8380-unclonable-agent-execution-credentials",
+            "title": "ERC-8380: Unclonable Agent Execution Credentials",
+        }
+    )
+    github = GitHubClient(
+        {
+            "number": 1953,
+            "title": "Add ERC: Unclonable Agent Execution Credentials",
+            "body": "Unrelated description with no ERC number and no Magicians link.",
+        }
+    )
+    verifier = ScanTargetVerifier(topic_client=topic, github_client=github)
+
+    with pytest.raises(ScanTargetRejected):
+        await verifier.verify(
+            ScanRegistrationProposal(
+                erc_number=8380,
+                magicians_topic_url=MAGICIANS_8380,
+                proposal_pr_url=PROPOSAL_PR_8380,
+            ),
+            trigger_record_id="tg:tawg:4310",
             now=NOW,
         )
