@@ -3362,7 +3362,7 @@
     "welcome_target_record_id": null
   },
   {
-    "attempts": 0,
+    "attempts": 1,
     "classified_route": null,
     "created_at": "2026-09-05T03:09:45.070187Z",
     "job_id": "reply:tg:tawg:4313",
@@ -3379,7 +3379,7 @@
     "router_context_scope": null,
     "router_context_sha256": null,
     "router_version": null,
-    "safe_error_code": null,
+    "safe_error_code": "reply_route_model_schema_invalid",
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "pending",
     "trigger_kind": "mention",
