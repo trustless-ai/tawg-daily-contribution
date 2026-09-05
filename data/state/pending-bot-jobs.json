@@ -3416,7 +3416,7 @@
     "router_version": "contextual-ai-v5",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "ready",
+    "status": "delivered",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4316",
     "updated_at": "2026-09-05T09:11:09.346680Z",
