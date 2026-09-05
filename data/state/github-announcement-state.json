@@ -2,7 +2,7 @@
   "initialized_at": "2026-08-29T15:45:00Z",
   "repositories": [
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/.github",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -11,7 +11,7 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/agent-contracts-examples",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -29,7 +29,7 @@
       ]
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/agent-ercs",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -57,7 +57,7 @@
       ]
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/agent-sdk",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -105,7 +105,7 @@
       ]
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/ccip-router",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -153,21 +153,21 @@
       ]
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/collapsed-state-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/composed-attestation-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/cross-reference-console",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -187,14 +187,14 @@
       ]
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/eip7702-rescue",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/observation-conditions-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -203,21 +203,21 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/pq-agent-binding",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/primitives",
       "initialized_at": "2026-09-03T20:45:07.910077Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/recompute-kit",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -325,14 +325,14 @@
       ]
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/recompute-lens",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/semantic-abi",
       "initialized_at": "2026-09-05T13:50:18.716472Z",
       "issue_numbers": [],
@@ -340,12 +340,12 @@
         {
           "author_login": "pipavlo82",
           "head_sha": "4c4e29c61a77ec9cfdf4d6b06ce63e57ef4d4c8c",
-          "merge_commit_sha": null,
-          "merged_at": null,
+          "merge_commit_sha": "4c4e29c61a77ec9cfdf4d6b06ce63e57ef4d4c8c",
+          "merged_at": "2026-09-05T20:04:55Z",
           "number": 1,
-          "state": "open",
+          "state": "merged",
           "title": "fix: align Semantic ABI v0 model before freeze",
-          "updated_at": "2026-09-05T14:55:32Z"
+          "updated_at": "2026-09-05T20:04:55Z"
         },
         {
           "author_login": "ogasurfproject-jpg",
@@ -359,18 +359,18 @@
         },
         {
           "author_login": "TMerlini",
-          "head_sha": "98c54c9bbdff87170214d842974520fc55721f75",
-          "merge_commit_sha": null,
-          "merged_at": null,
+          "head_sha": "d6dc744b9b1c7cbaacb7c2b082aa33decfa27918",
+          "merge_commit_sha": "d6dc744b9b1c7cbaacb7c2b082aa33decfa27918",
+          "merged_at": "2026-09-05T20:05:58Z",
           "number": 3,
-          "state": "open",
+          "state": "merged",
           "title": "Defer horizon-shield to post-ETHOnline (team decision)",
-          "updated_at": "2026-09-05T19:19:00Z"
+          "updated_at": "2026-09-05T20:05:58Z"
         }
       ]
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/tawg-daily-contribution",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -428,28 +428,28 @@
       ]
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/trustless-agent-substrate",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/trustless-ai-landing",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/verify-layer",
       "initialized_at": "2026-09-03T15:10:15.931759Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-05T19:55:11.614443Z",
+      "checked_at": "2026-09-05T20:25:12.451044Z",
       "full_name": "trustless-ai/zkIE",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
