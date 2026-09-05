@@ -41,6 +41,7 @@ This vault compiles current, source-cited knowledge for the Daily Contribution a
 
 ## Repositories
 
+- [[repos/.github|.github]]
 - [[repos/agent-contracts-examples|agent-contracts-examples]]
 - [[repos/agent-ercs|agent-ercs]]
 - [[repos/agent-sdk|agent-sdk]]
@@ -51,13 +52,15 @@ This vault compiles current, source-cited knowledge for the Daily Contribution a
 - [[repos/eip7702-rescue|eip7702-rescue]]
 - [[repos/observation-conditions-note|observation-conditions-note]]
 - [[repos/pq-agent-binding|pq-agent-binding]]
+- [[repos/primitives|primitives]]
 - [[repos/recompute-kit|recompute-kit]]
 - [[repos/recompute-lens|recompute-lens]]
+- [[repos/semantic-abi|semantic-abi]]
 - [[repos/tawg-daily-contribution|tawg-daily-contribution]]
 - [[repos/trustless-agent-substrate|trustless-agent-substrate]]
 - [[repos/trustless-ai-landing|trustless-ai-landing]]
+- [[repos/verify-layer|verify-layer]]
 - [[repos/zkie|zkie]]
-
 ## Acknowledgements
 
 - [[acknowledgements/baby-blue-viper|Baby Blue Viper]]
