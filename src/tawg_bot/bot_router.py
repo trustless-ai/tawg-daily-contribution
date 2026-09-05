@@ -2129,9 +2129,15 @@ class BotReplyService:
                     else []
                 ),
             }
+            normalized_source_urls = frozenset(
+                normalize_magicians_topic_url(url) for url in mutation_source_urls
+            )
+            normalized_citations = frozenset(
+                normalize_magicians_topic_url(url) for url in result.citations
+            )
             if (
-                not registration_urls.issubset(mutation_source_urls)
-                or not registration_urls.issubset(result.citations)
+                not registration_urls.issubset(normalized_source_urls)
+                or not registration_urls.issubset(normalized_citations)
                 or result.scan_registration.erc_number
                 not in self._explicit_erc_numbers(trigger.text_original)
             ):

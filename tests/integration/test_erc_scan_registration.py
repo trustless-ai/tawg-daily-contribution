@@ -92,8 +92,9 @@ def _registration_result(
     trigger_id: str,
     *,
     proposal_pr_url: str | None,
+    magicians_url: str = MAGICIANS,
 ) -> dict[str, Any]:
-    urls = [MAGICIANS, *([proposal_pr_url] if proposal_pr_url is not None else [])]
+    urls = [magicians_url, *([proposal_pr_url] if proposal_pr_url is not None else [])]
     page = (
         "---\n"
         "title: Agentic Commerce\n"
@@ -135,11 +136,11 @@ def _registration_result(
         "knowledge_write": {
             "authorship": "external",
             "authorship_evidence": [trigger_id],
-            "original_url": MAGICIANS,
+            "original_url": magicians_url,
         },
         "scan_registration": {
             "erc_number": 8183,
-            "magicians_topic_url": MAGICIANS,
+            "magicians_topic_url": magicians_url,
             "proposal_pr_url": proposal_pr_url,
         },
         "refusal": False,
@@ -236,6 +237,36 @@ async def test_scan_registration_accepts_magicians_url_with_post_id(tmp_path: Pa
     assert len(targets) == 1
     assert targets[0].magicians_topic_url == MAGICIANS
     assert verifier.calls and verifier.calls[0].magicians_topic_url == MAGICIANS
+
+
+@pytest.mark.asyncio
+async def test_scan_registration_grounding_accepts_post_id_citations(tmp_path: Path) -> None:
+    """When the whole reply (citations + scan_registration) uses the raw Magicians link with a
+    trailing post id, the grounded-scan check must normalize both sides so the normalized
+    registration URL is accepted against the normalized citations."""
+    post_id_url = f"{MAGICIANS}/17"
+    job = seed(tmp_path, f"@bot record ERC-8183 and scan {post_id_url}")
+    _seed_registry(tmp_path)
+    verifier = FakeVerifier()
+
+    result = _registration_result(
+        job.job_id,
+        job.trigger_record_id,
+        proposal_pr_url=None,
+        magicians_url=post_id_url,
+    )
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(result, route="knowledge_correction"),
+        bot_username="bot",
+        scan_target_verifier=verifier,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.refusal is False
+    targets = ScanTargetStore(tmp_path).load().ercs
+    assert len(targets) == 1
+    assert targets[0].magicians_topic_url == MAGICIANS
 
 
 @pytest.mark.asyncio
