@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "pipavlo82",
-    "event_id": "github-announcement:pr_opened:4f5719318b7038468fafbd90",
-    "kind": "pr_opened",
-    "number": 1,
-    "occurred_at": "2026-09-05T14:55:32Z",
-    "repository": "trustless-ai/semantic-abi",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "fix: align Semantic ABI v0 model before freeze"
-  }
-]
+[]
