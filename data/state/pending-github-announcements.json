@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "ogasurfproject-jpg",
-    "event_id": "github-announcement:pr_opened:dd7c66a97d85e99e68ed4899",
-    "kind": "pr_opened",
-    "number": 2,
-    "occurred_at": "2026-09-05T16:29:50Z",
-    "repository": "trustless-ai/semantic-abi",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "adapters/horizon-shield: real adapter, manifest with six declarations…"
-  }
-]
+[]
