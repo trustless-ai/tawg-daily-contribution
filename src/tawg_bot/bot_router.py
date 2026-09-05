@@ -70,6 +70,7 @@ from tawg_bot.scan_targets import (
     ScanTargetRejected,
     ScanTargetStore,
     ScanTargetVerifier,
+    normalize_magicians_topic_url,
 )
 from tawg_bot.source_registry import EvidenceKind
 from tawg_bot.telegram_intake import resolve_member_welcome_target
@@ -1977,9 +1978,18 @@ class BotReplyService:
         # then aborts the whole reply as an "invalid reply model output". Drop that field
         # before validation on every non-correction route; the controller separately
         # rejects a scan_registration outside the correction route anyway.
+        raw = dict(raw)
         if route is not BotRoute.KNOWLEDGE_CORRECTION:
-            raw = dict(raw)
             raw.pop("scan_registration", None)
+        else:
+            registration = raw.get("scan_registration")
+            if isinstance(registration, dict) and isinstance(
+                registration.get("magicians_topic_url"), str
+            ):
+                registration["magicians_topic_url"] = normalize_magicians_topic_url(
+                    registration["magicians_topic_url"]
+                )
+                raw["scan_registration"] = registration
         try:
             result = _ReplyResult.model_validate(raw)
         except ValidationError as error:
@@ -2211,7 +2221,7 @@ class BotReplyService:
         )
         if magicians is None:
             return None
-        topic_url = re.sub(r"/\d+$", "", magicians.group(0))
+        topic_url = normalize_magicians_topic_url(magicians.group(0))
         pr = re.search(
             r"https://github\.com/ethereum/ERCs/pull/[1-9][0-9]{0,9}",
             text,

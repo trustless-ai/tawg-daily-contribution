@@ -208,6 +208,37 @@ async def test_invalid_registration_does_not_block_valid_knowledge(tmp_path: Pat
 
 
 @pytest.mark.asyncio
+async def test_scan_registration_accepts_magicians_url_with_post_id(tmp_path: Path) -> None:
+    """A knowledge-correction reply whose ``scan_registration`` echoes the raw Magicians link
+    with a trailing post id (``/27902/17``) must be normalized to the canonical topic URL
+    instead of aborting the whole reply as an "invalid reply model output"."""
+    post_id_url = f"{MAGICIANS}/17"
+    job = seed(tmp_path, f"@bot record ERC-8183 and scan {MAGICIANS}")
+    _seed_registry(tmp_path)
+    verifier = FakeVerifier()
+
+    result = _registration_result(
+        job.job_id,
+        job.trigger_record_id,
+        proposal_pr_url=None,
+    )
+    result["scan_registration"]["magicians_topic_url"] = post_id_url
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(result, route="knowledge_correction"),
+        bot_username="bot",
+        scan_target_verifier=verifier,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.refusal is False
+    targets = ScanTargetStore(tmp_path).load().ercs
+    assert len(targets) == 1
+    assert targets[0].magicians_topic_url == MAGICIANS
+    assert verifier.calls and verifier.calls[0].magicians_topic_url == MAGICIANS
+
+
+@pytest.mark.asyncio
 async def test_source_suggestion_registers_erc_scan_target(tmp_path: Path) -> None:
     """A source suggestion that names exactly one ERC plus its Magicians topic (and an
     optional proposal PR) must register the ERC scan target, not just store source
