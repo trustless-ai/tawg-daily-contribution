@@ -754,6 +754,27 @@
     "updated_at": "2026-08-30T15:00:25.759963Z"
   },
   {
+    "content_sha256": "65759af36e1abe4ac1b58f7b54e8f2c9917f57ee65c1fba13d005e846f286d41",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:e584e848a5e1cb37f6e63031",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:e584e848a5e1cb37f6e63031",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-06T15:25:17.426278Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/trustless-ai-landing](https://github.com/trustless-ai/trustless-ai-landing)\n[#17 semantic-abi: wire agent panel to Trustless Pioneer \\(honest to live PQ binding\\)](https://github.com/trustless-ai/trustless-ai-landing/pull/17)\nCongratulations, [TMerlini](https://github.com/TMerlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-06T15:25:17.426278Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4384
+    ],
+    "updated_at": "2026-09-06T15:25:17.426278Z"
+  },
+  {
     "content_sha256": "8029348780652f046f7f8f828677702bd3fd4b62ab48d0ff4d62eb27bc303936",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:f26d54fbb1ff79d25fc4b0e9",
