@@ -1347,6 +1347,11 @@ class BotReplyService:
             if route is BotRoute.KNOWLEDGE_CORRECTION
             else frozenset()
         )
+        question_urls = (
+            frozenset(extract_public_https_urls((trigger, *chain)))
+            if route is BotRoute.KNOWLEDGE_QUESTION
+            else frozenset()
+        )
         current_github_urls: frozenset[str] = frozenset(
             cast(str, item["url"])
             for item in current_github_states
@@ -1415,6 +1420,7 @@ class BotReplyService:
                 local_ids
                 | set(local_erc_citations)
                 | set(mutation_source_urls)
+                | set(question_urls)
                 | set(current_github_urls)
             )
             citation_entries = [
@@ -1434,6 +1440,10 @@ class BotReplyService:
             )
             citation_entries.extend(
                 {"url": url}
+                for url in sorted(question_urls - set(local_erc_citations))
+            )
+            citation_entries.extend(
+                {"url": url}
                 for url in sorted(current_github_urls - set(local_erc_citations))
             )
         def record_context(record: SourceRecord) -> dict[str, Any]:
@@ -1441,7 +1451,7 @@ class BotReplyService:
             citation_urls = [
                 url
                 for url in extract_public_https_urls((record,))
-                if url in mutation_source_urls
+                if url in mutation_source_urls or url in question_urls
             ]
             if citation_urls:
                 payload["citation_urls"] = citation_urls
