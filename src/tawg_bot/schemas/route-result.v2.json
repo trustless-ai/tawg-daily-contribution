@@ -16,6 +16,7 @@
         "knowledge_correction",
         "source_suggestion",
         "coordination",
+        "verification",
         "refuse",
         "ignore"
       ]
@@ -23,6 +24,10 @@
     "context_scope": {
       "type": "string",
       "enum": ["conversation", "knowledge", "erc"]
+    },
+    "artifact": {
+      "type": ["string", "null"],
+      "maxLength": 4096
     }
   }
 }

@@ -143,9 +143,19 @@ def test_context_does_not_reauthorize_pruned_url_from_untrusted_text() -> None:
     assert pack.citation_allowlist == ()
 
 
-def test_context_rejects_any_payload_that_would_need_redaction() -> None:
+def test_context_redacts_payload_that_would_need_redaction() -> None:
     unsafe = inputs()
     unsafe.trigger["text"] = "contact private@example.com"
+
+    pack = builder().build(unsafe, max_chars=4000)
+
+    assert "private@example.com" not in pack.text
+    assert "[REDACTED_EMAIL]" in pack.text
+
+
+def test_context_rejects_secret_material() -> None:
+    unsafe = inputs()
+    unsafe.trigger["text"] = "leaked " + "AK" + "IA" + "A" * 16
 
     with pytest.raises(ContextRejected, match="privacy"):
         builder().build(unsafe, max_chars=4000)

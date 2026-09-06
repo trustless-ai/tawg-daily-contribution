@@ -15,6 +15,7 @@ from time import monotonic
 import httpx
 from pydantic import ValidationError
 
+from tawg_bot.bot_identity import configured_bot_id
 from tawg_bot.bot_router import (
     BotReplyService,
     PreparedReply,
@@ -53,6 +54,7 @@ from tawg_bot.github_announcements import (
     render_announcement,
 )
 from tawg_bot.github_source import GitHubHttpClient, GitHubSourceError
+from tawg_bot.http import SafeJsonHttpClient
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_refresh import KnowledgeRefresh, RefreshResult
 from tawg_bot.live_evidence import EvidencePack, LiveEvidenceService
@@ -64,6 +66,7 @@ from tawg_bot.models import (
     PendingBotJob,
     TriggerKind,
 )
+from tawg_bot.persist_mode import PersistMode, configured_persist_mode
 from tawg_bot.persistence_guard import PersistenceRejected
 from tawg_bot.repository_session import RepositoryConflict
 from tawg_bot.scan_targets import ScanTargetStore, ScanTargetVerifier
@@ -143,12 +146,8 @@ _DAILY_REJECTION_CODES = {
     "Daily citation has conflicting contributor mappings": "daily_mention_invalid",
     "quiet Daily invents source-backed progress": "daily_grounding_invalid",
     "quiet Daily has an invalid highlight": "daily_grounding_invalid",
-    "Daily Trusty's take contains source-dependent detail": (
-        "daily_grounding_invalid"
-    ),
-    "quiet Daily must state that no source-backed progress landed": (
-        "daily_grounding_invalid"
-    ),
+    "Daily Trusty's take contains source-dependent detail": ("daily_grounding_invalid"),
+    "quiet Daily must state that no source-backed progress landed": ("daily_grounding_invalid"),
     "Daily evidence falls outside the fixed UTC window": "daily_evidence_invalid",
     "priority context does not fit the configured budget": "daily_context_invalid",
     "invalid TAWG alias registry": "daily_alias_invalid",
@@ -236,12 +235,16 @@ class ProductionRuntime:
     ) -> WebhookIntakeResult:
         _require_utc(now, "webhook ingestion time")
         bot_username = _configured_bot_username()
+        bot_id = configured_bot_id()
+        persist_mode = configured_persist_mode()
         async with httpx.AsyncClient(timeout=30) as client:
             pipeline = _LivePipeline(
                 self.root,
                 client=client,
                 checkpoint=self.checkpoint,
                 now=now,
+                bot_id=bot_id,
+                persist_mode=persist_mode,
             )
             result = ingest_envelopes(
                 root=self.root,
@@ -250,6 +253,8 @@ class ProductionRuntime:
                 envelopes=(envelope,),
                 now=now,
                 telegram_chat_id=pipeline._chat_id(),
+                bot_id=bot_id,
+                persist_mode=persist_mode,
             )
             pipeline.telegram_synced_at = now
             await self.checkpoint.publish(f"telegram-webhook:{envelope.update_id}", self.root)
@@ -366,6 +371,8 @@ class _LivePipeline:
         now: datetime,
         ai: ClaudeCli | None = None,
         member_introductions_enabled: bool = False,
+        bot_id: int | None = None,
+        persist_mode: PersistMode = PersistMode.FULL,
     ) -> None:
         self.root = root.resolve()
         self.client = client
@@ -380,6 +387,15 @@ class _LivePipeline:
             operation_seconds=_SOURCE_OPERATION_SECONDS,
         )
         self.knowledge_state = KnowledgeStateStore(self.root, registry=self.registry)
+        # VERIFICATION route (PR #9) shipped BotReplyService's invinoveritas_client/
+        # invinoveritas_api_key parameters but never actually constructed or passed them
+        # here -- real gap found live 2026-09-01 (a genuine @trustless_ai_devbot verify
+        # request came back "invinoveritas verification is not configured" because the
+        # route defaults to None regardless of what's set on Modal). Wire it the same way
+        # every other external client in this class already is: share the one httpx.AsyncClient,
+        # read the credential from the environment, never hardcode it.
+        self.invinoveritas_client = SafeJsonHttpClient(client)
+        self.invinoveritas_api_key = os.environ.get("TAWG_INVINOVERITAS_API_KEY")
         try:
             registration_github = GitHubHttpClient.from_env(client=client)
         except GitHubSourceError:
@@ -411,6 +427,8 @@ class _LivePipeline:
         self.prepared_replies: list[PreparedReply] = []
         self.reply_failures: list[str] = []
         self.member_introductions_enabled = member_introductions_enabled
+        self.bot_id = bot_id
+        self.persist_mode = persist_mode
 
     async def telegram_intake(self, now: datetime) -> None:
         api = TelegramApi.from_env(client=self.client)
@@ -421,6 +439,7 @@ class _LivePipeline:
 
     async def source_check(self, now: datetime) -> None:
         try:
+
             async def scan_all() -> tuple[ScopedScanResult, GitHubAnnouncementBatch]:
                 scoped = await self.scoped_scanner.scan(
                     since=now - _SOURCE_RECHECK_INTERVAL,
@@ -587,15 +606,10 @@ class _LivePipeline:
                 ),
                 None,
             )
-            if (
-                preview_attempt is not None
-                and preview_attempt.status is DeliveryStatus.DELIVERED
-            ):
+            if preview_attempt is not None and preview_attempt.status is DeliveryStatus.DELIVERED:
                 self.prepared_daily = None
                 return None
-            recovered = _recover_rich_daily_preview(
-                self.root, delivery_job_id=delivery_job_id
-            )
+            recovered = _recover_rich_daily_preview(self.root, delivery_job_id=delivery_job_id)
             if recovered is not None:
                 self.prepared_daily = recovered
                 return recovered
@@ -624,9 +638,7 @@ class _LivePipeline:
             self.root,
             ai=self.ai,
             timeout_seconds=_DAILY_TIMEOUT_SECONDS,
-        ).prepare(
-            window, readiness=readiness, evidence=evidence
-        )
+        ).prepare(window, readiness=readiness, evidence=evidence)
         if prepared is None:
             self.prepared_daily = None
             return None
@@ -674,6 +686,8 @@ class _LivePipeline:
             api=api,
             chat_id=chat_id,
             checkpoint=self.checkpoint,
+            bot_id=self.bot_id,
+            persist_mode=self.persist_mode,
         )
         pending_announcements = self.github_announcements.pending()
         announcement_topic_id: int | None = None
@@ -709,6 +723,7 @@ class _LivePipeline:
                     text=reply.reply_text,
                     reply_to_message_id=reply.reply_to_message_id,
                     message_thread_id=reply.message_thread_id,
+                    attachments=reply.attachments,
                     now=self.now,
                 )
             except (DeliveryAmbiguous, DeliveryFailed):
@@ -759,6 +774,8 @@ class _LivePipeline:
             api=api,
             chat_id=self._chat_id(),
             checkpoint=self.checkpoint,
+            bot_id=self.bot_id,
+            persist_mode=self.persist_mode,
         )
         try:
             await delivery.deliver(
@@ -785,9 +802,7 @@ class _LivePipeline:
             ReplyRepairReconciler(self.root, bot_username=username).reconcile(now=self.now)
         jobs = self._load_jobs()
         model_work_deferred = (
-            self.knowledge_attempted
-            or self.daily_attempted
-            or self.prepared_daily is not None
+            self.knowledge_attempted or self.daily_attempted or self.prepared_daily is not None
         )
         actionable = [
             job
@@ -828,6 +843,11 @@ class _LivePipeline:
                 job.job_id,
             )
         )
+        actionable = _filter_bot_local_jobs(
+            actionable,
+            bot_id=self.bot_id,
+            persist_mode=self.persist_mode,
+        )
         if not actionable:
             self.prepared_replies = []
             return
@@ -846,14 +866,12 @@ class _LivePipeline:
                 bot_username=username,
                 live_evidence=self.live_evidence,
                 knowledge_state=self.knowledge_state,
-                chat_id=(
-                    self._chat_id()
-                    if os.environ.get("TAWG_TELEGRAM_CHAT_ID")
-                    else None
-                ),
+                chat_id=(self._chat_id() if os.environ.get("TAWG_TELEGRAM_CHAT_ID") else None),
                 timeout_seconds=min(_REPLY_TIMEOUT_SECONDS, remaining_seconds),
                 scan_target_verifier=self.scan_target_verifier,
                 github_current_client=getattr(self.github_announcements, "client", None),
+                invinoveritas_client=self.invinoveritas_client,
+                invinoveritas_api_key=self.invinoveritas_api_key,
             )
             try:
                 prepared = await service.prepare(job.job_id, now=self.now)
@@ -915,16 +933,24 @@ def _configured_bot_username() -> str:
     return username
 
 
+def _filter_bot_local_jobs(
+    jobs: list[PendingBotJob],
+    *,
+    bot_id: int | None,
+    persist_mode: PersistMode,
+) -> list[PendingBotJob]:
+    if persist_mode is PersistMode.RECEIPT_ONLY and bot_id is not None:
+        prefix = f"reply:{bot_id}:"
+        return [job for job in jobs if job.job_id.startswith(prefix)]
+    return jobs
+
+
 def _authorized_rich_daily_preview_job_id(root: Path, window: DailyWindow) -> str:
     if window.window_id != _RICH_DAILY_PREVIEW_SOURCE_ID:
         return window.window_id
     attempts = _load_delivery_attempts(root)
     original = next(
-        (
-            attempt
-            for attempt in attempts
-            if attempt.delivery_id == _RICH_DAILY_PREVIEW_SOURCE_ID
-        ),
+        (attempt for attempt in attempts if attempt.delivery_id == _RICH_DAILY_PREVIEW_SOURCE_ID),
         None,
     )
     if (
@@ -940,9 +966,7 @@ def _authorized_rich_daily_preview_job_id(root: Path, window: DailyWindow) -> st
     return _RICH_DAILY_PREVIEW_JOB_ID
 
 
-def _recover_rich_daily_preview(
-    root: Path, *, delivery_job_id: str
-) -> PreparedDaily | None:
+def _recover_rich_daily_preview(root: Path, *, delivery_job_id: str) -> PreparedDaily | None:
     attempts = _load_delivery_attempts(root)
     existing = next(
         (attempt for attempt in attempts if attempt.delivery_id == delivery_job_id),
@@ -978,8 +1002,7 @@ def _recover_rich_daily_preview(
         raise RuntimeFailure("invalid prepared Rich Daily preview state")
     if (
         existing is not None
-        and existing.content_sha256
-        != hashlib.sha256(text.encode("utf-8")).hexdigest()
+        and existing.content_sha256 != hashlib.sha256(text.encode("utf-8")).hexdigest()
     ):
         raise RuntimeFailure("prepared Rich Daily preview failed delivery binding")
     return PreparedDaily(

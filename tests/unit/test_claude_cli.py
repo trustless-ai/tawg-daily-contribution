@@ -176,6 +176,7 @@ async def test_route_job_uses_the_strict_toolless_classifier_contract(
         "knowledge_correction",
         "source_suggestion",
         "coordination",
+        "verification",
         "refuse",
         "ignore",
     ]

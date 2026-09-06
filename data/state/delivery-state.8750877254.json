@@ -1,0 +1,133 @@
+[
+  {
+    "content_sha256": "8eb7c9e8de8d17ff81428d9c404cc864946a62f584bcb96bdad46d2b791e5702",
+    "delivery_format": "mixed_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4101",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4101",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-09-03T11:32:06.151256Z",
+    "reply_text": null,
+    "reply_to_message_id": 4101,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-03T11:32:06.151256Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4102,
+      4103
+    ],
+    "updated_at": "2026-09-03T11:32:06.151256Z"
+  },
+  {
+    "content_sha256": "0cf533497a277b7fe4730b3a1a8131b5d7bb44b62ebde87d877475a3221c37f3",
+    "delivery_format": "mixed_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4105",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4105",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-09-03T11:37:16.747201Z",
+    "reply_text": null,
+    "reply_to_message_id": 4105,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-03T11:37:16.747201Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4106,
+      4107
+    ],
+    "updated_at": "2026-09-03T11:37:16.747201Z"
+  },
+  {
+    "content_sha256": "075c61da866925f7fe25742d2e8c096624319d3b7e6fc830f065f09ba7a748ac",
+    "delivery_format": "mixed_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4109",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4109",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-09-03T11:40:26.169525Z",
+    "reply_text": null,
+    "reply_to_message_id": 4109,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-03T11:40:26.169525Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4110,
+      4111
+    ],
+    "updated_at": "2026-09-03T11:40:26.169525Z"
+  },
+  {
+    "content_sha256": "00827593afb1865c7d0cc4dcf560135fef0ebf673e955d2a3765f99148573732",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4192",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4192",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-09-03T22:50:35.855169Z",
+    "reply_text": "Hey Jimmy! 👋 Trusty's here and ready to help. What's on your mind?",
+    "reply_to_message_id": 4192,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-03T22:50:35.855169Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4193
+    ],
+    "updated_at": "2026-09-03T22:50:35.855169Z"
+  },
+  {
+    "content_sha256": "21b502c03138217a057ae25e2aae747fa2a4ee1cf143c1ea1e9319cc7321369b",
+    "delivery_format": "mixed_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4195",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4195",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-09-03T22:51:23.680048Z",
+    "reply_text": "🔍 **Verification result**\n\n**Claim verified:**\n> If all Bloops are Razzles, all Razzles are Lazzles, and Toves are defined as a category disjoint from Lazzles, then no Bloop can be a Tove.\n\n**Verdict:** approve (confidence 0.99)\n\nThe conclusion follows by transitivity: every Bloop is a Lazzle, while Toves are disjoint from Lazzles; therefore no Bloop can be a Tove.\n\n**Proof artifact:**\n- decision_ref: `sha256:6f36830999808cf660ccc772d63e92922c262ebfe64c8629955d2bb0de06f392`\n- artifact sha256: `eeadba6029d946779d2cbed36832d1d93b51ee15acc8c2323855b4a95272518f`\n\n**Independent check (free, no auth):**\nThe signed proof is attached as a JSON file; POST its `event` and `expect_artifact_hash` to `https://api.babyblueviper.com/verify-proof` to re-run the check.\n\nNote: proof authenticity is confirmed via invinoveritas's own /verify-proof check; the signature is not yet independently recomputed locally by Trusty.",
+    "reply_to_message_id": 4195,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-03T22:51:23.680048Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4196,
+      4197
+    ],
+    "updated_at": "2026-09-03T22:51:23.680048Z"
+  },
+  {
+    "content_sha256": "264b78935e44595f65ad47aa52e22907729119055eb3d7078fa2a01040d9824b",
+    "delivery_format": "mixed_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4374",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4374",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-09-06T14:33:49.407280Z",
+    "reply_text": "🔍 **Verification result**\n\n**Claim verified:**\n> 2^10=1024\n\n**Verdict:** approve (confidence 0.99)\n\nThe arithmetic statement is correct: 2^10 equals 1024.\n\n**Proof artifact:**\n- decision_ref: `sha256:8f0d8ad5c312d9a6bf0c90a6a3afc15760050f20698da6aae11a2eb476862ca0`\n- artifact sha256: `813623c074206a1217bdaa0b1733cf850c9bf17ce51d46575fcea5e379cb30ad`\n\n**Verify it yourself (free, no auth):**\nDownload the attached proof file `invinoveritas-proof-8f0d8ad5c312.json` and run this command to re-check the signed proof against this exact claim:\n\n```bash\ncurl -sS -X POST 'https://api.babyblueviper.com/verify-proof' \\\n  -H 'Content-Type: application/json' \\\n  -d @invinoveritas-proof-8f0d8ad5c312.json\n```",
+    "reply_to_message_id": 4374,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-06T14:33:49.407280Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4375,
+      4376
+    ],
+    "updated_at": "2026-09-06T14:33:49.407280Z"
+  }
+]

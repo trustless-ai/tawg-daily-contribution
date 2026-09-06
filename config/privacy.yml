@@ -12,5 +12,6 @@ drop_numeric_id_keys:
 drop_path_keys:
   - file_path
   - local_path
+  - source_locator
 private_chat_types:
   - private

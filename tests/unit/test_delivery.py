@@ -8,6 +8,7 @@ import pytest
 
 from tawg_bot.delivery import DeliveryRejected, DeliveryService
 from tawg_bot.models import BotRoute, JobStatus, PendingBotJob, RouteContextScope
+from tawg_bot.persist_mode import PersistMode
 from tawg_bot.telegram_api import SentMessage
 
 PROJECT = Path(__file__).parents[2]
@@ -204,3 +205,43 @@ async def test_rejects_text_that_cannot_fit_two_messages(tmp_path: Path) -> None
             message_thread_id=None,
             now=NOW,
         )
+
+
+class _NoopCheckpoint:
+    async def publish(self, operation_id: str, root: Path) -> None:
+        del operation_id, root
+
+
+@pytest.mark.asyncio
+async def test_receipt_only_first_delivery_tolerates_missing_bot_scoped_state(
+    tmp_path: Path,
+) -> None:
+    """A receipt-only mirror worker has no ``delivery-state.<bot_id>.json`` until its first
+    successful delivery. ``_load_attempts`` must treat that missing file as "no prior
+    attempts" instead of raising ``DeliveryRejected`` -- the regression that made the dev bot
+    crash on every reply-triggered verify."""
+    seed(tmp_path)
+    bot_state = tmp_path / "data/state/delivery-state.8750877254.json"
+    assert not bot_state.exists()
+    api = Api()
+
+    result = await DeliveryService(
+        tmp_path,
+        api=api,
+        chat_id=-10077,
+        checkpoint=_NoopCheckpoint(),
+        bot_id=8750877254,
+        persist_mode=PersistMode.RECEIPT_ONLY,
+    ).deliver(
+        job_id="reply:tg:tawg:12",
+        text="Verification result.",
+        reply_to_message_id=12,
+        message_thread_id=None,
+        now=NOW,
+    )
+
+    assert result.status.value == "delivered"
+    assert api.calls == [(-10077, "Verification result.", 12, None)]
+    persisted = json.loads(bot_state.read_text(encoding="utf-8"))
+    assert persisted[0]["delivery_id"] == "reply:tg:tawg:12"
+    assert persisted[0]["status"] == "delivered"

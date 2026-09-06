@@ -31,6 +31,13 @@ from tawg_bot.github_announcements import (
     GitHubAnnouncementRejected,
     resolve_referenced_pull_evidence,
 )
+from tawg_bot.http import SafeJsonHttpClient
+from tawg_bot.invinoveritas_verify import (
+    VerificationRejected,
+    build_verification_proof_attachment,
+    format_verification_reply,
+    verify_and_confirm,
+)
 from tawg_bot.knowledge_jobs import KnowledgeStateStore
 from tawg_bot.knowledge_mutation import (
     KnowledgeMutationCapability,
@@ -53,6 +60,7 @@ from tawg_bot.models import (
     DeliveryStatus,
     JobStatus,
     PendingBotJob,
+    PreparedAttachment,
     Relation,
     RouteContextScope,
     SourceRecord,
@@ -90,9 +98,7 @@ _INLINE_CITATION = re.compile(
     re.IGNORECASE,
 )
 _LOCAL_CITATION = re.compile(r"\[((?:[A-Za-z0-9_.-]+:){2,}[A-Za-z0-9_.:/@-]+)\]")
-_TELEGRAM_MENTION = re.compile(
-    r"(?<![A-Za-z0-9_@])@[A-Za-z0-9_]{1,64}(?![A-Za-z0-9_])"
-)
+_TELEGRAM_MENTION = re.compile(r"(?<![A-Za-z0-9_@])@[A-Za-z0-9_]{1,64}(?![A-Za-z0-9_])")
 _UNSAFE_MEMBER_LOCATOR = re.compile(
     r"(?:\b(?:www\.|t\.me/|telegram\.me/)|"
     r"\[[^\]]+\]\([^)]+\)|"
@@ -107,6 +113,14 @@ _RENDERED_URL_CITATION = re.compile(
     r"|(?P<bare>https?://[^\s<>()\[\]]+)",
     re.IGNORECASE,
 )
+_ROUTE_EMOJI = {
+    BotRoute.KNOWLEDGE_QUESTION: "💡",
+    BotRoute.KNOWLEDGE_CORRECTION: "✏️",
+    BotRoute.IDENTITY_CORRECTION: "🪪",
+    BotRoute.SOURCE_SUGGESTION: "🔖",
+    BotRoute.VERIFICATION: "📏",
+    BotRoute.REFUSE: "🚫",
+}
 
 
 class ReplyRejected(ValueError):
@@ -128,10 +142,7 @@ class BotRouter:
         trigger_kind: TriggerKind = TriggerKind.MENTION,
     ) -> BotRoute:
         """Clamp an AI decision to the controller's non-negotiable authority boundary."""
-        if (
-            trigger_kind is TriggerKind.GREETING_CANDIDATE
-            and route is BotRoute.IGNORE
-        ):
+        if trigger_kind is TriggerKind.GREETING_CANDIDATE and route is BotRoute.IGNORE:
             return BotRoute.IGNORE
         if route is BotRoute.IGNORE:
             return BotRoute.REFUSE
@@ -158,9 +169,7 @@ class ReplyRepairReconciler:
     _LEGACY_REPAIRS: Mapping[str, _ReplyRepairSpec] = {
         "reply:tg:tawg:3380": _ReplyRepairSpec(
             trigger_id="tg:tawg:3380",
-            trigger_sha256=(
-                "dc6114743926cd5f4f9577807beb9211598fcff2c43b3244f2a1aa8a70660d5d"
-            ),
+            trigger_sha256=("dc6114743926cd5f4f9577807beb9211598fcff2c43b3244f2a1aa8a70660d5d"),
             prepared_text_sha256=(
                 "c88b75647067456eeb21dc284da1e93b36df61f1afc102ad6a913f19a6fde50e"
             ),
@@ -169,9 +178,7 @@ class ReplyRepairReconciler:
         ),
         "reply:tg:tawg:3446": _ReplyRepairSpec(
             trigger_id="tg:tawg:3446",
-            trigger_sha256=(
-                "531b2cced7b3abfef0d043fe8a56fe6b4b4db8d2224946e56ab44d22d64700b9"
-            ),
+            trigger_sha256=("531b2cced7b3abfef0d043fe8a56fe6b4b4db8d2224946e56ab44d22d64700b9"),
             prepared_text_sha256=(
                 "c88b75647067456eeb21dc284da1e93b36df61f1afc102ad6a913f19a6fde50e"
             ),
@@ -180,9 +187,7 @@ class ReplyRepairReconciler:
         ),
         "reply:tg:tawg:3470": _ReplyRepairSpec(
             trigger_id="tg:tawg:3470",
-            trigger_sha256=(
-                "2110c0c18a6ce873a957d9b18cbf577b85fe7c2d2bc18cfe874db14231c06e70"
-            ),
+            trigger_sha256=("2110c0c18a6ce873a957d9b18cbf577b85fe7c2d2bc18cfe874db14231c06e70"),
             prepared_text_sha256=(
                 "c88b75647067456eeb21dc284da1e93b36df61f1afc102ad6a913f19a6fde50e"
             ),
@@ -191,9 +196,7 @@ class ReplyRepairReconciler:
         ),
         "reply:tg:tawg:3560": _ReplyRepairSpec(
             trigger_id="tg:tawg:3560",
-            trigger_sha256=(
-                "7e64cbc929d55e004b14c98062973eea9cea82e5e6b04fb97881c61379a65d42"
-            ),
+            trigger_sha256=("7e64cbc929d55e004b14c98062973eea9cea82e5e6b04fb97881c61379a65d42"),
             prepared_text_sha256=(
                 "063486ea61377f4791c005fc9786f4c8335032ab79373e372463cf765b705e10"
             ),
@@ -203,9 +206,7 @@ class ReplyRepairReconciler:
         ),
         "reply:tg:tawg:3620": _ReplyRepairSpec(
             trigger_id="tg:tawg:3620",
-            trigger_sha256=(
-                "9b455c63c9053fa84ba7e1d10323511bab8f97cfd6f75d0865180792540f6160"
-            ),
+            trigger_sha256=("9b455c63c9053fa84ba7e1d10323511bab8f97cfd6f75d0865180792540f6160"),
             prepared_text_sha256=(
                 "31bf2825372e00933fa845ceebf1342d8eb016b04963f7259a15dfdf1dd1d2ac"
             ),
@@ -215,9 +216,7 @@ class ReplyRepairReconciler:
         ),
         "reply:tg:tawg:3650": _ReplyRepairSpec(
             trigger_id="tg:tawg:3650",
-            trigger_sha256=(
-                "50cb62e71685f569c95682d589d210a1e7f8603846d207c15b1abaa6837b71fe"
-            ),
+            trigger_sha256=("50cb62e71685f569c95682d589d210a1e7f8603846d207c15b1abaa6837b71fe"),
             prepared_text_sha256=(
                 "dd96f9874a401e43b8570fc9d813d075ef3db7aa0753659b8079f8360ccd03bc"
             ),
@@ -227,9 +226,7 @@ class ReplyRepairReconciler:
         ),
         "reply-repair:latest-discussion-write-v1:tg:tawg:3650": _ReplyRepairSpec(
             trigger_id="tg:tawg:3650",
-            trigger_sha256=(
-                "50cb62e71685f569c95682d589d210a1e7f8603846d207c15b1abaa6837b71fe"
-            ),
+            trigger_sha256=("50cb62e71685f569c95682d589d210a1e7f8603846d207c15b1abaa6837b71fe"),
             prepared_text_sha256=(
                 "62fd221154ae7b2d4f55295a8e8e12b73110962e816da3fcac32918464cc0512"
             ),
@@ -239,9 +236,7 @@ class ReplyRepairReconciler:
         ),
         "reply:tg:tawg:3668": _ReplyRepairSpec(
             trigger_id="tg:tawg:3668",
-            trigger_sha256=(
-                "5eb89cb1053e5d3dccdab15844f034cffc1babd8331d69c0f1a952fe03f43406"
-            ),
+            trigger_sha256=("5eb89cb1053e5d3dccdab15844f034cffc1babd8331d69c0f1a952fe03f43406"),
             prepared_text_sha256=(
                 "ce93546fb43d6d2a96b3a24a9c49bae9182b272deb0efcfe2acbcee853dd2c6d"
             ),
@@ -381,6 +376,7 @@ class PreparedReply:
     citations: tuple[str, ...]
     language: str
     refusal: bool
+    attachments: tuple[PreparedAttachment, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -405,9 +401,7 @@ class BotReplyService:
     _ROUTE_TIMEOUT_SECONDS = 60.0
     _ROUTE_CONTEXT_MAX_CHARS = 64_000
     _ROUTE_CONTEXT_MAX_PRIOR_RECORDS = 100
-    _LATEST_DISCUSSION_KNOWLEDGE_PATH = (
-        "knowledge/topics/erc-8183-agentic-commerce.md"
-    )
+    _LATEST_DISCUSSION_KNOWLEDGE_PATH = "knowledge/topics/erc-8183-agentic-commerce.md"
 
     def __init__(
         self,
@@ -423,15 +417,15 @@ class BotReplyService:
         timeout_seconds: float = 300,
         scan_target_verifier: ScanTargetVerifier | None = None,
         github_current_client: GitHubAnnouncementClient | None = None,
+        invinoveritas_client: SafeJsonHttpClient | None = None,
+        invinoveritas_api_key: str | None = None,
     ) -> None:
         self.root = root.resolve()
         self.ai = ai
         self.router = BotRouter(bot_username)
         self.live_evidence = live_evidence
         self.knowledge_state = knowledge_state
-        if chat_id is not None and (
-            isinstance(chat_id, bool) or not isinstance(chat_id, int)
-        ):
+        if chat_id is not None and (isinstance(chat_id, bool) or not isinstance(chat_id, int)):
             raise ValueError("configured Telegram chat ID must be an integer")
         self.chat_id = chat_id
         self.max_budget_usd = max_budget_usd
@@ -442,6 +436,13 @@ class BotReplyService:
         self.timeout_seconds = timeout_seconds
         self.scan_target_verifier = scan_target_verifier
         self.github_current_client = github_current_client
+        # VERIFICATION route (invinoveritas /review + /verify-proof), added same day as the
+        # standalone client (Telegram, damon group, msg 3817 Jimmy / msg 3823 Pavlo). Optional,
+        # same injected-dependency shape as live_evidence/scan_target_verifier above -- when
+        # unset, the VERIFICATION route below fails with a clear "not configured" error rather
+        # than a crash, matching the existing live_evidence pattern.
+        self.invinoveritas_client = invinoveritas_client
+        self.invinoveritas_api_key = invinoveritas_api_key
         self.privacy = PrivacyFilter.from_yaml(self.root / "config/privacy.yml")
 
     async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply | None:
@@ -460,8 +461,7 @@ class BotReplyService:
         if job.status is JobStatus.DELIVERED:
             return self._prepared(job)
         reuse_ready_introduction = (
-            job.status is JobStatus.READY
-            and job.trigger_kind is TriggerKind.MEMBER_INTRODUCTION
+            job.status is JobStatus.READY and job.trigger_kind is TriggerKind.MEMBER_INTRODUCTION
         )
         if job.status is JobStatus.READY and job.trigger_kind not in member_kinds:
             return self._prepared(job)
@@ -471,6 +471,7 @@ class BotReplyService:
                 {
                     "status": JobStatus.PENDING,
                     "prepared_reply_text": None,
+                    "prepared_attachments": [],
                     "prepared_citations": [],
                     "prepared_language": None,
                     "refusal": False,
@@ -479,6 +480,7 @@ class BotReplyService:
                     "router_context_sha256": None,
                     "router_version": None,
                     "routed_at": None,
+                    "verification_artifact": None,
                     "knowledge_mutation_paths": [],
                     "knowledge_mutation_trigger_sha256": None,
                     "updated_at": now,
@@ -502,6 +504,7 @@ class BotReplyService:
                 {
                     "status": JobStatus.CANCELLED,
                     "prepared_reply_text": None,
+                    "prepared_attachments": [],
                     "prepared_citations": [],
                     "prepared_language": None,
                     "refusal": False,
@@ -510,6 +513,7 @@ class BotReplyService:
                     "router_context_sha256": None,
                     "router_version": None,
                     "routed_at": None,
+                    "verification_artifact": None,
                     "knowledge_mutation_paths": [],
                     "knowledge_mutation_trigger_sha256": None,
                     "updated_at": now,
@@ -610,6 +614,7 @@ class BotReplyService:
                         "router_context_sha256": decision.context_sha256,
                         "router_version": self._ROUTER_VERSION,
                         "routed_at": now,
+                        "verification_artifact": decision.artifact,
                     }
                 )
                 jobs[job_id] = processing
@@ -621,28 +626,21 @@ class BotReplyService:
                 context_scope = processing.router_context_scope
 
             require_correction_transaction = (
-                processing.repair_reason_code
-                == "latest_discussion_knowledge_repaired"
+                processing.repair_reason_code == "latest_discussion_knowledge_repaired"
             )
             required_revision_paths = (
-                (self._LATEST_DISCUSSION_KNOWLEDGE_PATH,)
-                if require_correction_transaction
-                else ()
+                (self._LATEST_DISCUSSION_KNOWLEDGE_PATH,) if require_correction_transaction else ()
             )
-            if (
-                require_correction_transaction
-                and route is not BotRoute.KNOWLEDGE_CORRECTION
-            ):
+            if require_correction_transaction and route is not BotRoute.KNOWLEDGE_CORRECTION:
                 failure_code = "reply_validation_failed"
-                raise ReplyRejected(
-                    "required knowledge correction has a non-correction route"
-                )
+                raise ReplyRejected("required knowledge correction has a non-correction route")
 
             if route is BotRoute.IGNORE:
                 ignored = processing.model_copy(
                     update={
                         "status": JobStatus.IGNORED,
                         "prepared_reply_text": None,
+                        "prepared_attachments": [],
                         "prepared_language": None,
                         "prepared_citations": [],
                         "refusal": False,
@@ -689,15 +687,78 @@ class BotReplyService:
                 self._publish_jobs(jobs, f"{job_id}:refused")
                 return self._prepared(ready)
 
+            if route is BotRoute.VERIFICATION:
+                # Narrowly-scoped exception inside the "external actions" refusal, per Pavlo
+                # (damon msg 3823): explicit request over an identified artifact only. Short-
+                # circuits BEFORE the shared knowledge/evidence pipeline below on purpose --
+                # "no arbitrary egress and no silent sending of surrounding chat context" means
+                # this must never pull in reply_chain/prior_messages, only the current trigger's
+                # own text. That is also why this branch does not call context_builder.scope()
+                # or _erc_query_for_context() the way every other non-terminal route does.
+                failure_code = "reply_verification_failed"
+                if self.invinoveritas_client is None:
+                    raise ReplyRejected("invinoveritas verification is not configured")
+                # The AI router extracts the artifact as a structured field from the natural
+                # language trigger, rather than mechanically stripping a fixed "verify:" prefix.
+                artifact = processing.verification_artifact
+                artifact = self._validate_verification_artifact(artifact)
+                try:
+                    verification_result, proof_status = await verify_and_confirm(
+                        self.invinoveritas_client,
+                        artifact=artifact,
+                        api_key=self.invinoveritas_api_key,
+                    )
+                except VerificationRejected as error:
+                    raise ReplyRejected(str(error)) from error
+                proof_attachment = None
+                if proof_status.verified:
+                    proof_attachment = build_verification_proof_attachment(
+                        verification_result,
+                        artifact=artifact,
+                    )
+                proof_filename = (
+                    proof_attachment[0] if proof_attachment is not None else None
+                )
+                text = format_verification_reply(
+                    verification_result,
+                    proof_status,
+                    artifact=artifact,
+                    proof_filename=proof_filename,
+                )
+                prepared_attachments: list[PreparedAttachment] = []
+                if proof_attachment is not None:
+                    filename, content = proof_attachment
+                    prepared_attachments.append(
+                        PreparedAttachment(filename=filename, content=content)
+                    )
+                ready = processing.model_copy(
+                    update={
+                        "status": JobStatus.READY,
+                        "prepared_reply_text": text,
+                        "prepared_attachments": prepared_attachments,
+                        "prepared_language": "en",
+                        "prepared_citations": [],
+                        # Not a "refusal" in the REFUSE-route sense (the request itself was in
+                        # scope), but proof_status.verified=False means the verdict was withheld
+                        # -- same fail-closed spirit Pavlo named, so it is not counted as a
+                        # normal successful knowledge answer either.
+                        "refusal": not proof_status.verified,
+                        "updated_at": now,
+                        "safe_error_code": None,
+                    }
+                )
+                jobs[job_id] = ready
+                publish_suffix = "verified" if proof_status.verified else "verification_withheld"
+                self._publish_jobs(jobs, f"{job_id}:{publish_suffix}")
+                return self._prepared(ready)
+
             failure_code = "reply_context_failed"
             reply_scope = context_builder.scope(
                 trigger=trigger,
                 records=records.values(),
                 message_thread_id=processing.message_thread_id,
             )
-            reply_chain = tuple(
-                records[record_id] for record_id in reply_scope.reply_chain_ids
-            )
+            reply_chain = tuple(records[record_id] for record_id in reply_scope.reply_chain_ids)
             erc_query, erc_query_text = self._erc_query_for_context(
                 trigger=trigger,
                 reply_chain=reply_chain,
@@ -783,20 +844,18 @@ class BotReplyService:
                         trigger_record_id=trigger.record_id,
                         now=now,
                     )
-                    scan_registry, scan_registry_changed = ScanTargetStore(
-                        self.root
-                    ).merged(target)
+                    scan_registry, scan_registry_changed = ScanTargetStore(self.root).merged(target)
                 except ScanTargetRejected:
                     scan_registry = None
                     scan_registry_changed = False
                     reply_text = (
-                        f"{reply_text.rstrip()}\n\n"
-                        f"{self._scan_registration_warning(trigger)}"
+                        f"{reply_text.rstrip()}\n\n{self._scan_registration_warning(trigger)}"
                     )
             if result.english_recap is not None:
                 reply_text = f"{reply_text}\n\nEnglish recap: {result.english_recap.strip()}"
             failure_code = "reply_citation_binding_failed"
             reply_text = self._bind_reply_citations(reply_text, result.citations)
+            reply_text = self._append_route_emoji(reply_text, route)
             if len(reply_text) > 8192:
                 raise ReplyRejected("reply cannot fit in two Telegram messages")
             failure_code = "reply_privacy_failed"
@@ -820,9 +879,7 @@ class BotReplyService:
                     now=now,
                     operation_id=f"{job_id}:evidence",
                 )
-            uow = RepositoryUnitOfWork(
-                self.root, operation_id=safe_operation_id(job_id)
-            )
+            uow = RepositoryUnitOfWork(self.root, operation_id=safe_operation_id(job_id))
             external_texts = (
                 tuple(item.text for item in evidence_pack.evidence)
                 if evidence_pack is not None
@@ -879,11 +936,7 @@ class BotReplyService:
                     result.correction_transaction
                 )
                 scoped_urls = frozenset(
-                    (
-                        context.mutation_source_urls
-                        if uses_general_source_urls
-                        else frozenset()
-                    )
+                    (context.mutation_source_urls if uses_general_source_urls else frozenset())
                     | (
                         frozenset(local_erc_context.citations)
                         if local_erc_context is not None
@@ -919,9 +972,7 @@ class BotReplyService:
                     ready_payload.update(
                         {
                             "knowledge_mutation_paths": list(changed_paths),
-                            "knowledge_mutation_trigger_sha256": (
-                                trigger.content_sha256
-                            ),
+                            "knowledge_mutation_trigger_sha256": (trigger.content_sha256),
                         }
                     )
                     ready = PendingBotJob.model_validate(ready_payload)
@@ -933,6 +984,12 @@ class BotReplyService:
             return self._prepared(ready)
         except Exception as error:
             safe_error_code = self._safe_failure_code(failure_code, error)
+            print(
+                "tawg_event=reply_prepare_error "
+                f"type={type(error).__name__} code={safe_error_code} "
+                f"detail={str(error)[:240]!r}",
+                flush=True,
+            )
             failed_jobs = self._load_jobs()
             current = failed_jobs[job_id]
             failed_jobs[job_id] = current.model_copy(
@@ -980,10 +1037,9 @@ class BotReplyService:
             records=dict(records),
             message_thread_id=job.message_thread_id,
         )
-        if (
-            resolved_target is None
-            or resolved_target
-            != (job.welcome_target_person_id, job.welcome_target_record_id)
+        if resolved_target is None or resolved_target != (
+            job.welcome_target_person_id,
+            job.welcome_target_record_id,
         ):
             raise ReplyRejected("member welcome trigger is no longer valid")
         identity = aliases.people.get(job.welcome_target_person_id)
@@ -1037,14 +1093,10 @@ class BotReplyService:
             reply_text = result.reply_text.strip()
             if not reply_text or result.refusal:
                 raise ReplyRejected("member introduction model refused")
-            mentions = {
-                mention.casefold() for mention in _TELEGRAM_MENTION.findall(reply_text)
-            }
+            mentions = {mention.casefold() for mention in _TELEGRAM_MENTION.findall(reply_text)}
             if mentions != {expected_mention.casefold()}:
                 raise ReplyRejected("member introduction mention is unsafe")
-            if _INLINE_CITATION.search(reply_text) or _UNSAFE_MEMBER_LOCATOR.search(
-                reply_text
-            ):
+            if _INLINE_CITATION.search(reply_text) or _UNSAFE_MEMBER_LOCATOR.search(reply_text):
                 raise ReplyRejected("member introduction contains an unsafe locator")
             if len(reply_text) > 8192:
                 raise ReplyRejected("member introduction is too long")
@@ -1072,6 +1124,20 @@ class BotReplyService:
         jobs[job.job_id] = ready
         self._publish_jobs(jobs, f"{job.job_id}:ready")
         return self._prepared(ready)
+
+    @staticmethod
+    def _validate_verification_artifact(artifact: str | None) -> str:
+        """Gate placeholder for the extracted verification artifact.
+
+        Reserved boundary so the real submission-format rules can land here after
+        live testing. Today it only enforces the non-empty invariant; a rejected
+        artifact still raises the same fail-closed ReplyRejected so the reply path
+        degrades exactly as it did with the mechanical prefix extraction.
+        """
+
+        if not artifact or not artifact.strip():
+            raise ReplyRejected("verification trigger has no text to verify")
+        return artifact.strip()
 
     @staticmethod
     def _retryable_route_failure(error: ClaudeCliError) -> bool:
@@ -1131,9 +1197,7 @@ class BotReplyService:
                 "required knowledge correction has the wrong revision": (
                     "reply_required_correction_target_invalid"
                 ),
-                "required knowledge correction is a no-op": (
-                    "reply_required_correction_noop"
-                ),
+                "required knowledge correction is a no-op": ("reply_required_correction_noop"),
                 "coordination reply cannot cite evidence": (
                     "reply_coordination_citation_forbidden"
                 ),
@@ -1211,8 +1275,7 @@ class BotReplyService:
         )
         seen = {trigger.record_id, *(record.record_id for record in chain)}
         use_scoped_conversation = (
-            context_scope is RouteContextScope.CONVERSATION
-            and scoped_record_ids is not None
+            context_scope is RouteContextScope.CONVERSATION and scoped_record_ids is not None
         )
 
         nearby = [
@@ -1220,14 +1283,10 @@ class BotReplyService:
             for record in records.values()
             if record.created_at <= trigger.created_at
             and record.record_id not in seen
-            and (
-                scoped_record_ids is None
-                or record.record_id in scoped_record_ids
-            )
+            and (scoped_record_ids is None or record.record_id in scoped_record_ids)
             and (
                 use_scoped_conversation
-                or abs(record.created_at - trigger.created_at)
-                <= timedelta(minutes=30)
+                or abs(record.created_at - trigger.created_at) <= timedelta(minutes=30)
             )
         ]
         nearby.sort(key=ConversationContextBuilder.order_key)
@@ -1236,10 +1295,7 @@ class BotReplyService:
             current_github = (
                 await resolve_referenced_pull_evidence(
                     self.root,
-                    (
-                        record.text_original
-                        for record in (trigger, *chain, *reversed(nearby[:50]))
-                    ),
+                    (record.text_original for record in (trigger, *chain, *reversed(nearby[:50]))),
                     now=now,
                     client=self.github_current_client,
                     refresh_timeout_seconds=min(
@@ -1253,14 +1309,10 @@ class BotReplyService:
         except GitHubAnnouncementRejected:
             raise ReplyRejected("current GitHub state is invalid") from None
         current_github_gaps = tuple(
-            item
-            for item in current_github
-            if item.get("kind") != "github_pull_current_state"
+            item for item in current_github if item.get("kind") != "github_pull_current_state"
         )
         current_github_states = tuple(
-            item
-            for item in current_github
-            if item.get("kind") == "github_pull_current_state"
+            item for item in current_github if item.get("kind") == "github_pull_current_state"
         )
         retrieval_query = self._retrieval_query(trigger, chain)
         retrieved_items = (
@@ -1269,9 +1321,7 @@ class BotReplyService:
             else VaultRetriever(self.root).query(retrieval_query, top_k=16)
         )
         retrieved: list[dict[str, Any]] = (
-            list(local_erc_context.pages)
-            if local_erc_context is not None
-            else []
+            list(local_erc_context.pages) if local_erc_context is not None else []
         )
         for relative in required_revision_paths:
             target = self.root / relative
@@ -1297,11 +1347,7 @@ class BotReplyService:
                     "expected_sha256": hashlib.sha256(current_bytes).hexdigest(),
                 }
             )
-        privileged_paths = {
-            page["path"]
-            for page in retrieved
-            if isinstance(page.get("path"), str)
-        }
+        privileged_paths = {page["path"] for page in retrieved if isinstance(page.get("path"), str)}
         retrieved.extend(
             [
                 {
@@ -1321,15 +1367,12 @@ class BotReplyService:
             trigger=trigger,
             reply_chain=chain,
             retrieved_paths=(
-                item["path"]
-                for item in retrieved
-                if isinstance(item.get("path"), str)
+                item["path"] for item in retrieved if isinstance(item.get("path"), str)
             ),
         )
         if required_revision_paths:
             revisions_by_path = {
-                revision.path: revision
-                for revision in mutation_capability.exact_revisions
+                revision.path: revision for revision in mutation_capability.exact_revisions
             }
             if not set(required_revision_paths).issubset(revisions_by_path):
                 raise ReplyRejected("required repair target is not mutation-authorized")
@@ -1376,8 +1419,7 @@ class BotReplyService:
             citation_entries = []
         elif evidence_pack is not None:
             correction_local_ids = (
-                ({trigger.record_id} | {record.record_id for record in chain})
-                & local_ids
+                ({trigger.record_id} | {record.record_id for record in chain}) & local_ids
                 if route is BotRoute.KNOWLEDGE_CORRECTION
                 else set()
             )
@@ -1397,20 +1439,14 @@ class BotReplyService:
                     key=lambda item: (item.created_at, item.record_id),
                 )
             ]
+            citation_entries.extend({"url": url} for url in evidence_pack.citation_allowlist)
             citation_entries.extend(
-                {"url": url} for url in evidence_pack.citation_allowlist
+                {"url": url}
+                for url in sorted(mutation_source_urls - set(evidence_pack.citation_allowlist))
             )
             citation_entries.extend(
                 {"url": url}
-                for url in sorted(
-                    mutation_source_urls - set(evidence_pack.citation_allowlist)
-                )
-            )
-            citation_entries.extend(
-                {"url": url}
-                for url in sorted(
-                    current_github_urls - set(evidence_pack.citation_allowlist)
-                )
+                for url in sorted(current_github_urls - set(evidence_pack.citation_allowlist))
             )
         else:
             local_erc_citations = (
@@ -1435,8 +1471,11 @@ class BotReplyService:
             ]
             citation_entries.extend({"url": url} for url in local_erc_citations)
             citation_entries.extend(
+                {"url": url} for url in sorted(mutation_source_urls - set(local_erc_citations))
+            )
+            citation_entries.extend(
                 {"url": url}
-                for url in sorted(mutation_source_urls - set(local_erc_citations))
+                for url in sorted(question_urls - set(local_erc_citations))
             )
             citation_entries.extend(
                 {"url": url}
@@ -1446,6 +1485,7 @@ class BotReplyService:
                 {"url": url}
                 for url in sorted(current_github_urls - set(local_erc_citations))
             )
+
         def record_context(record: SourceRecord) -> dict[str, Any]:
             payload = record.model_dump(mode="json")
             citation_urls = [
@@ -1475,9 +1515,7 @@ class BotReplyService:
             trigger_context["erc_evidence_mode"] = "local_synthesis"
             trigger_context["local_verified_at"] = list(local_erc_context.verified_at)
         if require_correction_transaction:
-            trigger_context["required_action"] = (
-                "persist_correction_transaction_before_confirming"
-            )
+            trigger_context["required_action"] = "persist_correction_transaction_before_confirming"
         inputs = ContextInputs(
             trigger=trigger_context,
             reply_chain=[record_context(record) for record in chain],
@@ -1540,9 +1578,7 @@ class BotReplyService:
                 or job.knowledge_mutation_trigger_sha256 != trigger.content_sha256
             ):
                 continue
-            matches.setdefault(job.trigger_record_id, set()).update(
-                job.knowledge_mutation_paths
-            )
+            matches.setdefault(job.trigger_record_id, set()).update(job.knowledge_mutation_paths)
             if len(matches) >= 50:
                 break
         return [
@@ -1584,15 +1620,9 @@ class BotReplyService:
         context_scope: RouteContextScope,
         trigger_kind: TriggerKind,
     ) -> tuple[ErcQuery | None, str]:
-        context_text = "\n\n".join(
-            record.text_original for record in (*reply_chain, trigger)
-        )
-        if (
-            context_scope is not RouteContextScope.ERC
-            and not (
-                route is BotRoute.KNOWLEDGE_CORRECTION
-                and trigger_kind is TriggerKind.REPLY_TO_BOT
-            )
+        context_text = "\n\n".join(record.text_original for record in (*reply_chain, trigger))
+        if context_scope is not RouteContextScope.ERC and not (
+            route is BotRoute.KNOWLEDGE_CORRECTION and trigger_kind is TriggerKind.REPLY_TO_BOT
         ):
             return None, context_text
         query = self.router.erc_query(trigger.text_original)
@@ -1629,8 +1659,7 @@ class BotReplyService:
         required_evidence = tuple(
             record_id
             for record_id in context.mutation_capability.required_evidence
-            if record_id != trigger.record_id
-            and record_id in context.allowed_citations
+            if record_id != trigger.record_id and record_id in context.allowed_citations
         )
         for revision in context.mutation_capability.exact_revisions:
             frontmatter, _ = parse_frontmatter(revision.content)
@@ -1647,16 +1676,10 @@ class BotReplyService:
             ):
                 continue
             recorded_evidence = {
-                value
-                for value in (*source_ids, *telegram_record_ids)
-                if isinstance(value, str)
+                value for value in (*source_ids, *telegram_record_ids) if isinstance(value, str)
             }
             citation = next(
-                (
-                    record_id
-                    for record_id in required_evidence
-                    if record_id in recorded_evidence
-                ),
+                (record_id for record_id in required_evidence if record_id in recorded_evidence),
                 None,
             )
             if citation is None:
@@ -1730,6 +1753,11 @@ class BotReplyService:
                     jobs,
                     child_created_at=current.created_at,
                     message_thread_id=job.message_thread_id,
+                    webhook_text=(
+                        current.source_payload.get("reply_to_message_text")
+                        if depth == 0
+                        else None
+                    ),
                 )
                 if audited is None:
                     break
@@ -1754,27 +1782,34 @@ class BotReplyService:
         *,
         child_created_at: datetime,
         message_thread_id: int | None,
+        webhook_text: str | None = None,
     ) -> SourceRecord | None:
         if attempt.message_thread_id != message_thread_id:
             raise ReplyRejected("direct reply target failed thread audit binding")
         target_message_id = target_record_id.rsplit(":", 1)[-1]
         if not target_message_id.isdigit():
             raise ReplyRejected("direct reply target is invalid")
-        delivered_text = self._audited_delivery_text(attempt, jobs)
-        if delivered_text is None:
-            return None
-        try:
-            delivered_messages = split_telegram_text(
-                delivered_text,
-                limit=32_768,
-                max_messages=2,
-            )
-        except TelegramTextSplitError as error:
-            raise ReplyRejected("audited bot delivery text cannot be reconstructed") from error
-        if len(delivered_messages) != len(attempt.telegram_message_ids):
-            raise ReplyRejected("audited bot delivery message count does not match")
-        target_index = attempt.telegram_message_ids.index(int(target_message_id))
-        target_text = delivered_messages[target_index]
+        if webhook_text is not None and webhook_text.strip():
+            # The incoming webhook carries the replied-to message's text directly
+            # (Telegram's `reply_to_message`), so a mirror worker can use it without
+            # having to reconstruct it from the delivery state it does not persist.
+            target_text = webhook_text
+        else:
+            delivered_text = self._audited_delivery_text(attempt, jobs)
+            if delivered_text is None:
+                return None
+            try:
+                delivered_messages = split_telegram_text(
+                    delivered_text,
+                    limit=32_768,
+                    max_messages=2,
+                )
+            except TelegramTextSplitError as error:
+                raise ReplyRejected("audited bot delivery text cannot be reconstructed") from error
+            if len(delivered_messages) != len(attempt.telegram_message_ids):
+                raise ReplyRejected("audited bot delivery message count does not match")
+            target_index = attempt.telegram_message_ids.index(int(target_message_id))
+            target_text = delivered_messages[target_index]
         group_parts = target_record_id.split(":", 2)
         if len(group_parts) != 3 or group_parts[0] != "tg" or not group_parts[1]:
             raise ReplyRejected("direct reply target is outside Telegram scope")
@@ -1795,8 +1830,7 @@ class BotReplyService:
             record_id=target_record_id,
             source_type=SourceType.TELEGRAM_MESSAGE,
             source_locator=(
-                "repo:data/state/delivery-state.json#"
-                f"{attempt.delivery_id}:{target_message_id}"
+                f"repo:data/state/delivery-state.json#{attempt.delivery_id}:{target_message_id}"
             ),
             author_person_id="tawg-bot",
             author_source_handle=f"@{self.router.bot_username}",
@@ -1844,6 +1878,15 @@ class BotReplyService:
             ):
                 raise ReplyRejected("direct reply target failed delivery audit binding")
             return delivered_text
+        if attempt.reply_text is not None:
+            # A receipt-only mirror worker does not persist its pending-bot-jobs, so the
+            # audited reply text is carried on the delivery attempt itself. Verify it
+            # against the recorded hash before trusting it.
+            if attempt.content_sha256 != hashlib.sha256(
+                attempt.reply_text.encode("utf-8")
+            ).hexdigest():
+                raise ReplyRejected("direct reply target failed delivery audit binding")
+            return attempt.reply_text
         if not attempt.job_id.startswith("daily:"):
             return None
         path = self.root / "data/state/prepared-daily.json"
@@ -1858,31 +1901,30 @@ class BotReplyService:
         delivered_text = raw.get("telegram_text")
         if not isinstance(delivered_text, str) or not delivered_text.strip():
             raise ReplyRejected("prepared Daily audit text is invalid")
-        if attempt.content_sha256 != hashlib.sha256(
-            delivered_text.encode("utf-8")
-        ).hexdigest():
+        if attempt.content_sha256 != hashlib.sha256(delivered_text.encode("utf-8")).hexdigest():
             raise ReplyRejected("prepared Daily text failed delivery audit binding")
         return delivered_text
 
     def _load_delivery_attempts(self) -> tuple[DeliveryAttempt, ...]:
-        path = self.root / "data/state/delivery-state.json"
-        try:
-            raw = json.loads(path.read_text(encoding="utf-8"))
-            if not isinstance(raw, list):
-                raise ValueError
-            attempts = tuple(DeliveryAttempt.model_validate(item) for item in raw)
-        except (
-            OSError,
-            UnicodeError,
-            ValueError,
-            ValidationError,
-            json.JSONDecodeError,
-        ) as error:
-            raise ReplyRejected("invalid delivery state for direct reply") from error
+        attempts: list[DeliveryAttempt] = []
+        for path in sorted((self.root / "data/state").glob("delivery-state*.json")):
+            try:
+                raw = json.loads(path.read_text(encoding="utf-8"))
+                if not isinstance(raw, list):
+                    raise ValueError
+                attempts.extend(DeliveryAttempt.model_validate(item) for item in raw)
+            except (
+                OSError,
+                UnicodeError,
+                ValueError,
+                ValidationError,
+                json.JSONDecodeError,
+            ) as error:
+                raise ReplyRejected("invalid delivery state for direct reply") from error
         delivery_ids = {attempt.delivery_id for attempt in attempts}
         if len(delivery_ids) != len(attempts):
             raise ReplyRejected("duplicate delivery audit for direct reply")
-        return attempts
+        return tuple(attempts)
 
     def _local_erc_context(
         self,
@@ -1908,9 +1950,11 @@ class BotReplyService:
                 return None
             source_keys = frontmatter.get("source_keys") if frontmatter else None
             verified_at = frontmatter.get("verified_at") if frontmatter else None
-            if not isinstance(source_keys, list) or not all(
-                isinstance(source_key, str) for source_key in source_keys
-            ) or not isinstance(verified_at, str | datetime):
+            if (
+                not isinstance(source_keys, list)
+                or not all(isinstance(source_key, str) for source_key in source_keys)
+                or not isinstance(verified_at, str | datetime)
+            ):
                 return None
             active = {
                 source.source_key: source
@@ -2019,16 +2063,12 @@ class BotReplyService:
             and result.language.casefold().startswith("en")
             and result.english_recap
         ):
-            result = result.model_copy(
-                update={"english_recap": None}
-            )
+            result = result.model_copy(update={"english_recap": None})
         normalized_reply_text = self._normalize_local_citation_rendering(
             result.reply_text, allowed_citations
         )
         normalized_english_recap = (
-            self._normalize_local_citation_rendering(
-                result.english_recap, allowed_citations
-            )
+            self._normalize_local_citation_rendering(result.english_recap, allowed_citations)
             if result.english_recap is not None
             else None
         )
@@ -2046,12 +2086,10 @@ class BotReplyService:
             raise ReplyRejected("reply citations contain duplicates")
         if not set(result.citations).issubset(allowed_citations):
             raise ReplyRejected("reply cites fabricated evidence")
-        deduplicated_reply_text, deduplicated_english_recap = (
-            self._deduplicate_declared_citations(
-                result.reply_text,
-                result.english_recap,
-                frozenset(result.citations),
-            )
+        deduplicated_reply_text, deduplicated_english_recap = self._deduplicate_declared_citations(
+            result.reply_text,
+            result.english_recap,
+            frozenset(result.citations),
         )
         if (
             deduplicated_reply_text != result.reply_text
@@ -2104,26 +2142,17 @@ class BotReplyService:
             assert result.correction_transaction is not None
             transaction = result.correction_transaction
             write_paths = tuple(write.path for write in transaction.writes)
-            if (
-                len(write_paths) != len(required_revision_paths)
-                or set(write_paths) != set(required_revision_paths)
+            if len(write_paths) != len(required_revision_paths) or set(write_paths) != set(
+                required_revision_paths
             ):
-                raise ReplyRejected(
-                    "required knowledge correction targets the wrong path"
-                )
+                raise ReplyRejected("required knowledge correction targets the wrong path")
             revisions_by_path = {
-                revision.path: revision
-                for revision in mutation_capability.exact_revisions
+                revision.path: revision for revision in mutation_capability.exact_revisions
             }
             for write in transaction.writes:
                 revision = revisions_by_path.get(write.path)
-                if (
-                    revision is None
-                    or write.expected_sha256 != revision.expected_sha256
-                ):
-                    raise ReplyRejected(
-                        "required knowledge correction has the wrong revision"
-                    )
+                if revision is None or write.expected_sha256 != revision.expected_sha256:
+                    raise ReplyRejected("required knowledge correction has the wrong revision")
                 if hashlib.sha256(write.content.encode("utf-8")).hexdigest() == (
                     revision.expected_sha256
                 ):
@@ -2155,10 +2184,7 @@ class BotReplyService:
         if result.correction_transaction is not None:
             transaction = result.correction_transaction
             if route is BotRoute.KNOWLEDGE_CORRECTION:
-                creates_page = any(
-                    write.expected_sha256 is None
-                    for write in transaction.writes
-                )
+                creates_page = any(write.expected_sha256 is None for write in transaction.writes)
                 if creates_page and result.knowledge_write is None:
                     raise ReplyRejected("knowledge transaction omits authorship metadata")
                 try:
@@ -2179,9 +2205,7 @@ class BotReplyService:
                         )
                     except KnowledgeMutationRejected as error:
                         raise ReplyRejected(str(error)) from None
-                    result = result.model_copy(
-                        update={"correction_transaction": transaction}
-                    )
+                    result = result.model_copy(update={"correction_transaction": transaction})
                     self._validate_knowledge_write(
                         knowledge_write,
                         transaction,
@@ -2305,9 +2329,7 @@ class BotReplyService:
     def _transaction_has_source_urls(transaction: VaultTransaction) -> bool:
         for write in transaction.writes:
             frontmatter, _ = parse_frontmatter(write.content)
-            if frontmatter is not None and isinstance(
-                frontmatter.get("source_urls"), list
-            ):
+            if frontmatter is not None and isinstance(frontmatter.get("source_urls"), list):
                 return True
         return False
 
@@ -2332,15 +2354,18 @@ class BotReplyService:
     @staticmethod
     def _text_citations(text: str) -> tuple[str, ...]:
         found: list[str] = _LOCAL_CITATION.findall(text)
-        found.extend(
-            match.rstrip(".,;:!?") for match in _URL_CITATION.findall(text)
-        )
+        found.extend(match.rstrip(".,;:!?") for match in _URL_CITATION.findall(text))
         return tuple(found)
 
     @staticmethod
-    def _normalize_local_citation_rendering(
-        text: str, allowed_citations: frozenset[str]
-    ) -> str:
+    def _append_route_emoji(text: str, route: BotRoute) -> str:
+        emoji = _ROUTE_EMOJI.get(route)
+        if emoji is None:
+            return text
+        return f"{text.rstrip()} {emoji}"
+
+    @staticmethod
+    def _normalize_local_citation_rendering(text: str, allowed_citations: frozenset[str]) -> str:
         normalized = text
         for citation in sorted(allowed_citations, key=lambda value: (-len(value), value)):
             if ":" not in citation or citation.startswith("http"):
@@ -2419,9 +2444,7 @@ class BotReplyService:
         operation_id: str,
     ) -> None:
         assert self.knowledge_state is not None
-        uow = RepositoryUnitOfWork(
-            self.root, operation_id=safe_operation_id(operation_id)
-        )
+        uow = RepositoryUnitOfWork(self.root, operation_id=safe_operation_id(operation_id))
         uow.register_external_evidence(item.text for item in evidence_pack.evidence)
         try:
             self.knowledge_state.stage_evidence_outcome(
@@ -2432,9 +2455,7 @@ class BotReplyService:
             pass
 
     def _publish_jobs(self, jobs: Mapping[str, PendingBotJob], operation_id: str) -> None:
-        uow = RepositoryUnitOfWork(
-            self.root, operation_id=safe_operation_id(operation_id)
-        )
+        uow = RepositoryUnitOfWork(self.root, operation_id=safe_operation_id(operation_id))
         uow.register_external_evidence(())
         self._stage_jobs(uow, jobs)
         uow.publish()
@@ -2458,6 +2479,7 @@ class BotReplyService:
             citations=tuple(job.prepared_citations),
             language=job.prepared_language,
             refusal=job.refusal,
+            attachments=tuple(job.prepared_attachments),
         )
 
     @staticmethod

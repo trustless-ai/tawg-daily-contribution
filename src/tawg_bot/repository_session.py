@@ -13,6 +13,7 @@ RepositoryErrorCode = Literal[
     "repository_checkpoint_failed",
     "repository_checkout_failed",
     "repository_command_failed",
+    "repository_merge_failed",
 ]
 
 
@@ -68,10 +69,12 @@ class RepositorySession:
         remote: str,
         branch: str,
         runner: CommandRunner | None = None,
+        merge_branch: str | None = None,
     ) -> None:
         self.remote = remote
         self.branch = branch
         self.runner = runner or AsyncioCommandRunner()
+        self.merge_branch = merge_branch
 
     async def run(
         self,
@@ -83,22 +86,42 @@ class RepositorySession:
             try:
                 with TemporaryDirectory(prefix="tawg-repository-") as temporary_directory:
                     checkout = Path(temporary_directory) / "repository"
+                    clone_argv = [
+                        "git",
+                        "clone",
+                        "--branch",
+                        self.branch,
+                        "--single-branch",
+                    ]
+                    if self.merge_branch is None:
+                        clone_argv.extend(("--depth", "1"))
+                    clone_argv.extend(("--", self.remote, str(checkout)))
                     await self._run_command(
-                        argv=(
-                            "git",
-                            "clone",
-                            "--branch",
-                            self.branch,
-                            "--single-branch",
-                            "--depth",
-                            "1",
-                            "--",
-                            self.remote,
-                            str(checkout),
-                        ),
+                        argv=tuple(clone_argv),
                         cwd=checkout.parent,
                         failure_code="repository_checkout_failed",
                     )
+                    if self.merge_branch is not None and self.branch != self.merge_branch:
+                        await self._run_command(
+                            argv=(
+                                "git",
+                                "fetch",
+                                "origin",
+                                f"{self.merge_branch}:refs/remotes/origin/{self.merge_branch}",
+                            ),
+                            cwd=checkout,
+                            failure_code="repository_merge_failed",
+                        )
+                        await self._run_command(
+                            argv=(
+                                "git",
+                                "merge",
+                                "--no-edit",
+                                f"origin/{self.merge_branch}",
+                            ),
+                            cwd=checkout,
+                            failure_code="repository_merge_failed",
+                        )
                     result = await operation(checkout)
                     checkpoint = await self._run_command(
                         argv=(
