@@ -1798,7 +1798,7 @@ async def test_satisfied_stale_context_repair_skips_a_redundant_knowledge_write(
     assert prepared is not None
     assert prepared.reply_text == (
         "**Recomputable Verification Receipts** is already recorded in the knowledge "
-        "base and anchored to [tg:tawg:10]. No additional knowledge write was needed."
+        "base and anchored to [tg:tawg:10]. No additional knowledge write was needed. ✏️"
     )
     assert prepared.citations == ("tg:tawg:10",)
     assert [call["job_type"] for call in ai.calls] == ["route"]
@@ -2278,7 +2278,7 @@ async def test_non_english_reply_uses_full_chain_nearby_context_and_english_reca
     assert "Nearby ordinary context" not in context
     assert "knowledge/index.md" in context
     assert prepared.reply_text.endswith(
-        "English recap: The discussion is focused on a verifiable validation path."
+        "English recap: The discussion is focused on a verifiable validation path. 💡"
     )
     persisted = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())[0]
     assert persisted["status"] == "ready"
@@ -2312,7 +2312,7 @@ async def test_english_reply_discards_an_unexpected_english_recap(tmp_path: Path
 
     assert prepared.language == "en"
     assert "The recap adds one final implementation detail." not in prepared.reply_text
-    assert prepared.reply_text.endswith("Sources:\n• [tg:tawg:10]")
+    assert prepared.reply_text.endswith("Sources:\n• [tg:tawg:10] 💡")
     assert prepared.reply_text.count("[tg:tawg:10]") == 1
     assert "English recap:" not in prepared.reply_text
 
@@ -3985,7 +3985,7 @@ async def test_literal_record_prefix_is_normalized_for_an_exact_allowed_citation
         bot_username="bot",
     ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
 
-    assert prepared.reply_text.endswith("[tg:tawg:10]")
+    assert prepared.reply_text.endswith("[tg:tawg:10] 💡")
     assert "[record:tg:tawg:10]" not in prepared.reply_text
     assert prepared.citations == ("tg:tawg:10",)
 
@@ -4370,3 +4370,39 @@ async def test_knowledge_question_can_cite_a_mentioned_repo_url(tmp_path: Path) 
     )
     assert repo_url in reply_context["citation_allowlist"]
     assert prepared.citations == (repo_url,)
+
+
+@pytest.mark.parametrize(
+    "route, emoji",
+    [
+        (BotRoute.KNOWLEDGE_QUESTION, "💡"),
+        (BotRoute.KNOWLEDGE_CORRECTION, "✏️"),
+        (BotRoute.IDENTITY_CORRECTION, "🪪"),
+        (BotRoute.SOURCE_SUGGESTION, "🔖"),
+        (BotRoute.VERIFICATION, "📏"),
+        (BotRoute.REFUSE, "🚫"),
+    ],
+)
+def test_route_emoji_is_appended_inline(route: BotRoute, emoji: str) -> None:
+    assert BotReplyService._append_route_emoji("hello", route) == f"hello {emoji}"
+
+
+@pytest.mark.parametrize("route", [BotRoute.COORDINATION, BotRoute.IGNORE])
+def test_route_without_emoji_is_unchanged(route: BotRoute) -> None:
+    assert BotReplyService._append_route_emoji("hello", route) == "hello"
+
+
+@pytest.mark.asyncio
+async def test_knowledge_question_reply_ends_with_route_emoji(tmp_path: Path) -> None:
+    job = seed(tmp_path, "@bot What is the TAWG validation focus?")
+    ai = ContextualFakeAi("knowledge_question", reply_result(chinese=False))
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ai,
+        bot_username="bot",
+        chat_id=-1001,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared is not None
+    assert prepared.reply_text.endswith("💡")

@@ -113,6 +113,14 @@ _RENDERED_URL_CITATION = re.compile(
     r"|(?P<bare>https?://[^\s<>()\[\]]+)",
     re.IGNORECASE,
 )
+_ROUTE_EMOJI = {
+    BotRoute.KNOWLEDGE_QUESTION: "💡",
+    BotRoute.KNOWLEDGE_CORRECTION: "✏️",
+    BotRoute.IDENTITY_CORRECTION: "🪪",
+    BotRoute.SOURCE_SUGGESTION: "🔖",
+    BotRoute.VERIFICATION: "📏",
+    BotRoute.REFUSE: "🚫",
+}
 
 
 class ReplyRejected(ValueError):
@@ -847,6 +855,7 @@ class BotReplyService:
                 reply_text = f"{reply_text}\n\nEnglish recap: {result.english_recap.strip()}"
             failure_code = "reply_citation_binding_failed"
             reply_text = self._bind_reply_citations(reply_text, result.citations)
+            reply_text = self._append_route_emoji(reply_text, route)
             if len(reply_text) > 8192:
                 raise ReplyRejected("reply cannot fit in two Telegram messages")
             failure_code = "reply_privacy_failed"
@@ -2347,6 +2356,13 @@ class BotReplyService:
         found: list[str] = _LOCAL_CITATION.findall(text)
         found.extend(match.rstrip(".,;:!?") for match in _URL_CITATION.findall(text))
         return tuple(found)
+
+    @staticmethod
+    def _append_route_emoji(text: str, route: BotRoute) -> str:
+        emoji = _ROUTE_EMOJI.get(route)
+        if emoji is None:
+            return text
+        return f"{text.rstrip()} {emoji}"
 
     @staticmethod
     def _normalize_local_citation_rendering(text: str, allowed_citations: frozenset[str]) -> str:

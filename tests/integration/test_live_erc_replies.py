@@ -871,7 +871,7 @@ async def test_missing_normative_source_accepts_not_verified_with_gap(tmp_path: 
 
     assert prepared.reply_text == (
         "The current evidence supports this answer.\n\n"
-        f"Sources:\n• {IMPLEMENTATION}"
+        f"Sources:\n• {IMPLEMENTATION} 💡"
     )
     assert prepared.citations == (IMPLEMENTATION,)
 
