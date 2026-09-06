@@ -2992,5 +2992,23 @@
       4317
     ],
     "updated_at": "2026-09-05T09:11:09.346680Z"
+  },
+  {
+    "content_sha256": "2e5c00cf7412d6b75fc59b1ef6709bb36d76e61f8a5799ddd57f44ffdbc916a9",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4344",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4344",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-06T09:09:36.185005Z",
+    "reply_to_message_id": 4344,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-06T09:09:36.185005Z"
   }
 ]
