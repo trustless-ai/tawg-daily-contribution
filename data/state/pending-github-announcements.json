@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:782566c0d09284d06164f5d4",
+    "kind": "pr_merged",
+    "number": 19,
+    "occurred_at": "2026-09-06T17:04:41Z",
+    "repository": "trustless-ai/trustless-ai-landing",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "semantic-abi: trustless-ai robot + favicon + light-blue accent + symbol-tofu fix"
+  }
+]
