@@ -3270,6 +3270,25 @@
     "updated_at": "2026-09-03T22:50:39.019154Z"
   },
   {
+    "content_sha256": "db69a2a84c772599489e6bbdc96f2f8f0ff5d6d93a178523569589b5278418e1",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4195",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4195",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-09-06T15:05:39.173863Z",
+    "reply_text": "🔍 **Verification result**\n\n**Claim verified:**\n> If all Bloops are Razzles, all Razzles are Lazzles, and Toves are defined as a category disjoint from Lazzles, then no Bloop can be a Tove.\n\n**Verdict:** approve (confidence 0.99)\n\nThe conclusion follows by transitivity: every Bloop is a Lazzle, while Toves are disjoint from Lazzles; therefore no Bloop can be a Tove.\n\n**Proof artifact:**\n- decision_ref: `sha256:70f33ed1f82dd1ff6f674c0f796defc9d036f88c69936c83e936b29570f8c079`\n- artifact sha256: `eeadba6029d946779d2cbed36832d1d93b51ee15acc8c2323855b4a95272518f`\n\n**Verify it yourself (free, no auth):**\nDownload the attached proof file `invinoveritas-proof-70f33ed1f82d.json` and run this command to re-check the signed proof against this exact claim:\n\n```bash\ncurl -sS -X POST 'https://api.babyblueviper.com/verify-proof' \\\n  -H 'Content-Type: application/json' \\\n  -d @invinoveritas-proof-70f33ed1f82d.json\n```",
+    "reply_to_message_id": 4195,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-06T15:05:39.173863Z"
+  },
+  {
     "content_sha256": "dcd3a12d52e37b83d24694d1d4b7826777a984fb0374d554f69b7c9f179b5de2",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "reply:tg:tawg:4209",
