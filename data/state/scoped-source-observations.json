@@ -56,11 +56,11 @@
     "updated_at": "2026-08-09T13:10:53Z"
   },
   {
-    "metadata_sha256": "27fc584c3d4f344b82e22e7319469715f09caa0528092828c686920ff2671846",
+    "metadata_sha256": "fcd4b10085fc9d649e00418ca50c35b81a0b9365931fca68d70cd3b865e3b3be",
     "source_key": "cross-reference-console",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/cross-reference-console",
-    "updated_at": "2026-09-04T09:53:07Z"
+    "updated_at": "2026-09-06T14:04:13Z"
   },
   {
     "metadata_sha256": "77d86bd328cd492589e2a35a2fb265ad74beb397d3869ec76a3baedee7ce0610",
@@ -91,11 +91,11 @@
     "updated_at": "2026-09-04T10:52:25Z"
   },
   {
-    "metadata_sha256": "0df9001b8a1886230092014230455a674ff30bf11068a33726f130e124e6c432",
+    "metadata_sha256": "57ba3768a03b6fbacbf15b845a517689558a93cdab498617b1ec9f13b8988815",
     "source_key": "recompute-kit",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/recompute-kit",
-    "updated_at": "2026-09-06T12:56:01Z"
+    "updated_at": "2026-09-06T13:52:02Z"
   },
   {
     "metadata_sha256": "3ca70fe18e4e62e8ea690138da610229ebfa681c3a23d3ddbfe9cd9112091551",
@@ -112,11 +112,11 @@
     "updated_at": "2026-09-05T20:06:03Z"
   },
   {
-    "metadata_sha256": "2e49b148211f8ac9f8e8b4565bf25faa9d9f485a4126d1e8ebb7b75378ea74d0",
+    "metadata_sha256": "ca770de2fea18d09971dfc55306fddd8688fe06f81598760fb88e8f7d518fe12",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-09-06T13:43:37Z"
+    "updated_at": "2026-09-06T14:15:26Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
@@ -126,11 +126,11 @@
     "updated_at": "2026-08-26T15:32:09Z"
   },
   {
-    "metadata_sha256": "7a57b0fceec9cd7150d2b697d3ef577c7fdb3eb227916765de296850833c7421",
+    "metadata_sha256": "e204e334353e37309e484b823cdc2dd4cbd7449765d93dd8966bc3268369fad3",
     "source_key": "trustless-ai-landing",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/trustless-ai-landing",
-    "updated_at": "2026-08-15T14:29:27Z"
+    "updated_at": "2026-09-06T13:49:00Z"
   },
   {
     "metadata_sha256": "0e893941906b396322aafbe1c6a769a1c18d8809eee8fc443b7d3bbcb7d8a897",
