@@ -1,15 +1,5 @@
 [
   {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:ad26628179e76d7e0821a066",
-    "kind": "pr_merged",
-    "number": 38,
-    "occurred_at": "2026-09-06T13:51:58Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "tee-attested-leaf.v0: wire the CI adapter contract; keep bundle_digest honest"
-  },
-  {
     "author_login": "JimmyShi22",
     "event_id": "github-announcement:pr_updated:32cabb2a15358eb8d0f60cd7",
     "kind": "pr_updated",
