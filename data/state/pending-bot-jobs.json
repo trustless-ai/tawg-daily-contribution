@@ -3478,7 +3478,7 @@
     "welcome_target_record_id": null
   },
   {
-    "attempts": 64,
+    "attempts": 65,
     "classified_route": "knowledge_question",
     "created_at": "2026-09-06T01:14:21.725614Z",
     "job_id": "reply:tg:tawg:4343",
@@ -3495,12 +3495,12 @@
     "router_context_scope": "knowledge",
     "router_context_sha256": "b8874798c6cc5b9676faf3d8b62fea538577704b0988c4d1620a7c09823eaf69",
     "router_version": "contextual-ai-v5",
-    "safe_error_code": "reply_model_process_failed",
+    "safe_error_code": "reply_text_citation_undeclared",
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "pending",
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:4343",
-    "updated_at": "2026-09-06T02:56:09.004854Z",
+    "updated_at": "2026-09-06T03:00:13.650295Z",
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   }
