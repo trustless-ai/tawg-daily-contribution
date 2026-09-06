@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:540750794f9b2652e23ab7d2",
+    "kind": "pr_merged",
+    "number": 18,
+    "occurred_at": "2026-09-06T15:57:08Z",
+    "repository": "trustless-ai/trustless-ai-landing",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "semantic-abi: PQ panel → anchored (epoch 4, Base Sepolia)"
+  }
+]
