@@ -21,6 +21,8 @@ from tests.integration.test_bot_replies import NOW, FakeAi, seed
 
 MAGICIANS = "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902"
 PROPOSAL_PR = "https://github.com/ethereum/ERCs/pull/1081"
+MAGICIANS_8380 = "https://ethereum-magicians.org/t/erc-8380-unclonable-agent-execution-credentials/29274"
+PROPOSAL_PR_8380 = "https://github.com/ethereum/ERCs/pull/1953"
 PROJECT = Path(__file__).parents[2]
 
 
@@ -92,8 +94,9 @@ def _registration_result(
     trigger_id: str,
     *,
     proposal_pr_url: str | None,
+    magicians_url: str = MAGICIANS,
 ) -> dict[str, Any]:
-    urls = [MAGICIANS, *([proposal_pr_url] if proposal_pr_url is not None else [])]
+    urls = [magicians_url, *([proposal_pr_url] if proposal_pr_url is not None else [])]
     page = (
         "---\n"
         "title: Agentic Commerce\n"
@@ -135,11 +138,11 @@ def _registration_result(
         "knowledge_write": {
             "authorship": "external",
             "authorship_evidence": [trigger_id],
-            "original_url": MAGICIANS,
+            "original_url": magicians_url,
         },
         "scan_registration": {
             "erc_number": 8183,
-            "magicians_topic_url": MAGICIANS,
+            "magicians_topic_url": magicians_url,
             "proposal_pr_url": proposal_pr_url,
         },
         "refusal": False,
@@ -205,6 +208,67 @@ async def test_invalid_registration_does_not_block_valid_knowledge(tmp_path: Pat
         (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
     )[0]
     assert state["status"] == "ready"
+
+
+@pytest.mark.asyncio
+async def test_scan_registration_accepts_magicians_url_with_post_id(tmp_path: Path) -> None:
+    """A knowledge-correction reply whose ``scan_registration`` echoes the raw Magicians link
+    with a trailing post id (``/27902/17``) must be normalized to the canonical topic URL
+    instead of aborting the whole reply as an "invalid reply model output"."""
+    post_id_url = f"{MAGICIANS}/17"
+    job = seed(tmp_path, f"@bot record ERC-8183 and scan {MAGICIANS}")
+    _seed_registry(tmp_path)
+    verifier = FakeVerifier()
+
+    result = _registration_result(
+        job.job_id,
+        job.trigger_record_id,
+        proposal_pr_url=None,
+    )
+    result["scan_registration"]["magicians_topic_url"] = post_id_url
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(result, route="knowledge_correction"),
+        bot_username="bot",
+        scan_target_verifier=verifier,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.refusal is False
+    targets = ScanTargetStore(tmp_path).load().ercs
+    assert len(targets) == 1
+    assert targets[0].magicians_topic_url == MAGICIANS
+    assert verifier.calls and verifier.calls[0].magicians_topic_url == MAGICIANS
+
+
+@pytest.mark.asyncio
+async def test_scan_registration_grounding_accepts_post_id_citations(tmp_path: Path) -> None:
+    """When the whole reply (citations + scan_registration) uses the raw Magicians link with a
+    trailing post id, the grounded-scan check must normalize both sides so the normalized
+    registration URL is accepted against the normalized citations."""
+    post_id_url = f"{MAGICIANS}/17"
+    job = seed(tmp_path, f"@bot record ERC-8183 and scan {post_id_url}")
+    _seed_registry(tmp_path)
+    verifier = FakeVerifier()
+
+    result = _registration_result(
+        job.job_id,
+        job.trigger_record_id,
+        proposal_pr_url=None,
+        magicians_url=post_id_url,
+    )
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=FakeAi(result, route="knowledge_correction"),
+        bot_username="bot",
+        scan_target_verifier=verifier,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared.refusal is False
+    targets = ScanTargetStore(tmp_path).load().ercs
+    assert len(targets) == 1
+    assert targets[0].magicians_topic_url == MAGICIANS
 
 
 @pytest.mark.asyncio
@@ -334,5 +398,75 @@ async def test_verifier_rejects_mismatched_topic_metadata(
                 proposal_pr_url=None,
             ),
             trigger_record_id="tg:tawg:6000",
+            now=NOW,
+        )
+
+
+@pytest.mark.asyncio
+async def test_verifier_accepts_proposal_pr_referencing_same_topic_without_erc_number() -> None:
+    topic = TopicClient(
+        {
+            "id": 29274,
+            "slug": "erc-8380-unclonable-agent-execution-credentials",
+            "title": "ERC-8380: Unclonable Agent Execution Credentials",
+        }
+    )
+    github = GitHubClient(
+        {
+            "number": 1953,
+            "title": "Add ERC: Unclonable Agent Execution Credentials",
+            "body": (
+                "This proposal defines a capability token for delegated agent "
+                "execution. The idea was discussed on Ethereum Magicians before "
+                "this PR was opened:\n\n"
+                "https://ethereum-magicians.org/t/"
+                "idea-draft-erc-unclonable-agent-execution-credentials-via-zero-knowledge-nullifiers/29274\n"
+            ),
+        }
+    )
+    verifier = ScanTargetVerifier(topic_client=topic, github_client=github)
+
+    target = await verifier.verify(
+        ScanRegistrationProposal(
+            erc_number=8380,
+            magicians_topic_url=MAGICIANS_8380,
+            proposal_pr_url=PROPOSAL_PR_8380,
+        ),
+        trigger_record_id="tg:tawg:4310",
+        now=NOW,
+    )
+
+    assert target.erc_number == 8380
+    assert target.proposal_pr_url == PROPOSAL_PR_8380
+    assert topic.paths == ["/t/29274.json"]
+    assert github.paths == ["/repos/ethereum/ERCs/pulls/1953"]
+
+
+@pytest.mark.asyncio
+async def test_verifier_rejects_proposal_pr_with_neither_erc_number_nor_topic_reference() -> None:
+    topic = TopicClient(
+        {
+            "id": 29274,
+            "slug": "erc-8380-unclonable-agent-execution-credentials",
+            "title": "ERC-8380: Unclonable Agent Execution Credentials",
+        }
+    )
+    github = GitHubClient(
+        {
+            "number": 1953,
+            "title": "Add ERC: Unclonable Agent Execution Credentials",
+            "body": "Unrelated description with no ERC number and no Magicians link.",
+        }
+    )
+    verifier = ScanTargetVerifier(topic_client=topic, github_client=github)
+
+    with pytest.raises(ScanTargetRejected):
+        await verifier.verify(
+            ScanRegistrationProposal(
+                erc_number=8380,
+                magicians_topic_url=MAGICIANS_8380,
+                proposal_pr_url=PROPOSAL_PR_8380,
+            ),
+            trigger_record_id="tg:tawg:4310",
             now=NOW,
         )

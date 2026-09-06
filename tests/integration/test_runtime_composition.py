@@ -399,6 +399,14 @@ async def test_scheduled_source_check_uses_scoped_scanner(tmp_path: Path) -> Non
             del result
             uow.stage_json("data/state/scoped-source-observations.json", [])
 
+        def stage_repository_pages(
+            self,
+            uow: Any,
+            repositories: object,
+            now: datetime,
+        ) -> None:
+            del uow, repositories, now
+
     async with httpx.AsyncClient() as client:
         pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
         pipeline.scoped_scanner = Scanner()  # type: ignore[assignment]
@@ -1744,6 +1752,14 @@ async def test_internal_checkpoint_conflict_retries_phase_in_a_fresh_repository_
                     def stage(self, result: ScopedScanResult, uow: Any) -> None:
                         del result
                         uow.stage_json("data/state/scoped-source-observations.json", [])
+
+                    def stage_repository_pages(
+                        self,
+                        uow: Any,
+                        repositories: object,
+                        now: datetime,
+                    ) -> None:
+                        del uow, repositories, now
 
                 pipeline = _LivePipeline(root, client=client, checkpoint=checkpoint, now=NOW)
                 pipeline.scoped_scanner = Scanner()  # type: ignore[assignment]

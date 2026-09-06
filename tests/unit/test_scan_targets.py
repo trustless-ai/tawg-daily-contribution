@@ -13,10 +13,21 @@ from tawg_bot.scan_targets import (
     ScanTargetRegistry,
     ScanTargetRejected,
     ScanTargetStore,
+    normalize_magicians_topic_url,
 )
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
 NOW = datetime(2026, 8, 28, tzinfo=UTC)
+
+
+def test_normalize_magicians_topic_url_strips_only_post_id() -> None:
+    canonical = "https://ethereum-magicians.org/t/erc-8380-unclonable-agent-execution-credentials/29274"
+    assert normalize_magicians_topic_url(f"{canonical}/17") == canonical
+    assert normalize_magicians_topic_url(canonical) == canonical
+    assert (
+        normalize_magicians_topic_url("https://example.com/t/x/123")
+        == "https://example.com/t/x/123"
+    )
 
 
 def _payload(*, ercs: list[dict[str, object]] | None = None) -> dict[str, object]:

@@ -78,6 +78,7 @@ from tawg_bot.scan_targets import (
     ScanTargetRejected,
     ScanTargetStore,
     ScanTargetVerifier,
+    normalize_magicians_topic_url,
 )
 from tawg_bot.source_registry import EvidenceKind
 from tawg_bot.telegram_intake import resolve_member_welcome_target
@@ -1380,6 +1381,11 @@ class BotReplyService:
             if route is BotRoute.KNOWLEDGE_CORRECTION
             else frozenset()
         )
+        question_urls = (
+            frozenset(extract_public_https_urls((trigger, *chain)))
+            if route is BotRoute.KNOWLEDGE_QUESTION
+            else frozenset()
+        )
         current_github_urls: frozenset[str] = frozenset(
             cast(str, item["url"])
             for item in current_github_states
@@ -1441,6 +1447,7 @@ class BotReplyService:
                 local_ids
                 | set(local_erc_citations)
                 | set(mutation_source_urls)
+                | set(question_urls)
                 | set(current_github_urls)
             )
             citation_entries = [
@@ -1458,13 +1465,20 @@ class BotReplyService:
                 {"url": url} for url in sorted(mutation_source_urls - set(local_erc_citations))
             )
             citation_entries.extend(
-                {"url": url} for url in sorted(current_github_urls - set(local_erc_citations))
+                {"url": url}
+                for url in sorted(question_urls - set(local_erc_citations))
+            )
+            citation_entries.extend(
+                {"url": url}
+                for url in sorted(current_github_urls - set(local_erc_citations))
             )
 
         def record_context(record: SourceRecord) -> dict[str, Any]:
             payload = record.model_dump(mode="json")
             citation_urls = [
-                url for url in extract_public_https_urls((record,)) if url in mutation_source_urls
+                url
+                for url in extract_public_https_urls((record,))
+                if url in mutation_source_urls or url in question_urls
             ]
             if citation_urls:
                 payload["citation_urls"] = citation_urls
@@ -2005,9 +2019,18 @@ class BotReplyService:
         # then aborts the whole reply as an "invalid reply model output". Drop that field
         # before validation on every non-correction route; the controller separately
         # rejects a scan_registration outside the correction route anyway.
+        raw = dict(raw)
         if route is not BotRoute.KNOWLEDGE_CORRECTION:
-            raw = dict(raw)
             raw.pop("scan_registration", None)
+        else:
+            registration = raw.get("scan_registration")
+            if isinstance(registration, dict) and isinstance(
+                registration.get("magicians_topic_url"), str
+            ):
+                registration["magicians_topic_url"] = normalize_magicians_topic_url(
+                    registration["magicians_topic_url"]
+                )
+                raw["scan_registration"] = registration
         try:
             result = _ReplyResult.model_validate(raw)
         except ValidationError as error:
@@ -2132,9 +2155,15 @@ class BotReplyService:
                     else []
                 ),
             }
+            normalized_source_urls = frozenset(
+                normalize_magicians_topic_url(url) for url in mutation_source_urls
+            )
+            normalized_citations = frozenset(
+                normalize_magicians_topic_url(url) for url in result.citations
+            )
             if (
-                not registration_urls.issubset(mutation_source_urls)
-                or not registration_urls.issubset(result.citations)
+                not registration_urls.issubset(normalized_source_urls)
+                or not registration_urls.issubset(normalized_citations)
                 or result.scan_registration.erc_number
                 not in self._explicit_erc_numbers(trigger.text_original)
             ):
@@ -2219,7 +2248,7 @@ class BotReplyService:
         )
         if magicians is None:
             return None
-        topic_url = re.sub(r"/\d+$", "", magicians.group(0))
+        topic_url = normalize_magicians_topic_url(magicians.group(0))
         pr = re.search(
             r"https://github\.com/ethereum/ERCs/pull/[1-9][0-9]{0,9}",
             text,

@@ -4345,3 +4345,28 @@ async def test_model_failure_is_persisted_as_a_specific_safe_code(
     assert caught.value.safe_code == expected_code
     persisted = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())[0]
     assert persisted["safe_error_code"] == expected_code
+
+
+@pytest.mark.asyncio
+async def test_knowledge_question_can_cite_a_mentioned_repo_url(tmp_path: Path) -> None:
+    repo_url = "https://github.com/trustless-ai/semantic-abi"
+    job = seed(tmp_path, f"@bot what's this repo about? {repo_url}")
+    output = reply_result(chinese=False)
+    output["reply_text"] = f"It is a semantic type system. [semantic-abi]({repo_url})"
+    output["citations"] = [repo_url]
+    ai = ContextualFakeAi("knowledge_question", output)
+
+    prepared = await BotReplyService(
+        tmp_path,
+        ai=ai,
+        bot_username="bot",
+        chat_id=-1001,
+    ).prepare(job.job_id, now=NOW + timedelta(minutes=2))
+
+    assert prepared is not None
+    assert prepared.refusal is False
+    reply_context = json.loads(
+        next(call["context_pack"] for call in ai.calls if call["job_type"] == "reply")
+    )
+    assert repo_url in reply_context["citation_allowlist"]
+    assert prepared.citations == (repo_url,)

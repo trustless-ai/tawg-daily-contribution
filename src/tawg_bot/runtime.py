@@ -461,6 +461,11 @@ class _LivePipeline:
             uow.register_external_evidence(())
             self.scoped_scanner.stage(result, uow)
             self.github_announcements.stage(announcement_batch, uow)
+            self.scoped_scanner.stage_repository_pages(
+                uow,
+                result.repositories,
+                now,
+            )
             uow.publish()
             await self.checkpoint.publish(
                 f"scoped-source-check:{int(now.timestamp())}",

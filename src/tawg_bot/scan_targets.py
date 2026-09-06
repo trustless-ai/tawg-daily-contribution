@@ -18,9 +18,32 @@ if TYPE_CHECKING:
     from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
 _MAGICIANS_PATH = re.compile(r"^/t/[a-z0-9][a-z0-9-]{0,199}/([1-9][0-9]{0,9})$")
+_MAGICIANS_TOPIC_WITH_POST = re.compile(
+    r"^(https://ethereum-magicians\.org/t/[a-z0-9][a-z0-9-]{0,199}/[1-9][0-9]{0,9})"
+    r"(?:/[0-9]+)?$",
+    re.IGNORECASE,
+)
+_MAGICIANS_URL_IN_TEXT = re.compile(
+    r"https?://ethereum-magicians\.org/t/[a-z0-9][a-z0-9-]{0,199}/([1-9][0-9]{0,9})"
+    r"(?:/[0-9]+)?",
+    re.IGNORECASE,
+)
 _PROPOSAL_PR_PATH = re.compile(r"^/ethereum/ERCs/pull/([1-9][0-9]{0,9})$")
 _ERC_REFERENCE = r"(?:ERC|EIP)[- ]?{number}\b"
 _MAX_EXTERNAL_METADATA_CHARACTERS = 64_000
+
+
+def normalize_magicians_topic_url(value: str) -> str:
+    """Strip an optional trailing Discourse post id from a Magicians topic URL.
+
+    The pinned scan-target contract accepts only the canonical topic URL
+    (``.../t/<slug>/<topic-id>``), but users and the AI frequently paste the full link
+    with a trailing post id (``.../t/<slug>/<topic-id>/<post-id>``). Return the canonical
+    form when the value already matches the topic shape; otherwise return it unchanged so
+    the field validator can still reject genuinely invalid URLs.
+    """
+    match = _MAGICIANS_TOPIC_WITH_POST.fullmatch(value)
+    return match.group(1) if match is not None else value
 
 
 class ScanTargetRejected(ValueError):
@@ -254,6 +277,7 @@ class ScanTargetVerifier:
                 pull,
                 expected_number=pull_number,
                 erc_number=proposal.erc_number,
+                expected_topic_id=topic_id,
             )
         return ErcScanTarget(
             **proposal.model_dump(),
@@ -286,21 +310,30 @@ class ScanTargetVerifier:
         *,
         expected_number: int,
         erc_number: int,
+        expected_topic_id: int,
     ) -> None:
         if not isinstance(payload, Mapping):
             raise ScanTargetRejected("proposal PR metadata is invalid")
         title = payload.get("title")
         body = payload.get("body")
         body_text = body if isinstance(body, str) else ""
+        pr_text = f"{title}\n{body_text}"
+        references_expected_topic = any(
+            int(match.group(1)) == expected_topic_id
+            for match in _MAGICIANS_URL_IN_TEXT.finditer(pr_text)
+        )
         if (
             payload.get("number") != expected_number
             or not isinstance(title, str)
             or len(title) + len(body_text) > _MAX_EXTERNAL_METADATA_CHARACTERS
-            or re.search(
-                _ERC_REFERENCE.format(number=erc_number),
-                f"{title}\n{body_text}",
-                re.I,
+            or (
+                re.search(
+                    _ERC_REFERENCE.format(number=erc_number),
+                    pr_text,
+                    re.I,
+                )
+                is None
+                and not references_expected_topic
             )
-            is None
         ):
             raise ScanTargetRejected("proposal PR does not match the requested ERC")
