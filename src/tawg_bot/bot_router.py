@@ -1470,6 +1470,10 @@ class BotReplyService:
             )
             citation_entries.extend(
                 {"url": url}
+                for url in sorted(question_urls - set(local_erc_citations))
+            )
+            citation_entries.extend(
+                {"url": url}
                 for url in sorted(current_github_urls - set(local_erc_citations))
             )
 
