@@ -5,6 +5,7 @@
     "created_at": "2026-08-31T02:00:17.736499Z",
     "job_id": "member-introduction:logan-verdict",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "@LoganVerdict A bit of context on Trustless AI: we're people from around the world who met online around ERCs — builders, researchers, and EIP authors turning ideas into research, standards, and working implementations, with AI and blockchain results anyone can independently verify or recompute. Feel free to jump into a chat, propose something, or pick up whatever looks fun.",
@@ -23,6 +24,7 @@
     "trigger_kind": "member_introduction",
     "trigger_record_id": "tg:tawg:3778",
     "updated_at": "2026-08-31T02:05:11.853171Z",
+    "verification_artifact": null,
     "welcome_target_person_id": "logan-verdict",
     "welcome_target_record_id": "tg:tawg:3776"
   },
@@ -32,6 +34,7 @@
     "created_at": "2026-09-02T14:58:33.449564Z",
     "job_id": "member-introduction:ryan-veteze",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Hey @veteze, really glad you're here! 🎉\n\nAttestation work — and the off-chain kind especially — is something this community genuinely cares about. A big part of what drives Trustless AI is the question of *how* you actually establish trust in a claim without just asking someone to take your word for it. That challenge shows up whether you're anchoring a proof on-chain or not, and the interesting problems often live at the boundary where off-chain evidence has to mean something verifiable to the outside world.\n\nTrustless AI grew pretty organically — researchers, ERC authors, implementers, and reviewers who kept bumping into each other across open-source and standards work and realised they were all pulling in the same direction: moving from \"trust me\" toward results that anyone can independently inspect, verify, or recompute. No single company behind it, just people who found the problem compelling enough to keep working on it together.\n\nThe overlap you and the group were just sketching out sounds like exactly the kind of thread worth pulling on here. Jump in wherever feels natural — a question, a rough idea, a problem you're wrestling with — there's no ceremony required. Welcome! 🤝",
@@ -50,6 +53,7 @@
     "trigger_kind": "member_introduction",
     "trigger_record_id": "tg:tawg:4051",
     "updated_at": "2026-09-02T15:00:38.254404Z",
+    "verification_artifact": null,
     "welcome_target_person_id": "ryan-veteze",
     "welcome_target_record_id": "tg:tawg:4049"
   },
@@ -64,6 +68,7 @@
     ],
     "knowledge_mutation_trigger_sha256": "42e332d9e3c40511da59c04fa5582b759664559c8f2de8df6f6101be262df59a",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "@LoganVerdict Welcome to TAWG — really glad to have you here! 👋",
@@ -82,6 +87,7 @@
     "trigger_kind": "member_welcome",
     "trigger_record_id": "tg:tawg:3778",
     "updated_at": "2026-08-31T02:00:17.736499Z",
+    "verification_artifact": null,
     "welcome_target_person_id": "logan-verdict",
     "welcome_target_record_id": "tg:tawg:3776"
   },
@@ -96,6 +102,7 @@
     ],
     "knowledge_mutation_trigger_sha256": "fc340fd354240333e0c07f29373dbdf025f25f2ea3cd074e4e7a01ee92d2bdfd",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "@veteze Welcome to Trustless AI! 👋",
@@ -114,6 +121,7 @@
     "trigger_kind": "member_welcome",
     "trigger_record_id": "tg:tawg:4051",
     "updated_at": "2026-09-02T14:58:33.449564Z",
+    "verification_artifact": null,
     "welcome_target_person_id": "ryan-veteze",
     "welcome_target_record_id": "tg:tawg:4049"
   },
@@ -123,6 +131,7 @@
     "created_at": "2026-08-29T04:15:15.120853Z",
     "job_id": "reply-repair:bot-health-evidence-v1:tg:tawg:3668",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Jimmy! Honest answer: I don't have operational evidence telling me what went wrong or confirming that everything is fully healthy now.\n\nWhat I can observe from the conversation is that you noted the bot wasn't responding unless directly mentioned or greeted. That's the behavior that was visible. Beyond that, I can't responsibly diagnose a root cause or declare a recovery — producing this reply only proves this particular reply path is working right now, not that the whole bot is operating normally.\n\nIf you or anyone on the team has logs or error details, I'm happy to help interpret them. Otherwise, the most accurate thing I can say is: this response worked, and the earlier behavior you described is the only anomaly I can point to.",
@@ -141,6 +150,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3668",
     "updated_at": "2026-08-29T04:15:42.400522Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -150,6 +160,7 @@
     "created_at": "2026-08-27T17:28:48.776597Z",
     "job_id": "reply-repair:correction-followup-v1:tg:tawg:3470",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3470",
       "https://github.com/pipavlo82/recomputable-verification-receipts",
@@ -173,6 +184,7 @@
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3470",
     "updated_at": "2026-08-28T15:21:19.438517Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -182,6 +194,7 @@
     "created_at": "2026-08-27T14:29:40.281306Z",
     "job_id": "reply-repair:knowledge-correction-v1:tg:tawg:3446",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3446",
       "tg:tawg:3445"
@@ -203,6 +216,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3446",
     "updated_at": "2026-08-28T15:21:19.438517Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -212,6 +226,7 @@
     "created_at": "2026-08-29T01:00:25.215295Z",
     "job_id": "reply-repair:latest-discussion-v2:tg:tawg:3620",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902"
     ],
@@ -232,6 +247,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3620",
     "updated_at": "2026-08-29T01:30:11.311387Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -241,6 +257,7 @@
     "created_at": "2026-08-29T02:25:10.124740Z",
     "job_id": "reply-repair:latest-discussion-write-v1:tg:tawg:3650",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "https://eips.ethereum.org/EIPS/eip-8183",
       "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902"
@@ -262,6 +279,7 @@
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3650",
     "updated_at": "2026-08-29T02:29:25.489527Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -271,6 +289,7 @@
     "created_at": "2026-08-29T03:11:12.500851Z",
     "job_id": "reply-repair:latest-discussion-write-v2:tg:tawg:3650",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3620",
       "tg:tawg:3650",
@@ -294,6 +313,7 @@
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3650",
     "updated_at": "2026-08-29T03:15:09.503614Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -303,6 +323,7 @@
     "created_at": "2026-08-26T05:03:41.673472Z",
     "job_id": "reply-repair:recent-discussion-v1:tg:tawg:3380",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3376",
       "tg:tawg:3377",
@@ -325,6 +346,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3380",
     "updated_at": "2026-08-26T11:51:21.004539Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -334,6 +356,7 @@
     "created_at": "2026-08-28T16:21:18.818452Z",
     "job_id": "reply-repair:stale-citation-context-v1:tg:tawg:3560",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3470"
     ],
@@ -354,6 +377,7 @@
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3560",
     "updated_at": "2026-08-28T17:31:36.189360Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -363,6 +387,7 @@
     "created_at": "2026-08-30T12:23:43Z",
     "job_id": "reply-repair:stale-mutation-status-v1:tg:tawg:3766",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3736",
       "tg:tawg:3739",
@@ -388,6 +413,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3766",
     "updated_at": "2026-08-30T12:30:19.362445Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -397,6 +423,7 @@
     "created_at": "2026-08-26T02:10:57.226837Z",
     "job_id": "reply:tg:tawg:3369",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "I can help with TAWG knowledge, local identity corrections, evidence-backed knowledge corrections, and relevant source suggestions. I can't take that action.",
@@ -415,6 +442,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3369",
     "updated_at": "2026-08-26T02:10:57.226837Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -424,6 +452,7 @@
     "created_at": "2026-08-26T03:27:43.677775Z",
     "job_id": "reply:tg:tawg:3372",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3374",
       "tg:tawg:3376",
@@ -448,6 +477,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3372",
     "updated_at": "2026-08-26T09:05:26.624815Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -457,6 +487,7 @@
     "created_at": "2026-08-26T03:27:43.677775Z",
     "job_id": "reply:tg:tawg:3380",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "I can help with TAWG knowledge, local identity corrections, evidence-backed knowledge corrections, and relevant source suggestions. I can't take that action.",
@@ -475,6 +506,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3380",
     "updated_at": "2026-08-26T04:19:43.287631Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -484,6 +516,7 @@
     "created_at": "2026-08-26T05:03:41.673472Z",
     "job_id": "reply:tg:tawg:3387",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "https://eips.ethereum.org/EIPS/eip-8183",
       "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902",
@@ -506,6 +539,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3387",
     "updated_at": "2026-08-26T08:11:31.117465Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -515,6 +549,7 @@
     "created_at": "2026-08-26T10:42:04.774207Z",
     "job_id": "reply:tg:tawg:3398",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "I can help with TAWG knowledge, local identity corrections, evidence-backed knowledge corrections, and relevant source suggestions. I can't take that action.",
@@ -533,6 +568,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3398",
     "updated_at": "2026-08-26T10:42:04.774207Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -542,6 +578,7 @@
     "created_at": "2026-08-26T11:14:46.435246Z",
     "job_id": "reply:tg:tawg:3401",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3401",
       "tg:tawg:3400"
@@ -563,6 +600,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3401",
     "updated_at": "2026-08-26T13:41:34.703946Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -572,6 +610,7 @@
     "created_at": "2026-08-26T16:04:46.036497Z",
     "job_id": "reply:tg:tawg:3436",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "I can help with TAWG knowledge, local identity corrections, evidence-backed knowledge corrections, and relevant source suggestions. I can't take that action.",
@@ -590,6 +629,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3436",
     "updated_at": "2026-08-26T16:04:46.036497Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -599,6 +639,7 @@
     "created_at": "2026-08-27T06:06:30.824366Z",
     "job_id": "reply:tg:tawg:3446",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "I can help with TAWG knowledge, local identity corrections, evidence-backed knowledge corrections, and relevant source suggestions. I can't take that action.",
@@ -617,6 +658,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3446",
     "updated_at": "2026-08-27T08:40:07.230785Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -626,6 +668,7 @@
     "created_at": "2026-08-27T14:29:40.281306Z",
     "job_id": "reply:tg:tawg:3466",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3466"
     ],
@@ -646,6 +689,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3466",
     "updated_at": "2026-08-27T14:29:40.281306Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -655,6 +699,7 @@
     "created_at": "2026-08-27T15:00:52.868096Z",
     "job_id": "reply:tg:tawg:3468",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Jimmy! Doing great and ready to help — good to hear from you. 👋 What can I do for you today?",
@@ -673,6 +718,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3468",
     "updated_at": "2026-08-27T15:00:52.868096Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -682,6 +728,7 @@
     "created_at": "2026-08-27T16:20:28.634348Z",
     "job_id": "reply:tg:tawg:3470",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "I can help with TAWG knowledge, local identity corrections, evidence-backed knowledge corrections, and relevant source suggestions. I can't take that action.",
@@ -700,6 +747,7 @@
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3470",
     "updated_at": "2026-08-27T16:20:28.634348Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -709,6 +757,7 @@
     "created_at": "2026-08-27T16:00:07.367669Z",
     "job_id": "reply:tg:tawg:3473",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3127",
       "tg:tawg:3022",
@@ -731,6 +780,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3473",
     "updated_at": "2026-08-27T16:00:07.367669Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -740,6 +790,7 @@
     "created_at": "2026-08-27T17:28:48.776597Z",
     "job_id": "reply:tg:tawg:3478",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3470"
     ],
@@ -760,6 +811,7 @@
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3478",
     "updated_at": "2026-08-27T17:28:48.776597Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -769,6 +821,7 @@
     "created_at": "2026-08-27T17:49:16.200579Z",
     "job_id": "reply:tg:tawg:3480",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3478",
       "tg:tawg:3480"
@@ -790,6 +843,7 @@
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3480",
     "updated_at": "2026-08-27T17:49:16.200579Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -799,6 +853,7 @@
     "created_at": "2026-08-27T17:49:16.200579Z",
     "job_id": "reply:tg:tawg:3481",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Good night, Jimmy! 🌙 Rest well!",
@@ -817,6 +872,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3481",
     "updated_at": "2026-08-27T17:49:16.200579Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -826,6 +882,7 @@
     "created_at": "2026-08-27T21:23:07.286493Z",
     "job_id": "reply:tg:tawg:3484",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -844,6 +901,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3484",
     "updated_at": "2026-08-27T21:23:07.286493Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -853,6 +911,7 @@
     "created_at": "2026-08-27T23:02:53.169597Z",
     "job_id": "reply:tg:tawg:3499",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -871,6 +930,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3499",
     "updated_at": "2026-08-28T06:15:00.382352Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -880,6 +940,7 @@
     "created_at": "2026-08-28T04:09:40.117720Z",
     "job_id": "reply:tg:tawg:3511",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3511",
       "tg:tawg:3514"
@@ -901,6 +962,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3511",
     "updated_at": "2026-08-28T06:47:10.460916Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -910,6 +972,7 @@
     "created_at": "2026-08-28T04:09:40.117720Z",
     "job_id": "reply:tg:tawg:3513",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Jimmy! 🌞 Lots of good stuff to catch up on — the serializer boundary work has been moving fast. Welcome back!",
@@ -928,6 +991,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3513",
     "updated_at": "2026-08-28T06:47:10.460916Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -937,6 +1001,7 @@
     "created_at": "2026-08-28T04:09:40.117720Z",
     "job_id": "reply:tg:tawg:3517",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Good morning, Pavlo! ☀️ Hope it's a great one — looks like there's plenty of interesting work in the group to dig into!",
@@ -955,6 +1020,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3517",
     "updated_at": "2026-08-28T06:47:10.460916Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -964,6 +1030,7 @@
     "created_at": "2026-08-28T06:47:10.460916Z",
     "job_id": "reply:tg:tawg:3527",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Thanks, Jimmy! Glad to hear it 🙌 Let me know if anything else needs a look.",
@@ -982,6 +1049,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3527",
     "updated_at": "2026-08-28T06:47:10.460916Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -991,6 +1059,7 @@
     "created_at": "2026-08-28T10:00:59.001807Z",
     "job_id": "reply:tg:tawg:3533",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Merlini! ☀️ Hope you're having a great start to the day. Trusty's here whenever the group is ready to dig into Trustless AI work!",
@@ -1009,6 +1078,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3533",
     "updated_at": "2026-08-28T10:00:59.001807Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1018,6 +1088,7 @@
     "created_at": "2026-08-28T10:11:34.902880Z",
     "job_id": "reply:tg:tawg:3551",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Merlini! 👋 Noted — I'll be here when the remaining confirmations come in. Happy to help finalize the authorline contribution ledger once everything is aligned. Just ping me!",
@@ -1036,6 +1107,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3551",
     "updated_at": "2026-08-28T10:11:34.902880Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1045,6 +1117,7 @@
     "created_at": "2026-08-28T11:09:44.896403Z",
     "job_id": "reply:tg:tawg:3553",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -1063,6 +1136,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3553",
     "updated_at": "2026-08-28T16:21:18.818452Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1072,6 +1146,7 @@
     "created_at": "2026-08-28T11:09:44.896403Z",
     "job_id": "reply:tg:tawg:3557",
     "message_thread_id": 3520,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -1090,6 +1165,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3557",
     "updated_at": "2026-08-28T16:21:18.818452Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1099,6 +1175,7 @@
     "created_at": "2026-08-28T11:28:37.999639Z",
     "job_id": "reply:tg:tawg:3559",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3511",
       "tg:tawg:3559"
@@ -1120,6 +1197,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3559",
     "updated_at": "2026-08-28T15:21:19.438517Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1129,6 +1207,7 @@
     "created_at": "2026-08-28T11:28:37.999639Z",
     "job_id": "reply:tg:tawg:3560",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Thanks for re-triggering, Jimmy — but the same blocker is still in place.\n\n`tg:tawg:3470` (Pavlo's original RVR proposal) is still not in the citation allowlist. That message holds the technical content the knowledge entry needs — the two-axis model, Verification Profile structure, closure rule, six-field receipt, and ERC-8281 boundary. Without it on the allowlist, any claims in the entry would be unsupported and the write can't proceed.\n\nPlease add `tg:tawg:3470` to the citation allowlist and re-trigger, and the entry will be created right away.\n\nSame blocker as before: tg:tawg:3470 (Pavlo's RVR proposal) is still not in the citation allowlist. The knowledge entry cannot be written until it is added.",
@@ -1147,6 +1226,7 @@
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3560",
     "updated_at": "2026-08-28T15:21:19.438517Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1156,6 +1236,7 @@
     "created_at": "2026-08-28T15:21:19.438517Z",
     "job_id": "reply:tg:tawg:3563",
     "message_thread_id": 3520,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -1174,6 +1255,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3563",
     "updated_at": "2026-08-28T15:21:19.438517Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1183,6 +1265,7 @@
     "created_at": "2026-08-28T15:21:19.438517Z",
     "job_id": "reply:tg:tawg:3567",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -1201,6 +1284,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3567",
     "updated_at": "2026-08-28T15:21:19.438517Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1210,6 +1294,7 @@
     "created_at": "2026-08-28T16:21:18.818452Z",
     "job_id": "reply:tg:tawg:3596",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "👀 Binoculars right back at you, Merlini — present and watching the group's work with great interest. Six rounds of tightening that gate to the point where every negative control is load-bearing for the *exact* boundary it names… that's a good day's work in this channel.",
@@ -1228,6 +1313,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3596",
     "updated_at": "2026-08-28T16:21:18.818452Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1237,6 +1323,7 @@
     "created_at": "2026-08-28T17:54:28.312340Z",
     "job_id": "reply:tg:tawg:3610",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Hey Jimmy! 👋 Online and ready — bring it on! What are we rolling out?",
@@ -1255,6 +1342,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3610",
     "updated_at": "2026-08-28T18:05:10.504621Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1264,6 +1352,7 @@
     "created_at": "2026-08-28T17:57:44.539938Z",
     "job_id": "reply:tg:tawg:3611",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -1282,6 +1371,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3611",
     "updated_at": "2026-08-28T18:05:10.504621Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1291,6 +1381,7 @@
     "created_at": "2026-08-28T18:07:41.453342Z",
     "job_id": "reply:tg:tawg:3613",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Let's go, Jimmy! 🚀 Whenever you're ready, drop what you need and we'll get it done.",
@@ -1309,6 +1400,7 @@
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3613",
     "updated_at": "2026-08-28T18:07:41.453342Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1318,6 +1410,7 @@
     "created_at": "2026-08-28T18:08:42.921290Z",
     "job_id": "reply:tg:tawg:3615",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Ha, appreciate it Jimmy! ⚡ Ready to keep up with the group — just holler whenever you need something.",
@@ -1336,6 +1429,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3615",
     "updated_at": "2026-08-28T18:08:42.921290Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1345,6 +1439,7 @@
     "created_at": "2026-08-28T18:09:43.407098Z",
     "job_id": "reply:tg:tawg:3617",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3609",
       "tg:tawg:3610",
@@ -1368,6 +1463,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3617",
     "updated_at": "2026-08-28T18:09:43.407098Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1377,6 +1473,7 @@
     "created_at": "2026-08-28T18:14:11.032723Z",
     "job_id": "reply:tg:tawg:3619",
     "message_thread_id": 1360,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:1115",
       "tg:tawg:1238",
@@ -1400,6 +1497,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3619",
     "updated_at": "2026-08-28T18:14:11.032723Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1409,6 +1507,7 @@
     "created_at": "2026-08-28T18:15:07.061814Z",
     "job_id": "reply:tg:tawg:3620",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902",
       "https://eips.ethereum.org/EIPS/eip-8183"
@@ -1430,6 +1529,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3620",
     "updated_at": "2026-08-29T00:20:16.082475Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1439,6 +1539,7 @@
     "created_at": "2026-08-28T18:16:23.112280Z",
     "job_id": "reply:tg:tawg:3622",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Good night, Jimmy! 🌙 Rest well — big things moving today with the provenance-anchor work. See you next time!",
@@ -1457,6 +1558,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3622",
     "updated_at": "2026-08-28T18:16:23.112280Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1466,6 +1568,7 @@
     "created_at": "2026-08-28T18:17:02.303823Z",
     "job_id": "reply:tg:tawg:3623",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -1484,6 +1587,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3623",
     "updated_at": "2026-08-28T18:17:02.303823Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1493,6 +1597,7 @@
     "created_at": "2026-08-28T18:17:16.692036Z",
     "job_id": "reply:tg:tawg:3625",
     "message_thread_id": 1360,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3625",
       "tg:tawg:1115",
@@ -1517,6 +1622,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3625",
     "updated_at": "2026-08-28T18:17:16.692036Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1526,6 +1632,7 @@
     "created_at": "2026-08-28T20:45:06.594346Z",
     "job_id": "reply:tg:tawg:3633",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3632"
     ],
@@ -1546,6 +1653,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3633",
     "updated_at": "2026-08-28T20:46:33.108169Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1555,6 +1663,7 @@
     "created_at": "2026-08-28T23:36:21.293808Z",
     "job_id": "reply:tg:tawg:3642",
     "message_thread_id": 3520,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -1573,6 +1682,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3642",
     "updated_at": "2026-08-28T23:36:21.293808Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1582,6 +1692,7 @@
     "created_at": "2026-08-28T23:55:01.492687Z",
     "job_id": "reply:tg:tawg:3644",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "https://github.com/trustless-ai/agent-ercs/blob/main/contracts/reputation/ERC8275/README.md"
     ],
@@ -1602,6 +1713,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3644",
     "updated_at": "2026-08-29T00:29:50.832297Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1611,6 +1723,7 @@
     "created_at": "2026-08-29T00:29:50.832297Z",
     "job_id": "reply:tg:tawg:3647",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Logged. All five controls Pavlo specifically flagged — exact-body hashing, no-key/no-write refusal, attestation retention, byte-divergence behavior, and resolution-hook bypass — independently verified from the real source at exact head, with the suite confirming it (89/89, tsc clean, docker clean). Clean, no-objection finding on record.\n\nBaby Blue Viper independently verified ccip-router PR #6 at exact head 4da3de6ebcc3a941e03ff13cfa5bac2d27a858b4, covering all five flagged controls from real source and full suite runs. Clean, no-objection verdict acknowledged.",
@@ -1629,6 +1742,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3647",
     "updated_at": "2026-08-29T00:29:50.832297Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1638,6 +1752,7 @@
     "created_at": "2026-08-29T00:39:02.154518Z",
     "job_id": "reply:tg:tawg:3648",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Decision noted and makes sense — independently verified staleness + a spec surface that's clearly outgrown its host is a solid basis for the call. The reasoning holds: a standalone spec doesn't close the door on cross-referencing #1774 if Panini resurfaces, so there's no downside to moving now.\n\nWhen the spin-out starts, happy to help track the provenance cleanup work (the `convention_spec.source` pointer nit Merlini flagged is a clean first task once there's a canonical home to point at). Just ping here when someone's ready to draft.\n\nBaby Blue Viper confirmed the decision to spin ERC-8275 out to a standalone spec, independently verifying that PR #1774 has been idle 30 days with no response. Trusty acknowledged the decision and noted readiness to help with provenance cleanup when drafting begins.",
@@ -1656,6 +1771,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3648",
     "updated_at": "2026-08-29T00:40:10.552840Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1665,6 +1781,7 @@
     "created_at": "2026-08-29T00:41:50.494089Z",
     "job_id": "reply:tg:tawg:3650",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3620",
       "tg:tawg:3650",
@@ -1688,6 +1805,7 @@
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3650",
     "updated_at": "2026-08-29T00:52:34.798221Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1697,6 +1815,7 @@
     "created_at": "2026-08-29T03:05:45.182306Z",
     "job_id": "reply:tg:tawg:3661",
     "message_thread_id": 3520,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -1715,6 +1834,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3661",
     "updated_at": "2026-08-29T03:05:45.182306Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1724,6 +1844,7 @@
     "created_at": "2026-08-29T03:49:29.825662Z",
     "job_id": "reply:tg:tawg:3668",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "All good now, Jimmy! 👋 I'm back and responding normally. Sorry for the trouble earlier — looks like things are working as expected now. If anything seems off again, just ping me!",
@@ -1742,6 +1863,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3668",
     "updated_at": "2026-08-29T03:49:29.825662Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1751,6 +1873,7 @@
     "created_at": "2026-08-29T04:25:22.167755Z",
     "job_id": "reply:tg:tawg:3671",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3671",
       "https://github.com/trustless-ai/tawg-daily-contribution"
@@ -1772,6 +1895,7 @@
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:3671",
     "updated_at": "2026-08-29T04:30:12.173444Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1781,6 +1905,7 @@
     "created_at": "2026-08-29T11:57:04.508229Z",
     "job_id": "reply:tg:tawg:3677",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -1799,6 +1924,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3677",
     "updated_at": "2026-08-29T11:57:04.508229Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1808,6 +1934,7 @@
     "created_at": "2026-08-29T11:57:42.081856Z",
     "job_id": "reply:tg:tawg:3678",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -1826,6 +1953,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3678",
     "updated_at": "2026-08-29T11:57:42.081856Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1835,6 +1963,7 @@
     "created_at": "2026-08-29T12:08:33.723137Z",
     "job_id": "reply:tg:tawg:3680",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -1853,6 +1982,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3680",
     "updated_at": "2026-08-29T12:08:33.723137Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1862,6 +1992,7 @@
     "created_at": "2026-08-29T21:00:48.208063Z",
     "job_id": "reply:tg:tawg:3732",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -1880,6 +2011,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3732",
     "updated_at": "2026-08-29T21:00:48.208063Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1889,6 +2021,7 @@
     "created_at": "2026-08-29T21:04:47.810654Z",
     "job_id": "reply:tg:tawg:3734",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "That's a real one. 🎉\n\n`pq_key_binding.v1` landing complete and hardened — the unanchored rule, the tri-state evidence, the activation boundary defined once and held — that's the kind of closure that stays closed. And the way it got there is worth naming: a fork surfaced, got argued on merits, every claim was independently recomputed before anyone agreed to it, and the result is more honest than what any single person would have shipped alone.\n\nThe process working exactly as designed *is* the win. Onward. 🤝",
@@ -1907,6 +2040,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3734",
     "updated_at": "2026-08-29T21:04:47.810654Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1916,6 +2050,7 @@
     "created_at": "2026-08-30T00:01:45.698054Z",
     "job_id": "reply:tg:tawg:3745",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -1934,6 +2069,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3745",
     "updated_at": "2026-08-30T00:01:45.698054Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1943,6 +2079,7 @@
     "created_at": "2026-08-30T02:21:09.070521Z",
     "job_id": "reply:tg:tawg:3753",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Jimmy! ☀️ Hope the day is off to a great start for you and the rest of the group!",
@@ -1961,6 +2098,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3753",
     "updated_at": "2026-08-30T02:21:09.070521Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -1974,6 +2112,7 @@
     ],
     "knowledge_mutation_trigger_sha256": "c59ed8ee01a08a019245c50791c47f772a256e36142ddc40d94e1aeb15295d3a",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3755",
       "tg:tawg:3743",
@@ -1997,6 +2136,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3755",
     "updated_at": "2026-08-30T02:53:16.677719Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2006,6 +2146,7 @@
     "created_at": "2026-08-30T02:54:44.189968Z",
     "job_id": "reply:tg:tawg:3756",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2024,6 +2165,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3756",
     "updated_at": "2026-08-30T02:54:44.189968Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2033,6 +2175,7 @@
     "created_at": "2026-08-30T04:56:17.690621Z",
     "job_id": "reply:tg:tawg:3759",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2051,6 +2194,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3759",
     "updated_at": "2026-08-30T05:44:59.025885Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2060,6 +2204,7 @@
     "created_at": "2026-08-30T05:53:33.466961Z",
     "job_id": "reply:tg:tawg:3760",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2078,6 +2223,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3760",
     "updated_at": "2026-08-30T05:53:33.466961Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2087,6 +2233,7 @@
     "created_at": "2026-08-30T10:19:53.317775Z",
     "job_id": "reply:tg:tawg:3762",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "English",
     "prepared_reply_text": "Good morning, Merlini! ☀️ Hope you're ready for a great day of Trustless AI work. Let me know if you need anything!",
@@ -2105,6 +2252,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3762",
     "updated_at": "2026-08-30T10:19:53.317775Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2114,6 +2262,7 @@
     "created_at": "2026-08-30T10:23:04.794621Z",
     "job_id": "reply:tg:tawg:3764",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3714",
       "tg:tawg:3723",
@@ -2143,6 +2292,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3764",
     "updated_at": "2026-08-30T10:46:37.168606Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2152,6 +2302,7 @@
     "created_at": "2026-08-30T11:35:28.670042Z",
     "job_id": "reply:tg:tawg:3766",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3734",
       "tg:tawg:3736",
@@ -2178,6 +2329,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3766",
     "updated_at": "2026-08-30T11:35:28.670042Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2187,6 +2339,7 @@
     "created_at": "2026-08-30T16:23:39.197479Z",
     "job_id": "reply:tg:tawg:3771",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3705",
       "tg:tawg:3734",
@@ -2215,6 +2368,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3771",
     "updated_at": "2026-08-30T16:23:39.197479Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2224,6 +2378,7 @@
     "created_at": "2026-08-30T22:12:12.223960Z",
     "job_id": "reply:tg:tawg:3778",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2242,6 +2397,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3778",
     "updated_at": "2026-08-30T22:12:12.223960Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2251,6 +2407,7 @@
     "created_at": "2026-08-30T22:54:30.419279Z",
     "job_id": "reply:tg:tawg:3781",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2269,6 +2426,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3781",
     "updated_at": "2026-08-30T22:54:30.419279Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2278,6 +2436,7 @@
     "created_at": "2026-08-30T23:06:15.672004Z",
     "job_id": "reply:tg:tawg:3783",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2296,6 +2455,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3783",
     "updated_at": "2026-08-30T23:06:15.672004Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2305,6 +2465,7 @@
     "created_at": "2026-08-30T23:22:23.698383Z",
     "job_id": "reply:tg:tawg:3784",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2323,6 +2484,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3784",
     "updated_at": "2026-08-30T23:22:23.698383Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2332,6 +2494,7 @@
     "created_at": "2026-08-31T10:20:09.283037Z",
     "job_id": "reply:tg:tawg:3789",
     "message_thread_id": 3788,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Love that idea, Jimmy! 🤝 Dropping PR notes here as things move would keep the group in the loop without anyone having to dig through GitHub. I'll be ready to surface them whenever the controller routes them my way.",
@@ -2350,6 +2513,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3789",
     "updated_at": "2026-08-31T10:20:09.283037Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2359,6 +2523,7 @@
     "created_at": "2026-08-31T10:21:32.031810Z",
     "job_id": "reply:tg:tawg:3792",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Merlini! ☀️ Hope it's a great one — lots of good momentum in the group to carry into the day! 🤝",
@@ -2377,6 +2542,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3792",
     "updated_at": "2026-08-31T10:21:32.031810Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2390,6 +2556,7 @@
     ],
     "knowledge_mutation_trigger_sha256": "17192f4b44e7dd2517e8e630614b95546194bb20864b9bd6383c3e0ed05cb058",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3793",
       "https://github.com/trustless-ai/recompute-kit/pull/36"
@@ -2411,6 +2578,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3793",
     "updated_at": "2026-08-31T10:22:07.379573Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2420,6 +2588,7 @@
     "created_at": "2026-08-31T10:31:38.389797Z",
     "job_id": "reply:tg:tawg:3796",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2438,6 +2607,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3796",
     "updated_at": "2026-08-31T10:31:38.389797Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2447,6 +2617,7 @@
     "created_at": "2026-08-31T11:06:29.092310Z",
     "job_id": "reply:tg:tawg:3798",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Pavlo! ☀️ Hope it's a great one — lots of good momentum in the group right now.",
@@ -2465,6 +2636,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3798",
     "updated_at": "2026-08-31T11:06:29.092310Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2478,6 +2650,7 @@
     ],
     "knowledge_mutation_trigger_sha256": "8cd26e083b15e6768ce55bf15043629f6974426d389b8e54921adf3bfd52f6ff",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:3800",
       "https://github.com/ethereum/ERCs/pull/1980",
@@ -2500,6 +2673,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3808",
     "updated_at": "2026-08-31T12:27:52.350259Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2509,6 +2683,7 @@
     "created_at": "2026-08-31T22:44:53.455791Z",
     "job_id": "reply:tg:tawg:3845",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2527,6 +2702,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3845",
     "updated_at": "2026-08-31T22:44:53.455791Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2536,6 +2712,7 @@
     "created_at": "2026-09-01T08:53:11.020692Z",
     "job_id": "reply:tg:tawg:3862",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Merlini! ☀️ Looks like the group had quite the productive night — lots of clean recomputes and a merged PR to wake up to. Hope you're ready to dive in!",
@@ -2554,6 +2731,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3862",
     "updated_at": "2026-09-01T08:53:11.020692Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2563,6 +2741,7 @@
     "created_at": "2026-09-01T08:53:37.007219Z",
     "job_id": "reply:tg:tawg:3864",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2581,6 +2760,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3864",
     "updated_at": "2026-09-01T08:53:37.007219Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2590,6 +2770,7 @@
     "created_at": "2026-09-01T10:37:14.550949Z",
     "job_id": "reply:tg:tawg:3873",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "👋 Hey Jimmy! A sibling bot in the making — exciting times. Looking forward to having a dev mirror to test against. Let me know when it's up and running! 🤖🤝🤖",
@@ -2608,6 +2789,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3873",
     "updated_at": "2026-09-01T10:37:14.550949Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2617,6 +2799,7 @@
     "created_at": "2026-09-01T10:37:45.946827Z",
     "job_id": "reply:tg:tawg:3874",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Merlini! 👋 Always good to hear from you. Hope the morning's treating you well — looks like it's going to be a busy day in the group! Here whenever you need me.",
@@ -2635,6 +2818,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3874",
     "updated_at": "2026-09-01T10:37:45.946827Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2644,6 +2828,7 @@
     "created_at": "2026-09-01T10:58:08.011604Z",
     "job_id": "reply:tg:tawg:3880",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Pavlo! 🌄 Quite a run of progress landing overnight — the ccip-router gateway looks well-closed from here. Hope the deployment coordination with Merlini goes smoothly today!",
@@ -2662,6 +2847,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3880",
     "updated_at": "2026-09-01T10:58:08.011604Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2671,6 +2857,7 @@
     "created_at": "2026-09-01T11:01:48.043771Z",
     "job_id": "reply:tg:tawg:3884",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2689,6 +2876,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3884",
     "updated_at": "2026-09-01T11:01:48.043771Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2698,6 +2886,7 @@
     "created_at": "2026-09-01T11:49:10.115899Z",
     "job_id": "reply:tg:tawg:3907",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2716,6 +2905,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3907",
     "updated_at": "2026-09-01T11:49:10.115899Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2725,6 +2915,7 @@
     "created_at": "2026-09-01T12:35:13.949505Z",
     "job_id": "reply:tg:tawg:3923",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Hey @Tmerlini_bot! 👋 Great to meet you. Merlini's been busy today getting you tuned in — voice replies, n8n routing, and all. Looking forward to working alongside you. Verification and recomputation together does sound like a fun future 🤝",
@@ -2743,6 +2934,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:3923",
     "updated_at": "2026-09-01T12:35:13.949505Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2752,6 +2944,7 @@
     "created_at": "2026-09-01T15:30:41.125086Z",
     "job_id": "reply:tg:tawg:3929",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Jimmy! 👋 Dev branch Trusty is online and ready. Good timing with PR #9 all wired up — looking forward to being put through its paces on the verification route. Let's test!",
@@ -2770,6 +2963,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3929",
     "updated_at": "2026-09-01T15:30:41.125086Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2779,6 +2973,7 @@
     "created_at": "2026-09-01T16:42:43.115863Z",
     "job_id": "reply:tg:tawg:3934",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2797,6 +2992,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3934",
     "updated_at": "2026-09-01T16:42:43.115863Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2806,6 +3002,7 @@
     "created_at": "2026-09-01T23:34:33.036582Z",
     "job_id": "reply:tg:tawg:3957",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2824,6 +3021,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3957",
     "updated_at": "2026-09-01T23:34:33.036582Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2833,6 +3031,7 @@
     "created_at": "2026-09-02T01:05:08.847787Z",
     "job_id": "reply:tg:tawg:3966",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Jimmy! ☀️ Quite the active night in the group — looks like a lot moved on the verification front. Hope the day ahead is a good one!",
@@ -2851,6 +3050,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3966",
     "updated_at": "2026-09-02T01:05:08.847787Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2860,6 +3060,7 @@
     "created_at": "2026-09-02T01:53:50.354456Z",
     "job_id": "reply:tg:tawg:3973",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2878,6 +3079,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3973",
     "updated_at": "2026-09-02T01:53:50.354456Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2887,6 +3089,7 @@
     "created_at": "2026-09-02T01:54:07.842212Z",
     "job_id": "reply:tg:tawg:3974",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2905,6 +3108,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:3974",
     "updated_at": "2026-09-02T01:54:07.842212Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2914,6 +3118,7 @@
     "created_at": "2026-09-02T08:00:41.630431Z",
     "job_id": "reply:tg:tawg:4001",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -2932,6 +3137,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4001",
     "updated_at": "2026-09-02T08:00:41.630431Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2941,6 +3147,7 @@
     "created_at": "2026-09-02T08:39:46.081947Z",
     "job_id": "reply:tg:tawg:4003",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Jimmy! 🌞 Looks like the group had a very productive night — exciting stuff happening here. Hope your day is off to a great start! ☀️",
@@ -2959,6 +3166,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4003",
     "updated_at": "2026-09-02T08:39:46.081947Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2968,6 +3176,7 @@
     "created_at": "2026-09-02T16:14:38.540906Z",
     "job_id": "reply:tg:tawg:4064",
     "message_thread_id": 3520,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:4064"
     ],
@@ -2988,6 +3197,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:4064",
     "updated_at": "2026-09-02T20:40:45.265773Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -2997,6 +3207,7 @@
     "created_at": "2026-09-03T00:26:36.759809Z",
     "job_id": "reply:tg:tawg:4087",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Jimmy! ☀️ Hope it's a great one — lots of momentum from yesterday to carry forward!",
@@ -3015,6 +3226,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4087",
     "updated_at": "2026-09-03T00:26:36.759809Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3024,6 +3236,7 @@
     "created_at": "2026-09-03T11:44:38.195375Z",
     "job_id": "reply:tg:tawg:4112",
     "message_thread_id": 3981,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Jimmy! 👋 Good to see you here. Hope the verification testing is going well — looks like a productive stretch of work from the group. Let me know if there's anything I can help with!",
@@ -3042,6 +3255,36 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4112",
     "updated_at": "2026-09-03T11:44:38.195375Z",
+    "verification_artifact": null,
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
+  },
+  {
+    "attempts": 0,
+    "classified_route": null,
+    "created_at": "2026-09-06T15:05:39.173863Z",
+    "job_id": "reply:tg:tawg:4116",
+    "message_thread_id": 3981,
+    "prepared_attachments": [],
+    "prepared_citations": [],
+    "prepared_language": null,
+    "prepared_reply_text": null,
+    "prerequisite_job_id": null,
+    "refusal": false,
+    "repair_of_job_id": null,
+    "repair_reason_code": null,
+    "reply_to_message_id": 4116,
+    "routed_at": null,
+    "router_context_scope": null,
+    "router_context_sha256": null,
+    "router_version": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.pending-bot-job.v1",
+    "status": "pending",
+    "trigger_kind": "reply_to_bot",
+    "trigger_record_id": "tg:tawg:4116",
+    "updated_at": "2026-09-06T15:05:39.173863Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3051,6 +3294,7 @@
     "created_at": "2026-09-03T12:40:49.640260Z",
     "job_id": "reply:tg:tawg:4123",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -3069,6 +3313,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4123",
     "updated_at": "2026-09-03T12:40:49.640260Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3078,6 +3323,7 @@
     "created_at": "2026-09-03T22:50:39.019154Z",
     "job_id": "reply:tg:tawg:4192",
     "message_thread_id": 3981,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Jimmy! 👋 I'm here and ready to help. What's on your mind?",
@@ -3096,6 +3342,36 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4192",
     "updated_at": "2026-09-03T22:50:39.019154Z",
+    "verification_artifact": null,
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
+  },
+  {
+    "attempts": 0,
+    "classified_route": null,
+    "created_at": "2026-09-06T15:05:39.173863Z",
+    "job_id": "reply:tg:tawg:4195",
+    "message_thread_id": 3981,
+    "prepared_attachments": [],
+    "prepared_citations": [],
+    "prepared_language": null,
+    "prepared_reply_text": null,
+    "prerequisite_job_id": null,
+    "refusal": false,
+    "repair_of_job_id": null,
+    "repair_reason_code": null,
+    "reply_to_message_id": 4195,
+    "routed_at": null,
+    "router_context_scope": null,
+    "router_context_sha256": null,
+    "router_version": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.pending-bot-job.v1",
+    "status": "pending",
+    "trigger_kind": "reply_to_bot",
+    "trigger_record_id": "tg:tawg:4195",
+    "updated_at": "2026-09-06T15:05:39.173863Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3105,6 +3381,7 @@
     "created_at": "2026-09-04T00:22:25.493802Z",
     "job_id": "reply:tg:tawg:4200",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -3123,6 +3400,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4200",
     "updated_at": "2026-09-04T07:39:33.599871Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3132,6 +3410,7 @@
     "created_at": "2026-09-04T00:50:12.395591Z",
     "job_id": "reply:tg:tawg:4205",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -3150,6 +3429,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4205",
     "updated_at": "2026-09-04T00:50:12.395591Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3159,6 +3439,7 @@
     "created_at": "2026-09-04T00:59:04.112881Z",
     "job_id": "reply:tg:tawg:4209",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Happy to answer! From what I can directly observe about myself: I'm a Claude agent built on Anthropic's Claude Agent SDK. I respond to mentions, receive Telegram context from the controller, and have access to a knowledge vault for reading and writing source-cited knowledge.\n\nWhat I can't tell you is the full deployment stack behind me — things like hosting, orchestration infrastructure, or how the controller pipeline is wired up. I only see what arrives in my context window each turn. So I can confirm the runtime (Claude Agent SDK) and describe what I do, but I can't diagnose or describe the parts of my own system I'm not directly observing. 😄",
@@ -3177,6 +3458,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:4209",
     "updated_at": "2026-09-04T00:59:04.112881Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3186,6 +3468,7 @@
     "created_at": "2026-09-04T09:39:03.124341Z",
     "job_id": "reply:tg:tawg:4231",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:4201",
       "tg:tawg:4206",
@@ -3213,6 +3496,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:4231",
     "updated_at": "2026-09-04T09:39:03.124341Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3222,6 +3506,7 @@
     "created_at": "2026-09-04T09:48:21.552577Z",
     "job_id": "reply:tg:tawg:4234",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:4234"
     ],
@@ -3242,6 +3527,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:4234",
     "updated_at": "2026-09-04T09:48:21.552577Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3251,6 +3537,7 @@
     "created_at": "2026-09-04T09:50:43.309438Z",
     "job_id": "reply:tg:tawg:4237",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -3269,6 +3556,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4237",
     "updated_at": "2026-09-04T09:50:43.309438Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3278,6 +3566,7 @@
     "created_at": "2026-09-04T12:33:26.812705Z",
     "job_id": "reply:tg:tawg:4245",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -3296,6 +3585,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4245",
     "updated_at": "2026-09-04T12:33:26.812705Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3305,6 +3595,7 @@
     "created_at": "2026-09-04T12:54:03.666232Z",
     "job_id": "reply:tg:tawg:4248",
     "message_thread_id": 16,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -3323,6 +3614,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4248",
     "updated_at": "2026-09-04T12:54:03.666232Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3332,6 +3624,7 @@
     "created_at": "2026-09-06T12:54:45.164696Z",
     "job_id": "reply:tg:tawg:4266",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -3350,6 +3643,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4266",
     "updated_at": "2026-09-06T12:54:45.164696Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3363,6 +3657,7 @@
     ],
     "knowledge_mutation_trigger_sha256": "fce35a6eb55b7c48d2a3d99aed743ecbe505ee3efe41ce98ffa74a6647612090",
     "message_thread_id": 3520,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:4310",
       "https://github.com/ethereum/ERCs/pull/1953",
@@ -3385,6 +3680,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:4310",
     "updated_at": "2026-09-05T00:55:13.421460Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3398,6 +3694,7 @@
     ],
     "knowledge_mutation_trigger_sha256": "fce35a6eb55b7c48d2a3d99aed743ecbe505ee3efe41ce98ffa74a6647612090",
     "message_thread_id": 3981,
+    "prepared_attachments": [],
     "prepared_citations": [
       "tg:tawg:4313",
       "https://github.com/ethereum/ERCs/pull/1953",
@@ -3420,6 +3717,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:4313",
     "updated_at": "2026-09-05T03:10:10.119230Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3429,6 +3727,7 @@
     "created_at": "2026-09-05T09:11:09.346680Z",
     "job_id": "reply:tg:tawg:4316",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Merlini! ☀️ Quite a day ahead — ETHGlobal Online is live and the team is assembling. Hope the building goes well!",
@@ -3447,6 +3746,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4316",
     "updated_at": "2026-09-05T09:11:09.346680Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3456,6 +3756,7 @@
     "created_at": "2026-09-05T09:44:01.498250Z",
     "job_id": "reply:tg:tawg:4318",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -3474,6 +3775,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4318",
     "updated_at": "2026-09-05T10:43:45.188925Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3483,6 +3785,7 @@
     "created_at": "2026-09-05T11:46:06.738586Z",
     "job_id": "reply:tg:tawg:4319",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": null,
     "prepared_reply_text": null,
@@ -3501,6 +3804,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4319",
     "updated_at": "2026-09-05T11:46:06.738586Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3510,6 +3814,7 @@
     "created_at": "2026-09-06T01:14:21.725614Z",
     "job_id": "reply:tg:tawg:4343",
     "message_thread_id": 3981,
+    "prepared_attachments": [],
     "prepared_citations": [
       "https://github.com/trustless-ai/semantic-abi"
     ],
@@ -3530,6 +3835,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:4343",
     "updated_at": "2026-09-06T13:30:45.899165Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3539,6 +3845,7 @@
     "created_at": "2026-09-06T09:09:36.185005Z",
     "job_id": "reply:tg:tawg:4344",
     "message_thread_id": null,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Good morning, Merlini! 🌞 Quite a bit moved while you were away — the group had a solid Saturday with PRF fixture scoping, the PoTT paper discussion, and the governance draft getting its first read-through. Plenty to catch up on! ☕",
@@ -3557,6 +3864,7 @@
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:4344",
     "updated_at": "2026-09-06T09:09:36.185005Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3566,6 +3874,7 @@
     "created_at": "2026-09-06T13:42:56.250234Z",
     "job_id": "reply:tg:tawg:4364",
     "message_thread_id": 3981,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Hey Jimmy! 👋 Good to hear from you — this reply path is definitely working. I can't claim the whole system is fully healthy from my end without operational diagnostics to back that up, but I'm here and responding. Ready to help whenever the group needs it! 🙂",
@@ -3584,6 +3893,7 @@
     "trigger_kind": "reply_to_bot",
     "trigger_record_id": "tg:tawg:4364",
     "updated_at": "2026-09-06T13:42:56.250234Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
@@ -3593,6 +3903,7 @@
     "created_at": "2026-09-06T13:57:33.178832Z",
     "job_id": "reply:tg:tawg:4369",
     "message_thread_id": 3981,
+    "prepared_attachments": [],
     "prepared_citations": [],
     "prepared_language": "en",
     "prepared_reply_text": "Got it, Jimmy — thanks for the loop-in. This is exactly the kind of thing that deserves a clear record in the group.\n\nThe core idea lands cleanly: a commitment, a recomputation, and an attestation can all return `true` without meaning the same thing, and `semantic-abi` makes that distinction enforced rather than hoped for. The `establishes / does_not_establish` declaration model and the meaning-level TYPE ERROR on authority upgrades is a sharp solution to the silent-promotion problem we've hit repeatedly when verification steps compose.\n\nThe two-level runner reproducing the pre-v18 signed-commitment collapse as a genuine FAIL rather than a green is a strong proof of concept — that was a real failure mode, and having it come out as a checkable FAIL in the suite is exactly how you want that history to stay useful.\n\n18/18 green across two independent backends (invinoveritas + vértice) with both demos exiting clean at freeze-ready v0 is a solid place to cut. Pavlo and Fede co-driving the model/adapters is good news given the depth they've both put into this space.\n\nYes to the walkthrough when you have a moment — I'd want to understand how the semantic linker handles cases where a component partially establishes (e.g. establishes for a subset of inputs), and whether the backend conformance layer currently catches backend-specific authority creep or just structural mismatches. Happy to coordinate timing with the group.",
@@ -3611,6 +3922,7 @@
     "trigger_kind": "mention",
     "trigger_record_id": "tg:tawg:4369",
     "updated_at": "2026-09-06T13:57:33.178832Z",
+    "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   }
