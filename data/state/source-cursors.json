@@ -16,7 +16,7 @@
     "repo:recompute-kit:metadata_sha256": "5ac3e570e20cc95f0256c84186a723979f66572f19600f756627c5cd6d56de98",
     "repo:recompute-lens:metadata_sha256": "3ca70fe18e4e62e8ea690138da610229ebfa681c3a23d3ddbfe9cd9112091551",
     "repo:semantic-abi:metadata_sha256": "595acdf8ace4fee2d5b5597979ee556d09a9f37361a090a0a0b736a130ba8f57",
-    "repo:tawg-daily-contribution:metadata_sha256": "c410a915c4fe5fc2bd5c9572d96baf9fe354ec7a47d1715e8aada108d25430df",
+    "repo:tawg-daily-contribution:metadata_sha256": "8cd9c87029de967270e28f6a53f1962a5af594a176d01ba67a6b2b0ccce58042",
     "repo:trustless-agent-substrate:metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
     "repo:trustless-ai-landing:metadata_sha256": "7a57b0fceec9cd7150d2b697d3ef577c7fdb3eb227916765de296850833c7421",
     "repo:verify-layer:metadata_sha256": "0e893941906b396322aafbe1c6a769a1c18d8809eee8fc443b7d3bbcb7d8a897",
@@ -25,7 +25,7 @@
   "knowledge_record_id": null,
   "knowledge_updated_at": null,
   "magicians": {
-    "topic:25098:metadata_sha256": "e4455856e1df23a19c6f9b2465376559c7c7ea90267ff4c244a62f475df76ad7",
+    "topic:25098:metadata_sha256": "31a0b9a9f1b8c53d84bc6b3831e4bac3b8f2502be1202f8ae6c1411aabde74ce",
     "topic:27902:metadata_sha256": "ea7b8cd91a5497deeb975da2e9547de367bb5ef1604a72cc180cf96009bad324",
     "topic:28851:metadata_sha256": "f96b7d0d854a9388c207c865804e416905cd7bdf5ad0d77aac102aad485aa0d4",
     "topic:28920:metadata_sha256": "98be34ed80675aeb23430d48387068061d62aedee8ce0b5cb57c2eac638c1c99",
