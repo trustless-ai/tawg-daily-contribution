@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:134d7765297a57ffe3f0f5a2",
-    "kind": "pr_merged",
-    "number": 37,
-    "occurred_at": "2026-09-06T12:55:48Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "tee-attested-leaf.v0 — enclave leaf folds into 8281 manifest, class-preserving (first cut)"
-  }
-]
+[]
