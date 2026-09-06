@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:e584e848a5e1cb37f6e63031",
+    "kind": "pr_merged",
+    "number": 17,
+    "occurred_at": "2026-09-06T15:24:10Z",
+    "repository": "trustless-ai/trustless-ai-landing",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "semantic-abi: wire agent panel to Trustless Pioneer (honest to live PQ binding)"
+  }
+]
