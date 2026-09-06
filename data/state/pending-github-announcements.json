@@ -1,16 +1,6 @@
 [
   {
     "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:4d43253ff1f7ba9818d0961b",
-    "kind": "pr_merged",
-    "number": 16,
-    "occurred_at": "2026-09-06T13:48:55Z",
-    "repository": "trustless-ai/trustless-ai-landing",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "semantic-abi: add ETHOnline demo page (served at /semantic-abi/)"
-  },
-  {
-    "author_login": "TMerlini",
     "event_id": "github-announcement:pr_merged:ad26628179e76d7e0821a066",
     "kind": "pr_merged",
     "number": 38,
