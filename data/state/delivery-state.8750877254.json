@@ -107,5 +107,24 @@
       4197
     ],
     "updated_at": "2026-09-03T22:51:23.680048Z"
+  },
+  {
+    "content_sha256": "264b78935e44595f65ad47aa52e22907729119055eb3d7078fa2a01040d9824b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4374",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4374",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-09-06T14:33:49.407280Z",
+    "reply_text": "🔍 **Verification result**\n\n**Claim verified:**\n> 2^10=1024\n\n**Verdict:** approve (confidence 0.99)\n\nThe arithmetic statement is correct: 2^10 equals 1024.\n\n**Proof artifact:**\n- decision_ref: `sha256:8f0d8ad5c312d9a6bf0c90a6a3afc15760050f20698da6aae11a2eb476862ca0`\n- artifact sha256: `813623c074206a1217bdaa0b1733cf850c9bf17ce51d46575fcea5e379cb30ad`\n\n**Verify it yourself (free, no auth):**\nDownload the attached proof file `invinoveritas-proof-8f0d8ad5c312.json` and run this command to re-check the signed proof against this exact claim:\n\n```bash\ncurl -sS -X POST 'https://api.babyblueviper.com/verify-proof' \\\n  -H 'Content-Type: application/json' \\\n  -d @invinoveritas-proof-8f0d8ad5c312.json\n```",
+    "reply_to_message_id": 4374,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-06T14:33:49.407280Z"
   }
 ]
