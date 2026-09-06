@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:854328a2b99d9eac4206e766",
-    "kind": "pr_merged",
-    "number": 20,
-    "occurred_at": "2026-09-06T17:19:52Z",
-    "repository": "trustless-ai/trustless-ai-landing",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "semantic-abi: fix mojibake (charset) + flip robot + viewport"
-  }
-]
+[]
