@@ -129,5 +129,24 @@
       4376
     ],
     "updated_at": "2026-09-06T14:33:49.407280Z"
+  },
+  {
+    "content_sha256": "275eba6753846172c0fb4082e3f98119ad3a50106fa04bbde3d29f92233d0bc3",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4377",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4377",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-09-06T14:44:33.868170Z",
+    "reply_text": "Good question — here's what the available evidence shows about **semantic-abi**.\n\nThe only direct mention in the TAWG record describes someone shipping an \"invinoveritas adapter\" into semantic-abi. From that context, it appears to be an open-source repository licensed under CC0/Apache-2.0, with no shared checker and no privileged access — characteristics that place it in the community-owned, permissionlessly verifiable category [tg:tawg:4325].\n\nBeyond that snapshot, I don't have a local knowledge page or live evidence covering semantic-abi's full purpose, architecture, or relationship to any specific ERC. If you can share a repo link or a short description, I'd be happy to record it properly — or if another group member knows more, that would fill the gap nicely. 💡",
+    "reply_to_message_id": 4377,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-06T14:44:33.868170Z"
   }
 ]
