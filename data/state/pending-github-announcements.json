@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:issue_opened:84093bc63690343094713032",
+    "kind": "issue_opened",
+    "number": 39,
+    "occurred_at": "2026-09-07T05:41:40Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "IETF SCITT / Vaara joint interoperability report -- staging for @certisyn"
+  }
+]
