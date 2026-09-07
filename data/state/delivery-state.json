@@ -733,6 +733,25 @@
     "updated_at": "2026-09-02T14:35:14.780291Z"
   },
   {
+    "content_sha256": "5001ad7e9bb954fdd2948461848e6a57791215f71073f000005f58d0c819868b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:9e1676d60aa5312b434a6212",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:9e1676d60aa5312b434a6212",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-07T10:05:13.367264Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/trustless-ai-landing](https://github.com/trustless-ai/trustless-ai-landing)\n[#21 semantic-abi demo: align panel to canonical v0 \\(Pavlo's review, 5 fixes\\)](https://github.com/trustless-ai/trustless-ai-landing/pull/21)\nCongratulations, [TMerlini](https://github.com/TMerlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-07T10:05:13.367264Z"
+  },
+  {
     "content_sha256": "ce981e5b7079d614a84a46a9e52ca6f6553f19667dda9b4423ee6434fea6ae88",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:a938246d18991f1c57cc1b43",
