@@ -586,6 +586,27 @@
     "updated_at": "2026-09-06T16:00:36.805123Z"
   },
   {
+    "content_sha256": "442bf7fd54f1ff2684347fe5fb9c990e8ac3f75aed3a2c625157a0f26f4bea79",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:5494c5c39c0f25c2653ec91e",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:5494c5c39c0f25c2653ec91e",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-07T10:05:13.367264Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/trustless-ai-landing](https://github.com/trustless-ai/trustless-ai-landing)\n[#22 semantic-abi: layered hero \\(investor lede + builder thesis\\)](https://github.com/trustless-ai/trustless-ai-landing/pull/22)\nCongratulations, [TMerlini](https://github.com/TMerlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-07T10:05:13.367264Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4398
+    ],
+    "updated_at": "2026-09-07T10:05:13.367264Z"
+  },
+  {
     "content_sha256": "5c69dba972e497072245d8d1aa37539d9e4ec5f500ca4aaafc50b21e3710f1cb",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:6a2a1c0494aa82068ee7fc5a",
@@ -731,6 +752,27 @@
       4048
     ],
     "updated_at": "2026-09-02T14:35:14.780291Z"
+  },
+  {
+    "content_sha256": "5001ad7e9bb954fdd2948461848e6a57791215f71073f000005f58d0c819868b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:9e1676d60aa5312b434a6212",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:9e1676d60aa5312b434a6212",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-07T10:05:13.367264Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/trustless-ai-landing](https://github.com/trustless-ai/trustless-ai-landing)\n[#21 semantic-abi demo: align panel to canonical v0 \\(Pavlo's review, 5 fixes\\)](https://github.com/trustless-ai/trustless-ai-landing/pull/21)\nCongratulations, [TMerlini](https://github.com/TMerlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-07T10:05:13.367264Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4397
+    ],
+    "updated_at": "2026-09-07T10:05:13.367264Z"
   },
   {
     "content_sha256": "ce981e5b7079d614a84a46a9e52ca6f6553f19667dda9b4423ee6434fea6ae88",
