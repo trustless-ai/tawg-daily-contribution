@@ -11,16 +11,6 @@
   },
   {
     "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:2333693c8ac84467d6d78d4c",
-    "kind": "pr_merged",
-    "number": 26,
-    "occurred_at": "2026-09-07T21:28:02Z",
-    "repository": "trustless-ai/trustless-ai-landing",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "semantic-abi: ETHGlobal icon + 'Continuity track' label"
-  },
-  {
-    "author_login": "TMerlini",
     "event_id": "github-announcement:pr_merged:2eb9bde87aa68b73ead64040",
     "kind": "pr_merged",
     "number": 92,
