@@ -334,6 +334,25 @@
     "updated_at": "2026-08-31T12:01:11.481378Z"
   },
   {
+    "content_sha256": "371c3338d9e3a5c7e49fb8db93698a7fac685bfd1d184d27f981df0eec0f290e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:issue_opened:84093bc63690343094713032",
+    "destination": "tawg",
+    "job_id": "github-announcement:issue_opened:84093bc63690343094713032",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-07T06:15:14.227903Z",
+    "reply_text": "🆕 **New issue** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#39 IETF SCITT / Vaara joint interoperability report -- staging for @certisyn](https://github.com/trustless-ai/recompute-kit/issues/39)\nOpened by [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-07T06:15:14.227903Z"
+  },
+  {
     "content_sha256": "9d4ca8ba9480eba01145ffbabcdd7a2426f5b7b0b6ab2f5c5a19ae512223f016",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:issue_opened:e197badcc48c12b495565a2a",
