@@ -3959,5 +3959,39 @@
     "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
+  },
+  {
+    "attempts": 1,
+    "classified_route": "verification",
+    "created_at": "2026-09-07T01:13:40.965800Z",
+    "job_id": "reply:tg:tawg:4391",
+    "message_thread_id": 3981,
+    "prepared_attachments": [
+      {
+        "content": "{\n  \"expect_artifact_hash\": \"c0ed2c36fd615f2a1cf0ac636ecfd8180b6537d230ebdd31cbe403d9151b3d47\",\n  \"event\": {\n    \"id\": \"44ef398db9cee1f1ae413365328913a473563f8cf4ab30a933af6f40c4b4a334\",\n    \"pubkey\": \"6786e18a864893a900bd9858e650f67ccc3513f248fed374b591e2ff6922fbb7\",\n    \"created_at\": 1788743635,\n    \"kind\": 30078,\n    \"tags\": [\n      [\n        \"d\",\n        \"invinoveritas-proof-c0ed2c36fd615f2a1cf0ac636ecfd8180b6537d230ebdd31cbe403d9151b3d47-1788743635-2b3003ae\"\n      ],\n      [\n        \"t\",\n        \"invinoveritas\"\n      ],\n      [\n        \"t\",\n        \"proof\"\n      ],\n      [\n        \"schema\",\n        \"invinoveritas.verdict_proof.v1\"\n      ]\n    ],\n    \"content\": \"{\\\"artifact_hash\\\":\\\"c0ed2c36fd615f2a1cf0ac636ecfd8180b6537d230ebdd31cbe403d9151b3d47\\\",\\\"artifact_type\\\":\\\"general\\\",\\\"confidence\\\":0.99,\\\"conformance_suite\\\":\\\"https://github.com/babyblueviper1/preaction-governance-conformance\\\",\\\"context_provenance\\\":\\\"caller_asserted_unverified\\\",\\\"decision_ref\\\":\\\"sha256:e0e60433c1cf0e040f051a43d16cbfe333daab7bc691d0aa6fc859437d4e3f69\\\",\\\"decision_ref_preimage_fields\\\":[\\\"artifact_hash\\\",\\\"artifact_type\\\",\\\"policy_version\\\",\\\"verdict\\\",\\\"source_class\\\",\\\"vantage_limitation\\\",\\\"related_decision_ref\\\",\\\"intended_audience\\\",\\\"confidentiality_tier\\\",\\\"disclosed_summary\\\",\\\"intended_verifier\\\",\\\"policy_commitment\\\",\\\"verified_at\\\",\\\"registry_as_of\\\",\\\"registry_snapshot_sha256\\\",\\\"action_binding_tool_hash\\\",\\\"action_binding_args_hash\\\",\\\"action_binding_agent_id\\\",\\\"action_binding_nonce\\\",\\\"freshness_beacon_hash\\\",\\\"epistemic_basis\\\"],\\\"decision_ref_preimage_rule\\\":\\\"every name in decision_ref_preimage_fields is a key in the hashed preimage object, always -- absent fields (e.g. vantage_limitation when not applicable) are present as JSON null, never omitted from the object.\\\",\\\"engine_generation\\\":1,\\\"epistemic_basis\\\":null,\\\"freshness_beacon\\\":{\\\"block_time\\\":1788743448,\\\"hash\\\":\\\"00000000000000000001e0e13329f0370a25df51f2564c58ceefccbe060981ad\\\",\\\"height\\\":965863,\\\"source\\\":\\\"bitcoin\\\"},\\\"freshness_beacon_hash\\\":\\\"sha256:4dc57b03ae49912737d6e6c99e02acac170fdf5c9489b7bc372e7ef018889940\\\",\\\"independent_nodes\\\":[\\\"https://invinoveritas-castra.babyblueviper.workers.dev/verify\\\",\\\"https://babyblueviper1--2aba75da693711f185891607ee4eb77e.web.val.run\\\"],\\\"key_id\\\":\\\"6786e18a864893a900bd9858e650f67ccc3513f248fed374b591e2ff6922fbb7\\\",\\\"platform\\\":\\\"invinoveritas\\\",\\\"policy_commitment\\\":\\\"sha256:f72a2be68b79cda6f4802c426c89c7f9b6a357943a13cf2d52113cca30e540c8\\\",\\\"policy_commitment_inputs\\\":{\\\"conformance_suite_commit\\\":\\\"e90948ed3eb9d36eb1d0997ea4d02045e28a405a\\\",\\\"conformance_suite_repo\\\":\\\"babyblueviper1/preaction-governance-conformance\\\",\\\"rubric_doc_path\\\":\\\"docs/policy_spec/invinoveritas.review.v12.md\\\",\\\"rubric_sha256\\\":\\\"bb74afa68bd5e8b1ca1038d8f0c8cd9a0d1f83888a7ea7df7c551f579a974180\\\"},\\\"policy_version\\\":\\\"invinoveritas.review.v18\\\",\\\"registry_as_of\\\":null,\\\"registry_snapshot_sha256\\\":null,\\\"review_model_hash\\\":\\\"deda3dc02a1d1575f15d5c9f9b3e31cf0c768a55508c31e7ff0f4fc8f33fc669\\\",\\\"review_prompt_template_hash\\\":\\\"13a72a4c1e3a99b969ac46b724eceef6620716292f2b730f19915cdd469c1e31\\\",\\\"schema\\\":\\\"invinoveritas.verdict_proof.v1\\\",\\\"source_class\\\":\\\"agent_reported\\\",\\\"summary_hash\\\":\\\"59c7df7a40a588a94ceeffa35560fc62f2ea60dbf4a1c1dd5b2450aada7ee5b7\\\",\\\"verdict\\\":\\\"reject\\\",\\\"verified_at\\\":1788743635,\\\"verifier_keys\\\":\\\"https://api.babyblueviper.com/.well-known/verifier-keys.json\\\",\\\"verifier_pubkey\\\":\\\"6786e18a864893a900bd9858e650f67ccc3513f248fed374b591e2ff6922fbb7\\\",\\\"verify_how\\\":\\\"Easiest: install the offline verifier above and recompute locally. Or POST this proof's signed `event` to verify_url (or an independent_node), OR run NIP-01 yourself: recompute the Nostr event id = sha256([0,pubkey,created_at,kind,tags,content]), verify the schnorr signature against verifier_pubkey. valid ⇒ invinoveritas issued this, untampered. No trust required.\\\",\\\"verify_offline\\\":\\\"npm i invinoveritas-verify  ·  pip install invinoveritas-verify  — recompute this proof on your own machine against verifier_pubkey; you never have to call us.\\\",\\\"verify_url\\\":\\\"https://api.babyblueviper.com/verify-proof\\\"}\",\n    \"sig\": \"c1ccb680a10ae37d666cc9a3d836cc7b4e54276cbcb9be8314537dadfc6b16787b457b5cac1015d70ca1e4385a6e501181bfb0d0cc587429b8ea947e579e17ce\"\n  }\n}",
+        "filename": "invinoveritas-proof-e0e60433c1cf.json"
+      }
+    ],
+    "prepared_citations": [],
+    "prepared_language": "en",
+    "prepared_reply_text": "🔍 **Verification result**\n\n**Claim verified:**\n> 5/3=1\n\n**Verdict:** reject (confidence 0.99)\n\nThe stated equality is false under standard arithmetic: 5 divided by 3 is approximately 1.6667, not 1.\n\n**Proof artifact:**\n- decision_ref: `sha256:e0e60433c1cf0e040f051a43d16cbfe333daab7bc691d0aa6fc859437d4e3f69`\n- artifact sha256: `c0ed2c36fd615f2a1cf0ac636ecfd8180b6537d230ebdd31cbe403d9151b3d47`\n\n**Verify it yourself (free, no auth):**\nDownload the attached proof file `invinoveritas-proof-e0e60433c1cf.json` and run this command to re-check the signed proof against this exact claim:\n\n```bash\ncurl -sS -X POST 'https://api.babyblueviper.com/verify-proof' \\\n  -H 'Content-Type: application/json' \\\n  -d @invinoveritas-proof-e0e60433c1cf.json\n```",
+    "prerequisite_job_id": null,
+    "refusal": false,
+    "repair_of_job_id": null,
+    "repair_reason_code": null,
+    "reply_to_message_id": 4391,
+    "routed_at": "2026-09-07T01:13:40.965800Z",
+    "router_context_scope": "knowledge",
+    "router_context_sha256": "41f47fc02d362616801df0decbf1f6b13bb4409eca65a1efc3e39a2c6c661604",
+    "router_version": "contextual-ai-v5",
+    "safe_error_code": null,
+    "schema_version": "tawg.pending-bot-job.v1",
+    "status": "ready",
+    "trigger_kind": "mention",
+    "trigger_record_id": "tg:tawg:4391",
+    "updated_at": "2026-09-07T01:13:40.965800Z",
+    "verification_artifact": "5/3=1",
+    "welcome_target_person_id": null,
+    "welcome_target_record_id": null
   }
 ]
