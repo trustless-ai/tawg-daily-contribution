@@ -11,16 +11,6 @@
   },
   {
     "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:2eb9bde87aa68b73ead64040",
-    "kind": "pr_merged",
-    "number": 92,
-    "occurred_at": "2026-09-07T21:29:03Z",
-    "repository": "trustless-ai/cross-reference-console",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "pins: site-tree bafybeigqr77… (ETHGlobal icon + Continuity label)"
-  },
-  {
-    "author_login": "TMerlini",
     "event_id": "github-announcement:pr_merged:da57a04d16da308605133ad1",
     "kind": "pr_merged",
     "number": 7,
