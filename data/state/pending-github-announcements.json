@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:5b15987af39068da7c6112ba",
-    "kind": "pr_merged",
-    "number": 6,
-    "occurred_at": "2026-09-07T16:04:23Z",
-    "repository": "trustless-ai/semantic-abi",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "ui: re-sync to the live sequenced-UI page"
   }
 ]
