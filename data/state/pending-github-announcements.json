@@ -11,16 +11,6 @@
   },
   {
     "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:3d8348dfae37f7ff48254c25",
-    "kind": "pr_merged",
-    "number": 93,
-    "occurred_at": "2026-09-07T22:29:14Z",
-    "repository": "trustless-ai/cross-reference-console",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "pins: site-tree bafybeidh7br… (1inch linker preset)"
-  },
-  {
-    "author_login": "TMerlini",
     "event_id": "github-announcement:pr_merged:ddbbfcca2dc6699cfb045485",
     "kind": "pr_merged",
     "number": 8,
