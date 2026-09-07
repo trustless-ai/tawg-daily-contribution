@@ -8,5 +8,45 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:864154cf55b745837cc85728",
+    "kind": "pr_merged",
+    "number": 5,
+    "occurred_at": "2026-09-07T15:50:52Z",
+    "repository": "trustless-ai/semantic-abi",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "vertice: real independent adapter grounded on ai.verticecriativo.pt/verify"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:df166df50fb49965610aa522",
+    "kind": "pr_merged",
+    "number": 25,
+    "occurred_at": "2026-09-07T16:00:52Z",
+    "repository": "trustless-ai/trustless-ai-landing",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:d9f7d0a8c40fb1ebcc0a6e55",
+    "kind": "pr_merged",
+    "number": 91,
+    "occurred_at": "2026-09-07T16:03:41Z",
+    "repository": "trustless-ai/cross-reference-console",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "pins: site-tree bafybeihntuo… (semantic-abi sequenced UI)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:5b15987af39068da7c6112ba",
+    "kind": "pr_merged",
+    "number": 6,
+    "occurred_at": "2026-09-07T16:04:23Z",
+    "repository": "trustless-ai/semantic-abi",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "ui: re-sync to the live sequenced-UI page"
   }
 ]
