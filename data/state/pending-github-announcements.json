@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:a6468b45b38aeeb2e3cc67d8",
+    "kind": "pr_merged",
+    "number": 4,
+    "occurred_at": "2026-09-07T12:46:31Z",
+    "repository": "trustless-ai/semantic-abi",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "ui: sync built demo page from the live ENS-pinned copy"
+  }
+]
