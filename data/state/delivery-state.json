@@ -1132,6 +1132,25 @@
     "updated_at": "2026-09-06T15:25:17.426278Z"
   },
   {
+    "content_sha256": "2213b2ed0a00892fce877eb935de6f481695656ad775f4884163320443739d11",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:f1d30260f5b813513cc9b5c5",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:f1d30260f5b813513cc9b5c5",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-07T22:55:10.000540Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/trustless-ai-landing](https://github.com/trustless-ai/trustless-ai-landing)\n[#27 semantic-abi: 1inch slippage-vs-minimum linker preset \\(non-prize demo\\)](https://github.com/trustless-ai/trustless-ai-landing/pull/27)\nCongratulations, [TMerlini](https://github.com/TMerlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-07T22:55:10.000540Z"
+  },
+  {
     "content_sha256": "8029348780652f046f7f8f828677702bd3fd4b62ab48d0ff4d62eb27bc303936",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:f26d54fbb1ff79d25fc4b0e9",
