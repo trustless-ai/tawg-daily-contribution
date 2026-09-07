@@ -1751,13 +1751,13 @@
     "prepared_at": "2026-09-07T14:35:10.421032Z",
     "reply_text": "🔄 **PR updated** in [trustless-ai/trustless-ai-landing](https://github.com/trustless-ai/trustless-ai-landing)\n[#25 semantic-abi: sequenced reveal layout \\(functional view preserved\\)](https://github.com/trustless-ai/trustless-ai-landing/pull/25)\nNew commits from [TMerlini](https://github.com/TMerlini)",
     "reply_to_message_id": null,
-    "safe_error_code": null,
+    "safe_error_code": "recovered_sending",
     "schema_version": "tawg.delivery-attempt.v1",
     "sent_at": null,
-    "status": "sending",
+    "status": "ambiguous",
     "telegram_chat_id": null,
     "telegram_message_ids": [],
-    "updated_at": "2026-09-07T14:35:10.421032Z"
+    "updated_at": "2026-09-07T14:36:47.391465Z"
   },
   {
     "content_sha256": "a1e1ef87b2bd57ea18c654d45498336642fed78c6b78ae5a1e0142bf876d63b7",
