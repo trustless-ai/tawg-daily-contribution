@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:c037da11ba6f2b495af8b4aa",
+    "kind": "pr_merged",
+    "number": 24,
+    "occurred_at": "2026-09-07T10:55:48Z",
+    "repository": "trustless-ai/trustless-ai-landing",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "semantic-abi: plain-language linker + drop em-dashes"
+  }
+]
