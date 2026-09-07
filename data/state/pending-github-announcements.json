@@ -1,1 +1,12 @@
-[]
+[
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:2ec954b95ae11e47c774c9bd",
+    "kind": "pr_merged",
+    "number": 23,
+    "occurred_at": "2026-09-07T10:36:37Z",
+    "repository": "trustless-ai/trustless-ai-landing",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "semantic-abi: 'How it plugs in' adoption beat"
+  }
+]
