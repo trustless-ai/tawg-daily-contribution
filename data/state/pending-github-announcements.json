@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:9e1676d60aa5312b434a6212",
+    "kind": "pr_merged",
+    "number": 21,
+    "occurred_at": "2026-09-07T09:47:17Z",
+    "repository": "trustless-ai/trustless-ai-landing",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "semantic-abi demo: align panel to canonical v0 (Pavlo's review, 5 fixes)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:5494c5c39c0f25c2653ec91e",
+    "kind": "pr_merged",
+    "number": 22,
+    "occurred_at": "2026-09-07T10:00:24Z",
+    "repository": "trustless-ai/trustless-ai-landing",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "semantic-abi: layered hero (investor lede + builder thesis)"
+  }
+]
