@@ -11,16 +11,6 @@
   },
   {
     "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:864154cf55b745837cc85728",
-    "kind": "pr_merged",
-    "number": 5,
-    "occurred_at": "2026-09-07T15:50:52Z",
-    "repository": "trustless-ai/semantic-abi",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "vertice: real independent adapter grounded on ai.verticecriativo.pt/verify"
-  },
-  {
-    "author_login": "TMerlini",
     "event_id": "github-announcement:pr_merged:df166df50fb49965610aa522",
     "kind": "pr_merged",
     "number": 25,
