@@ -11,16 +11,6 @@
   },
   {
     "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:d9f7d0a8c40fb1ebcc0a6e55",
-    "kind": "pr_merged",
-    "number": 91,
-    "occurred_at": "2026-09-07T16:03:41Z",
-    "repository": "trustless-ai/cross-reference-console",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "pins: site-tree bafybeihntuo… (semantic-abi sequenced UI)"
-  },
-  {
-    "author_login": "TMerlini",
     "event_id": "github-announcement:pr_merged:5b15987af39068da7c6112ba",
     "kind": "pr_merged",
     "number": 6,
