@@ -1552,6 +1552,25 @@
     "updated_at": "2026-09-04T18:15:18.003927Z"
   },
   {
+    "content_sha256": "44ac50c8a065e5cbfeabd4412a70d85b44340b8c25a8f586db74b1ac07f30cf8",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:3a89111add9d2c8354532fd3",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:3a89111add9d2c8354532fd3",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-07T15:10:09.938307Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/trustless-ai-landing](https://github.com/trustless-ai/trustless-ai-landing)\n[#25 semantic-abi: sequenced reveal layout \\(functional view preserved\\)](https://github.com/trustless-ai/trustless-ai-landing/pull/25)\nNew commits from [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-07T15:10:09.938307Z"
+  },
+  {
     "content_sha256": "0836a276288346376357eb8ac107518539a4b817d5884dc476efa40d6101735f",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:4218166dbe22095f0b193bbb",
