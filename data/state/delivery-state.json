@@ -523,6 +523,25 @@
     "updated_at": "2026-08-29T19:45:14.936877Z"
   },
   {
+    "content_sha256": "bab48aaea1b5fc6df44f1fcf3fab2b558a137dcee3d00fd37768b6c6ece53d78",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:2eb9bde87aa68b73ead64040",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:2eb9bde87aa68b73ead64040",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-07T21:45:13.282620Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/cross-reference-console](https://github.com/trustless-ai/cross-reference-console)\n[#92 pins: site-tree bafybeigqr77… \\(ETHGlobal icon + Continuity label\\)](https://github.com/trustless-ai/cross-reference-console/pull/92)\nCongratulations, [TMerlini](https://github.com/TMerlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-07T21:45:13.282620Z"
+  },
+  {
     "content_sha256": "f37a8285142a6f56eade065b8e15a2aabbe45b792ad3f1c970c0802a0514c03f",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:2ec954b95ae11e47c774c9bd",
