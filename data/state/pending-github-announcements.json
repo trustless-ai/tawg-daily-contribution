@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_updated:d1b2e5bc94eee1c2165a8a0f",
-    "kind": "pr_updated",
-    "number": 25,
-    "occurred_at": "2026-09-07T13:55:18Z",
-    "repository": "trustless-ai/trustless-ai-landing",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  }
-]
+[]
