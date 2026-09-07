@@ -3794,5 +3794,24 @@
       4407
     ],
     "updated_at": "2026-09-07T10:54:17.100626Z"
+  },
+  {
+    "content_sha256": "1e64975c047197f3d5decb3581bb7639b3d2b6084b1c2bed51e27bff2fe0c8c6",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4410",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4410",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-07T11:28:56.627219Z",
+    "reply_text": "Good morning, Pavlo! 🌅 Hope it's a great one — looks like the group is already up and buzzing today.",
+    "reply_to_message_id": 4410,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-07T11:28:56.627219Z"
   }
 ]
