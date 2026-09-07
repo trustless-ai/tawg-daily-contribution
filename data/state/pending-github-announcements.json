@@ -8,5 +8,35 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:f1d30260f5b813513cc9b5c5",
+    "kind": "pr_merged",
+    "number": 27,
+    "occurred_at": "2026-09-07T22:28:33Z",
+    "repository": "trustless-ai/trustless-ai-landing",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "semantic-abi: 1inch slippage-vs-minimum linker preset (non-prize demo)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:3d8348dfae37f7ff48254c25",
+    "kind": "pr_merged",
+    "number": 93,
+    "occurred_at": "2026-09-07T22:29:14Z",
+    "repository": "trustless-ai/cross-reference-console",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "pins: site-tree bafybeidh7br… (1inch linker preset)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:ddbbfcca2dc6699cfb045485",
+    "kind": "pr_merged",
+    "number": 8,
+    "occurred_at": "2026-09-07T22:29:42Z",
+    "repository": "trustless-ai/semantic-abi",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "ui: re-sync to live (1inch linker preset)"
   }
 ]
