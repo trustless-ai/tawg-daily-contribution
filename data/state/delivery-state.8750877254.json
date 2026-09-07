@@ -192,5 +192,24 @@
       4401
     ],
     "updated_at": "2026-09-07T10:32:56.161576Z"
+  },
+  {
+    "content_sha256": "f8d0e44b775557f1a9fd348cdd3081bd4e10aa0746e9b7e64454e489098a07bb",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4405",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4405",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-07T10:54:14.581850Z",
+    "reply_text": "Good morning! ☀️ Hope the group has a great day ahead — lots of good momentum building here!",
+    "reply_to_message_id": 4405,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-07T10:54:14.581850Z"
   }
 ]
