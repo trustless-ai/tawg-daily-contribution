@@ -1132,6 +1132,25 @@
     "updated_at": "2026-08-31T12:35:14.725234Z"
   },
   {
+    "content_sha256": "2a045c3e1065f46e2a12b719bfb99f9f10a725e6e250a1adcd9acabc6801ac4c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:36a1954a1cd5e5b61fdbcf8b",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:36a1954a1cd5e5b61fdbcf8b",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-07T15:40:18.382332Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/semantic-abi](https://github.com/trustless-ai/semantic-abi)\n[#5 vertice: real independent adapter grounded on ai.verticecriativo.pt/verify](https://github.com/trustless-ai/semantic-abi/pull/5)\nOpened by [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-07T15:40:18.382332Z"
+  },
+  {
     "content_sha256": "8d9e21e65ac496396c3dba6770f11253567f23d40dfb41117cf32409ac35fd9b",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:42c6981b1b60c1a1bae8e65a",
