@@ -3752,5 +3752,26 @@
       4402
     ],
     "updated_at": "2026-09-07T10:32:57.127614Z"
+  },
+  {
+    "content_sha256": "222ad22fbe202b19d074beacb9c81fb1e55e4f9f80881470d3870ace65ea8890",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4405",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4405",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-07T10:54:17.100626Z",
+    "reply_text": "Good morning! ☀️ Hope the week is off to a great start for everyone!",
+    "reply_to_message_id": 4405,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-07T10:54:17.100626Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4407
+    ],
+    "updated_at": "2026-09-07T10:54:17.100626Z"
   }
 ]
