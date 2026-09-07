@@ -3689,5 +3689,24 @@
       4392
     ],
     "updated_at": "2026-09-07T01:13:40.965800Z"
+  },
+  {
+    "content_sha256": "0547b939dd2f8965066b4a26752a3a07fb35bceb4dc72c3c442d025ccc3bf7f7",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4399",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4399",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-07T10:32:57.127614Z",
+    "reply_text": "Good morning, Merlini! ☀️ Hope you have a great day ahead — lots of exciting things moving in the group!",
+    "reply_to_message_id": 4399,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-07T10:32:57.127614Z"
   }
 ]
