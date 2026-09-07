@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_opened:36a1954a1cd5e5b61fdbcf8b",
+    "kind": "pr_opened",
+    "number": 5,
+    "occurred_at": "2026-09-07T15:14:16Z",
+    "repository": "trustless-ai/semantic-abi",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "vertice: real independent adapter grounded on ai.verticecriativo.pt/verify"
   }
 ]
