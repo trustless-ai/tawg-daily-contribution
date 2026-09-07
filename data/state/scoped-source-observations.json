@@ -105,18 +105,18 @@
     "updated_at": "2026-07-19T09:39:18Z"
   },
   {
-    "metadata_sha256": "595acdf8ace4fee2d5b5597979ee556d09a9f37361a090a0a0b736a130ba8f57",
+    "metadata_sha256": "d5ab9d3908901deb829b385340fd8fa8a99103685dcac5c5f2b71f5412185a98",
     "source_key": "semantic-abi",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/semantic-abi",
-    "updated_at": "2026-09-05T20:06:03Z"
+    "updated_at": "2026-09-07T12:47:10Z"
   },
   {
-    "metadata_sha256": "fe8e72f52af7794e698611f4217404b83fd9f4942e5a9dde83619ded6477020a",
+    "metadata_sha256": "f962a5f9203acbece77d15765386087eb030390d3e5a29ccc8481f856192adc6",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-09-07T12:10:45Z"
+    "updated_at": "2026-09-07T12:50:21Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",

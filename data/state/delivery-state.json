@@ -796,6 +796,27 @@
     "updated_at": "2026-09-07T10:05:13.367264Z"
   },
   {
+    "content_sha256": "fbc690e0f2ce26fa00b47a24198c1ed74ab1617280399e361e1fbe1d0a0456f2",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:a6468b45b38aeeb2e3cc67d8",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:a6468b45b38aeeb2e3cc67d8",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-07T12:50:28.815331Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/semantic-abi](https://github.com/trustless-ai/semantic-abi)\n[#4 ui: sync built demo page from the live ENS-pinned copy](https://github.com/trustless-ai/semantic-abi/pull/4)\nCongratulations, [TMerlini](https://github.com/TMerlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-07T12:50:28.815331Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4414
+    ],
+    "updated_at": "2026-09-07T12:50:28.815331Z"
+  },
+  {
     "content_sha256": "ce981e5b7079d614a84a46a9e52ca6f6553f19667dda9b4423ee6434fea6ae88",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:a938246d18991f1c57cc1b43",
