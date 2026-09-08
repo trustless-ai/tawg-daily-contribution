@@ -4294,5 +4294,24 @@
     "telegram_chat_id": null,
     "telegram_message_ids": [],
     "updated_at": "2026-09-08T11:01:34.879995Z"
+  },
+  {
+    "content_sha256": "ab7a0559e81b7880a79250b86c6f1695a37ef99b81cdec93f7a20f6dbaeb6366",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4472",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4472",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-08T11:01:34.879995Z",
+    "reply_text": "Happy to fill in while @Tmerlini_bot catches up! Here's a quick summary of what's moved:\n\n**recompute-kit PR #37 — merged** (Sep 6)\nTEE-attested AI inference leaf folds into the ERC-8281 manifest. Critical same-day fix: the checker now actually gates on `SEMANTIC_VERIFICATION` in `does_not_establish` — a leaf that dropped the disclaimer used to silently pass. All 7 tests green. [tg:tawg:4361] / https://github.com/trustless-ai/recompute-kit/pull/37\n\n**Semantic-ABI scope clarified**\nNot off-chain→on-chain only — the tool checks authority-class composition at any evidence layer. The off-chain flavour in the ETHOnline demo is just which adapters shipped first, a sampling artefact not a boundary. [tg:tawg:4359] Three concrete evidence-type cases worked through: stale oracle signature and spoofed state-inclusion proof (DeFi), plus the new TEE inference case. [tg:tawg:4354]\n\n**Welcome Filip (@filip_blagojevic) — Apex Fusion developer** 🤝\nJoined via a technical call this morning. [tg:tawg:4460] Already a deep conversation: agents-marketplace uses bonded escrow with on-chain receipt hash commitments, Ed25519-signed by the supplier and recomputable by anyone. [tg:tawg:4462] Pre-dispute gap named honestly: a caught hash mismatch is permanently attributable evidence but doesn't block payout today — the stake-slash path for REPRODUCED-class mismatches is the next milestone. [tg:tawg:4464]\n\n**WYRIWE PR (#1810) — editor queue**\nOn the EIPsInsight board, 3 weeks in \"Waiting on Editor.\" No updates planned — updating the PR resets queue position. [tg:tawg:4421]\n\n**ETHGlobal — Continuity track**\nTeam track-selection mismatch flagged; one member still on \"Building from Scratch.\" Manual fix needed to avoid submission block. [tg:tawg:4338] 💡",
+    "reply_to_message_id": 4472,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-08T11:01:34.879995Z"
   }
 ]
