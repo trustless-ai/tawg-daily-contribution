@@ -40,7 +40,7 @@ class BusyQuestionConfig:
             window_seconds=int(
                 os.environ.get("TAWG_BUSY_QUESTION_WINDOW_SECONDS", "7200")
             ),
-            threshold=int(os.environ.get("TAWG_BUSY_QUESTION_THRESHOLD", "14")),
+            threshold=int(os.environ.get("TAWG_BUSY_QUESTION_THRESHOLD", "22")),
             cooldown_seconds=int(
                 os.environ.get("TAWG_BUSY_QUESTION_COOLDOWN_SECONDS", "7200")
             ),

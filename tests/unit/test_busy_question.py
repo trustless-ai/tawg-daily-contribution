@@ -60,6 +60,25 @@ def test_config_from_env_reads_environment(monkeypatch: pytest.MonkeyPatch) -> N
     assert parsed.target == "@some_bot"
 
 
+def test_config_from_env_uses_less_sensitive_busy_threshold(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    for name in (
+        "TAWG_BUSY_QUESTION_WINDOW_SECONDS",
+        "TAWG_BUSY_QUESTION_THRESHOLD",
+        "TAWG_BUSY_QUESTION_COOLDOWN_SECONDS",
+        "TAWG_BUSY_QUESTION_TARGET",
+    ):
+        monkeypatch.delenv(name, raising=False)
+
+    parsed = BusyQuestionConfig.from_env()
+
+    assert parsed.window_seconds == 7200
+    assert parsed.threshold == 22
+    assert parsed.cooldown_seconds == 7200
+    assert parsed.target == "@Tmerlini_bot"
+
+
 def test_count_recent_messages_only_counts_window(tmp_path: Path) -> None:
     seed_messages(
         tmp_path,
