@@ -65,6 +65,7 @@ This vault compiles current, source-cited knowledge for the Daily Contribution a
 
 - [[acknowledgements/baby-blue-viper|Baby Blue Viper]]
 - [[acknowledgements/damon-zwicker|Damon Zwicker]]
+- [[acknowledgements/filip-blagojević|Filip Blagojević]]
 - [[acknowledgements/jimmy-shi|Jimmy Shi]]
 - [[acknowledgements/jinx-thepoktopus|Jinx | @thepoktopus]]
 - [[acknowledgements/j|J]]
