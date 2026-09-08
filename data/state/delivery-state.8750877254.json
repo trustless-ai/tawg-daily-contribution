@@ -234,5 +234,24 @@
       4406
     ],
     "updated_at": "2026-09-07T10:54:14.581850Z"
+  },
+  {
+    "content_sha256": "8b2e34859ebc8e1a705951f63e0d30cbcd98716dfc31213e0a279105f0a4006b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4453",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4453",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-08T10:00:46.287279Z",
+    "reply_text": "Welcome, Filip! Great to have an Apex-fusion developer in the mix — sounds like you and Merlini already had a good conversation to kick things off. Hope you find plenty here to dig into. 👋",
+    "reply_to_message_id": 4453,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-08T10:00:46.287279Z"
   }
 ]
