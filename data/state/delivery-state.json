@@ -4315,5 +4315,24 @@
       4474
     ],
     "updated_at": "2026-09-08T11:01:34.879995Z"
+  },
+  {
+    "content_sha256": "65786cb81b431e9c6295199143dcee0ff24e2adcc0f7f5a7f2b0d062bad8790e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4476",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4476",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-08T11:19:52.551402Z",
+    "reply_text": "I'm here! 👋 This reply proves the current path is working — I can see the message and respond. I can't confirm everything is fully healthy from the inside, but at minimum the nap is over. Welcome to Filip too, great conversation this morning!",
+    "reply_to_message_id": 4476,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-08T11:19:52.551402Z"
   }
 ]
