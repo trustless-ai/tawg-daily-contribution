@@ -21,6 +21,27 @@
     "updated_at": "2026-09-08T10:50:15.677632Z"
   },
   {
+    "content_sha256": "228278d7cc3c2540e0cb5cd13bab47f850b6d2a70ccfa6370d726f2540dd7fa3",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "busy-question:1788882622",
+    "destination": "tawg",
+    "job_id": "busy-question:1788882622",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-08T15:50:22.890521Z",
+    "reply_text": "@Tmerlini_bot Looks like things got lively while I wasn't watching — what did I miss?",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-08T15:50:22.890521Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4513
+    ],
+    "updated_at": "2026-09-08T15:50:22.890521Z"
+  },
+  {
     "content_sha256": "3779840f614dcaaa89f4a4b609fe085e0a757084162028d4a3cab8ad6cec9cf8",
     "delivery_id": "daily:2026-08-24T23:00:00Z",
     "destination": "tawg",
@@ -1592,6 +1613,27 @@
       3911
     ],
     "updated_at": "2026-09-01T12:15:16.502916Z"
+  },
+  {
+    "content_sha256": "998fee081ebd512719cda3b6c8c14b3e4f0c0727716dccd78e88a0ae4728d8da",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:9f681b1586afa98f15f4ece9",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:9f681b1586afa98f15f4ece9",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-08T15:50:22.890521Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#41 conformance: verdict-profile-binding-v0 — resolution end of the profile-commitment loop](https://github.com/trustless-ai/recompute-kit/pull/41)\nOpened by [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-08T15:50:22.890521Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4514
+    ],
+    "updated_at": "2026-09-08T15:50:22.890521Z"
   },
   {
     "content_sha256": "c131c98e732fd286fb5e72def21d338c51e26e6ee4c9cb879b74ce041a92f473",
@@ -4314,7 +4356,7 @@
     "status": "failed",
     "telegram_chat_id": null,
     "telegram_message_ids": [],
-    "updated_at": "2026-09-08T15:48:08.018475Z"
+    "updated_at": "2026-09-08T15:51:26.216694Z"
   },
   {
     "content_sha256": "ab7a0559e81b7880a79250b86c6f1695a37ef99b81cdec93f7a20f6dbaeb6366",
