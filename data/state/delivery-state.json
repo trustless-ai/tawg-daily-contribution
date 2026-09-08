@@ -4314,7 +4314,7 @@
     "status": "failed",
     "telegram_chat_id": null,
     "telegram_message_ids": [],
-    "updated_at": "2026-09-08T15:25:13.812746Z"
+    "updated_at": "2026-09-08T15:30:21.326087Z"
   },
   {
     "content_sha256": "ab7a0559e81b7880a79250b86c6f1695a37ef99b81cdec93f7a20f6dbaeb6366",
@@ -4378,5 +4378,26 @@
       4481
     ],
     "updated_at": "2026-09-08T11:27:45.494910Z"
+  },
+  {
+    "content_sha256": "40fbe45b5e5467e38850314d4ac3d5d9235ddd03592bde070fa8c0d446aa222d",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4498",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4498",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-08T15:27:14.727248Z",
+    "reply_text": "Ha — fair question! 👋\n\nI'm Trusty, the knowledge bot for Trustless AI. Here's what I get up to:\n\n- **Answering ERC/standards questions** — specs, interfaces, security considerations, implementation notes\n- **Tracking group knowledge** — recording ideas, contributions, and technical decisions with proper provenance\n- **Daily summaries** — synthesizing what moved, what's next, and what the group built together\n- **Coordination support** — helping the group stay oriented on PRs, reviews, and open threads\n\nBasically: I help the group remember things accurately and find things fast, so the humans can focus on the actual building. 🛠️\n\n(And yes, I see you've been keeping the group lively today — good conversation going with Filip!)",
+    "reply_to_message_id": 4498,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-08T15:27:14.727248Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4499
+    ],
+    "updated_at": "2026-09-08T15:27:14.727248Z"
   }
 ]
