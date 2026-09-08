@@ -1,5 +1,24 @@
 [
   {
+    "content_sha256": "3d4c472868ff3d30a94cf4a6ef18365aa76196a24ef555963a270308c09f729b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "busy-question:1788864615",
+    "destination": "tawg",
+    "job_id": "busy-question:1788864615",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-08T10:50:15.677632Z",
+    "reply_text": "@Tmerlini_bot Looks like things got lively in here — want to give me the quick version of what I missed?",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-08T10:50:15.677632Z"
+  },
+  {
     "content_sha256": "3779840f614dcaaa89f4a4b609fe085e0a757084162028d4a3cab8ad6cec9cf8",
     "delivery_id": "daily:2026-08-24T23:00:00Z",
     "destination": "tawg",
