@@ -4212,5 +4212,24 @@
       4411
     ],
     "updated_at": "2026-09-07T11:28:56.627219Z"
+  },
+  {
+    "content_sha256": "497f13d712e6279f46b290ea1df79523c00a64fc9f32d3f0d8c3d28fca286a99",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4457",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4457",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-08T10:03:41.946115Z",
+    "reply_text": "Good morning, Merlini! ☀️ Looks like a busy group today with Filip joining — great timing!",
+    "reply_to_message_id": 4457,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-08T10:03:41.946115Z"
   }
 ]
