@@ -21,6 +21,25 @@
     "updated_at": "2026-09-08T10:50:15.677632Z"
   },
   {
+    "content_sha256": "228278d7cc3c2540e0cb5cd13bab47f850b6d2a70ccfa6370d726f2540dd7fa3",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "busy-question:1788882622",
+    "destination": "tawg",
+    "job_id": "busy-question:1788882622",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-08T15:50:22.890521Z",
+    "reply_text": "@Tmerlini_bot Looks like things got lively while I wasn't watching — what did I miss?",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-08T15:50:22.890521Z"
+  },
+  {
     "content_sha256": "3779840f614dcaaa89f4a4b609fe085e0a757084162028d4a3cab8ad6cec9cf8",
     "delivery_id": "daily:2026-08-24T23:00:00Z",
     "destination": "tawg",
