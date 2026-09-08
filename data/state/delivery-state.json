@@ -859,6 +859,25 @@
     "updated_at": "2026-08-29T21:00:19.274260Z"
   },
   {
+    "content_sha256": "78f2f18d2038f9c8789da28e7419d84e3b59fc2ffadcc1296536ae2307b3e35c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:812fcac7e17dd48b3876589e",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:812fcac7e17dd48b3876589e",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-08T15:15:18.201630Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#40 conformance: profile-amendment-v0 — authorized amendment vs unauthorized swap](https://github.com/trustless-ai/recompute-kit/pull/40)\nCongratulations, [TMerlini](https://github.com/TMerlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-08T15:15:18.201630Z"
+  },
+  {
     "content_sha256": "03351125964db14c0f7fb98e47c84b9420f75a4f782aacf0d80e28d50c1fcdf6",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:854328a2b99d9eac4206e766",
