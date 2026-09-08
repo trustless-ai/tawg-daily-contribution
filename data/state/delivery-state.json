@@ -2098,6 +2098,25 @@
     "updated_at": "2026-08-31T11:30:22.598269Z"
   },
   {
+    "content_sha256": "711320949e206c01e0ae4505216a5197568536f4284c60bc34cdcf46de7ec9e9",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:618f9f99f0f6529a6d6e5da3",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:618f9f99f0f6529a6d6e5da3",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-08T21:50:21.010469Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#42 conformance: profile-commitment-loop-v0 — chain both ends into one mechanical seam](https://github.com/trustless-ai/recompute-kit/pull/42)\nNew commits from [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-08T21:50:21.010469Z"
+  },
+  {
     "content_sha256": "af1deb799bdcfe2078d4ddf1eb16bf9be77ff8c4cb65330f06b6e9965166170c",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:6b92c292f7ed1dc7f1410d5a",
