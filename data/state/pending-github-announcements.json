@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_updated:618f9f99f0f6529a6d6e5da3",
-    "kind": "pr_updated",
-    "number": 42,
-    "occurred_at": "2026-09-08T21:28:10Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "conformance: profile-commitment-loop-v0 — chain both ends into one mechanical seam"
   }
 ]
