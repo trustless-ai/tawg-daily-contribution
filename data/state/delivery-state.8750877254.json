@@ -276,5 +276,24 @@
       4550
     ],
     "updated_at": "2026-09-09T11:26:27.200836Z"
+  },
+  {
+    "content_sha256": "ce3b87163fa79d4ff4bec0456f50987bb44a28ff52e38c01ced619c27845d7c7",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4552",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4552",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-09T11:46:06.441820Z",
+    "reply_text": "Morning! ☀️ Good to see the group coming alive today.",
+    "reply_to_message_id": 4552,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-09T11:46:06.441820Z"
   }
 ]
