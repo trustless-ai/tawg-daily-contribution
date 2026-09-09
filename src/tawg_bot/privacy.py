@@ -171,12 +171,22 @@ class PrivacyFilter:
                 return value
             github_prefix = sanitized[max(0, match.start() - 256) : match.start()]
             github_suffix = sanitized[match.end() : match.end() + 1]
-            if re.search(
+            is_github_record_id = re.search(
                 r'(?:^|["\'\s\[])gh:[A-Z0-9._-]+:'
                 r"(?:issue:\d+:comment|pr:\d+:review|release):$",
                 github_prefix,
                 re.I,
-            ) and (not github_suffix or github_suffix in {'"', "'", ",", "]", "}", "\n"}):
+            ) is not None
+            is_github_comment_url = re.search(
+                r"(?:^|[\"'\s\[])"
+                r"(?:https?://)?github\.com/[A-Z0-9._-]+/[A-Z0-9._-]+/"
+                r"(?:issues|pull)/\d+#issuecomment-$",
+                github_prefix,
+                re.I,
+            ) is not None
+            if (is_github_record_id or is_github_comment_url) and (
+                not github_suffix or github_suffix in {'"', "'", ",", ".", "]", "}", "\n"}
+            ):
                 return value
             digit_count = sum(character.isdigit() for character in value)
             if digit_count > 15 and value.isdigit():

@@ -249,6 +249,15 @@ def test_github_comment_record_id_is_not_treated_as_a_phone(
     )
 
 
+def test_scheme_less_github_issue_comment_url_is_not_treated_as_a_phone(
+    redactor: PrivacyFilter,
+) -> None:
+    value = "github.com/trustless-ai/recompute-kit/pull/123#issuecomment-5379076880."
+
+    assert redactor.inspect(value).sanitized_text == value
+    assert redactor.inspect("call 5379076880").sanitized_text == "call [REDACTED_PHONE]"
+
+
 def test_knowledge_refresh_operation_id_does_not_allow_phone_shaped_suffixes(
     redactor: PrivacyFilter,
 ) -> None:
