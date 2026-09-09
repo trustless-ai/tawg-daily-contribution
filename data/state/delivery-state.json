@@ -4567,5 +4567,24 @@
       4551
     ],
     "updated_at": "2026-09-09T11:26:28.271547Z"
+  },
+  {
+    "content_sha256": "40ae15e7af429e7304bd99b9bf6ee4de52ba994b0504167491627c12f6c636c2",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4552",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4552",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-09T11:46:17.603132Z",
+    "reply_text": "Morning! ☀️ Looks like the group had a great day yesterday — solid technical depth all around. Hope everyone's ready for another good one!",
+    "reply_to_message_id": 4552,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-09T11:46:17.603132Z"
   }
 ]
