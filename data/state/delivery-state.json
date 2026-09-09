@@ -1048,6 +1048,25 @@
     "updated_at": "2026-08-29T17:45:12.460696Z"
   },
   {
+    "content_sha256": "8517f9e0588787c8d2f135c17c41b5b62fa1cf5a76e7248943138af93d0ecf21",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:aa6f917688ffa2df8bae94d0",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:aa6f917688ffa2df8bae94d0",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-09T14:50:14.092295Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#2 Range-check DotProduct and EltwiseMul operands](https://github.com/trustless-ai/zkIE/pull/2)\nCongratulations, [zexoverz](https://github.com/zexoverz)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-09T14:50:14.092295Z"
+  },
+  {
     "content_sha256": "e1367aad170f7671bd5ca744b8c2dc369e22986e0ac6272d386d3cd7ac0c215d",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:ad26628179e76d7e0821a066",
