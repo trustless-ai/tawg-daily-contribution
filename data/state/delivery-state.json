@@ -4479,10 +4479,10 @@
     "safe_error_code": null,
     "schema_version": "tawg.delivery-attempt.v1",
     "sent_at": null,
-    "status": "sending",
+    "status": "prepared",
     "telegram_chat_id": null,
     "telegram_message_ids": [],
-    "updated_at": "2026-09-09T22:35:10.859303Z"
+    "updated_at": "2026-09-09T22:40:12.911077Z"
   },
   {
     "content_sha256": "ab7a0559e81b7880a79250b86c6f1695a37ef99b81cdec93f7a20f6dbaeb6366",
