@@ -376,6 +376,27 @@
     "updated_at": "2026-09-08T23:00:34.269050Z"
   },
   {
+    "content_sha256": "c87461912e923d757eb7bcd9e37c483bcda4debb6a7e1b2d9589fd86821c91ae",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-09-09T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-09-09T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-09T23:00:22.978184Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-09-08 23:00 → 2026-09-09 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **ERC-8309 companion repo goes public** — v0.3.9 shipped with prior findings applied and the full cut history published for independent byte-comparison. [tg:tawg:4565]\n\n> **Byte-compare independently confirmed** — the v0.3.7→v0.3.8 delta is exactly the §7.0/§7.1 reference-deployment note relocation and nothing more. [tg:tawg:4566]\n\n> **Magicians post framing aligned** — the companion is scoped as a narrow adjunct to the ERC-8309/#1826 resolution boundary rather than a competing standalone proposal. [tg:tawg:4568]\n\n## 🤝 **What moved**\n\n### ERC-8309 companion\n\n_The companion spec moved from a private working draft to a publicly verifiable artifact with a clear path toward the Ethereum Magicians post._\n\n- Damon Zwicker (@damonzwicker) **Shipped** v0.3.9 with both findings from the v0.3.8 review applied and bundled v0.3.7 alongside it so readers could byte-compare rather than rely on trust, grounding the review in verifiable evidence. [tg:tawg:4543]\n- Damon Zwicker (@damonzwicker) **Published** the companion repo with v0.3.9 at the root and every cut from v0.2 through v0.3.8 preserved in cuts/, giving the group a complete and auditable draft history for independent verification. [tg:tawg:4565]\n- Baby Blue Viper (@babyblueviper1) **Confirmed** the byte-compare independently once the repo was public, establishing that the only content-level change between v0.3.7 and v0.3.8 is the §7.0/§7.1 reference-deployment note relocation — turning a group claim into a verified finding. [tg:tawg:4566]\n- Pavlo (@pavlentyy82) **Advised** framing the companion narrowly as the public adjunct to the ERC-8309/#1826 resolution boundary rather than a standalone proposal, keeping the Magicians post scoped and avoiding overlap with existing work. [tg:tawg:4568]\n- Pavlo (@pavlentyy82) **Flagged** a pre-post artifact check: the README's claim that every cut is preserved in cuts/ should be confirmed against the actual file range before publication, closing a small trust gap. [tg:tawg:4569]\n\n### Trusty visuals\n\n_A quick exchange clarified how Trusty's sprite feature works and how it landed with the group._\n\n- Jimmy Shi (@jimmyshi) **Clarified** that the sprite display is a Codex built-in feature and that the contribution was uploading Trusty's images, giving the group an accurate picture of how the visual came together. [tg:tawg:4561]\n- Merlini (@gobross) **Reacted** with enthusiasm to Trusty's sprite appearance, signaling that the visual landing resonated with the group. [tg:tawg:4558]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Explore whether framing the companion narrowly as an ERC-8309/#1826 adjunct supports or constrains future scope expansion.\n- Consider whether the append-only byte-compare pattern could be reused as a standard verification step for other spec change reviews.\n\n### ✅ **TODOs**\n\n- Confirm the cuts/ directory contains every version from v0.2 through v0.3.8 as stated in the README before the Magicians post goes live.\n- Draft the Ethereum Magicians post for the ERC-8309 companion using the narrow resolution-boundary framing.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A private spec became a public, byte-comparable artifact in a single window — and an independent member ran the verification check and reported back before the day closed.\n>\n> When the history opens and the auditors are already in the repo, the review loop runs itself. Keep shipping verifiable work! 🔗",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-09T23:00:22.978184Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4571
+    ],
+    "updated_at": "2026-09-09T23:00:22.978184Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
@@ -4482,7 +4503,7 @@
     "status": "failed",
     "telegram_chat_id": null,
     "telegram_message_ids": [],
-    "updated_at": "2026-09-09T22:55:09.799269Z"
+    "updated_at": "2026-09-09T23:05:07.341999Z"
   },
   {
     "content_sha256": "ab7a0559e81b7880a79250b86c6f1695a37ef99b81cdec93f7a20f6dbaeb6366",
