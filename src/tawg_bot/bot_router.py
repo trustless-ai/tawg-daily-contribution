@@ -99,6 +99,14 @@ _INLINE_CITATION = re.compile(
 )
 _LOCAL_CITATION = re.compile(r"\[((?:[A-Za-z0-9_.-]+:){2,}[A-Za-z0-9_.:/@-]+)\]")
 _TELEGRAM_MENTION = re.compile(r"(?<![A-Za-z0-9_@])@[A-Za-z0-9_]{1,64}(?![A-Za-z0-9_])")
+_UNAMBIGUOUS_GROUP_GREETING = re.compile(
+    r"\s*(?:hello|hi|hey|yo|greetings|gm|gn|good\s+(?:morning|afternoon|"
+    r"evening|night|day)|morning|afternoon|evening|大家好|各位好|早安|早上好|"
+    r"下午好|晚上好)"
+    r"(?:\s*[,!:\-]?\s*(?:guys|everyone|everybody|all|folks|team|friends|"
+    r"大家|各位|诸位|伙伴们|朋友们))?[^\w@]*",
+    re.IGNORECASE,
+)
 _UNSAFE_MEMBER_LOCATOR = re.compile(
     r"(?:\b(?:www\.|t\.me/|telegram\.me/)|"
     r"\[[^\]]+\]\([^)]+\)|"
@@ -140,9 +148,12 @@ class BotRouter:
         self,
         route: BotRoute,
         trigger_kind: TriggerKind = TriggerKind.MENTION,
+        trigger_text: str = "",
     ) -> BotRoute:
         """Clamp an AI decision to the controller's non-negotiable authority boundary."""
         if trigger_kind is TriggerKind.GREETING_CANDIDATE and route is BotRoute.IGNORE:
+            if _UNAMBIGUOUS_GROUP_GREETING.fullmatch(trigger_text):
+                return BotRoute.COORDINATION
             return BotRoute.IGNORE
         if route is BotRoute.IGNORE:
             return BotRoute.REFUSE
@@ -605,6 +616,7 @@ class BotReplyService:
                 route = self.router.authorize_ai_route(
                     decision.route,
                     processing.trigger_kind,
+                    trigger.text_original,
                 )
                 context_scope = decision.context_scope
                 processing = processing.model_copy(

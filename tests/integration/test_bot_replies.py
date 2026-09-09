@@ -436,6 +436,54 @@ async def test_real_greeting_candidate_gets_a_coordination_reply(tmp_path: Path)
 
 
 @pytest.mark.asyncio
+async def test_group_greeting_cannot_be_silenced_by_an_ai_ignore_route(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "Good morning guys ☀️",
+        trigger_kind=TriggerKind.GREETING_CANDIDATE,
+    )
+    ai = ContextualFakeAi("ignore", coordination_result())
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is not None
+    assert prepared.reply_text.startswith("Good morning")
+    assert [call["job_type"] for call in ai.calls] == ["route", "reply"]
+    persisted = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )[0]
+    assert persisted["status"] == "ready"
+    assert persisted["classified_route"] == "coordination"
+
+
+@pytest.mark.asyncio
+async def test_greeting_addressed_to_a_named_person_can_still_be_ignored(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "Morning Jimmy ☀️",
+        trigger_kind=TriggerKind.GREETING_CANDIDATE,
+    )
+    ai = ContextualFakeAi("ignore", coordination_result())
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is None
+    persisted = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )[0]
+    assert persisted["status"] == "ignored"
+    assert persisted["classified_route"] == "ignore"
+
+
+@pytest.mark.asyncio
 async def test_non_correction_route_drops_invalid_scan_registration(
     tmp_path: Path,
 ) -> None:
