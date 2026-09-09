@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "zexoverz",
-    "event_id": "github-announcement:pr_merged:aa6f917688ffa2df8bae94d0",
-    "kind": "pr_merged",
-    "number": 2,
-    "occurred_at": "2026-09-09T14:26:45Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Range-check DotProduct and EltwiseMul operands"
   }
 ]
