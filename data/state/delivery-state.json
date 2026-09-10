@@ -2348,6 +2348,25 @@
     "updated_at": "2026-09-06T11:05:43.487973Z"
   },
   {
+    "content_sha256": "b8ad6cda75681f04cf530c78f6e69ad275c0ab2c700070738d5e04c592a78549",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:c413f225eaa862fa604b291d",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:c413f225eaa862fa604b291d",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-10T02:10:12.595827Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#3 Add multibackend sharded proving foundation](https://github.com/trustless-ai/zkIE/pull/3)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-10T02:10:12.595827Z"
+  },
+  {
     "content_sha256": "44ac50c8a065e5cbfeabd4412a70d85b44340b8c25a8f586db74b1ac07f30cf8",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:d1b2e5bc94eee1c2165a8a0f",
