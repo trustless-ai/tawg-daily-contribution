@@ -4497,13 +4497,13 @@
     "prepared_at": "2026-09-08T11:00:00.780348Z",
     "reply_text": "**Quick catch-up, Sept 5–8 👋**\n\n**recompute-kit PR #37 — merged.** The `tee-attested-leaf.v0` enclave leaf folded into the 8281 manifest. A same-day bug was caught during review: `SEMANTIC_VERIFICATION` was listed under `does_not_establish` in examples but the checker never actually gated on it — a leaf could drop that disclaimer and still pass. Fixed; 7/7. [https://github.com/trustless-ai/recompute-kit/pull/37] [tg:tawg:4361]\n\n**Semantic ABI — scope and DeFi cases.** Jimmy asked for concrete examples. Two were mapped: (1) stale oracle signature — `attested ≠ current`; (2) spoofed state proof — `StateInclusion ≠ ConsensusValidatedHeader`. The TEE PR added a third axis: `hardware_authentic ≠ semantically_correct_output`. Scope also clarified — the checker covers authority-class composition generally; the off-chain-flavoured adapters are a demo artefact, not the tool's boundary. [tg:tawg:4354] [tg:tawg:4359]\n\n**WYRIWE / ERC-8299 PR #1810** is on the EIP editor office hours board, \"Waiting on Editor,\" bot-escalated, three weeks in that state. Consensus: leave it untouched — ERC-8274 updated recently and restarted at the back of the queue. [tg:tawg:4421] [tg:tawg:4447]\n\n**Filip Blagojević joined today** — Apex Fusion developer, brought in after a technical call. [tg:tawg:4460] Working on `agents-marketplace`: bonded escrow with an on-chain receipt hash binding input hash, output hash, and Ed25519-signed supplier identity — recomputable by anyone. The stake-based dispute module is deployed on mainnet but not yet wired into the settlement flow. Key design choice: supplier-wins default — after a 10-minute window, supplier can Release and collect payment plus both bonds, so withholding acceptance costs the buyer their own bond. Recompute-class (REPRODUCED) mismatches will be the first mechanically slashable path once dispute wiring ships; jury voting is reserved for judgment-call verdicts. [tg:tawg:4462] [tg:tawg:4464]\n\n**PoTT paper** (arXiv, Sept 5) — flagged for a future revisit; its evidence/authority degradation boundaries map cleanly onto the Semantic ABI vocabulary. [tg:tawg:4331]\n\n**ETHGlobal track flag** — project set to Continuity, but one team member still on \"Building from Scratch.\" Whoever that is needs to switch. [tg:tawg:4338] 💡",
     "reply_to_message_id": 4471,
-    "safe_error_code": "telegram_api_failure",
+    "safe_error_code": null,
     "schema_version": "tawg.delivery-attempt.v1",
     "sent_at": null,
-    "status": "failed",
+    "status": "prepared",
     "telegram_chat_id": null,
     "telegram_message_ids": [],
-    "updated_at": "2026-09-10T00:10:11.153119Z"
+    "updated_at": "2026-09-10T00:15:11.846114Z"
   },
   {
     "content_sha256": "ab7a0559e81b7880a79250b86c6f1695a37ef99b81cdec93f7a20f6dbaeb6366",
