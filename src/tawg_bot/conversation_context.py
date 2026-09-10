@@ -55,6 +55,12 @@ class ConversationContextBuilder:
             raise ValueError("conversation context max_chars must be at least 512")
         if max_prior_records < 0:
             raise ValueError("max_prior_records cannot be negative")
+        # A greeting candidate is a message that merely contains a greeting word; deciding
+        # whether it is a real greeting needs the trigger itself, never the rest of the thread.
+        # Carrying unrelated history here once inflated a route context to the 64KB ceiling and
+        # made the route model fail on every retry, so keep these requests trigger-only.
+        if trigger_kind is TriggerKind.GREETING_CANDIDATE:
+            max_prior_records = 0
         chain, ordinary = self._scoped_records(
             trigger=trigger,
             records=records,
