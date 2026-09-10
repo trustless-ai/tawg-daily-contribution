@@ -1,12 +1,9 @@
-"""A greeting candidate is classified from its own text, not from the surrounding thread.
+"""A greeting candidate is routed with the same recent context as every other trigger.
 
-Regression for tg:tawg:4585 (2026-09-10). The message opened with "Good morning" inside the
-ERC-8309 companion thread, so the router folded 117 same-thread messages into a ~64KB route
-context. The route model then failed with "Claude Code failed with exit status 1" on every
-maintenance tick and the job never left "pending".
-
-A greeting candidate carries no @mention and no reply-to-bot, so the trigger itself is enough
-to classify it. Thread history is still supplied for every other trigger kind.
+The router briefly carried the trigger alone for greeting candidates, to work around routed
+jobs that kept failing. That shortcut was reverted once the real cause turned out to be an
+upstream model outage -- same-day, same-size contexts routed fine before and after it. This
+guards the restored behaviour so the shortcut does not come back.
 """
 
 from __future__ import annotations
@@ -25,7 +22,6 @@ from tests.integration.test_bot_replies import (
     ContextualFakeAi,
     _record,
     coordination_result,
-    reply_result,
     seed,
 )
 
@@ -48,7 +44,7 @@ def _route_prior_ids(ai: ContextualFakeAi) -> list[str]:
 
 
 @pytest.mark.asyncio
-async def test_greeting_candidate_route_context_omits_thread_history(tmp_path: Path) -> None:
+async def test_greeting_candidate_route_context_keeps_thread_history(tmp_path: Path) -> None:
     job = seed(
         tmp_path,
         "Good morning \u2600\ufe0f \nLooks clean to me.",
@@ -62,17 +58,4 @@ async def test_greeting_candidate_route_context_omits_thread_history(tmp_path: P
     )
 
     assert prepared is None
-    assert "tg:tawg:9" not in _route_prior_ids(ai)
-
-
-@pytest.mark.asyncio
-async def test_explicit_mention_route_context_keeps_thread_history(tmp_path: Path) -> None:
-    job = seed(tmp_path, "@bot what should we check next?")
-    _seed_unrelated_thread_history(tmp_path)
-    ai = ContextualFakeAi("knowledge_question", reply_result(chinese=False))
-
-    await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
-        job.job_id, now=NOW + timedelta(minutes=2)
-    )
-
     assert "tg:tawg:9" in _route_prior_ids(ai)
