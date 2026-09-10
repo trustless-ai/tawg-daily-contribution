@@ -112,11 +112,11 @@
     "updated_at": "2026-09-07T22:29:47Z"
   },
   {
-    "metadata_sha256": "339e08e78e265356894ebde7ad5103cd61b2d64a85ee8f45748db0983abe3358",
+    "metadata_sha256": "e0ba377a08cfebd95ff07370e644815dd0df26b5ba9654d3703168d4151841e4",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-09-10T15:09:03Z"
+    "updated_at": "2026-09-10T15:37:00Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
@@ -175,10 +175,10 @@
     "updated_at": "2026-08-06T00:28:58.582000Z"
   },
   {
-    "metadata_sha256": "70ff82b4c10e561ed9851ff7961e3bb695e18a7df7fc43f0c5a2d40303737ac3",
+    "metadata_sha256": "4880375053841ba5e599b2e2927a61e412413e1aa18b5e8d5c17a04279a23ec1",
     "source_key": "magicians-29274",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8380-unclonable-agent-execution-credentials/29274",
-    "updated_at": "2026-09-10T15:08:37.201000Z"
+    "updated_at": "2026-09-10T15:26:39.002000Z"
   }
 ]
