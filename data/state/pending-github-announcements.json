@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_merged:5c72280e2a2aea56a20eff70",
-    "kind": "pr_merged",
-    "number": 3,
-    "occurred_at": "2026-09-11T17:38:38Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Add multibackend sharded proving foundation"
   }
 ]
