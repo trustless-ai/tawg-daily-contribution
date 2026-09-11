@@ -418,6 +418,27 @@
     "updated_at": "2026-09-10T23:03:35.292749Z"
   },
   {
+    "content_sha256": "eb701cab5975df296dbb3fe6eefb666d193a7b706470433d5f9f5cd85a969f36",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-09-11T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-09-11T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-11T23:00:23.186593Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-09-10 23:00 → 2026-09-11 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **RSI v0 closed, tagged, and public** — The bounded Relational Security Invariants v0 shipped as a finished, tagged release, giving the group a concrete new security invariant surface to build on. [tg:tawg:4602]\n\n> **Full independent pass confirmed on RSI v0** — An independent run of the tagged release returned 539/539 tests and 123/123 conformance with no failures, with the exact verification scope openly negotiated until the record was precisely right. [tg:tawg:4605]\n\n> **zkIE multibackend proving foundation drafted** — A new draft PR laid down sharded multibackend proving infrastructure in zkIE, opening the path for distributing cryptographic proving across backends. [PR #3](https://github.com/trustless-ai/zkIE/pull/3)\n\n## 🤝 **What moved**\n\n### relational-security-invariants\n\n_RSI v0 crossed into a closed, tagged public release and received a careful peer verification exchange that precisely scoped the record._\n\n- Pavlo (@pavlentyy82) **Shipped** RSI v0 as a closed, tagged, public release, creating a stable security invariant surface the group can extend with additional relation families as Semantic ABI and ERC-8380 mature. [tg:tawg:4602]\n- Baby Blue Viper (@babyblueviper1) **Verified** the tagged RSI v0 independently, returning 539/539 tests and 123/123 conformance with zero failures, giving the group a concrete external pass signal on the release. [tg:tawg:4605]\n- Pavlo (@pavlentyy82) **Confirmed** that Baby Blue Viper's boundary reading was correct and that mutation gates prove mapped decisions are sound, tightening the spec's residual risk language for future readers. [tg:tawg:4606]\n- Baby Blue Viper (@babyblueviper1) **Disclosed** that their clone included the predictor and frozen expectations, ruling out strict blind derivation status and preserving an accurate verification record rather than an overstated one. [tg:tawg:4609]\n- Pavlo (@pavlentyy82) **Accepted** the disclosure and applied the correct classification, ensuring the verification record reflects precisely what was independently reproduced and what was not. [tg:tawg:4610]\n\n### recompute-kit\n\n_A new predicate conformance module entered the review queue, with the implementation backed by prior independent reproduction._\n\n- Baby Blue Viper submitted a PR adding predicate_conformance.v0 with PIN-RECORD precommit, conformance-run, and repair-run stages to recompute-kit, advancing the kit's ability to enforce and recover programmatic predicate conformance. [PR #14](https://github.com/trustless-ai/recompute-kit/pull/14)\n- Baby Blue Viper noted in a review comment that the behavior was reproduced independently via a standalone repro before any edits were made, giving future reviewers a higher-confidence baseline for the new conformance module. [PR #14 review](https://github.com/trustless-ai/recompute-kit/pull/14#discussion_r3989086133)\n\n### zkIE\n\n_A draft PR opened the foundation for multibackend sharded proving in zkIE._\n\n- Jimmy Shi submitted a draft PR establishing the multibackend sharded proving foundation for zkIE, laying architectural groundwork for distributing cryptographic proving across backends and expanding the project's compute surface. [PR #3](https://github.com/trustless-ai/zkIE/pull/3)\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n- Once ERC-8380 is aligned and Semantic ABI stabilizes post-hackathon, RSI relation families could be extended with those new surfaces\n- Explore whether predicate_conformance.v0 repair-run semantics align naturally with RSI mutation gate patterns\n\n### ✅ **TODOs**\n- Progress review on the recompute-kit predicate conformance PR\n- Advance the zkIE multibackend proving draft toward a reviewable state\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A tagged spec release met an independent test run in the group chat, and instead of stopping at the numbers, the conversation kept going until the exact scope of the verification — what it proved and what it didn't — was pinned down with care.\n>\n> Turns out the most rigorous QA happens when everyone is honest about what's actually in their clone. Keep that energy going! 🔬",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-11T23:00:23.186593Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4622
+    ],
+    "updated_at": "2026-09-11T23:00:23.186593Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
