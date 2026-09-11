@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_updated:29cda8913f6257b503da3eae",
-    "kind": "pr_updated",
-    "number": 14,
-    "occurred_at": "2026-09-11T12:25:29Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Add predicate_conformance.v0: PIN-RECORD precommit/conformance-run/repair-run"
   }
 ]
