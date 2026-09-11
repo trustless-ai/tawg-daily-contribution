@@ -318,5 +318,24 @@
       4597
     ],
     "updated_at": "2026-09-11T00:05:46.661186Z"
+  },
+  {
+    "content_sha256": "e184e5b8e06268f5dc0607dc0a942a42346b784cfda79b2f16d475856c1fab8e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4599",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4599",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-11T01:03:13.046609Z",
+    "reply_text": "Morning! ☀️ Hope it's a good one.",
+    "reply_to_message_id": 4599,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-11T01:03:13.046609Z"
   }
 ]
