@@ -439,6 +439,25 @@
     "updated_at": "2026-09-11T23:00:23.186593Z"
   },
   {
+    "content_sha256": "624986c878065f15d7daf56c626fe3daa3506092d53f514e571103a44341da3e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-09-12T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-09-12T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-12T23:00:21.962902Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-09-11 23:00 → 2026-09-12 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Semantic ABI submitted** — A new protocol artifact cleared the development stage and reached the submission milestone, opening the path to group review. [tg:tawg:4632]\n\n> **Clean-room onboarding completed end-to-end** — A structured multi-person relay carried an exposure check, access invite, and frozen pack confirmation through to a new collaborator's confirmed acceptance. [tg:tawg:4639]\n\n> **Byte-change concern flagged before interoperability deposit** — A potential inconsistency in signed bytes was caught ahead of the deposit, giving the team time to reconcile cleanly. [issue #39, pre-deposit comment](https://github.com/trustless-ai/recompute-kit/issues/39#issuecomment-5642981437)\n\n## 🤝 **What moved**\n\n### semantic-abi\n\n_A new protocol artifact reached the submission milestone today._\n\n- Merlini (@gobross) submitted the Semantic ABI, moving a new protocol artifact from active development to the submission stage and making it available for group review and iteration. [tg:tawg:4632]\n\n### clean-room access\n\n_The onboarding coordination for a new clean-room participant moved from initial setup to confirmed access today._\n\n- Pavlo (@pavlentyy82) structured a prior-exposure check for a new collaborator against a restricted repository, establishing the integrity baseline required before access to the derivation pack could be granted. [tg:tawg:4625]\n\n- Baby Blue Viper (@babyblueviper1) collected and relayed the new collaborator's self-reported prior-exposure answers, providing the confirmed clean-room baseline that allowed the access process to advance. [tg:tawg:4630]\n\n- Pavlo (@pavlentyy82) sent the clean-room repo invite once the exposure check cleared, completing the controlled access-grant step and opening the frozen-pack derivation phase for the new collaborator. [tg:tawg:4636]\n\n- Baby Blue Viper (@babyblueviper1) relayed the invite details, frozen pack commit reference, and hash-recording instructions to the new collaborator, ensuring all integrity constraints were conveyed before any restricted material was revealed. [tg:tawg:4638]\n\n- Baby Blue Viper (@babyblueviper1) confirmed that the new collaborator accepted the invite and that the frozen pack with hash-pinned derivation sequence remains intact, completing the full onboarding relay. [tg:tawg:4639]\n\n### recompute-kit\n\n_The interoperability report staging reached a quality checkpoint before the deposit step._\n\n- Certisyn flagged a byte-change concern on the interoperability report before the deposit, giving the team a critical window to reconcile signed bytes and avoid a post-deposit integrity conflict. [issue #39, pre-deposit comment](https://github.com/trustless-ai/recompute-kit/issues/39#issuecomment-5642981437)\n\n- Baby Blue Viper acknowledged the pre-deposit flag and confirmed the team understood the concern, keeping the interoperability report staging process on track for a clean deposit. [issue #39, acknowledgement](https://github.com/trustless-ai/recompute-kit/issues/39#issuecomment-5646634114)\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Whether the Semantic ABI submission opens a formal review window and what feedback the group wants to gather before it advances further\n- How the flagged byte-change issue on the interoperability report will be resolved and whether re-signing is needed before the deposit\n\n### ✅ **TODOs**\n\n- Review the Semantic ABI submission and share feedback so the iteration cycle can continue\n- Resolve the byte-change discrepancy on the interoperability report before the deposit proceeds\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A clean-room onboarding sequence ran from initial exposure check all the way to confirmed invite acceptance through a tightly coordinated relay — each handoff logged and integrity-verified before the next step could begin.\n>\n> When a whole team operates like a hash-verified relay race, even the most careful access controls move at the speed of trust 🚀",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-12T23:00:21.962902Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
