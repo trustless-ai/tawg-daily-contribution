@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:b81063c90d83828f5adcd772",
-    "kind": "pr_merged",
-    "number": 10,
-    "occurred_at": "2026-09-13T13:10:22Z",
-    "repository": "trustless-ai/ccip-router",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "ci: one publisher, no stale-layer cache, immutable :sha tag"
   }
 ]
