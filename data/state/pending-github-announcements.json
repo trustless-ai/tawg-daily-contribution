@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_opened:0a9da24c072b812711eac2b0",
-    "kind": "pr_opened",
-    "number": 43,
-    "occurred_at": "2026-09-13T14:54:28Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "predicate-conformance-v0: post-merge hardening from Pavlo's PR #14 review"
   }
 ]
