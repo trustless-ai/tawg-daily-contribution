@@ -105,6 +105,12 @@ people:
       - thoughtproof
       magicians:
       - thoughtproof
+  raul-thoughtproof-2:
+    display_names:
+    - Raul ThoughtProof
+    handles:
+      telegram:
+      - raulj1980
   ryan-veteze:
     display_names:
     - Ryan VETEZE
