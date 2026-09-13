@@ -1531,6 +1531,25 @@
     "updated_at": "2026-08-30T00:15:15.020141Z"
   },
   {
+    "content_sha256": "95ad59532e3b80aa07f2947b6dbd653290fb524e45844a6c0cb3d431a4551ff8",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:0a9da24c072b812711eac2b0",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:0a9da24c072b812711eac2b0",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-13T15:00:12.821227Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#43 predicate-conformance-v0: post-merge hardening from Pavlo's PR #14 review](https://github.com/trustless-ai/recompute-kit/pull/43)\nOpened by [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-13T15:00:12.821227Z"
+  },
+  {
     "content_sha256": "81cf5766fa0be7b7b58c301ab157c212a146d37168a0abe6e381ccb8d07774e4",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:0d5ee80a07846aeed914b155",
