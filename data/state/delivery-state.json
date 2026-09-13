@@ -4966,5 +4966,26 @@
       4600
     ],
     "updated_at": "2026-09-11T01:03:10.363009Z"
+  },
+  {
+    "content_sha256": "693d2ec1883f4e3da60ac3bf16661733d782cc95eb2d3d5ab131feeb78cc0ab4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4659",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4659",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-13T12:00:49.237426Z",
+    "reply_text": "Good morning, Pavlo! 🌄 Great to see you in the group — lots of good energy here today!",
+    "reply_to_message_id": 4659,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-13T12:00:49.237426Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4660
+    ],
+    "updated_at": "2026-09-13T12:00:49.237426Z"
   }
 ]
