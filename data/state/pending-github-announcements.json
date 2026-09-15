@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "zexoverz",
+    "event_id": "github-announcement:pr_opened:91bbc4179a28ba83392761fe",
+    "kind": "pr_opened",
+    "number": 44,
+    "occurred_at": "2026-09-15T18:06:49Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "run_conformance: a gate's own exit 2 is unverifiable, not verified-bad"
   }
 ]
