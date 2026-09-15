@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "zexoverz",
-    "event_id": "github-announcement:pr_merged:f7260e086ddd68525a971f10",
-    "kind": "pr_merged",
-    "number": 4,
-    "occurred_at": "2026-09-15T01:41:32Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Negative tests load the byte tables, and an assembler dot operand test"
   }
 ]
