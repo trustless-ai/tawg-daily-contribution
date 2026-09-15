@@ -1951,6 +1951,27 @@
     "updated_at": "2026-09-01T12:15:16.502916Z"
   },
   {
+    "content_sha256": "2a2ddeb88990cc05a1f5fb92d430bd252ec1c528274213876a5cb33262848730",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:91bbc4179a28ba83392761fe",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:91bbc4179a28ba83392761fe",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-15T18:15:15.875100Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#44 run\\_conformance: a gate's own exit 2 is unverifiable, not verified-bad](https://github.com/trustless-ai/recompute-kit/pull/44)\nOpened by [zexoverz](https://github.com/zexoverz)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-15T18:15:15.875100Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4707
+    ],
+    "updated_at": "2026-09-15T18:15:15.875100Z"
+  },
+  {
     "content_sha256": "998fee081ebd512719cda3b6c8c14b3e4f0c0727716dccd78e88a0ae4728d8da",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:9f681b1586afa98f15f4ece9",
