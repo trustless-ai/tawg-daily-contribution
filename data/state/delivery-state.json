@@ -1552,6 +1552,27 @@
     "updated_at": "2026-09-01T11:10:12.575251Z"
   },
   {
+    "content_sha256": "d53c05d9029048ef4b7f6e7641fe81f3e0e3c69c3c33e76dc676f13c6ef760a2",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:f7260e086ddd68525a971f10",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:f7260e086ddd68525a971f10",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-15T01:45:17.514802Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#4 Negative tests load the byte tables, and an assembler dot operand test](https://github.com/trustless-ai/zkIE/pull/4)\nCongratulations, [zexoverz](https://github.com/zexoverz)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-15T01:45:17.514802Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4691
+    ],
+    "updated_at": "2026-09-15T01:45:17.514802Z"
+  },
+  {
     "content_sha256": "86102b10a63b52815d73e46124c209893e0c76edc2809751fe9a7a1831cf971f",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:081aac1d7d5315659c2301c1",
