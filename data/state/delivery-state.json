@@ -2915,6 +2915,25 @@
     "updated_at": "2026-09-10T11:00:23.746535Z"
   },
   {
+    "content_sha256": "96b3b7b91a5556d14968536209731ac92069a986bfae641b986c528f96d45af8",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:f3b662b156042cbd19e2bbd0",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:f3b662b156042cbd19e2bbd0",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-16T23:07:49.153808Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#45 conformance: separate event-time and concurrent admission safety](https://github.com/trustless-ai/recompute-kit/pull/45)\nNew commits from [pipavlo82](https://github.com/pipavlo82)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-16T23:07:49.153808Z"
+  },
+  {
     "content_sha256": "b8ad6cda75681f04cf530c78f6e69ad275c0ab2c700070738d5e04c592a78549",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:f9dbe5694bc3d7a63e3e77ad",
