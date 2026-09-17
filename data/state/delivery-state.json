@@ -2182,6 +2182,25 @@
     "updated_at": "2026-09-06T13:45:14.695046Z"
   },
   {
+    "content_sha256": "e5966761379417100bac182aadf59da6fb1531d46e9a54d01af6b00f94aa575f",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:eb7b2ef83b80a5b2f500371e",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:eb7b2ef83b80a5b2f500371e",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-17T22:20:18.799015Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#46 conformance: bind event authorization to consumption-time state](https://github.com/trustless-ai/recompute-kit/pull/46)\nOpened by [pipavlo82](https://github.com/pipavlo82)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-17T22:20:18.799015Z"
+  },
+  {
     "content_sha256": "3c7ea92a7dbcfa9eb8d430402399311e2e5c1f3e379cbac19f22a73a4eaff9ad",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:f76bcc9fa0474911601f22a3",
