@@ -5281,5 +5281,24 @@
       4727
     ],
     "updated_at": "2026-09-17T00:29:16.467359Z"
+  },
+  {
+    "content_sha256": "542279b1a94f86fc69491b7e9d520056e236dcbc43f4ab0df4e00011447e0f10",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4731",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4731",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-17T00:50:27.668921Z",
+    "reply_text": "Good night, Jimmy! 🌙 Rest well!",
+    "reply_to_message_id": 4731,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-17T00:50:27.668921Z"
   }
 ]
