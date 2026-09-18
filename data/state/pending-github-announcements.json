@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "pipavlo82",
+    "event_id": "github-announcement:pr_merged:1fd667430d9258368956462f",
+    "kind": "pr_merged",
+    "number": 46,
+    "occurred_at": "2026-09-18T14:09:51Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "conformance: bind event authorization to consumption-time state"
   }
 ]
