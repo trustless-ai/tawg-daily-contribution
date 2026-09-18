@@ -565,6 +565,25 @@
     "updated_at": "2026-09-17T23:00:32.567745Z"
   },
   {
+    "content_sha256": "3c6170694ace558fbfa0b0015192134b999f58f28f1b11c88a8ed76919904a1b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-09-18T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-09-18T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-18T23:00:25.514410Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-09-17 23:00 → 2026-09-18 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Both PRs #45 and #46 landed cleanly** — A two-PR relay closed in one session, with all test vectors, mutations, and regression checks passing and S2 semantics confirmed exactly as designed. [tg:tawg:4756]\n\n> **ERC-8004 prompt-enforcement gap converged** — Two forum posts approached the same structural tension from different angles, establishing EIP-7715 as the prompt anchor and leaving the enforcement boundary open for a future revision. [Magicians post 402](https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098/402)\n\n## 🤝 **What moved**\n\n### agent-sdk\n_Both open implementation PRs closed in quick succession, locking in verified S2 semantics._\n\n- Pavlo (@pavlentyy82) **Merged** PR #45 into main with a clean merge commit and all integration and regression checks green, keeping the prior PR intact and giving the team a stable, verified foundation for subsequent work. [tg:tawg:4751]\n- Pavlo (@pavlentyy82) **Landed** PR #46 after a targeted retarget-and-rerun cycle, with all 18 test vectors, all 7 mutation checks, byte-identical output under optimization, and valid pins — confirming that S2 event-time and consumption-time semantics behave exactly as designed. [tg:tawg:4754]\n- Baby Blue Viper (@babyblueviper1) **Coordinated** the two-PR sequence by calling for a prompt ping as soon as #45 was confirmed, keeping the handoff tight and ensuring #46 was retargeted and verified without delay. [tg:tawg:4752]\n\n### ERC-8004\n_The forum conversation sharpened the prompt-enforcement boundary and surfaced a concrete open question._\n\n- A forum contributor mapped the wallet-question gap, identifying EIP-7715 as the prompt anchor and flagging enforcement as a revision concern, helping the group locate exactly where the spec boundary currently sits. [Magicians post 401](https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098/401)\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n- Explore where the ERC-8004 enforcement layer should anchor given the confirmed prompt-enforcement gap surfaced in today's forum exchange.\n- Consider whether the S2 semantics validation pattern from PR #46 can be extended to future implementation work.\n\n### ✅ **TODOs**\n- Continue the ERC-8004 forum thread to resolve the enforcement revision question.\n- Use the confirmed PR #46 regression baseline when scoping and reviewing upcoming PRs.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A two-PR relay closed out cleanly inside one working session — one merge confirmed the foundation, a targeted rerun verified the semantics end to end, and a cross-check sealed it. The full loop from implementation to test to confirmation ran without a gap.\n>\n> When the entire test suite blinks green twice before the afternoon break, you know the relay is dialed in — keep that rhythm going! 🚀",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-18T23:00:25.514410Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
