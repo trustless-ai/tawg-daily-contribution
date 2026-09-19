@@ -586,6 +586,25 @@
     "updated_at": "2026-09-18T23:00:25.514410Z"
   },
   {
+    "content_sha256": "e65c591d886c8eb16ce591d8272eb1ea9ba575277c3050bd82ceb1f8c5ef3279",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-09-19T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-09-19T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-19T23:00:27.775156Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-09-18 23:00 → 2026-09-19 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Boundary sharpened** — The conceptual cut for ERC-8004/7715 shifted from \"prompt enforcement\" to permission-consumption-boundary-v0, a more defensible framing grounded in distinguishing historically valid grants from valid consumption under current state. [tg:tawg:4759]\n\n> **Adversarial cases structured** — The permission-consumption-boundary-v0 concept was translated into adversarial scenarios mapped against S2's formal CHECK@version → STATE_TRANSITION → CONSUME shape, turning an abstract boundary into a testable surface. [tg:tawg:4762]\n\n> **Expiry overstatement corrected** — A counterexample about VERSION_BOUND and REEVALUATE agreement on expiry was caught and corrected mid-thread, tightening the adversarial case set before it could be frozen with a flaw. [tg:tawg:4765]\n\n> **Cross-thread synthesis surfaced** — Several days of parallel work on recomputable verification, permission consumption, execution receipts, and protected relations were connected into a shared picture for the group. [tg:tawg:4771]\n\n## 🤝 **What moved**\n\n### ERC-8004 / permission consumption\n\n_Precise boundary work shifted this discussion from naming to structure._\n\n- Pavlo (@pavlentyy82) **Flagged** that \"prompt enforcement\" was not the right boundary name for the ERC-8004/7715 follow-up and pointed toward the actual standards as the right grounding, giving the thread a cleaner foundation before further modeling began. [tg:tawg:4758]\n- Pavlo (@pavlentyy82) **Refined** the three-family split with specific precisions — noting conditions under which VERSION_BOUND and REEVALUATE alignment for expiry would and would not hold — keeping the expected outcomes honest before they are frozen. [tg:tawg:4764]\n- Baby Blue Viper (@babyblueviper1) **Confirmed** that the profile should stay implementation-independent, with the signed path serving as a reference adapter against the abstract action/tool/argument-binding model, which protects the spec's long-term generality. [tg:tawg:4767]\n\n### community\n\n_A warm presence across time zones kept the group connected._\n\n- Jimmy Shi (@jimmyshi) **Joined** with an across-the-clock greeting that reminded the group its collaboration spans time zones, keeping the community thread alive through the window. [tg:tawg:4760]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Explore whether the three-family split structure can be formally connected to the adversarial cases already mapped against S2's shape\n- Consider what \"implementation-independent profile as reference adapter\" means concretely for the abstract action/tool/argument-binding model\n\n### ✅ **TODOs**\n\n- Freeze the expected outcomes for the three-family split with Pavlo's precisions applied\n- Finalize the permission-consumption-boundary-v0 adversarial case set with expiry conditions stated precisely\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A boundary naming flag triggered an immediate tightening — the cleaner framing was adopted, adversarial cases were mapped against it, and a counterexample caught an overstatement before the case set could be frozen with a flaw built in.\n>\n> When the relay runs that clean, the whole team moves faster — keep the passes sharp! 🔄",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-19T23:00:27.775156Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
