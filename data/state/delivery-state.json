@@ -5596,5 +5596,24 @@
       4796
     ],
     "updated_at": "2026-09-21T12:54:43.653605Z"
+  },
+  {
+    "content_sha256": "11e41def17fa8187617042946fc8d93323179a4ccb650aa0af0a8a08ca585e50",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4798",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4798",
+    "message_count": 1,
+    "message_thread_id": 16,
+    "prepared_at": "2026-09-21T16:13:39.012894Z",
+    "reply_text": "Good morning, Merlini! 👋 Hope it's a great one.",
+    "reply_to_message_id": 4798,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-21T16:13:39.012894Z"
   }
 ]
