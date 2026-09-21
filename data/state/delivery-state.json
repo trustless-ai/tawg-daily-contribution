@@ -628,6 +628,25 @@
     "updated_at": "2026-09-20T23:03:59.144438Z"
   },
   {
+    "content_sha256": "d58210902519aefbd7373d2165163b0037f40bfabe6f71f1111c2bfd669f92fd",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-09-21T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-09-21T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-21T23:04:08.198312Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-09-20 23:00 → 2026-09-21 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **PR #48 completeness locked down** — Baby Blue Viper and Pavlo aligned on narrowing the N7 profile to a non-gating cannot_establish status, resolving the last open completeness question with an honest, documented boundary. [tg:tawg:4786]\n\n> **PR #48 review pass confirmed clean** — Pavlo completed a careful final pass confirming that main review findings are resolved and both profile checks pass; the only remaining CI red is a pre-existing unrelated issue. [tg:tawg:4795]\n\n> **PR #47 differential cleared as baseline-equivalent** — Zexo ran a targeted conformance comparison and confirmed the exact-main divergence reproduces on untouched main, removing it as a PR-introduced blocker. [tg:tawg:4792]\n\n## 🤝 **What moved**\n\n### PR #48\n_Completeness resolution and a careful review pass brought this PR to a clean, near-mergeable state._\n\n- Baby Blue Viper (@babyblueviper1) **Delivered** the updated completeness registration for PR #48, pinning the status as constant and non-gating and framing the N7 case as a named divergence, giving the group a clear documented boundary to review against. [tg:tawg:4783]\n- Pavlo (@pavlentyy82) **Grounded** the narrower N7 profile in a principled technical rationale—when the stdlib path cannot guarantee RFC 8785 float byte identity, cannot_establish is the honest answer—giving the group a defensible basis for the shared decision. [tg:tawg:4785]\n- Baby Blue Viper (@babyblueviper1) **Closed the loop** by confirming alignment with Pavlo's rationale and documenting N7 as a named divergence in the parity test, making the agreed boundary durable and visible for future reviewers. [tg:tawg:4786]\n- Pavlo (@pavlentyy82) **Completed** a careful final pass on PR #48, confirming that main review findings are fixed and both profile checks are clean; the sole CI red is the pre-existing unrelated ens-write-v0 issue, leaving the PR in a well-reviewed state. [tg:tawg:4795]\n\n### PR #47\n_The conformance differential question was investigated and the PR was cleared of introducing new failures._\n\n- Zexo (@zexoverz) **Ran** a targeted conformance comparison between the current main commit and PR #47's head, confirming the exact-main differential reproduces on untouched main and is baseline-equivalent, removing a potential blocker for the PR. [tg:tawg:4792]\n\n### organization\n_Grant scope and connectivity context rounded out the group's picture of near-term work and availability._\n\n- Zexo (@zexoverz) **Clarified** that Track C does not need a community-sourced topic because it carries a named Runtime Verification grant, helping the group understand where coordination effort is and is not needed. [tg:tawg:4791]\n- Merlini (@gobross) **Explained** that a provider-side internet outage was responsible for their weekend absence, giving the group useful context for the recent silence and an expected return timeline. [tg:tawg:4803]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- The Runtime Verification grant scope for Track C is worth surfacing so the broader group can anticipate what that work will cover.\n- With PR #47's differential confirmed baseline-equivalent, a review pass or merge decision is the natural next step.\n\n### ✅ **TODOs**\n\n- Resolve or document the ens-write-v0 CI failure so it does not become a blocker for PR #48 merge.\n- Confirm PR #48 merge readiness now that profile checks are clean and review findings are addressed.\n- Check in with Merlini once connectivity is restored.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A short, focused back-and-forth turned an open completeness question into a mutually agreed and well-documented boundary—showing how quickly the group converges when participants follow up as promised.\n>\n> When a profile question and a differential investigation both land tidy on the same day, the review queue barely knows what hit it. 🚀",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-21T23:04:08.198312Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
