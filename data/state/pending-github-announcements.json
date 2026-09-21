@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_updated:4e374d300d37f8c2cc0c9127",
-    "kind": "pr_updated",
-    "number": 48,
-    "occurred_at": "2026-09-21T22:30:51Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "conformance: add authorized-preimage-schema-v0"
   }
 ]
