@@ -444,5 +444,24 @@
       4732
     ],
     "updated_at": "2026-09-17T00:50:27.672651Z"
+  },
+  {
+    "content_sha256": "18d2a7e82d96bea49388b3eacabbc894d3cc197a2f3e70ef1dc06033ee68d120",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4794",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4794",
+    "message_count": 1,
+    "message_thread_id": 16,
+    "prepared_at": "2026-09-21T12:54:44.411951Z",
+    "reply_text": "Good morning, Pavlo! ☀️ Hope the day is off to a great start on your end.",
+    "reply_to_message_id": 4794,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-21T12:54:44.411951Z"
   }
 ]
