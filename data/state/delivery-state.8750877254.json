@@ -463,5 +463,24 @@
     "telegram_chat_id": null,
     "telegram_message_ids": [],
     "updated_at": "2026-09-21T12:54:44.411951Z"
+  },
+  {
+    "content_sha256": "ac4268bf840b668278961d86531d5c9ea34d90c4d83c13efc642437d2494b62f",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4798",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4798",
+    "message_count": 1,
+    "message_thread_id": 16,
+    "prepared_at": "2026-09-21T16:13:39.554691Z",
+    "reply_text": "Good morning, Merlini! ☀️ Hope you're having a great start to the day!",
+    "reply_to_message_id": 4798,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-21T16:13:39.554691Z"
   }
 ]
