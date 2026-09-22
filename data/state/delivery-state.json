@@ -649,6 +649,25 @@
     "updated_at": "2026-09-21T23:04:08.198312Z"
   },
   {
+    "content_sha256": "1d3082c18f9fa509fa67b40c382b2f80ff69e5292e7c69c2b663a7de69937e19",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-09-22T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-09-22T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-22T23:00:24.873733Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-09-21 23:00 → 2026-09-22 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **zkIE proves end-to-end** — TimesFM 8M ran its full forward pass through the proving pipeline, confirming the zkIE stack can handle a real model at scale. [tg:tawg:4820]\n\n> **PR #47 confirmed mergeable** — After rebasing on post-#48 main, the patch was independently verified as merge-ready with the only remaining failure traced to an unrelated external issue. [tg:tawg:4844]\n\n> **V model training plan structured** — A multi-phase compute plan surfaced the v1-vs-v2 architectural choice as the immediate decision needed to unlock the first training phase. [tg:tawg:4833]\n\n## 🤝 **What moved**\n\n### zkIE\n\n_The proving pipeline reached a full end-to-end milestone with a real model._\n\n- Jimmy Shi (@jimmyshi) **Landed** a complete end-to-end proof of TimesFM 8M, covering all 8.04 million parameters across seven layers from raw input to output, demonstrating that the zkIE pipeline can sustain a full forward pass on a production-scale model. [tg:tawg:4820]\n\n### recompute-kit\n\n_Pending patch work moved from rebase to confirmed merge-readiness, with a follow-on classification fix opened in the same session._\n\n- Pavlo (@pavlentyy82) **Rebased** PR #47 cleanly onto the post-#48 main with the patch unchanged and a favorable CI differential, keeping the work current and narrowing the review scope for the team. [tg:tawg:4843]\n- Baby Blue Viper (@babyblueviper1) **Confirmed** PR #47 as mergeable at head e06deac5, establishing that the only remaining CI failure is an unrelated external ENS parse error and not a defect in the patch itself, giving reviewers a clean signal to act on. [tg:tawg:4844]\n- Baby Blue Viper (@babyblueviper1) **Opened** PR #49 to classify ens-write-v0 as `requires_live` in conformance/uncovered.json, removing the ENS noise from the CI signal at its source and keeping future test runs interpretable for the whole team. [tg:tawg:4850]\n\n### V model planning\n\n_Architectural and compute decisions for the next training cycle were laid out in structured form._\n\n- Merlini (@gobross) **Introduced** a structured planning artifact as the working reference for the V model training cycle, giving the group a shareable anchor for the architectural and phasing decisions ahead. [tg:tawg:4825]\n- Merlini (@gobross) **Framed** the v1-vs-v2 architectural choice as the immediate week-one decision, noting that training both variants in parallel doubles cost until the question is resolved. [tg:tawg:4833]\n- Merlini (@gobross) **Outlined** an identity-gate validation approach rather than visual inspection, and placed translation accuracy work in a later phase with a defined compute budget. [tg:tawg:4834]\n- Merlini (@gobross) **Clarified** that production inference services fall outside the allowed job scope, and that proving for a paying counterparty fits within the three-day job cap, sharpening the boundary between proving work and service operation. [tg:tawg:4835]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Resolve the v1 vs v2 style question for V so the first training phase can start without doubling cost\n- Explore whether the identity-gate validation method could serve as a lightweight regression check for other models\n\n### ✅ **TODOs**\n\n- Merge PR #47 now that mergeability is confirmed and the sole CI failure is isolated\n- Review and merge PR #49 to finalize the ens-write-v0 classification in conformance/uncovered.json\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** Two contributors ran a tight relay on a stalled patch — a rebase, a merge confirmation, and a follow-on fix all landed within a single evening session, turning a noisy CI signal into a clear merge path.\n>\n> When the diff is clean and the gate is open, the only thing left is to push — let's go! 🎉",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-22T23:00:24.873733Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
