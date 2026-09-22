@@ -1573,6 +1573,27 @@
     "updated_at": "2026-09-04T10:00:25.091717Z"
   },
   {
+    "content_sha256": "63520214e63297283c10b2013e48a83ffe83149f5dcbb8444aa72bd3d43b2d14",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:c402ae73417f00c8d541e8fd",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:c402ae73417f00c8d541e8fd",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-22T20:35:44.841948Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#48 conformance: add authorized-preimage-schema-v0](https://github.com/trustless-ai/recompute-kit/pull/48)\nCongratulations, [babyblueviper1](https://github.com/babyblueviper1)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-22T20:35:44.841948Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4842
+    ],
+    "updated_at": "2026-09-22T20:35:44.841948Z"
+  },
+  {
     "content_sha256": "40c55cf625ed27b1a139d41b11d1001d15152614f7998a9d134813e50a5c6fcb",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:cb866d5ef1cc281bba964b5a",
