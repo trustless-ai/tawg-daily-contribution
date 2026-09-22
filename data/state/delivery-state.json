@@ -5743,5 +5743,24 @@
       4818
     ],
     "updated_at": "2026-09-22T02:16:22.409375Z"
+  },
+  {
+    "content_sha256": "fe97107f7b68fe884401374f51a7722317c6bff76781aae6d8abd9794db9148a",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:4829",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:4829",
+    "message_count": 1,
+    "message_thread_id": 16,
+    "prepared_at": "2026-09-22T10:40:48.321294Z",
+    "reply_text": "Good morning, Pavlo! 👋 Hope the day is off to a great start for everyone.",
+    "reply_to_message_id": 4829,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-22T10:40:48.321294Z"
   }
 ]
