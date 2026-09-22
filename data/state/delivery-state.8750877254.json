@@ -526,5 +526,24 @@
       4824
     ],
     "updated_at": "2026-09-22T09:39:10.412728Z"
+  },
+  {
+    "content_sha256": "44da0f34def595ee8a58ee201ed9e9f7191357bf7578dc036e129eedc7bce631",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4829",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4829",
+    "message_count": 1,
+    "message_thread_id": 16,
+    "prepared_at": "2026-09-22T10:40:40.037101Z",
+    "reply_text": "Good morning, Pavlo! 👋 Hope the day is off to a good start for you.",
+    "reply_to_message_id": 4829,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-22T10:40:40.037101Z"
   }
 ]
