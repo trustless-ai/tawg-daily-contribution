@@ -505,5 +505,24 @@
       4817
     ],
     "updated_at": "2026-09-22T02:16:22.167637Z"
+  },
+  {
+    "content_sha256": "7e25670722c274addee295ffd5a039e5e47f9a4625312c2035786106476842f1",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:4823",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:4823",
+    "message_count": 1,
+    "message_thread_id": 1737,
+    "prepared_at": "2026-09-22T09:39:10.412728Z",
+    "reply_text": "🌅 Good morning, Merlini! That's great news — non-commercial fits the Trustless AI mission perfectly. 🎉 Welcome win to start the day!",
+    "reply_to_message_id": 4823,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-22T09:39:10.412728Z"
   }
 ]
