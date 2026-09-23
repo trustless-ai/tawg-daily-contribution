@@ -8,5 +8,25 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_opened:63d399ec97dae45157d9d8ce",
+    "kind": "pr_opened",
+    "number": 53,
+    "occurred_at": "2026-09-23T16:52:46Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "run_conformance: enforce declared checker / mutation_checker / dependencies pins"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_updated:82518c3c638e87a32d61b63a",
+    "kind": "pr_updated",
+    "number": 50,
+    "occurred_at": "2026-09-23T16:53:42Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "conformance: witness P17/P18/P19 in permission-consumption-boundary-v0's mutation check"
   }
 ]
