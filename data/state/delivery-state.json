@@ -2371,6 +2371,27 @@
     "updated_at": "2026-09-23T09:00:23.544671Z"
   },
   {
+    "content_sha256": "805ef27bcd24cb5c4abaedbdb557914477c2e8f611a79aacf195f75d3c9abefb",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:a843fbc8cf091b568f5c5a07",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:a843fbc8cf091b568f5c5a07",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-23T14:40:39.218983Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#51 permission-consumption-boundary-v0: mutants for the consumed identity and domain guards](https://github.com/trustless-ai/recompute-kit/pull/51)\nOpened by [zexoverz](https://github.com/zexoverz)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-23T14:40:39.218983Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4868
+    ],
+    "updated_at": "2026-09-23T14:40:39.218983Z"
+  },
+  {
     "content_sha256": "c131c98e732fd286fb5e72def21d338c51e26e6ee4c9cb879b74ce041a92f473",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:b8d41a0935236e9ef7004b20",
