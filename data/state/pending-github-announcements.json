@@ -11,16 +11,6 @@
   },
   {
     "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_updated:1000a6bbf2af8fed7d1134ec",
-    "kind": "pr_updated",
-    "number": 50,
-    "occurred_at": "2026-09-24T08:04:00Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "conformance: witness P17/P18/P19 in permission-consumption-boundary-v0's mutation check"
-  },
-  {
-    "author_login": "babyblueviper1",
     "event_id": "github-announcement:pr_updated:427f28d4727434870b1d2c9c",
     "kind": "pr_updated",
     "number": 52,
