@@ -2560,6 +2560,25 @@
     "updated_at": "2026-09-05T16:35:12.641841Z"
   },
   {
+    "content_sha256": "d9ddf406888ef22d6ed0db0de3a3d1492651edd26e561b436f5c9fb5d3858a99",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:dde42d9439e7762ff30004f3",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:dde42d9439e7762ff30004f3",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-24T15:35:52.734173Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#54 run\\_conformance: report executed files no declared pin covers \\(opt-in strict mode\\)](https://github.com/trustless-ai/recompute-kit/pull/54)\nOpened by [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-24T15:35:52.734173Z"
+  },
+  {
     "content_sha256": "b6200225a85e9d65bd9373121d71523ac75e93302d77c57e79ce0b6a03a1e0f6",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:de49b9ab1371fdfe4c15651f",
