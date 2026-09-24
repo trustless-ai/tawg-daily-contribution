@@ -11,16 +11,6 @@
   },
   {
     "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_opened:dde42d9439e7762ff30004f3",
-    "kind": "pr_opened",
-    "number": 54,
-    "occurred_at": "2026-09-24T15:12:11Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "run_conformance: report executed files no declared pin covers (opt-in strict mode)"
-  },
-  {
-    "author_login": "babyblueviper1",
     "event_id": "github-announcement:pr_opened:2832a797b1e564e13357ff0a",
     "kind": "pr_opened",
     "number": 55,
