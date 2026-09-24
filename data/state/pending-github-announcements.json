@@ -8,5 +8,45 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_merged:27f89f27770d6dab0b6be14d",
+    "kind": "pr_merged",
+    "number": 49,
+    "occurred_at": "2026-09-24T08:01:00Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "conformance: classify ens-write-v0 as requires_live"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_updated:1000a6bbf2af8fed7d1134ec",
+    "kind": "pr_updated",
+    "number": 50,
+    "occurred_at": "2026-09-24T08:04:00Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "conformance: witness P17/P18/P19 in permission-consumption-boundary-v0's mutation check"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_updated:427f28d4727434870b1d2c9c",
+    "kind": "pr_updated",
+    "number": 52,
+    "occurred_at": "2026-09-24T08:04:17Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "run_conformance: report a stale uncovered.json entry for multi-check suites too"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_updated:534723a215dc5c540e5ee286",
+    "kind": "pr_updated",
+    "number": 53,
+    "occurred_at": "2026-09-24T08:04:34Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "run_conformance: enforce declared checker / mutation_checker / dependencies pins"
   }
 ]
