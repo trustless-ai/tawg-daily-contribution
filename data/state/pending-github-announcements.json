@@ -11,16 +11,6 @@
   },
   {
     "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_merged:27f89f27770d6dab0b6be14d",
-    "kind": "pr_merged",
-    "number": 49,
-    "occurred_at": "2026-09-24T08:01:00Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "conformance: classify ens-write-v0 as requires_live"
-  },
-  {
-    "author_login": "babyblueviper1",
     "event_id": "github-announcement:pr_updated:1000a6bbf2af8fed7d1134ec",
     "kind": "pr_updated",
     "number": 50,
