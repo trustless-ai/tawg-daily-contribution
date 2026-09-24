@@ -691,6 +691,27 @@
     "updated_at": "2026-09-23T23:00:27.184959Z"
   },
   {
+    "content_sha256": "f16bddc1e5ad53e9f771974f5296a1145b0f68807af1a181ab124bd111a70670",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-09-24T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-09-24T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-24T23:00:26.808190Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-09-23 23:00 → 2026-09-24 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Memory estimate corrected** — An observed 1.2 GB figure against a ~9.7 GB estimate shows the current memory-linear extrapolation is too pessimistic, pointing the group toward a better baseline for projecting larger model sizes. [tg:tawg:4877]\n\n## 🤝 **What moved**\n\n### model-sizing\n\n_An empirical correction sharpened the foundation for memory projections across model scales._\n\n- Baby Blue Viper (@babyblueviper1) **Flagged** that the 1.2 GB observed memory figure departs sharply from the ~9.7 GB estimate, noted that the resulting linear extrapolations to 7B and 13B sizes look overly pessimistic, and identified re-deriving those numbers from the 200M data point as the path to a more reliable shared baseline. [tg:tawg:4877]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Revisit 7B and 13B memory projections by anchoring the derivation to the corrected 200M figure rather than the prior linear estimate.\n\n### ✅ **TODOs**\n\n- Re-derive memory estimates from the 200M baseline once the observed figure is confirmed stable.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** One measured data point landing eight times below the estimate quietly reset the trajectory for all the larger model projections built on top of it — a small number doing a lot of heavy lifting.\n>\n> Sometimes the most useful thing a team can do is trust a single careful measurement over a confident extrapolation — keep those sanity-checks coming! 🔧",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-24T23:00:26.808190Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4890
+    ],
+    "updated_at": "2026-09-24T23:00:26.808190Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
