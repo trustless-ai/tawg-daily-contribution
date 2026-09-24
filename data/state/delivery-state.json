@@ -2077,6 +2077,27 @@
     "updated_at": "2026-08-31T12:35:14.725234Z"
   },
   {
+    "content_sha256": "9ceb2b1791812c6c45f2088f09b38051e04655a034a4fb4d82b76d1e77a48e03",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:2832a797b1e564e13357ff0a",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:2832a797b1e564e13357ff0a",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-24T15:35:52.734173Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#55 requires\\_live exclusions age visibly: owner / reviewed\\_at / review\\_after](https://github.com/trustless-ai/recompute-kit/pull/55)\nOpened by [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-24T15:37:17.115030Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4886
+    ],
+    "updated_at": "2026-09-24T15:37:17.115030Z"
+  },
+  {
     "content_sha256": "3c9694f238f4e340f0bbd382fde9632f9df46fadb70284a7ef074066a274583b",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:34d56dde01c959730b690f77",
@@ -2558,6 +2579,27 @@
       4326
     ],
     "updated_at": "2026-09-05T16:35:12.641841Z"
+  },
+  {
+    "content_sha256": "d9ddf406888ef22d6ed0db0de3a3d1492651edd26e561b436f5c9fb5d3858a99",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:dde42d9439e7762ff30004f3",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:dde42d9439e7762ff30004f3",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-24T15:35:52.734173Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#54 run\\_conformance: report executed files no declared pin covers \\(opt-in strict mode\\)](https://github.com/trustless-ai/recompute-kit/pull/54)\nOpened by [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-24T15:35:52.734173Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4885
+    ],
+    "updated_at": "2026-09-24T15:35:52.734173Z"
   },
   {
     "content_sha256": "b6200225a85e9d65bd9373121d71523ac75e93302d77c57e79ce0b6a03a1e0f6",
