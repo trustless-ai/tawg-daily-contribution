@@ -712,6 +712,27 @@
     "updated_at": "2026-09-24T23:00:26.808190Z"
   },
   {
+    "content_sha256": "86d551ef8cc46f44ed03b5350126c33846991cec44b5a409dd07a37cea96b879",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-09-25T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-09-25T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-25T23:00:23.406109Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-09-24 23:00 → 2026-09-25 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Pin coverage gap closed on PR #53** — A malformed pin entry that had been silently skipped is now explicitly reported as NOT COVERED, tightening enforcement in the validation path. [tg:tawg:4899]\n\n> **Gen-3 verifiers confirmed end-to-end on Sepolia** — Deployed contracts passed exact-match Sourcify verification, and an independent on-chain walk validated the full guard-to-verifier hop. [tg:tawg:4913]\n\n> **Data-poisoning research cleared for the evidence boundary** — An overlap check confirmed the authenticated-provenance composition survives and remains a non-redundant tool for the group. [tg:tawg:4931]\n\n## 🤝 **What moved**\n\n### PR #53 — pin validation\n\n_A fast review-and-fix relay tightened the declared-pin enforcement path._\n\n- Zexo (@zexoverz) **Spotted** that `_check_declared_pins` was silently skipping any entry that wasn't a well-formed `{path, sha256}` object, surfacing a gap where a malformed pin could pass undetected and weaken enforcement for the whole group. [tg:tawg:4894]\n- Baby Blue Viper (@babyblueviper1) **Fixed** the gap on PR #53 (commit 112d3dc), changing behavior so any pin that cannot be enforced is now reported as NOT COVERED rather than quietly passed over, making the validation signal reliable and actionable. [tg:tawg:4899]\n\n### gen-3 verifiers\n\n_The Sepolia deployment was verified end-to-end, closing the loop on work from two weeks prior._\n\n- Zexo (@zexoverz) **Closed the loop** on the gen-3 verifiers from 16 Sep, confirming every contract reached exact-match status on Sourcify and sharing the composed run adapter details with the group. [tg:tawg:4895]\n- Baby Blue Viper (@babyblueviper1) **Walked** the complete on-chain hop independently — from guard through registry to verifier — corroborating source-level claims and giving the group a cross-checked deployment they can rely on with confidence. [tg:tawg:4913]\n\n### evidence-boundary research\n\n_Incoming data-poisoning research was mapped and stress-tested against the group's boundary design._\n\n- Pavlo (@pavlentyy82) **Shared** a deeper research pass on data poisoning, examining whether authenticated provenance and exact-record techniques can mitigate it and framing the findings as relevant to the ongoing evidence-boundary work. [tg:tawg:4926]\n- Baby Blue Viper (@babyblueviper1) **Completed** the overlap check against Pavlo's research, confirming the exact composition survives and that the boundary approach remains useful and distinct enough to carry forward. [tg:tawg:4931]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Explore surfacing the NOT COVERED signal in downstream tooling or user-facing diagnostics\n- Continue mapping data-poisoning mitigations to concrete evidence-boundary properties\n\n### ✅ **TODOs**\n\n- Review and advance PR #53 toward merge now that the pin-coverage fix is in\n- Document the gen-3 verifier hop structure so the on-chain path is easy for others to audit independently\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A review caught a silent skip in pin enforcement, a fix landed within hours, and an independent on-chain walk confirmed the deployed chain held — the full loop closed before the day ended.\n>\n> When spec gaps, code fixes, and chain verifications all land in one session, the group is basically running at compiler speed. Keep it going! 🔧",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-25T23:00:23.406109Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4932
+    ],
+    "updated_at": "2026-09-25T23:00:23.406109Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
