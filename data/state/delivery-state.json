@@ -1846,6 +1846,27 @@
     "updated_at": "2026-09-07T16:15:16.980303Z"
   },
   {
+    "content_sha256": "b26af50afb3fad6a9d305ca45636c23007f9012de049e6ab742ee1a96a4adfa4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:e15e438af35ea1c612c49ca0",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:e15e438af35ea1c612c49ca0",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-25T21:50:11.748400Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#54 run\\_conformance: report executed files no declared pin covers \\(opt-in strict mode\\)](https://github.com/trustless-ai/recompute-kit/pull/54)\nCongratulations, [babyblueviper1](https://github.com/babyblueviper1)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-25T21:50:11.748400Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4928
+    ],
+    "updated_at": "2026-09-25T21:50:11.748400Z"
+  },
+  {
     "content_sha256": "65759af36e1abe4ac1b58f7b54e8f2c9917f57ee65c1fba13d005e846f286d41",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:e584e848a5e1cb37f6e63031",
@@ -3377,6 +3398,25 @@
       4882
     ],
     "updated_at": "2026-09-24T08:16:00.041388Z"
+  },
+  {
+    "content_sha256": "dd2b5a7fb6e598eb44e56f5cdd3d8d6cb8ea7c902a681da05706eccda90ae66f",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:5de936184d999c9891952c1d",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:5de936184d999c9891952c1d",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-25T21:50:11.748400Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#52 run\\_conformance: report a stale uncovered.json entry for multi-check suites too](https://github.com/trustless-ai/recompute-kit/pull/52)\nNew commits from [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-25T21:50:11.748400Z"
   },
   {
     "content_sha256": "e6b671c60fc34b254adce8ddd74a029fb41bf8d75c19a23842cf039459335da5",
