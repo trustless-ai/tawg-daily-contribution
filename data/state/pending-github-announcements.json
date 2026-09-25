@@ -11,16 +11,6 @@
   },
   {
     "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_updated:f0e1de2edc4197d8cf0c1b9d",
-    "kind": "pr_updated",
-    "number": 55,
-    "occurred_at": "2026-09-25T18:21:26Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "requires_live exclusions age visibly: owner / reviewed_at / review_after"
-  },
-  {
-    "author_login": "babyblueviper1",
     "event_id": "github-announcement:pr_updated:42b2c66baa64bbfbb4cb881e",
     "kind": "pr_updated",
     "number": 54,
