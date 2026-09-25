@@ -3400,6 +3400,25 @@
     "updated_at": "2026-09-24T08:16:00.041388Z"
   },
   {
+    "content_sha256": "dd2b5a7fb6e598eb44e56f5cdd3d8d6cb8ea7c902a681da05706eccda90ae66f",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:5de936184d999c9891952c1d",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:5de936184d999c9891952c1d",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-25T21:50:11.748400Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#52 run\\_conformance: report a stale uncovered.json entry for multi-check suites too](https://github.com/trustless-ai/recompute-kit/pull/52)\nNew commits from [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-25T21:50:11.748400Z"
+  },
+  {
     "content_sha256": "e6b671c60fc34b254adce8ddd74a029fb41bf8d75c19a23842cf039459335da5",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:601387a89c518be3d558f96e",
