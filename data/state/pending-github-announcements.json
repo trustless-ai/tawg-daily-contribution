@@ -11,16 +11,6 @@
   },
   {
     "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_updated:8456f1e13b93eb8cfeea8cd2",
-    "kind": "pr_updated",
-    "number": 52,
-    "occurred_at": "2026-09-25T21:04:08Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "run_conformance: report a stale uncovered.json entry for multi-check suites too"
-  },
-  {
-    "author_login": "babyblueviper1",
     "event_id": "github-announcement:pr_updated:dc0a42da84659b9bbc2bdf9d",
     "kind": "pr_updated",
     "number": 55,
