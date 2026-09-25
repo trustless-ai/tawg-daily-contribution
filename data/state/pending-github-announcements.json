@@ -8,5 +8,45 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "zexoverz",
+    "event_id": "github-announcement:pr_merged:442b25ae7c920857580139f7",
+    "kind": "pr_merged",
+    "number": 44,
+    "occurred_at": "2026-09-25T20:54:46Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "run_conformance: a gate's own exit 2 is unverifiable, not verified-bad"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_updated:13512cc2f8eaf2e9d6708cb5",
+    "kind": "pr_updated",
+    "number": 54,
+    "occurred_at": "2026-09-25T21:01:55Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "run_conformance: report executed files no declared pin covers (opt-in strict mode)"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_updated:8456f1e13b93eb8cfeea8cd2",
+    "kind": "pr_updated",
+    "number": 52,
+    "occurred_at": "2026-09-25T21:04:08Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "run_conformance: report a stale uncovered.json entry for multi-check suites too"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_updated:dc0a42da84659b9bbc2bdf9d",
+    "kind": "pr_updated",
+    "number": 55,
+    "occurred_at": "2026-09-25T21:04:17Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "requires_live exclusions age visibly: owner / reviewed_at / review_after"
   }
 ]
