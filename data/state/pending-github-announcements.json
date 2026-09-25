@@ -10,16 +10,6 @@
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
   },
   {
-    "author_login": "zexoverz",
-    "event_id": "github-announcement:pr_merged:442b25ae7c920857580139f7",
-    "kind": "pr_merged",
-    "number": 44,
-    "occurred_at": "2026-09-25T20:54:46Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "run_conformance: a gate's own exit 2 is unverifiable, not verified-bad"
-  },
-  {
     "author_login": "babyblueviper1",
     "event_id": "github-announcement:pr_updated:13512cc2f8eaf2e9d6708cb5",
     "kind": "pr_updated",
