@@ -8,5 +8,25 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_merged:e15e438af35ea1c612c49ca0",
+    "kind": "pr_merged",
+    "number": 54,
+    "occurred_at": "2026-09-25T21:28:55Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "run_conformance: report executed files no declared pin covers (opt-in strict mode)"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_updated:5de936184d999c9891952c1d",
+    "kind": "pr_updated",
+    "number": 52,
+    "occurred_at": "2026-09-25T21:34:02Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "run_conformance: report a stale uncovered.json entry for multi-check suites too"
   }
 ]
