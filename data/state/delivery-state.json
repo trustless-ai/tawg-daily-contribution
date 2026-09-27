@@ -754,6 +754,27 @@
     "updated_at": "2026-09-26T23:00:31.098182Z"
   },
   {
+    "content_sha256": "b9ec2d113e7c9e258b56d861212a2abcd179f8fd292978829505dc4e10c578ae",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-09-27T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-09-27T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-27T23:00:17.589337Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-09-26 23:00 → 2026-09-27 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Verification lands on commit ead6446** — Pavlo worked through the commit against the README, checker, builder, and vectors, concluding that five key points are genuinely load-bearing rather than merely documented. [tg:tawg:4957]\n\n> **Recompute-kit sequencing agreed** — Baby Blue Viper locked in fold-first, upstream-second ordering and committed to reshaping the work into a standard recompute-kit profile. [tg:tawg:4958]\n\n## 🤝 **What moved**\n\n### recompute-kit\n\n_Verification and restructuring work converged on a clearer, more grounded implementation path._\n\n- Pavlo (@pavlentyy82) **Verified** commit ead6446 against the actual README, checker, builder, and vectors, confirming that five key points are genuinely load-bearing — this grounding gives the group confidence in the profile's foundations before any restructuring begins. [tg:tawg:4957]\n- Baby Blue Viper (@babyblueviper1) **Agreed** on fold-first, upstream-second sequencing and planned to reshape the work into a standard recompute-kit profile (README/check.py/mutation_check.py/vectors.json/suite.json), setting up a clean and reproducible path toward the upstream step. [tg:tawg:4958]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Clarify what the AUTHENTICA prefix mentioned in the fold plan means for the recompute-kit profile structure and any downstream compatibility considerations\n\n### ✅ **TODOs**\n\n- Complete the full recompute-kit profile restructure (README/check.py/mutation_check.py/vectors.json/suite.json) before moving to the upstream step\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** Verification confirmed five load-bearing points and fold-first sequencing was agreed in the same window — a tidy spec-to-plan relay that keeps the next step grounded before anything moves upstream.\n>\n> When the checklist and the commit shake hands, the pipeline gets to breathe. Keep that loop closing! 🎯",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-27T23:00:17.589337Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4959
+    ],
+    "updated_at": "2026-09-27T23:00:17.589337Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
