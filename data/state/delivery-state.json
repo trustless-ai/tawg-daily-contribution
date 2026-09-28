@@ -2266,6 +2266,25 @@
     "updated_at": "2026-09-24T15:37:17.115030Z"
   },
   {
+    "content_sha256": "602d2e90129767e5753284c50afa3d650e36e20744368f6ad4ea47194e2b4f45",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:2863a4140be0fa21eb69d0c3",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:2863a4140be0fa21eb69d0c3",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-28T10:36:07.518694Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#56 conformance: scan-subject-binding-v0 \\(what a clean poisoning scan establishes about consumed data\\)](https://github.com/trustless-ai/recompute-kit/pull/56)\nOpened by [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-28T10:36:07.518694Z"
+  },
+  {
     "content_sha256": "3c9694f238f4e340f0bbd382fde9632f9df46fadb70284a7ef074066a274583b",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:34d56dde01c959730b690f77",
