@@ -8,5 +8,25 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_opened:2863a4140be0fa21eb69d0c3",
+    "kind": "pr_opened",
+    "number": 56,
+    "occurred_at": "2026-09-28T10:25:00Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "conformance: scan-subject-binding-v0 (what a clean poisoning scan establishes about consumed data)"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_updated:c9fada42c155d13058f6106f",
+    "kind": "pr_updated",
+    "number": 55,
+    "occurred_at": "2026-09-28T10:36:14Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "requires_live exclusions age visibly: owner / reviewed_at / review_after"
   }
 ]
