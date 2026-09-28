@@ -2266,6 +2266,27 @@
     "updated_at": "2026-09-24T15:37:17.115030Z"
   },
   {
+    "content_sha256": "602d2e90129767e5753284c50afa3d650e36e20744368f6ad4ea47194e2b4f45",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:2863a4140be0fa21eb69d0c3",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:2863a4140be0fa21eb69d0c3",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-28T10:36:07.518694Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#56 conformance: scan-subject-binding-v0 \\(what a clean poisoning scan establishes about consumed data\\)](https://github.com/trustless-ai/recompute-kit/pull/56)\nOpened by [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-28T10:36:07.518694Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4968
+    ],
+    "updated_at": "2026-09-28T10:36:07.518694Z"
+  },
+  {
     "content_sha256": "3c9694f238f4e340f0bbd382fde9632f9df46fadb70284a7ef074066a274583b",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:34d56dde01c959730b690f77",
@@ -3900,6 +3921,27 @@
       4574
     ],
     "updated_at": "2026-09-10T02:10:12.595827Z"
+  },
+  {
+    "content_sha256": "a36383d0e7ff4861a2803b176c89a6b2a19607ae66fd96f70fc6e4b147cba36a",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:c9fada42c155d13058f6106f",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:c9fada42c155d13058f6106f",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-28T10:36:07.518694Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#55 requires\\_live exclusions age visibly: owner / reviewed\\_at / review\\_after](https://github.com/trustless-ai/recompute-kit/pull/55)\nNew commits from [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-28T10:36:07.518694Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      4969
+    ],
+    "updated_at": "2026-09-28T10:36:07.518694Z"
   },
   {
     "content_sha256": "44ac50c8a065e5cbfeabd4412a70d85b44340b8c25a8f586db74b1ac07f30cf8",
