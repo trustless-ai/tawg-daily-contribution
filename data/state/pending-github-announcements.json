@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_opened:3cb40c623d7c9924e6a96b3d",
+    "kind": "pr_opened",
+    "number": 57,
+    "occurred_at": "2026-09-29T18:21:04Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "run_conformance: adapter.contract (reporter | self_grading); runner grades reporters; R1/R2/R3"
   }
 ]
