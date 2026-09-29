@@ -2350,6 +2350,27 @@
     "updated_at": "2026-09-28T10:36:07.518694Z"
   },
   {
+    "content_sha256": "9ac66baebb18d22dbee21898307fd83d57ccc007f0fb933c331c38255bdce05d",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:318416b77e480914bb71663e",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:318416b77e480914bb71663e",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-29T16:40:11.658699Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/agent-ercs](https://github.com/trustless-ai/agent-ercs)\n[#20 Sync IAgentWorkflow with ERC-8301 operationId](https://github.com/trustless-ai/agent-ercs/pull/20)\nOpened by [zexoverz](https://github.com/zexoverz)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-29T16:40:11.658699Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5033
+    ],
+    "updated_at": "2026-09-29T16:40:11.658699Z"
+  },
+  {
     "content_sha256": "3c9694f238f4e340f0bbd382fde9632f9df46fadb70284a7ef074066a274583b",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:34d56dde01c959730b690f77",
