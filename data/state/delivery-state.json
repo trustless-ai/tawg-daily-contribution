@@ -1825,6 +1825,25 @@
     "updated_at": "2026-09-13T13:20:08.143459Z"
   },
   {
+    "content_sha256": "56713c43386d2b029bd7f7d9cd9d0645a672f2d3a3bd5dbc76859cad42cc4fd4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:b98b5fb8ea53b4af3a4a466f",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:b98b5fb8ea53b4af3a4a466f",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-30T02:55:44.300799Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#58 Revert #56: landed before Zexo's review](https://github.com/trustless-ai/recompute-kit/pull/58)\nCongratulations, [babyblueviper1](https://github.com/babyblueviper1)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-30T02:55:44.300799Z"
+  },
+  {
     "content_sha256": "66672a876b76b48ab1420c821fc380a8fb586f08f8249389ad2d7299a3c8e5a2",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:c037da11ba6f2b495af8b4aa",
