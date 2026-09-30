@@ -817,6 +817,27 @@
     "updated_at": "2026-09-29T23:00:24.098925Z"
   },
   {
+    "content_sha256": "3465163620ca9fbcb712bdd25f01e2797e52c5fd05d6758cec69318275da0b78",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-09-30T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-09-30T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-09-30T23:00:14.258859Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-09-29 23:00 → 2026-09-30 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **CUDA GKR runs on GPT-2** — Jimmy Shi turned the layer-granularity GKR concept into a runnable GPT-2 experiment, giving the group its first concrete CUDA baseline to profile and extend. [tg:tawg:5053]\n\n> **Grader bug isolated and decomposed** — Pavlo surfaced the key presence-vs-value collapse and Merlini validated it and split it into three distinct actionable items, bringing the grading fix within reach of closure. [tg:tawg:5061]\n\n> **PR #1932 revocation state converged** — Pavlo and Baby Blue Viper each independently checked the same commit head and confirmed the normative post-revocation label, turning an open question into settled ground. [tg:tawg:5063]\n\n## 🤝 **What moved**\n\n### zkIE / cuda-gkr\n\n_The ZK inference direction gained its first concrete experimental run._\n\n- Jimmy Shi (@jimmyshi) **Shipped** a GPT-2 run built around the merged layer-granularity GKR design, translating a conceptual thread into runnable CUDA code and giving the group a real baseline to profile and extend. [tg:tawg:5053]\n- Jimmy Shi (@jimmyshi) **Shared** the cuda-gkr feature branch, making the implementation directly accessible for collaborative review and iteration. [tg:tawg:5054]\n\n### grading-fix\n\n_The grader correctness work reached a precise and actionable state._\n\n- Pavlo (@pavlentyy82) **Identified** a remaining boundary in the grading fix: `grade()` using `got.get(k)` collapses a missing key and an explicit null into the same result, which matters for declared-field comparisons and blocks a clean closure of the fix. [tg:tawg:5057]\n- Merlini (@gobross) **Validated** Pavlo's analysis and organized the issues into three distinct categories, separating what is actionable immediately from what can be deferred, giving the group a clear path to close the fix without scope creep. [tg:tawg:5061]\n\n### ERC-8373 / PR #1932\n\n_Normative state naming for the post-revocation case was cross-verified and settled._\n\n- Baby Blue Viper **Checked** PR #1932 before the discussion and confirmed the spec text already names the post-revocation state, narrowing the open question before others weighed in. [tg:tawg:5062]\n- Pavlo (@pavlentyy82) **Verified** against the current #1932 head (27e79ea) that the ERC prose already names the post-revocation state, clarifying which definition is normative and anchoring the conversation to settled text. [tg:tawg:5063]\n- Baby Blue Viper **Confirmed** the same prose finding against the same commit head and extended the check to `admit()` logic, establishing that resolved-empty and unanchored-chain return distinct named states. [tg:tawg:5064]\n- Baby Blue Viper **Resolved** a two-part precision question about `admit()` return values, landing on concrete named states the group can use directly in downstream test and review work. [tg:tawg:5068]\n\n### ERC-8183 / external engagement\n\n_An external perspective arrived in the ongoing specification discussion._\n\n- A procurement-side contribution entered the ERC-8183 thread with a question about Exam design, bringing a mechanism-design angle that widens the context the specification needs to address. [ERC-8183 Magicians post](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/422)\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Profile the cuda-gkr GPT-2 run to understand where layer-granularity GKR gains or loses on real model shapes\n- Explore how the presence-vs-value distinction in the grader maps onto broader grading semantics beyond the immediate fix\n- Track whether the Magicians procurement-side question surfaces Exam design constraints worth pulling into the spec\n\n### ✅ **TODOs**\n\n- Land the grader presence-vs-value fix now that the three issues are clearly separated\n- Document the settled post-revocation and binding-state terminology from #1932 so test cases can follow\n- Review the cuda-gkr branch and give feedback on the GPT-2 CUDA baseline\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** Two contributors independently checked the same PR commit head and arrived at the same normative label — the post-revocation state resolved through dual verification rather than debate.\n>\n> Turns out the spec already wrote the answer; the group just had to read it twice to be sure. 🔍",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-30T23:00:14.258859Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5069
+    ],
+    "updated_at": "2026-09-30T23:00:14.258859Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
