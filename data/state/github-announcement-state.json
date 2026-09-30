@@ -2,7 +2,7 @@
   "initialized_at": "2026-08-29T15:45:00Z",
   "repositories": [
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/.github",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -11,7 +11,7 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/agent-contracts-examples",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -29,7 +29,7 @@
       ]
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/agent-ercs",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -67,7 +67,7 @@
       ]
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/agent-sdk",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -115,7 +115,7 @@
       ]
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/ccip-router",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -163,21 +163,21 @@
       ]
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/collapsed-state-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/composed-attestation-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/cross-reference-console",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -227,14 +227,14 @@
       ]
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/eip7702-rescue",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/observation-conditions-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -243,25 +243,26 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/pq-agent-binding",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/primitives",
       "initialized_at": "2026-09-03T20:45:07.910077Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/recompute-kit",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
-        39
+        39,
+        61
       ],
       "pulls": [
         {
@@ -583,18 +584,28 @@
           "state": "open",
           "title": "conformance: scan-subject-binding-v0 (re-opened #56 for review)",
           "updated_at": "2026-09-30T02:26:48Z"
+        },
+        {
+          "author_login": "babyblueviper1",
+          "head_sha": "196dca820245dc251e5c549781ccb50f108f29cb",
+          "merge_commit_sha": null,
+          "merged_at": null,
+          "number": 60,
+          "state": "open",
+          "title": "pq-key-binding-v1/cutoff: grade() must assert presence, not just value",
+          "updated_at": "2026-09-30T21:06:15Z"
         }
       ]
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/recompute-lens",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/semantic-abi",
       "initialized_at": "2026-09-05T13:50:18.716472Z",
       "issue_numbers": [],
@@ -682,7 +693,7 @@
       ]
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/tawg-daily-contribution",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -740,14 +751,14 @@
       ]
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/trustless-agent-substrate",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/trustless-ai-landing",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -875,14 +886,14 @@
       ]
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/verify-layer",
       "initialized_at": "2026-09-03T15:10:15.931759Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-09-30T20:55:52.459545Z",
+      "checked_at": "2026-09-30T21:30:17.046070Z",
       "full_name": "trustless-ai/zkIE",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
