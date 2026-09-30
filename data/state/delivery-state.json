@@ -880,6 +880,25 @@
     "updated_at": "2026-09-07T06:15:14.227903Z"
   },
   {
+    "content_sha256": "1b89e3830ed1b4fcd7f62a48ad00f8f0d3f6277a82b669931593b4cae69b12d0",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:issue_opened:d0723f72017eb617557cde0e",
+    "destination": "tawg",
+    "job_id": "github-announcement:issue_opened:d0723f72017eb617557cde0e",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-30T21:30:17.046070Z",
+    "reply_text": "🆕 **New issue** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#61 pq\\_key\\_binding.v1: resolution\\_reason=no\\_in\\_force\\_binding on the t==R branch does not name the ERC's own authority\\_revoked state](https://github.com/trustless-ai/recompute-kit/issues/61)\nOpened by [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-09-30T21:30:17.046070Z"
+  },
+  {
     "content_sha256": "9d4ca8ba9480eba01145ffbabcdd7a2426f5b7b0b6ab2f5c5a19ae512223f016",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:issue_opened:e197badcc48c12b495565a2a",
