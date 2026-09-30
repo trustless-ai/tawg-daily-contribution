@@ -11,16 +11,6 @@
   },
   {
     "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_opened:4f10c4f773b62fd0f237d381",
-    "kind": "pr_opened",
-    "number": 60,
-    "occurred_at": "2026-09-30T21:06:15Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "pq-key-binding-v1/cutoff: grade() must assert presence, not just value"
-  },
-  {
-    "author_login": "babyblueviper1",
     "event_id": "github-announcement:issue_opened:d0723f72017eb617557cde0e",
     "kind": "issue_opened",
     "number": 61,
