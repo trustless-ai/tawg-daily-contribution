@@ -880,6 +880,27 @@
     "updated_at": "2026-09-07T06:15:14.227903Z"
   },
   {
+    "content_sha256": "1b89e3830ed1b4fcd7f62a48ad00f8f0d3f6277a82b669931593b4cae69b12d0",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:issue_opened:d0723f72017eb617557cde0e",
+    "destination": "tawg",
+    "job_id": "github-announcement:issue_opened:d0723f72017eb617557cde0e",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-30T21:30:17.046070Z",
+    "reply_text": "🆕 **New issue** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#61 pq\\_key\\_binding.v1: resolution\\_reason=no\\_in\\_force\\_binding on the t==R branch does not name the ERC's own authority\\_revoked state](https://github.com/trustless-ai/recompute-kit/issues/61)\nOpened by [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-30T21:30:17.046070Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5066
+    ],
+    "updated_at": "2026-09-30T21:30:17.046070Z"
+  },
+  {
     "content_sha256": "9d4ca8ba9480eba01145ffbabcdd7a2426f5b7b0b6ab2f5c5a19ae512223f016",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:issue_opened:e197badcc48c12b495565a2a",
@@ -2558,6 +2579,27 @@
       4333
     ],
     "updated_at": "2026-09-05T19:20:16.031885Z"
+  },
+  {
+    "content_sha256": "36c8ef3d152bd9b35683413b4ed10163d256f063ac46f22662190c9ebd7e03da",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:4f10c4f773b62fd0f237d381",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:4f10c4f773b62fd0f237d381",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-09-30T21:30:17.046070Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#60 pq-key-binding-v1/cutoff: grade\\(\\) must assert presence, not just value](https://github.com/trustless-ai/recompute-kit/pull/60)\nOpened by [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-09-30T21:30:17.046070Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5065
+    ],
+    "updated_at": "2026-09-30T21:30:17.046070Z"
   },
   {
     "content_sha256": "050ed0af4f8f7a6da21eceb543032107cbd6e493c1b4c7ba2a5f6c9de4a6d175",
