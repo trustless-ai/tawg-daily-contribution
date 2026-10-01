@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:issue_opened:0a756640862408bc0188c4e4",
+    "kind": "issue_opened",
+    "number": 14,
+    "occurred_at": "2026-10-01T14:52:01Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "verify_shard_dag / verify_committed_shard_dag re-run the full forward pass (contradicts README's 'verifying is cheap and does not re-run the model')"
   }
 ]
