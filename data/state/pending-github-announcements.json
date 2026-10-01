@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_merged:b368f73caeaa3c5b49ffcdd9",
+    "kind": "pr_merged",
+    "number": 7,
+    "occurred_at": "2026-10-01T09:43:10Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "bench(timesFM): add timesFM 200 benchmark"
   }
 ]
