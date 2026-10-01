@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_merged:ce82ac2678d64b386de33ae1",
+    "kind": "pr_merged",
+    "number": 16,
+    "occurred_at": "2026-10-01T23:35:29Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat(deepseek): Support deepseek-v2-lite"
   }
 ]
