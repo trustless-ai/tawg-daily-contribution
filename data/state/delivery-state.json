@@ -901,6 +901,25 @@
     "updated_at": "2026-09-07T06:15:14.227903Z"
   },
   {
+    "content_sha256": "e454f7a73482f93b760a1b98eadb64f2bf8b4ebc069e508ff5199ac1d8bce56c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:issue_opened:88df1d5623d17d893d5006f1",
+    "destination": "tawg",
+    "job_id": "github-announcement:issue_opened:88df1d5623d17d893d5006f1",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-01T14:30:54.318408Z",
+    "reply_text": "🆕 **New issue** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#13 RoPE rounding remainder is not range-checked \\(soundness gap\\)](https://github.com/trustless-ai/zkIE/issues/13)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-01T14:30:54.318408Z"
+  },
+  {
     "content_sha256": "1b89e3830ed1b4fcd7f62a48ad00f8f0d3f6277a82b669931593b4cae69b12d0",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:issue_opened:d0723f72017eb617557cde0e",
