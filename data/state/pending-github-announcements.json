@@ -8,5 +8,25 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_merged:3fbfd7175e8c0d25f51d2a85",
+    "kind": "pr_merged",
+    "number": 12,
+    "occurred_at": "2026-10-01T14:02:28Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "docs: rewrite adding-a-model guide"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:issue_opened:88df1d5623d17d893d5006f1",
+    "kind": "issue_opened",
+    "number": 13,
+    "occurred_at": "2026-10-01T14:25:58Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "RoPE rounding remainder is not range-checked (soundness gap)"
   }
 ]
