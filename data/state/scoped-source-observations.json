@@ -112,11 +112,11 @@
     "updated_at": "2026-09-07T22:29:47Z"
   },
   {
-    "metadata_sha256": "a32b8ddcd0d10a30a00d468846598f5a5af061dc06c2f76bf79389e791d35fa0",
+    "metadata_sha256": "8697e25d96e4736113f4ee6d944aedc3e3fda0814ac35df7cb1141c9cfd17891",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-10-01T03:10:46Z"
+    "updated_at": "2026-10-01T03:45:21Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
@@ -140,11 +140,11 @@
     "updated_at": "2026-09-03T18:16:39Z"
   },
   {
-    "metadata_sha256": "93abd27a8418246675781bb14fcfb4e3d0192b2b9e789b1d98f5579cf8b87beb",
+    "metadata_sha256": "15ce9151e02b7fac6811a7e4ba7fbedae4ca2d5db382215c74b945edc2a55c79",
     "source_key": "zkIE",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/zkIE",
-    "updated_at": "2026-10-01T03:14:10Z"
+    "updated_at": "2026-10-01T03:22:23Z"
   },
   {
     "metadata_sha256": "cb56eef90557d1beac33bbf4ce5d4bde1bf10efbc0b7a05d47675a8a9015adb4",
