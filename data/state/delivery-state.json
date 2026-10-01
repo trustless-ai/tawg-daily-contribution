@@ -1279,6 +1279,25 @@
     "updated_at": "2026-09-07T22:55:10.000540Z"
   },
   {
+    "content_sha256": "26da07e74b71632a99227fb20a32654dcc7e16d5905540fdc8de9bac6e43ee9e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:3fbfd7175e8c0d25f51d2a85",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:3fbfd7175e8c0d25f51d2a85",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-01T14:30:54.318408Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#12 docs: rewrite adding-a-model guide](https://github.com/trustless-ai/zkIE/pull/12)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-01T14:30:54.318408Z"
+  },
+  {
     "content_sha256": "48c2a0aa7dfaf2d58949b0c43f91c9b56ad426e2c71ce2333457513a653f8b5f",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:442b25ae7c920857580139f7",
