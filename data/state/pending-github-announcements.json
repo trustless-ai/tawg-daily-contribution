@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_merged:e6b8e9f8c0a04df8f166d837",
-    "kind": "pr_merged",
-    "number": 11,
-    "occurred_at": "2026-10-01T13:37:58Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "feat(gemma 3): Support gemma 3 270M"
   }
 ]
