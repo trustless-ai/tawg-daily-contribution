@@ -1090,6 +1090,25 @@
     "updated_at": "2026-09-25T12:05:30.389555Z"
   },
   {
+    "content_sha256": "06560bec4ca3b66031aa85f2cdbd39b5337aeec4292cd4822d2f004899e0c570",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:1d2f09756944dcc77d995c5a",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:1d2f09756944dcc77d995c5a",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-01T11:26:04.422875Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#8 perf\\(all\\): Move files and update roadmap](https://github.com/trustless-ai/zkIE/pull/8)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-01T11:26:04.422875Z"
+  },
+  {
     "content_sha256": "4baf7551d3ca755fcfbf5f3f88ae57742b7f77e34d429c0db83dfca017ff9785",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:1fd667430d9258368956462f",
