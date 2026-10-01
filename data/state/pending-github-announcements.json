@@ -11,16 +11,6 @@
   },
   {
     "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_merged:1d2f09756944dcc77d995c5a",
-    "kind": "pr_merged",
-    "number": 8,
-    "occurred_at": "2026-10-01T11:01:37Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "perf(all): Move files and update roadmap"
-  },
-  {
-    "author_login": "JimmyShi22",
     "event_id": "github-announcement:pr_merged:91659e823ae7885cac926b5e",
     "kind": "pr_merged",
     "number": 9,
