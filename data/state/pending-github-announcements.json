@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_merged:7d1d51aa31095c97d187075f",
-    "kind": "pr_merged",
-    "number": 5,
-    "occurred_at": "2026-10-01T07:15:39Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "perf(all): Remove old codes"
   }
 ]
