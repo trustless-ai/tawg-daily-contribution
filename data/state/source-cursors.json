@@ -16,11 +16,11 @@
     "repo:recompute-kit:metadata_sha256": "5ccc7532701c640761c10bb7dcec45a10dee507ebc9e503510d63b7aa6f2adee",
     "repo:recompute-lens:metadata_sha256": "3ca70fe18e4e62e8ea690138da610229ebfa681c3a23d3ddbfe9cd9112091551",
     "repo:semantic-abi:metadata_sha256": "ece1e475af6f8511e81c50dd8fcf10cd43f32d479fbafc341d387bd2075d983e",
-    "repo:tawg-daily-contribution:metadata_sha256": "ec548c6eebca24f322c774f9d154b18c6fd758eb065d9f1f2e90d0d0c901e5c7",
+    "repo:tawg-daily-contribution:metadata_sha256": "589dd92c6f9d807004c4ae538bcc017348d2991c907fba9be6bd77b885652bdd",
     "repo:trustless-agent-substrate:metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
     "repo:trustless-ai-landing:metadata_sha256": "018b14008b1ecec6b427b82bec73ebdeae887737ce62a5c6a11b90f18bf1d550",
     "repo:verify-layer:metadata_sha256": "0e893941906b396322aafbe1c6a769a1c18d8809eee8fc443b7d3bbcb7d8a897",
-    "repo:zkIE:metadata_sha256": "15ce9151e02b7fac6811a7e4ba7fbedae4ca2d5db382215c74b945edc2a55c79"
+    "repo:zkIE:metadata_sha256": "1a27cfd6ffe5de3a2a4d74c5e48a15cab5698ad544a551ebd51bb272974655ff"
   },
   "knowledge_record_id": null,
   "knowledge_updated_at": null,
