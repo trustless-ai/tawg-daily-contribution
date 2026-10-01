@@ -2224,6 +2224,27 @@
     "updated_at": "2026-09-06T15:25:17.426278Z"
   },
   {
+    "content_sha256": "bbc3727bb6bcbc15b63795d6a228a811451635d04bd1cf4e93c318556747b318",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:e6b8e9f8c0a04df8f166d837",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:e6b8e9f8c0a04df8f166d837",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-01T14:00:52.263354Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#11 feat\\(gemma 3\\): Support gemma 3 270M](https://github.com/trustless-ai/zkIE/pull/11)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-01T14:00:52.263354Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5102
+    ],
+    "updated_at": "2026-10-01T14:00:52.263354Z"
+  },
+  {
     "content_sha256": "60019216a6563d6ca5c8584e8a47ab11f5d6a09825971232facc59ccf0becb32",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:e73834622ab27ec51d1ac927",
