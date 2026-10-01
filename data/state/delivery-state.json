@@ -838,6 +838,25 @@
     "updated_at": "2026-09-30T23:00:14.258859Z"
   },
   {
+    "content_sha256": "f0e154b578421156dc7f351b0ca3bf33b48fdd2b91d5afc1072b523bba65b86e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-10-01T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-10-01T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-10-01T23:00:19.914695Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-09-30 23:00 → 2026-10-01 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **zkIE weights-commitment proposal opened** — A docs-and-tooling PR backed by real numbers landed in the zkIE repo, turning design discussion into a reviewable artifact for the group. [tg:tawg:5119]\n\n> **Three-check conformance sweep on erc-8309-vantage cleared** — Namespace, cursor/since, and skew-bound checks all returned zero hits against the pinned schema and golden sets, giving the group a verified clean baseline. [tg:tawg:5092]\n\n> **ERC-8004 Namespaces section locked as non-normative** — A definitive ruling resolved the open question and tightened the spec's normative surface. [tg:tawg:5074]\n\n## 🤝 **What moved**\n\n### zkIE\n\n_The zkIE direction advanced from design conversation to a concrete, reviewable proposal._\n\n- Jimmy Shi (@jimmyshi) **Shared** the zkIE repository with the group, anchoring the trustless AI verification work in a live codebase and giving every contributor a direct reference for ongoing design decisions. [tg:tawg:5084]\n\n- Baby Blue Viper **Analyzed** the accumulator-inside-WHIR approach for batch membership checks and favored it over per-element Merkle proofs, keeping the design within the algebra the system already uses and reducing proof overhead for the group's zkIE implementation. [tg:tawg:5113]\n\n- Baby Blue Viper **Shipped** a weights-commitment proposal covering docs and tooling (prover unchanged) with real numbers attached, giving Jimmy Shi and the rest of the group a concrete artifact to evaluate and build on. [tg:tawg:5119]\n\n### ERC-8004 spec\n\n_The normative boundary of the Namespaces section moved from open question to settled ground._\n\n- Merlini (@gobross) **Ruled** the Namespaces section non-normative and confirmed the existing lock on the out-of-band convention, resolving an editorial ambiguity and helping keep the spec's normative surface clean for implementers. [tg:tawg:5074]\n\n- Zexo (@zexoverz) **Confirmed** agreement with the ruling, providing group-wide alignment and clearing the path for the edit to proceed without further debate. [tg:tawg:5086]\n\n### erc-8309 conformance\n\n_Conformance checks ran independently and converged on a clean result._\n\n- Baby Blue Viper **Cleared** the cursor/since conformance check against the pinned erc-8309-vantage schema and golden vectors, confirming that two edits under consideration fall outside the conformance surface. [tg:tawg:5072]\n\n- Baby Blue Viper **Completed** a three-check sweep across namespace, cursor/since, and skew-bound dimensions against the pinned schema and golden sets, producing a clean baseline the group can use as a stable reference. [tg:tawg:5092]\n\n- Pavlo (@pavlentyy82) **Independently verified** the same three checks, adding a second confirmation that raises confidence in the clean conformance result. [tg:tawg:5097]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Two posts on the ERC-8004 Ethereum Magicians thread were flagged by the community in this window; reviewing the surrounding thread context may indicate whether a spec note or editorial response is warranted. [post 374](https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098/374)\n\n- A second flagged post from the same window is worth the same check, as two flags in a single window is a pattern worth tracking for ERC-8004 discussion health. [post 390](https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098/390)\n\n### ✅ **TODOs**\n\n- Review and provide feedback on the zkIE weights-commitment PR (docs and tooling, prover unchanged) to keep the proposal moving toward a decision.\n\n- Apply the Namespaces-as-non-normative ruling to the ERC-8004 draft text to complete the editorial follow-through.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A design-space discussion about proof-system algebra translated into a doc-backed proposal with real figures before the window closed — a full idea-to-artifact loop that gives the whole group something concrete to react to.\n>\n> Nothing like a day when the whiteboard empties and a PR fills right up — keep the ideas flowing! 🔬",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-01T23:00:19.914695Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
