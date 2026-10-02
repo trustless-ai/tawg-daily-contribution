@@ -1132,6 +1132,27 @@
     "updated_at": "2026-09-06T13:10:48.780416Z"
   },
   {
+    "content_sha256": "c853abb4a39aabd5c35bcd9feef8f20923df7b02cd6b528187af2a462b9540a6",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:19cba32df60713db3805498b",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:19cba32df60713db3805498b",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-02T16:10:08.676625Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#17 feat\\(engine\\): add mmap to support large memory usage and support deepseek-v2-lite seq=512](https://github.com/trustless-ai/zkIE/pull/17)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-02T16:10:08.676625Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5143
+    ],
+    "updated_at": "2026-10-02T16:10:08.676625Z"
+  },
+  {
     "content_sha256": "74560fcab551a793576705354288fe706b93bdd67d25ebcbb0d8a7757e3c571b",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:1b03529952111311a312474b",
