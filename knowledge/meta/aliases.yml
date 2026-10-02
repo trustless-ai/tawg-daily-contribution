@@ -95,6 +95,12 @@ people:
     display_names:
     - Petchevere
     handles: {}
+  petchevere-2:
+    display_names:
+    - Petchevere
+    handles:
+      telegram:
+      - petchevere
   ramiro:
     display_names:
     - Ramiro
