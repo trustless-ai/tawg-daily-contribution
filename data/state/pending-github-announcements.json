@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "pipavlo82",
-    "event_id": "github-announcement:pr_opened:56a0a11bb28d086193aec25c",
-    "kind": "pr_opened",
-    "number": 1,
-    "occurred_at": "2026-10-02T02:28:20Z",
-    "repository": "trustless-ai/primitives",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "fix: distinguish recipe packages from runner declarations"
   }
 ]
