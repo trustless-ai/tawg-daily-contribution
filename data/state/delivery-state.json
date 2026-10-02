@@ -2938,6 +2938,27 @@
     "updated_at": "2026-09-20T17:10:18.320038Z"
   },
   {
+    "content_sha256": "6773df11c0352ca6b5613211f5f1cc72fff9f13a1877b2e6d9b1bd2f22dcc62c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:56a0a11bb28d086193aec25c",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:56a0a11bb28d086193aec25c",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-02T02:45:43.040217Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/primitives](https://github.com/trustless-ai/primitives)\n[#1 fix: distinguish recipe packages from runner declarations](https://github.com/trustless-ai/primitives/pull/1)\nOpened by [pipavlo82](https://github.com/pipavlo82)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-02T02:45:43.040217Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5142
+    ],
+    "updated_at": "2026-10-02T02:45:43.040217Z"
+  },
+  {
     "content_sha256": "f79182a2be71cf8b2dbbb095cf923f3ec0bb380d540c229aa01fe5c5b035d902",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:63d399ec97dae45157d9d8ce",
