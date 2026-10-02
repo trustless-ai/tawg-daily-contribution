@@ -112,11 +112,11 @@
     "updated_at": "2026-09-07T22:29:47Z"
   },
   {
-    "metadata_sha256": "14dd0e5ff981d13417d73683e2b0c6497d9be8bc21886f86f578ef1df6512661",
+    "metadata_sha256": "9aa61cf28df7991b6bf59e4cabd164f501edf9a9140e2dcb7bfda4a79414bf40",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-10-02T10:55:21Z"
+    "updated_at": "2026-10-02T11:25:40Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
@@ -147,11 +147,11 @@
     "updated_at": "2026-10-01T23:35:34Z"
   },
   {
-    "metadata_sha256": "9017be3e9583ce7223cc7f06ca3ce7c93fc23b50335db71594ba8f4e732d918d",
+    "metadata_sha256": "207bb12db47f6ac5af05759906e82995ac4d094c0a26fc8094a994b9c864aee3",
     "source_key": "magicians-25098",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098",
-    "updated_at": "2026-10-02T02:10:11.932000Z"
+    "updated_at": "2026-10-02T10:55:51.878000Z"
   },
   {
     "metadata_sha256": "524d94096b5c1ad1c89cbd5af5f3692ad74de34631d17365e602403913f60ca1",
