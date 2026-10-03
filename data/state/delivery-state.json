@@ -3064,6 +3064,27 @@
     "updated_at": "2026-09-07T13:25:15.834060Z"
   },
   {
+    "content_sha256": "d86f9f3a09bae793ebc6248aeb67ebb207fc1eebecf1768562f68de83ea4bf87",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:6d53dd182c028435de8cb7c8",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:6d53dd182c028435de8cb7c8",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-03T00:30:28.408858Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#20 test\\(ops\\): bound the rsqrt table, and check it before indexing](https://github.com/trustless-ai/zkIE/pull/20)\nOpened by [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-03T00:30:28.408858Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5155
+    ],
+    "updated_at": "2026-10-03T00:30:28.408858Z"
+  },
+  {
     "content_sha256": "546b9be29e26c602fed30fc8744da7ade335f83413cef1ec191191b16cc6b5cf",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:70da0695499f10ea0014f2c9",
@@ -3104,6 +3125,27 @@
       5052
     ],
     "updated_at": "2026-09-30T02:55:44.300799Z"
+  },
+  {
+    "content_sha256": "0554c00ac663dfca462061c516b1c558e8c1bbbedcd66a37901dbfdfce61e229",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:79eb2e7c1ed17ea5d81dc987",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:79eb2e7c1ed17ea5d81dc987",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-03T00:30:28.408858Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#21 ci: build and run the workspace library tests on push and PR](https://github.com/trustless-ai/zkIE/pull/21)\nOpened by [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-03T00:30:28.408858Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5156
+    ],
+    "updated_at": "2026-10-03T00:30:28.408858Z"
   },
   {
     "content_sha256": "7874684b5585189ce4aa6e0cb7bbf5e962eed2017e34e65c62bc8d4d27cfff9b",
@@ -3314,6 +3356,27 @@
       3869
     ],
     "updated_at": "2026-09-01T09:30:15.131321Z"
+  },
+  {
+    "content_sha256": "e9df3ce227925448fe7a441a0ea70eea912e12fadd1415194c8388d7d4b2ffe2",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:ba03c34b5247acce8f52a262",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:ba03c34b5247acce8f52a262",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-03T00:30:28.408858Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#19 fix\\(ops\\): rsqrt\\_index coarse step is 2^8, not 2^16 \\(+ restore test compilation\\)](https://github.com/trustless-ai/zkIE/pull/19)\nOpened by [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-03T00:30:28.408858Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5154
+    ],
+    "updated_at": "2026-10-03T00:30:28.408858Z"
   },
   {
     "content_sha256": "53b27ef1a93c58e9409e36c4c658ae06b5c4e0ee19083b2d5978b8add0b2bdb9",
