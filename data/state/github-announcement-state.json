@@ -2,7 +2,7 @@
   "initialized_at": "2026-08-29T15:45:00Z",
   "repositories": [
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/.github",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -11,7 +11,7 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/agent-contracts-examples",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -29,7 +29,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/agent-ercs",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -67,7 +67,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/agent-sdk",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -115,7 +115,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/ccip-router",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -163,21 +163,21 @@
       ]
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/collapsed-state-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/composed-attestation-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/cross-reference-console",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -227,14 +227,14 @@
       ]
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/eip7702-rescue",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/observation-conditions-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -243,14 +243,14 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/pq-agent-binding",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/primitives",
       "initialized_at": "2026-09-03T20:45:07.910077Z",
       "issue_numbers": [],
@@ -268,7 +268,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/recompute-kit",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -609,14 +609,14 @@
       ]
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/recompute-lens",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/semantic-abi",
       "initialized_at": "2026-09-05T13:50:18.716472Z",
       "issue_numbers": [],
@@ -704,7 +704,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/tawg-daily-contribution",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -762,14 +762,14 @@
       ]
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/trustless-agent-substrate",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/trustless-ai-landing",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -897,14 +897,14 @@
       ]
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/verify-layer",
       "initialized_at": "2026-09-03T15:10:15.931759Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-03T00:00:22.436754Z",
+      "checked_at": "2026-10-03T00:30:28.408858Z",
       "full_name": "trustless-ai/zkIE",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -1062,6 +1062,36 @@
           "state": "closed",
           "title": "fix: bugfix and test the performance again",
           "updated_at": "2026-10-02T21:09:23Z"
+        },
+        {
+          "author_login": "TMerlini",
+          "head_sha": "f6e9da5b2c3cd5376150fd48f0553d2221623fa1",
+          "merge_commit_sha": null,
+          "merged_at": null,
+          "number": 19,
+          "state": "open",
+          "title": "fix(ops): rsqrt_index coarse step is 2^8, not 2^16 (+ restore test compilation)",
+          "updated_at": "2026-10-03T00:13:03Z"
+        },
+        {
+          "author_login": "TMerlini",
+          "head_sha": "a0a0f48a9ca60e6fc1bc03761bba70078ff93e1f",
+          "merge_commit_sha": null,
+          "merged_at": null,
+          "number": 20,
+          "state": "open",
+          "title": "test(ops): bound the rsqrt table, and check it before indexing",
+          "updated_at": "2026-10-03T00:22:54Z"
+        },
+        {
+          "author_login": "TMerlini",
+          "head_sha": "ac3553edbb96b641b5c4e0d1d05ef4fccff1ec46",
+          "merge_commit_sha": null,
+          "merged_at": null,
+          "number": 21,
+          "state": "open",
+          "title": "ci: build and run the workspace library tests on push and PR",
+          "updated_at": "2026-10-03T00:25:46Z"
         }
       ]
     }

@@ -8,5 +8,35 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_opened:ba03c34b5247acce8f52a262",
+    "kind": "pr_opened",
+    "number": 19,
+    "occurred_at": "2026-10-03T00:13:03Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "fix(ops): rsqrt_index coarse step is 2^8, not 2^16 (+ restore test compilation)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_opened:6d53dd182c028435de8cb7c8",
+    "kind": "pr_opened",
+    "number": 20,
+    "occurred_at": "2026-10-03T00:22:54Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "test(ops): bound the rsqrt table, and check it before indexing"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_opened:79eb2e7c1ed17ea5d81dc987",
+    "kind": "pr_opened",
+    "number": 21,
+    "occurred_at": "2026-10-03T00:25:46Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "ci: build and run the workspace library tests on push and PR"
   }
 ]
