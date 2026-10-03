@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_opened:d22222d2ef0b3c400cc2e315",
+    "kind": "pr_opened",
+    "number": 23,
+    "occurred_at": "2026-10-03T06:18:21Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat: three-tier rsqrt table + in-place verify + refreshed benchmarks"
   }
 ]
