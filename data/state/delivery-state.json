@@ -2938,6 +2938,27 @@
     "updated_at": "2026-09-07T15:40:18.382332Z"
   },
   {
+    "content_sha256": "64ea6212c64243931821f00a3f814d0917481b578c41525fcb3946a72f8054db",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:3ae09449672d7bf24da1a452",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:3ae09449672d7bf24da1a452",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-03T20:10:19.223652Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#24 feat\\(ops\\): declare each op's reads and writes, and derive shard inputs](https://github.com/trustless-ai/zkIE/pull/24)\nOpened by [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-03T20:10:19.223652Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5197
+    ],
+    "updated_at": "2026-10-03T20:10:19.223652Z"
+  },
+  {
     "content_sha256": "70c300dd5c17a2c36f869161dfb1335117a0b23fedccdc39eb7c00df8e1b4d0b",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:3cb40c623d7c9924e6a96b3d",
