@@ -1741,6 +1741,25 @@
     "updated_at": "2026-10-01T07:20:24.943216Z"
   },
   {
+    "content_sha256": "c71960f1966b462c1783f77106cd16b1e9aef26c264877ed7ec053257bcf53c1",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:7d71f94e806b3cb18c670a35",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:7d71f94e806b3cb18c670a35",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-03T04:35:36.289768Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#22 chore: bring rsqrt-table bounds check + CI into main](https://github.com/trustless-ai/zkIE/pull/22)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-03T04:35:36.289768Z"
+  },
+  {
     "content_sha256": "976636f56d693dd45a67bdef6026e511e299b948e93662d29776bd7caed30782",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:7df49112dcb0f5b6ea8a7434",
