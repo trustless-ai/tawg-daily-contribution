@@ -3127,6 +3127,25 @@
     "updated_at": "2026-09-30T02:55:44.300799Z"
   },
   {
+    "content_sha256": "0554c00ac663dfca462061c516b1c558e8c1bbbedcd66a37901dbfdfce61e229",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:79eb2e7c1ed17ea5d81dc987",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:79eb2e7c1ed17ea5d81dc987",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-03T00:30:28.408858Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#21 ci: build and run the workspace library tests on push and PR](https://github.com/trustless-ai/zkIE/pull/21)\nOpened by [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-03T00:30:28.408858Z"
+  },
+  {
     "content_sha256": "7874684b5585189ce4aa6e0cb7bbf5e962eed2017e34e65c62bc8d4d27cfff9b",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:7f0c802f662f5d9054e4de83",
