@@ -3484,6 +3484,27 @@
     "updated_at": "2026-09-02T14:00:28.678616Z"
   },
   {
+    "content_sha256": "9b1c35e71a96762dffa9121f98ad11db86ddc95f5b43b72e38ba2fee3c10b5cc",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:d22222d2ef0b3c400cc2e315",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:d22222d2ef0b3c400cc2e315",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-03T06:40:12.955119Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#23 feat: three-tier rsqrt table + in-place verify + refreshed benchmarks](https://github.com/trustless-ai/zkIE/pull/23)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-03T06:40:12.955119Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5170
+    ],
+    "updated_at": "2026-10-03T06:40:12.955119Z"
+  },
+  {
     "content_sha256": "ad4896721f1c873fbf3a277930d471e3465801d85770e7ddc7cee5c53403a3aa",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:d2c1fec490d84cdb76a61cb0",
