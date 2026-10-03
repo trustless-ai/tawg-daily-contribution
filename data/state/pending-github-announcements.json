@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_opened:79eb2e7c1ed17ea5d81dc987",
-    "kind": "pr_opened",
-    "number": 21,
-    "occurred_at": "2026-10-03T00:25:46Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "ci: build and run the workspace library tests on push and PR"
   }
 ]
