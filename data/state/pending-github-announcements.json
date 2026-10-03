@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_opened:3ae09449672d7bf24da1a452",
+    "kind": "pr_opened",
+    "number": 24,
+    "occurred_at": "2026-10-03T20:03:21Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat(ops): declare each op's reads and writes, and derive shard inputs"
   }
 ]
