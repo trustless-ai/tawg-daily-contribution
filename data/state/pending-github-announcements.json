@@ -11,16 +11,6 @@
   },
   {
     "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:f5cc060c28e18084dfc40fe6",
-    "kind": "pr_merged",
-    "number": 20,
-    "occurred_at": "2026-10-03T04:29:25Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "test(ops): bound the rsqrt table, and check it before indexing"
-  },
-  {
-    "author_login": "TMerlini",
     "event_id": "github-announcement:pr_merged:7619b9eca93abeb99fe909c6",
     "kind": "pr_merged",
     "number": 21,
