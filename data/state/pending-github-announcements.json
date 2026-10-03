@@ -11,16 +11,6 @@
   },
   {
     "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:6f2f7f111dd379147b35d121",
-    "kind": "pr_merged",
-    "number": 19,
-    "occurred_at": "2026-10-03T04:29:18Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "fix(ops): rsqrt_index coarse step is 2^8, not 2^16 (+ restore test compilation)"
-  },
-  {
-    "author_login": "TMerlini",
     "event_id": "github-announcement:pr_merged:f5cc060c28e18084dfc40fe6",
     "kind": "pr_merged",
     "number": 20,
