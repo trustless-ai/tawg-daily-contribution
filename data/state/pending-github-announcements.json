@@ -8,5 +8,25 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:7619b9eca93abeb99fe909c6",
+    "kind": "pr_merged",
+    "number": 21,
+    "occurred_at": "2026-10-03T04:29:32Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "ci: build and run the workspace library tests on push and PR"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_merged:7d71f94e806b3cb18c670a35",
+    "kind": "pr_merged",
+    "number": 22,
+    "occurred_at": "2026-10-03T04:31:39Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "chore: bring rsqrt-table bounds check + CI into main"
   }
 ]
