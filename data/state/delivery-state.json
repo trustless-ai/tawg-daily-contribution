@@ -880,6 +880,27 @@
     "updated_at": "2026-10-02T23:15:31.247054Z"
   },
   {
+    "content_sha256": "926f2876421427adfaaa9eba3e37ec8a0b72ca0b87f7c61dbe5c1f1e33226db1",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-10-03T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-10-03T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-10-03T23:00:07.462454Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-10-02 23:00 → 2026-10-03 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **DeepSeek-V2-Lite ran on Deucalion** — A large public model executed successfully on the group's own hardware, a concrete step toward verifiable inference at real scale. [tg:tawg:5189]\n\n> **Cross-community convergence article published** — A post connecting independent efforts at SCITT/IETF, TAWG, and a Linux Foundation lab reached a public audience and extended the group's visibility across aligned communities. [tg:tawg:5198]\n\n## 🤝 **What moved**\n\n### zkIE / cuda-gkr\n_A new CUDA implementation PR opened for review, building on a prior chain of foundational work._\n\n- Jimmy Shi (@jimmyshi) opened PR #23 in zkIE (feature/cuda-gkr → main), introducing a three-level reciprocal square root approach that builds directly on Merlini's PRs #19, #20, and #21, advancing the group's zero-knowledge ML proving pipeline toward GPU acceleration. [tg:tawg:5165]\n\n### Deucalion inference\n_A confirmed model run on group hardware opened into forward capacity planning._\n\n- Jimmy Shi (@jimmyshi) produced a rough capacity estimate for running DeepSeek-V4.1-Flash on Deucalion using layer-based sharding, drawing on benchmark data from the DeepSeek-V2-Lite run at sequence length 512, giving the team a concrete basis for scoping the next large-model experiment. [tg:tawg:5176]\n\n### cross-community outreach\n_A public piece bridging TAWG with parallel accountability efforts moved from concept into circulation._\n\n- Petchevere (@petchevere) drafted a piece on independent convergence across SCITT at IETF, TAWG, and a Linux Foundation lab, building a public-facing narrative that surfaces shared assumptions about trustless AI accountability to a wider audience. [tg:tawg:5146]\n\n- Baby Blue Viper acknowledged Petchevere's published article, reflecting how the outreach work is landing and connecting the group's accountability framing to parallel external efforts in standards and open-source governance. [tg:tawg:5199]\n\n### serializer-binding\n_The scope of the serializer-binding implementation received a community-backed confirmation._\n\n- Pavlo (@pavlentyy82) confirmed that the boundary encoded in the serializer-binding work matches the documented scope, giving the team shared confidence in that interface and removing a potential source of ambiguity for downstream integration. [tg:tawg:5157]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- The cross-community convergence framing could grow into a recurring bridge between TAWG and standards bodies such as SCITT/IETF and Linux Foundation efforts\n- Capacity estimates for larger models on Deucalion open a natural path to planning the next hardware experiment\n\n### ✅ **TODOs**\n\n- Review PR #23 for cuda-gkr in zkIE and progress it toward merge\n- Follow up on any remaining open questions around the serializer-binding interface boundary\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A new CUDA proving-pipeline PR landed directly on top of a completed chain of foundational work — a clean sequential handoff showing how building on each other's output keeps momentum flowing without a gap.\n>\n> When the commit history reads like a relay baton pass, the CI pipeline barely has time to catch its breath. ⚡",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-03T23:00:07.462454Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5203
+    ],
+    "updated_at": "2026-10-03T23:00:07.462454Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
