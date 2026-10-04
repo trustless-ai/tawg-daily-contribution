@@ -3253,6 +3253,25 @@
     "updated_at": "2026-08-29T19:00:22.483648Z"
   },
   {
+    "content_sha256": "ad908378089d299bc5d0bda5aec8f6c1e793b055d16dc4868146c6a2f8f2bf0e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:73364378b0bbc2232bd32f02",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:73364378b0bbc2232bd32f02",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-04T10:35:39.552087Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#26 feat\\(ops\\): forward\\_shard — materialise one shard, release the rest as it goes](https://github.com/trustless-ai/zkIE/pull/26)\nOpened by [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-04T10:35:39.552087Z"
+  },
+  {
     "content_sha256": "4004bd88a7e72451095e3edec9969de3e41835067a5050094bed25c4d113d145",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:7420e3ba34e17352a3704da2",
