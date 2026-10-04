@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_updated:d55866e322a1abdbe27dfd51",
-    "kind": "pr_updated",
-    "number": 25,
-    "occurred_at": "2026-10-04T04:42:55Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "ci: raise the timeout and save the cache even when a run fails"
   }
 ]
