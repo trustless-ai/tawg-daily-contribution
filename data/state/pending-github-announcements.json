@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_updated:75240dc4fb79d729cef09df8",
-    "kind": "pr_updated",
-    "number": 27,
-    "occurred_at": "2026-10-04T19:01:48Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "docs: state the current verify cost (the verifier recomputes the forward); succinct verification tracked in #15"
   }
 ]
