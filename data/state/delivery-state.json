@@ -4826,6 +4826,25 @@
     "updated_at": "2026-09-07T14:36:47.391465Z"
   },
   {
+    "content_sha256": "90aa4f8f77752f5a183b67af8a9d42de4ef64a056c7e794e1cc3f4d0e0d326ea",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:aa4e645c6de3be37f83087d5",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:aa4e645c6de3be37f83087d5",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-04T23:05:05.601056Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#15 docs + tools: on-chain weights-commitment cost study \\(measured WHIR opening sizes, bit-exact Solidity Poseidon2, EVM gas\\)](https://github.com/trustless-ai/zkIE/pull/15)\nNew commits from [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-04T23:05:05.601056Z"
+  },
+  {
     "content_sha256": "a1e1ef87b2bd57ea18c654d45498336642fed78c6b78ae5a1e0142bf876d63b7",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:acc63332633f7ffa2089e5e0",
