@@ -10,16 +10,6 @@
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
   },
   {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_updated:4a17b36f58e2292a052b3d80",
-    "kind": "pr_updated",
-    "number": 26,
-    "occurred_at": "2026-10-04T18:54:59Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "feat(ops): forward_shard — materialise one shard, release the rest as it goes"
-  },
-  {
     "author_login": "babyblueviper1",
     "event_id": "github-announcement:pr_updated:75240dc4fb79d729cef09df8",
     "kind": "pr_updated",
