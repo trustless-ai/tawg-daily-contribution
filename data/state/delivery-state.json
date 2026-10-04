@@ -3547,6 +3547,25 @@
     "updated_at": "2026-09-02T14:00:28.678616Z"
   },
   {
+    "content_sha256": "586d3a4b5d945ca89edeb7788c810706ecfee83276accc7ce46b17ad51a6a4bb",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:cd3cb2468315dccf98dbf905",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:cd3cb2468315dccf98dbf905",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-04T04:25:44.271794Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#25 ci: raise the timeout and save the cache even when a run fails](https://github.com/trustless-ai/zkIE/pull/25)\nOpened by [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-04T04:25:44.271794Z"
+  },
+  {
     "content_sha256": "9b1c35e71a96762dffa9121f98ad11db86ddc95f5b43b72e38ba2fee3c10b5cc",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:d22222d2ef0b3c400cc2e315",
