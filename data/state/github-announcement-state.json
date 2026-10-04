@@ -2,7 +2,7 @@
   "initialized_at": "2026-08-29T15:45:00Z",
   "repositories": [
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/.github",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -11,7 +11,7 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/agent-contracts-examples",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -29,7 +29,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/agent-ercs",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -67,7 +67,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/agent-sdk",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -115,7 +115,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/ccip-router",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -163,21 +163,21 @@
       ]
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/collapsed-state-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/composed-attestation-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/cross-reference-console",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -227,14 +227,14 @@
       ]
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/eip7702-rescue",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/observation-conditions-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -243,14 +243,14 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/pq-agent-binding",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/primitives",
       "initialized_at": "2026-09-03T20:45:07.910077Z",
       "issue_numbers": [],
@@ -268,7 +268,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/recompute-kit",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -609,14 +609,14 @@
       ]
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/recompute-lens",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/semantic-abi",
       "initialized_at": "2026-09-05T13:50:18.716472Z",
       "issue_numbers": [],
@@ -704,7 +704,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/tawg-daily-contribution",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -762,14 +762,14 @@
       ]
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/trustless-agent-substrate",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/trustless-ai-landing",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -897,14 +897,14 @@
       ]
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/verify-layer",
       "initialized_at": "2026-09-03T15:10:15.931759Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-04T18:50:42.745916Z",
+      "checked_at": "2026-10-04T19:25:09.745539Z",
       "full_name": "trustless-ai/zkIE",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -1031,7 +1031,7 @@
           "number": 15,
           "state": "open",
           "title": "docs + tools: on-chain weights-commitment cost study (measured WHIR opening sizes, bit-exact Solidity Poseidon2, EVM gas)",
-          "updated_at": "2026-10-04T18:16:41Z"
+          "updated_at": "2026-10-04T18:55:33Z"
         },
         {
           "author_login": "JimmyShi22",
@@ -1135,23 +1135,23 @@
         },
         {
           "author_login": "TMerlini",
-          "head_sha": "a171cf53a2ee5b86b20add85d4225f3c20fd9eb6",
+          "head_sha": "e46f35e445dfd5626c055b219585b7e72fe217e0",
           "merge_commit_sha": null,
           "merged_at": null,
           "number": 26,
           "state": "open",
           "title": "feat(ops): forward_shard — materialise one shard, release the rest as it goes",
-          "updated_at": "2026-10-04T18:16:31Z"
+          "updated_at": "2026-10-04T18:54:59Z"
         },
         {
           "author_login": "babyblueviper1",
-          "head_sha": "da509db5bbb276702bf58a913075eceb2f5e466d",
+          "head_sha": "9b27dbdf68cb308784d4d3af05f5a38d485543e3",
           "merge_commit_sha": null,
           "merged_at": null,
           "number": 27,
           "state": "open",
           "title": "docs: state the current verify cost (the verifier recomputes the forward); succinct verification tracked in #15",
-          "updated_at": "2026-10-04T18:03:39Z"
+          "updated_at": "2026-10-04T19:01:48Z"
         }
       ]
     }
