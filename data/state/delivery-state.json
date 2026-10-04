@@ -901,6 +901,27 @@
     "updated_at": "2026-10-03T23:00:07.462454Z"
   },
   {
+    "content_sha256": "ed6b65e4761b715fd371257d65309255201ef1b6003296af978d1e08ac024dae",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-10-04T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-10-04T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-10-04T23:00:09.936264Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-10-03 23:00 → 2026-10-04 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Full verification loop closed on PR #59** — A cold-clone run reproduced all pins and vectors and killed every mutant, giving the implementation a clean bill of health before cross-evaluation. [tg:tawg:5219]\n\n> **PRF PR #13 landed on main** — A new conformance profile capturing guarantee-transfer settlement reached main, turning a discussion artifact into a merged, testable fixture. [tg:tawg:5223]\n\n> **Cross-evaluation schema ready for both artifacts** — With PR #14 drafted and pinned, both PR #59 and PRF #13 now have a neutral contract to run against, making the interoperability test concrete and actionable. [tg:tawg:5259]\n\n## 🤝 **What moved**\n\n### protected-relation-fixtures\n_The conformance work moved from individual verification into a shared evaluation layer._\n\n- Zexo (@zexoverz) **Verified** PR #59 at a specific commit on a cold clone, confirming that all test vectors reproduce and every mutant is killed, which removes implementation-integrity uncertainty before the group runs any cross-evaluation. [tg:tawg:5219]\n- Pavlo (@pavlentyy82) **Landed** PR #13 on main with the award-actual-settlement-v0 conformance profile, giving the group a concrete merged fixture that captures guarantee-transfer behavior in a form both sides can evaluate against. [tg:tawg:5223]\n- Baby Blue Viper **Endorsed** the schema-first gate as the right interoperability criterion, framing the standard as: if both artifacts evaluate cleanly through one neutral contract without either native verdict bending to fit, that constitutes real evidence of compatibility. [tg:tawg:5244]\n- Pavlo (@pavlentyy82) **Opened** PR #14 with a draft schema and prototype pinned to a specific commit, providing the neutral evaluation surface that lets PR #59 and PRF #13 be tested together without importing either artifact's own assumptions. [tg:tawg:5259]\n\n### guarantee-preservation\n_The group converged on a principle-first, interface-level approach before any ERC commitment._\n\n- Pavlo (@pavlentyy82) **Proposed** a Guarantee Preservation Rule grounded in two concrete cases, drawing a precise line between checking declared dependencies and establishing that those dependencies actually hold — a conceptual anchor the group can build conformance criteria around. [tg:tawg:5239]\n- Pavlo (@pavlentyy82) **Advocated** staying at the conformance and interoperability layer rather than committing to an ERC draft early, keeping the interface shape provable before any spec locks the group in. [tg:tawg:5243]\n- Jimmy Shi (@jimmyshi) **Affirmed** the boundary-commitment framing — agreeing that no one should guess whether a scheme preserves soundness — which strengthens the shared standard for what counts as a valid preservation claim. [tg:tawg:5204]\n- Petchevere (@petchevere) **Clarified** that the zkIE discussion is scoped tightly to the agent-action thread, preventing related but distinct lines of work from blurring and keeping the group's work streams cleanly separated. [tg:tawg:5194]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n- Explore whether the Guarantee Preservation Rule can be expressed as a machine-checkable predicate at the conformance layer, before any ERC draft is written.\n- Consider what a \"native verdict bending\" failure looks like in practice and whether the cross-evaluation schema in PR #14 can surface it reliably.\n\n### ✅ **TODOs**\n- Run PR #59 against the draft schema and prototype in PRF PR #14 to produce the first cross-evaluation result.\n- Review whether the award-actual-settlement-v0 conformance profile in PR #13 satisfies the Guarantee Preservation Rule as proposed.\n- Confirm that the agent-action and zkIE thread scoping stays clean as both discussions develop in parallel.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A complete verification pass on one implementation fed directly into the opening of a neutral cross-evaluation schema — the group moved from \"does this hold on its own?\" to \"can both artifacts clear a shared bar?\" without pausing between the two steps.\n>\n> When the mutation suite goes 8-for-8 and the draft schema drops before the window closes, the hardest thing left is agreeing on the framing — which, honestly, is the good kind of hard. 🔬",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-04T23:00:09.936264Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5262
+    ],
+    "updated_at": "2026-10-04T23:00:09.936264Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
