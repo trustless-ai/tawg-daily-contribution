@@ -1405,6 +1405,27 @@
     "updated_at": "2026-09-07T10:40:12.121943Z"
   },
   {
+    "content_sha256": "248bdd65038e43d9837793b440e518155b8ade7680b7bed41977e759b2111e86",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:35c2611030946377da146af0",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:35c2611030946377da146af0",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-05T01:40:24.550223Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#27 docs: state the current verify cost \\(the verifier recomputes the forward\\); succinct verification tracked in #15](https://github.com/trustless-ai/zkIE/pull/27)\nCongratulations, [babyblueviper1](https://github.com/babyblueviper1)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-05T01:40:24.550223Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5275
+    ],
+    "updated_at": "2026-10-05T01:40:24.550223Z"
+  },
+  {
     "content_sha256": "d6e28145645cf8f5e95009a20cd65b774fca488e8498cda80f0242da0fe3afa0",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:3d8348dfae37f7ff48254c25",
@@ -1552,6 +1573,27 @@
     "updated_at": "2026-09-01T17:05:15.222360Z"
   },
   {
+    "content_sha256": "cc0f424ad8bfa5d6d1018f17b6813d161e8d58bf39571c192f20350e3ea3f979",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:50e098eb0e37e53f00b27982",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:50e098eb0e37e53f00b27982",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-05T01:40:24.550223Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#24 feat\\(ops\\): declare each op's reads and writes, and derive shard inputs](https://github.com/trustless-ai/zkIE/pull/24)\nCongratulations, [TMerlini](https://github.com/TMerlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-05T01:40:24.550223Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5272
+    ],
+    "updated_at": "2026-10-05T01:40:24.550223Z"
+  },
+  {
     "content_sha256": "05609486a47d178eaca88ecb3d864fe58b2441fa8ee917799a42b0652860c784",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:540750794f9b2652e23ab7d2",
@@ -1676,6 +1718,27 @@
       5158
     ],
     "updated_at": "2026-10-03T04:35:36.289768Z"
+  },
+  {
+    "content_sha256": "3caccf67867c93b40a77a9d57ad3dd375daf57811f45d09c605a6c0f7b39aaaa",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:72cf8a425d2535bb04f6e7d0",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:72cf8a425d2535bb04f6e7d0",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-05T01:40:24.550223Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#26 feat\\(ops\\): forward\\_shard — materialise one shard, release the rest as it goes](https://github.com/trustless-ai/zkIE/pull/26)\nCongratulations, [TMerlini](https://github.com/TMerlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-05T01:40:24.550223Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5273
+    ],
+    "updated_at": "2026-10-05T01:40:24.550223Z"
   },
   {
     "content_sha256": "a8baaa5fea0013ac7d94c2c0b6c69a0be7d62670c13b9601834b4dcebe757842",
@@ -2285,6 +2348,27 @@
       4842
     ],
     "updated_at": "2026-09-22T20:35:44.841948Z"
+  },
+  {
+    "content_sha256": "722156fa91952fe7898d3f1541a18abc0ed6e9b6f2ffa32b97956c99dcbc3918",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:cb40fa8fd0c509825b1e0af9",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:cb40fa8fd0c509825b1e0af9",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-05T01:40:24.550223Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#25 ci: raise the timeout and save the cache even when a run fails](https://github.com/trustless-ai/zkIE/pull/25)\nCongratulations, [TMerlini](https://github.com/TMerlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-05T01:40:24.550223Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5274
+    ],
+    "updated_at": "2026-10-05T01:40:24.550223Z"
   },
   {
     "content_sha256": "40c55cf625ed27b1a139d41b11d1001d15152614f7998a9d134813e50a5c6fcb",
