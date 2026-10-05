@@ -3253,6 +3253,25 @@
     "updated_at": "2026-10-02T02:45:43.040217Z"
   },
   {
+    "content_sha256": "4d735ea3ad7fc7a3461e28ea272a2d08e8e45329b3ab7e9c809d7b23e5b2591e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:5e9eae21acc2aa27c9e35b1e",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:5e9eae21acc2aa27c9e35b1e",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-05T11:30:54.219727Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#28 feat\\(ops\\): measure proof size — and 41% of a real graph has no proof of its own](https://github.com/trustless-ai/zkIE/pull/28)\nOpened by [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-05T11:30:54.219727Z"
+  },
+  {
     "content_sha256": "f79182a2be71cf8b2dbbb095cf923f3ec0bb380d540c229aa01fe5c5b035d902",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:63d399ec97dae45157d9d8ce",
