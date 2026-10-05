@@ -11,16 +11,6 @@
   },
   {
     "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:50e098eb0e37e53f00b27982",
-    "kind": "pr_merged",
-    "number": 24,
-    "occurred_at": "2026-10-05T01:12:57Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "feat(ops): declare each op's reads and writes, and derive shard inputs"
-  },
-  {
-    "author_login": "TMerlini",
     "event_id": "github-announcement:pr_merged:72cf8a425d2535bb04f6e7d0",
     "kind": "pr_merged",
     "number": 26,
