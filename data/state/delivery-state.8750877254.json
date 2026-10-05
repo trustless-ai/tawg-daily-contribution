@@ -631,5 +631,24 @@
       5293
     ],
     "updated_at": "2026-10-05T11:31:55.265519Z"
+  },
+  {
+    "content_sha256": "0784275c412fdec28a328a851e1fee69d1831c31f5b3a9f40f2358dad92e17d9",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:5295",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:5295",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-10-05T11:41:34.210784Z",
+    "reply_text": "Good morning, Merlini! ☀️ Great to see you back.",
+    "reply_to_message_id": 5295,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-05T11:41:34.210784Z"
   }
 ]
