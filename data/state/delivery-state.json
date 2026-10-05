@@ -3253,6 +3253,27 @@
     "updated_at": "2026-10-02T02:45:43.040217Z"
   },
   {
+    "content_sha256": "4d735ea3ad7fc7a3461e28ea272a2d08e8e45329b3ab7e9c809d7b23e5b2591e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:5e9eae21acc2aa27c9e35b1e",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:5e9eae21acc2aa27c9e35b1e",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-05T11:30:54.219727Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#28 feat\\(ops\\): measure proof size — and 41% of a real graph has no proof of its own](https://github.com/trustless-ai/zkIE/pull/28)\nOpened by [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-05T11:30:54.219727Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5290
+    ],
+    "updated_at": "2026-10-05T11:30:54.219727Z"
+  },
+  {
     "content_sha256": "f79182a2be71cf8b2dbbb095cf923f3ec0bb380d540c229aa01fe5c5b035d902",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:63d399ec97dae45157d9d8ce",
@@ -4112,6 +4133,27 @@
       4744
     ],
     "updated_at": "2026-09-17T20:50:15.800849Z"
+  },
+  {
+    "content_sha256": "90aa4f8f77752f5a183b67af8a9d42de4ef64a056c7e794e1cc3f4d0e0d326ea",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:266235cee7cc57cf1b1e9363",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:266235cee7cc57cf1b1e9363",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-05T11:30:54.219727Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#15 docs + tools: on-chain weights-commitment cost study \\(measured WHIR opening sizes, bit-exact Solidity Poseidon2, EVM gas\\)](https://github.com/trustless-ai/zkIE/pull/15)\nNew commits from [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-05T11:30:54.219727Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5289
+    ],
+    "updated_at": "2026-10-05T11:30:54.219727Z"
   },
   {
     "content_sha256": "8e8ccdef42bdd409f00d45806efef1d93aeffa54b6c6244f4ea63b11f9f1478b",
