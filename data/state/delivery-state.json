@@ -1405,6 +1405,25 @@
     "updated_at": "2026-09-07T10:40:12.121943Z"
   },
   {
+    "content_sha256": "248bdd65038e43d9837793b440e518155b8ade7680b7bed41977e759b2111e86",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:35c2611030946377da146af0",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:35c2611030946377da146af0",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-05T01:40:24.550223Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#27 docs: state the current verify cost \\(the verifier recomputes the forward\\); succinct verification tracked in #15](https://github.com/trustless-ai/zkIE/pull/27)\nCongratulations, [babyblueviper1](https://github.com/babyblueviper1)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-05T01:40:24.550223Z"
+  },
+  {
     "content_sha256": "d6e28145645cf8f5e95009a20cd65b774fca488e8498cda80f0242da0fe3afa0",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:3d8348dfae37f7ff48254c25",
