@@ -8,5 +8,45 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:50e098eb0e37e53f00b27982",
+    "kind": "pr_merged",
+    "number": 24,
+    "occurred_at": "2026-10-05T01:12:57Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat(ops): declare each op's reads and writes, and derive shard inputs"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:72cf8a425d2535bb04f6e7d0",
+    "kind": "pr_merged",
+    "number": 26,
+    "occurred_at": "2026-10-05T01:13:15Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat(ops): forward_shard — materialise one shard, release the rest as it goes"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:cb40fa8fd0c509825b1e0af9",
+    "kind": "pr_merged",
+    "number": 25,
+    "occurred_at": "2026-10-05T01:13:24Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "ci: raise the timeout and save the cache even when a run fails"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_merged:35c2611030946377da146af0",
+    "kind": "pr_merged",
+    "number": 27,
+    "occurred_at": "2026-10-05T01:13:33Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "docs: state the current verify cost (the verifier recomputes the forward); succinct verification tracked in #15"
   }
 ]
