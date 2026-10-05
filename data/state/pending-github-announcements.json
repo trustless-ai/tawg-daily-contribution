@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_opened:5e9eae21acc2aa27c9e35b1e",
-    "kind": "pr_opened",
-    "number": 28,
-    "occurred_at": "2026-10-05T11:25:17Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "feat(ops): measure proof size — and 41% of a real graph has no proof of its own"
   }
 ]
