@@ -1552,6 +1552,25 @@
     "updated_at": "2026-09-01T17:05:15.222360Z"
   },
   {
+    "content_sha256": "cc0f424ad8bfa5d6d1018f17b6813d161e8d58bf39571c192f20350e3ea3f979",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:50e098eb0e37e53f00b27982",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:50e098eb0e37e53f00b27982",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-05T01:40:24.550223Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#24 feat\\(ops\\): declare each op's reads and writes, and derive shard inputs](https://github.com/trustless-ai/zkIE/pull/24)\nCongratulations, [TMerlini](https://github.com/TMerlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-05T01:40:24.550223Z"
+  },
+  {
     "content_sha256": "05609486a47d178eaca88ecb3d864fe58b2441fa8ee917799a42b0652860c784",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:540750794f9b2652e23ab7d2",
