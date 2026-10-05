@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_updated:46686ea7bf2253df0e57489c",
+    "kind": "pr_updated",
+    "number": 15,
+    "occurred_at": "2026-10-05T14:48:20Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "docs + tools: on-chain weights-commitment cost study (measured WHIR opening sizes, bit-exact Solidity Poseidon2, EVM gas)"
   }
 ]
