@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "Echo-Merlini",
+    "event_id": "github-announcement:pr_merged:3bd89c443f096ba5629ca6e2",
+    "kind": "pr_merged",
+    "number": 11,
+    "occurred_at": "2026-10-06T00:35:15Z",
+    "repository": "trustless-ai/ccip-router",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "ci: publish to npm on tag, with guards that make \"green\" mean published"
   }
 ]
