@@ -1447,6 +1447,25 @@
     "updated_at": "2026-10-05T01:40:24.550223Z"
   },
   {
+    "content_sha256": "e24b6b14639863c54adfbc478876c43b2fda622e5aff98286bda55ed8e6edc87",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:3bd89c443f096ba5629ca6e2",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:3bd89c443f096ba5629ca6e2",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-06T00:55:25.587703Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/ccip-router](https://github.com/trustless-ai/ccip-router)\n[#11 ci: publish to npm on tag, with guards that make \"green\" mean published](https://github.com/trustless-ai/ccip-router/pull/11)\nCongratulations, [Echo-Merlini](https://github.com/Echo-Merlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-06T00:55:25.587703Z"
+  },
+  {
     "content_sha256": "d6e28145645cf8f5e95009a20cd65b774fca488e8498cda80f0242da0fe3afa0",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:3d8348dfae37f7ff48254c25",
