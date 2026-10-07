@@ -2,7 +2,7 @@
   "initialized_at": "2026-08-29T15:45:00Z",
   "repositories": [
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/.github",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -11,7 +11,7 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/agent-contracts-examples",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -29,7 +29,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/agent-ercs",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -67,7 +67,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/agent-sdk",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -115,7 +115,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/ccip-router",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -173,21 +173,21 @@
       ]
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/collapsed-state-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/composed-attestation-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/cross-reference-console",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -237,14 +237,14 @@
       ]
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/eip7702-rescue",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/observation-conditions-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -253,14 +253,14 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/pq-agent-binding",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/primitives",
       "initialized_at": "2026-09-03T20:45:07.910077Z",
       "issue_numbers": [],
@@ -278,7 +278,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/recompute-kit",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -619,14 +619,14 @@
       ]
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/recompute-lens",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/semantic-abi",
       "initialized_at": "2026-09-05T13:50:18.716472Z",
       "issue_numbers": [],
@@ -714,7 +714,7 @@
       ]
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/tawg-daily-contribution",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -772,14 +772,14 @@
       ]
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/trustless-agent-substrate",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/trustless-ai-landing",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -907,14 +907,14 @@
       ]
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/verify-layer",
       "initialized_at": "2026-09-03T15:10:15.931759Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-10-07T02:10:57.368771Z",
+      "checked_at": "2026-10-07T02:45:15.790972Z",
       "full_name": "trustless-ai/zkIE",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -1175,13 +1175,13 @@
         },
         {
           "author_login": "JimmyShi22",
-          "head_sha": "541d35fa4e7ab0f4cc60379d873ddf994c638da0",
+          "head_sha": "59c0d1de6b7f2a375c1e8fcc37253ad58c677d36",
           "merge_commit_sha": null,
           "merged_at": null,
           "number": 29,
           "state": "open",
           "title": "feat(pcs): multi-point WHIR opening + parallel committed verify; batch-opening/ReedWeave assessed against the verify cost",
-          "updated_at": "2026-10-06T22:36:33Z"
+          "updated_at": "2026-10-07T02:29:27Z"
         }
       ]
     }
