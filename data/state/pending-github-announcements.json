@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_updated:a1048f0a267725a032d7cdde",
+    "kind": "pr_updated",
+    "number": 29,
+    "occurred_at": "2026-10-07T02:29:27Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat(pcs): multi-point WHIR opening + parallel committed verify; batch-opening/ReedWeave assessed against the verify cost"
   }
 ]
