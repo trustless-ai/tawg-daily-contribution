@@ -8221,5 +8221,24 @@
       5297
     ],
     "updated_at": "2026-10-05T11:41:34.431118Z"
+  },
+  {
+    "content_sha256": "d88ee73a7ac50c11d9250ee9217813f3809f5ecbf844f8691fd3e13e256e5b6a",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:5359",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:5359",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-10-08T11:32:57.823290Z",
+    "reply_text": "Good morning, Jimmy! ☀️ Hope it's a great one.",
+    "reply_to_message_id": 5359,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-08T11:32:57.823290Z"
   }
 ]
