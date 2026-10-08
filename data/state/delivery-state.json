@@ -2497,6 +2497,25 @@
     "updated_at": "2026-10-01T23:45:12.075562Z"
   },
   {
+    "content_sha256": "45689a956b114625ead16181b42fa18aeb216cd5b102a734807277829de564fe",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:d0e73693b74a3c2a1dd63f22",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:d0e73693b74a3c2a1dd63f22",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-08T10:35:37.106119Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/agent-sdk](https://github.com/trustless-ai/agent-sdk)\n[#28 Repin ERC-8354 verifier to pick up the expiry fix](https://github.com/trustless-ai/agent-sdk/pull/28)\nCongratulations, [babyblueviper1](https://github.com/babyblueviper1)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-08T10:35:37.106119Z"
+  },
+  {
     "content_sha256": "fde1f35830d54e6101c45950a748af88e01862558f8599c9946207fc9cf2c301",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:d3ca778c6ceb7c30aacdc0b4",
