@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_merged:d0e73693b74a3c2a1dd63f22",
-    "kind": "pr_merged",
-    "number": 28,
-    "occurred_at": "2026-10-08T10:20:08Z",
-    "repository": "trustless-ai/agent-sdk",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Repin ERC-8354 verifier to pick up the expiry fix"
   }
 ]
