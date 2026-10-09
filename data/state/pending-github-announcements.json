@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_updated:1cd406eacc2dad43fc3a69cd",
-    "kind": "pr_updated",
-    "number": 63,
-    "occurred_at": "2026-10-09T03:46:11Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "scan-subject-binding-v0: fix case-count drift (10 -> 12), add missing c7 row"
   }
 ]
