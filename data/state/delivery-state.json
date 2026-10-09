@@ -5435,6 +5435,25 @@
     "updated_at": "2026-09-22T14:26:02.170146Z"
   },
   {
+    "content_sha256": "98c1d765ead0845ab783f7d96f2f568855ad6f53a7850c86f7206df2e07ff689",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:b6128ac18d38790f6405950a",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:b6128ac18d38790f6405950a",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-09T12:20:50.873560Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#15 conformance: cover dex-calldata-v0 with a hermetic gate](https://github.com/trustless-ai/recompute-kit/pull/15)\nNew commits from [zexoverz](https://github.com/zexoverz)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-09T12:20:50.873560Z"
+  },
+  {
     "content_sha256": "ca3537bb5d2f8fffe6f2d8b53bde67f3eac880d9307cccc1d1a42b58c607ee82",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:bab6b8c525822401ca3f6801",
