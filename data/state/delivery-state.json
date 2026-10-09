@@ -5332,6 +5332,27 @@
     "updated_at": "2026-09-21T20:20:46.892825Z"
   },
   {
+    "content_sha256": "0f01a016187fd599abbcb2eb0b4677d31bce9c0413f1931da5d3f1d02eba1e6e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:a855309f881290657ddca989",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:a855309f881290657ddca989",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-09T22:10:28.938311Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#17 Add recompute-mutation-survival: prove tests are load-bearing, not decorative](https://github.com/trustless-ai/recompute-kit/pull/17)\nNew commits from [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-09T22:10:28.938311Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5398
+    ],
+    "updated_at": "2026-10-09T22:10:28.938311Z"
+  },
+  {
     "content_sha256": "44ac50c8a065e5cbfeabd4412a70d85b44340b8c25a8f586db74b1ac07f30cf8",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:aa19f908b40b30bbfc39c6bc",
