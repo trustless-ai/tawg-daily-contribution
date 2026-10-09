@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "babyblueviper1",
-    "event_id": "github-announcement:pr_merged:75c5f08e0d45711b7be9204f",
-    "kind": "pr_merged",
-    "number": 60,
-    "occurred_at": "2026-10-09T12:12:17Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "pq-key-binding-v1/cutoff: grade() must assert presence, not just value"
   }
 ]
