@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_opened:9d21aff2f8ccec1a7251f57a",
-    "kind": "pr_opened",
-    "number": 62,
-    "occurred_at": "2026-10-09T02:22:09Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "scan-subject-binding-v0: README said 10 cases, suite has 12 — and c7 was undocumented"
   }
 ]
