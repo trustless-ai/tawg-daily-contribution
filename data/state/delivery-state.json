@@ -8401,12 +8401,12 @@
     "prepared_at": "2026-10-09T10:52:02.345898Z",
     "reply_text": "Good morning, Pavlo! ☀️ Hope it's a good one.",
     "reply_to_message_id": 5373,
-    "safe_error_code": null,
+    "safe_error_code": "recovered_sending",
     "schema_version": "tawg.delivery-attempt.v1",
     "sent_at": null,
-    "status": "sending",
+    "status": "ambiguous",
     "telegram_chat_id": null,
     "telegram_message_ids": [],
-    "updated_at": "2026-10-09T10:52:02.345898Z"
+    "updated_at": "2026-10-09T10:52:37.739008Z"
   }
 ]
