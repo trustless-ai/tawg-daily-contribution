@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_updated:a855309f881290657ddca989",
+    "kind": "pr_updated",
+    "number": 17,
+    "occurred_at": "2026-10-09T21:50:45Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Add recompute-mutation-survival: prove tests are load-bearing, not decorative"
   }
 ]
