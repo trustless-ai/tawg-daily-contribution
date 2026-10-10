@@ -5269,6 +5269,25 @@
     "updated_at": "2026-09-25T21:15:49.278618Z"
   },
   {
+    "content_sha256": "a73a9935217193dbf844d11fd00c4ce5d1df58e10fe6af258d6ab238c9976e6b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:88bad278f50b6cd1ab5796c5",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:88bad278f50b6cd1ab5796c5",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-10T00:15:27.131940Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#29 feat\\(pcs\\): multi-point WHIR opening + parallel committed verify; batch-opening/ReedWeave assessed against the verify cost](https://github.com/trustless-ai/zkIE/pull/29)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-10T00:15:27.131940Z"
+  },
+  {
     "content_sha256": "ba31c843c33e417e13b5d37f88569019a9d9e8571bf2301b556d4d4de1029a4d",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:948fd1c716cdbcd5c45c5a67",
