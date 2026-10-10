@@ -16,7 +16,7 @@
     "repo:recompute-kit:metadata_sha256": "e974b081112e8d7a397e7d0de3c3ef821f5849a7345a2e3063975c5f16b6a825",
     "repo:recompute-lens:metadata_sha256": "3ca70fe18e4e62e8ea690138da610229ebfa681c3a23d3ddbfe9cd9112091551",
     "repo:semantic-abi:metadata_sha256": "ece1e475af6f8511e81c50dd8fcf10cd43f32d479fbafc341d387bd2075d983e",
-    "repo:tawg-daily-contribution:metadata_sha256": "7307721fc8a3d8d8561ca6ea95425afb4406671768ee533809cb5d849018c24e",
+    "repo:tawg-daily-contribution:metadata_sha256": "a8122355c0b9318f20ca211c47c0e780ebc823059bb1c100fd777889527fa230",
     "repo:trustless-agent-substrate:metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
     "repo:trustless-ai-landing:metadata_sha256": "018b14008b1ecec6b427b82bec73ebdeae887737ce62a5c6a11b90f18bf1d550",
     "repo:verify-layer:metadata_sha256": "0e893941906b396322aafbe1c6a769a1c18d8809eee8fc443b7d3bbcb7d8a897",
@@ -27,7 +27,7 @@
   "magicians": {
     "topic:25098:metadata_sha256": "51c6fd25525a3aae28c938ba6ac60f8a795b9e5092d13e4f703730dc6832248b",
     "topic:27902:metadata_sha256": "44fac38ad639f80a229a6bd0faec2f5348ae7dfcceae5964c737fcee12b4c367",
-    "topic:28851:metadata_sha256": "f96b7d0d854a9388c207c865804e416905cd7bdf5ad0d77aac102aad485aa0d4",
+    "topic:28851:metadata_sha256": "849e54875bb2a4f4bcd16e3666f74a61c2d107380a81a61c1c50a94b92b40a90",
     "topic:28920:metadata_sha256": "98be34ed80675aeb23430d48387068061d62aedee8ce0b5cb57c2eac638c1c99",
     "topic:29274:metadata_sha256": "3c2cd6c60247f86be2fcbf57d7fa41ddf942712cbfa26543711bc90f6abdab7f"
   },
