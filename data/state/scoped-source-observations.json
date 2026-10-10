@@ -112,11 +112,11 @@
     "updated_at": "2026-09-07T22:29:47Z"
   },
   {
-    "metadata_sha256": "7307721fc8a3d8d8561ca6ea95425afb4406671768ee533809cb5d849018c24e",
+    "metadata_sha256": "a8122355c0b9318f20ca211c47c0e780ebc823059bb1c100fd777889527fa230",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-10-10T12:05:28Z"
+    "updated_at": "2026-10-10T12:35:35Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
@@ -161,11 +161,11 @@
     "updated_at": "2026-10-05T08:59:21.350000Z"
   },
   {
-    "metadata_sha256": "f96b7d0d854a9388c207c865804e416905cd7bdf5ad0d77aac102aad485aa0d4",
+    "metadata_sha256": "849e54875bb2a4f4bcd16e3666f74a61c2d107380a81a61c1c50a94b92b40a90",
     "source_key": "magicians-28851",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8312-bounded-agent-actions/28851",
-    "updated_at": "2026-08-20T14:59:08.391000Z"
+    "updated_at": "2026-10-10T12:14:24.976000Z"
   },
   {
     "metadata_sha256": "98be34ed80675aeb23430d48387068061d62aedee8ce0b5cb57c2eac638c1c99",
