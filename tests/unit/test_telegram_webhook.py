@@ -85,9 +85,10 @@ def test_group_message_dispatches_a_minimal_sanitized_envelope() -> None:
         "author_is_bot": False,
         "reply_to_message_id": None,
         "reply_to_message_text": None,
-        "message_thread_id": None,
-        "entities": (),
-        "has_bot_command": False,
+            "message_thread_id": None,
+            "entities": (),
+            "mentioned_users": (),
+            "has_bot_command": False,
         "attachments": (),
         "triggers_reply": False,
     }

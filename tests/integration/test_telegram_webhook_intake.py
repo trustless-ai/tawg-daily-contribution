@@ -307,6 +307,64 @@ def test_redacted_bot_command_marker_survives_webhook_to_intake(tmp_path: Path) 
     assert result.jobs_created == 0
 
 
+def test_text_mention_welcome_creates_member_welcome_jobs(tmp_path: Path) -> None:
+    seed_repository(tmp_path)
+    normalizer = TelegramWebhookNormalizer(
+        config=TelegramWebhookConfig(
+            secret_token="x" * 32,
+            chat_id=-100_123_456,
+            group_slug="tawg",
+            bot_username="tawg_bot",
+        ),
+        privacy=PrivacyFilter.from_yaml(tmp_path / "config/privacy.yml"),
+    )
+    body = json.dumps(
+        {
+            "update_id": 504,
+            "message": {
+                "message_id": 44,
+                "date": int(NOW.timestamp()),
+                "chat": {"id": -100_123_456, "type": "supergroup"},
+                "from": {"id": 111, "username": "jimmy", "first_name": "Jimmy"},
+                "text": "Luc Welcome Lucas! 👋",
+                "entities": [
+                    {
+                        "type": "text_mention",
+                        "offset": 0,
+                        "length": 3,
+                        "user": {"id": 555, "username": "lucas", "first_name": "Lucas"},
+                    }
+                ],
+            },
+        }
+    ).encode()
+
+    decision = normalizer.process("x" * 32, body)
+
+    assert decision.disposition == "dispatch"
+    assert decision.envelope is not None
+    assert [user.username for user in getattr(decision.envelope, "mentioned_users", ())] == [
+        "lucas"
+    ]
+    result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(decision.envelope,),
+        now=NOW,
+        telegram_chat_id=-100_123_456,
+    )
+
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert result.jobs_created == 2
+    assert {job["job_id"] for job in jobs} == {
+        "member-welcome:lucas",
+        "member-introduction:lucas",
+    }
+
+
 def test_replay_is_a_noop_but_an_older_unseen_update_is_ingested(tmp_path: Path) -> None:
     seed_repository(tmp_path)
     mention = envelope(
