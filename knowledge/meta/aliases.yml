@@ -61,6 +61,10 @@ people:
     handles:
       telegram:
       - loganverdict
+  luc:
+    display_names:
+    - Luc
+    handles: {}
   m-blockbird:
     display_names:
     - M @Blockbird
