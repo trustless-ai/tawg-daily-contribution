@@ -47,6 +47,12 @@ class TelegramWebhookEntity(_FrozenStrictModel):
     value: str = Field(max_length=4096)
 
 
+class TelegramWebhookMentionedUser(_FrozenStrictModel):
+    user_id: int = Field(ge=0)
+    username: str | None = Field(default=None, max_length=256)
+    display_name: str = Field(min_length=1, max_length=256)
+
+
 class TelegramWebhookAttachment(_FrozenStrictModel):
     media_type: str = Field(min_length=1, max_length=32)
     has_caption: bool = False
@@ -68,6 +74,7 @@ class TelegramWebhookEnvelope(_FrozenStrictModel):
     reply_to_message_text: str | None = Field(default=None, max_length=4096)
     message_thread_id: int | None = Field(default=None, ge=0)
     entities: tuple[TelegramWebhookEntity, ...] = ()
+    mentioned_users: tuple[TelegramWebhookMentionedUser, ...] = ()
     has_bot_command: bool = False
     attachments: tuple[TelegramWebhookAttachment, ...] = ()
     triggers_reply: bool
@@ -233,6 +240,12 @@ class TelegramWebhookNormalizer:
         )
         if entities is None:
             return None, entity_reason or "malformed_update"
+        mentioned_users, mention_reason = self._mentioned_users(
+            message.get("caption_entities") if is_caption else message.get("entities"),
+            text,
+        )
+        if mentioned_users is None:
+            return None, mention_reason or "malformed_update"
         has_bot_command = any(entity.entity_type == "bot_command" for entity in entities)
         if text_result.sanitized_text != text:
             entities = ()
@@ -271,6 +284,7 @@ class TelegramWebhookNormalizer:
             "reply_to_message_text": reply_to_message_text,
             "message_thread_id": message_thread_id,
             "entities": entities,
+            "mentioned_users": mentioned_users,
             "has_bot_command": has_bot_command,
             "attachments": attachments,
             "triggers_reply": telegram_entities_trigger_reply(
@@ -339,6 +353,66 @@ class TelegramWebhookNormalizer:
             if len(entities) > MAX_SAFE_ENTITIES:
                 return None, "too_many_entities"
         return tuple(entities), None
+
+    def _mentioned_users(
+        self, raw_entities: object, text: str
+    ) -> tuple[tuple[TelegramWebhookMentionedUser, ...] | None, str | None]:
+        if raw_entities is None:
+            return (), None
+        if not isinstance(raw_entities, list):
+            return None, "malformed_entity"
+        if len(raw_entities) > MAX_SAFE_ENTITIES:
+            return None, "too_many_entities"
+        users: list[TelegramWebhookMentionedUser] = []
+        for raw_entity in raw_entities:
+            if not isinstance(raw_entity, dict):
+                return None, "malformed_entity"
+            if raw_entity.get("type") != "text_mention":
+                continue
+            offset = raw_entity.get("offset")
+            length = raw_entity.get("length")
+            user = raw_entity.get("user")
+            if (
+                not isinstance(offset, int)
+                or isinstance(offset, bool)
+                or not isinstance(length, int)
+                or isinstance(length, bool)
+                or offset < 0
+                or length <= 0
+                or offset + length > len(text.encode("utf-16-le")) // 2
+                or not isinstance(user, dict)
+            ):
+                return None, "malformed_entity"
+            user_id = user.get("id")
+            if not isinstance(user_id, int) or isinstance(user_id, bool) or user_id < 0:
+                return None, "malformed_entity"
+            username = user.get("username")
+            username_result = (
+                self._privacy.inspect(username) if isinstance(username, str) else None
+            )
+            public_username = (
+                username_result.sanitized_text
+                if username_result is not None
+                and username_result.accepted
+                and username_result.sanitized_text is not None
+                else None
+            )
+            display_name = " ".join(
+                value
+                for value in (user.get("first_name"), user.get("last_name"))
+                if isinstance(value, str)
+            ).strip()
+            display_result = self._privacy.inspect(display_name or "Unknown member")
+            if not display_result.accepted or not display_result.sanitized_text:
+                return None, "privacy_rejected"
+            users.append(
+                TelegramWebhookMentionedUser(
+                    user_id=user_id,
+                    username=public_username,
+                    display_name=display_result.sanitized_text,
+                )
+            )
+        return tuple(users), None
 
     @staticmethod
     def _utf16_slice(text: str, offset: int, length: int) -> str:

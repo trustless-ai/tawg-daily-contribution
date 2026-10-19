@@ -39,6 +39,7 @@ from tawg_bot.query import TelegramQuery
 from tawg_bot.storage import partition_stable_records
 from tawg_bot.telegram_webhook import (
     TelegramWebhookEnvelope,
+    TelegramWebhookMentionedUser,
     telegram_entities_trigger_reply,
 )
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
@@ -105,6 +106,7 @@ class _TelegramMessage:
     trigger_kind: TriggerKind | None
     author_is_bot: bool | None
     persist_thread_metadata: bool
+    mentioned_users: tuple[TelegramWebhookMentionedUser, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -224,6 +226,45 @@ class _TelegramPersistence:
                 source_payload=source_payload,
             )
             records_by_id[record.record_id] = record
+            if (
+                message.trigger_kind is TriggerKind.GREETING_CANDIDATE
+                and _MEMBER_WELCOME.search(message.text) is not None
+            ):
+                for mentioned in message.mentioned_users:
+                    if mentioned.username is None:
+                        continue
+                    try:
+                        person_id = self.aliases.resolve_public_handle(
+                            source="telegram",
+                            public_handle=mentioned.username,
+                            display_name=mentioned.display_name,
+                        )
+                    except AliasError:
+                        continue
+                    mention_id = (
+                        f"tg:{self.group_slug}:{message.message_id}:"
+                        f"mention:{mentioned.user_id}"
+                    )
+                    mention_record = SourceRecord.from_text(
+                        record_id=mention_id,
+                        source_type=SourceType.TELEGRAM_MESSAGE,
+                        source_locator=f"repo:{month_path}#{mention_id}",
+                        author_person_id=person_id,
+                        author_source_handle=f"@{mentioned.username}",
+                        created_at=message.created_at,
+                        updated_at=message.created_at,
+                        text_original="",
+                        ingested_at=now,
+                        source_payload={
+                            "message_kind": "text_mention",
+                            "message_thread_id": (
+                                message.message_thread_id
+                                if message.persist_thread_metadata
+                                else None
+                            ),
+                        },
+                    )
+                    records_by_id[mention_id] = mention_record
             job_id = (
                 f"reply:{bot_id}:{record.record_id}"
                 if persist_mode is PersistMode.RECEIPT_ONLY and bot_id is not None
@@ -1196,6 +1237,7 @@ def _message_from_envelope(
         trigger_kind=trigger_kind,
         author_is_bot=envelope.author_is_bot,
         persist_thread_metadata=True,
+        mentioned_users=envelope.mentioned_users,
     )
 
 
