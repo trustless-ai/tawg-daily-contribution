@@ -4765,6 +4765,25 @@
     "updated_at": "2026-09-23T14:40:39.218983Z"
   },
   {
+    "content_sha256": "9d267dfaa5d2fe2d5a591a7a281bf8447894abc4899b8b7e6a705039dfb14e0b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:aa1d89c65d2cee5fb765863f",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:aa1d89c65d2cee5fb765863f",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-20T11:00:38.295652Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#30 feat\\<verified-inference\\>: add model-pinned GPT-2 proofs with independent verification](https://github.com/trustless-ai/zkIE/pull/30)\nOpened by [HaoXuan40404](https://github.com/HaoXuan40404)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-20T11:00:38.295652Z"
+  },
+  {
     "content_sha256": "52b39f0ffd7992e287ac75e100b4e0307c3b57733f4a89bab77fe29b58cbf261",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:ac25808a8b6d7b7f82b30d22",
