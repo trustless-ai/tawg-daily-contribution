@@ -5416,6 +5416,27 @@
     "updated_at": "2026-08-29T17:00:20.267901Z"
   },
   {
+    "content_sha256": "ddb5422c1a08a85bb6d4af80abf5cd6ec5deb4d42e0ba8d847231e4a42d90268",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:1e77717a89407801c6a5e2d9",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:1e77717a89407801c6a5e2d9",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-20T02:15:15.215576Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/tawg-daily-contribution](https://github.com/trustless-ai/tawg-daily-contribution)\n[#14 Add Transformer study notes \\(English, from zero to complete\\)](https://github.com/trustless-ai/tawg-daily-contribution/pull/14)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-20T02:15:15.215576Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5623
+    ],
+    "updated_at": "2026-10-20T02:15:15.215576Z"
+  },
+  {
     "content_sha256": "ba31c843c33e417e13b5d37f88569019a9d9e8571bf2301b556d4d4de1029a4d",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:1ec8af2af1c1fc9ff9540624",
