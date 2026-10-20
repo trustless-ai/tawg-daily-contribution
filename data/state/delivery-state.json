@@ -7409,6 +7409,25 @@
     "updated_at": "2026-09-25T18:40:49.190990Z"
   },
   {
+    "content_sha256": "0edd19e810258f474471192385ed0fe2b4b0a36db0dffa3780f78b79a9ee3d55",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:f2a877fad14eede3a74cc8c5",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:f2a877fad14eede3a74cc8c5",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-20T11:35:12.236769Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#83 fix\\(conformance\\): distinguish ungradable cases from semantic refutations \\(#79\\)](https://github.com/trustless-ai/recompute-kit/pull/83)\nNew commits from [pipavlo82](https://github.com/pipavlo82)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-20T11:35:12.236769Z"
+  },
+  {
     "content_sha256": "96b3b7b91a5556d14968536209731ac92069a986bfae641b986c528f96d45af8",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:f3b662b156042cbd19e2bbd0",
