@@ -797,5 +797,24 @@
       5533
     ],
     "updated_at": "2026-10-15T10:50:03.923238Z"
+  },
+  {
+    "content_sha256": "e0505a8f200f311765421811e428eebc143a945b227e187597c38c5023832fe1",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:5625",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:5625",
+    "message_count": 1,
+    "message_thread_id": 5583,
+    "prepared_at": "2026-10-20T11:00:38.104173Z",
+    "reply_text": "Good morning, Pavlo! ☀️ Hope it's a great one — lots of good momentum in the group right now!",
+    "reply_to_message_id": 5625,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-20T11:00:38.104173Z"
   }
 ]
