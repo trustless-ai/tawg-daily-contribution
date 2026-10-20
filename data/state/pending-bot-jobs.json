@@ -149,6 +149,11 @@
     "classified_route": "coordination",
     "created_at": "2026-10-20T17:30:41.687088Z",
     "job_id": "member-welcome:asher-li",
+    "knowledge_mutation_paths": [
+      "knowledge/acknowledgements/asher-li.md",
+      "knowledge/index.md"
+    ],
+    "knowledge_mutation_trigger_sha256": "4ba5f8b1d44ec504e01bd5f13623a61df4c81b45de752600d684a49923d0d28f",
     "message_thread_id": null,
     "prepared_attachments": [],
     "prepared_citations": [],
@@ -165,7 +170,7 @@
     "router_version": "template-member-welcome-v1",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "ready",
+    "status": "delivered",
     "trigger_kind": "member_welcome",
     "trigger_record_id": "tg:tawg:5638",
     "updated_at": "2026-10-20T17:30:41.687088Z",

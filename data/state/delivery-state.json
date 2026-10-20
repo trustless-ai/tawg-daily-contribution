@@ -7640,6 +7640,27 @@
     "updated_at": "2026-10-16T00:56:31.293607Z"
   },
   {
+    "content_sha256": "b632f6e2c9541d4527b8cd1c4a3e1e661f0fef1709ffa08aee718de11117901c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "member-welcome:asher-li",
+    "destination": "tawg",
+    "job_id": "member-welcome:asher-li",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-10-20T17:30:41.687088Z",
+    "reply_text": "@Asher40404 Welcome to Trustless AI! 👋",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-20T17:30:41.687088Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5639
+    ],
+    "updated_at": "2026-10-20T17:30:41.687088Z"
+  },
+  {
     "content_sha256": "ebfea3d16c6abc72e8ed2bb99d638e6cbab192ff136b816211c28077daef2627",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "member-welcome:filip-blagojević",
