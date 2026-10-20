@@ -7556,6 +7556,27 @@
     "updated_at": "2026-09-01T10:35:12.210324Z"
   },
   {
+    "content_sha256": "12ad6cc2ec2e43a23a7c3416d29388b304e354272ca059a270ff48a0be3e9906",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "member-introduction:asher-li",
+    "destination": "tawg",
+    "job_id": "member-introduction:asher-li",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-10-20T17:35:12.244798Z",
+    "reply_text": "Hey @Asher40404, really glad you're here! 🎉\n\nCryptography background landing on zkIE work — honestly that's a pretty perfect fit for where Trustless AI is heading right now.\n\nTrustless AI grew out of a loose, organic gathering of people who found each other through open-source and Ethereum standards work — EIP authors, protocol researchers, reviewers, implementers — all drawn together by the same underlying question: what does it actually mean for an AI or blockchain system to be *trustless*? Not \"trust me, the output is correct,\" but systems where anyone can independently inspect, verify, or recompute what happened. That shift is harder than it sounds, and the cryptographic foundations are a big part of why it's hard — and why people like you matter here.\n\nThe group works across research, standards drafting, code, and review. There's no formal onboarding ritual. You can jump into a discussion, ask something that's been bugging you, poke at a proof, or just watch how things develop for a bit — all equally valid.\n\nWith a deep crypto background coming into zkIE specifically, I suspect you'll have plenty to say sooner rather than later. Looking forward to it! 🔐",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-20T17:35:12.244798Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5640
+    ],
+    "updated_at": "2026-10-20T17:35:12.244798Z"
+  },
+  {
     "content_sha256": "a880fc247735647465e9d64d90c7132f81756f601f7397c7f96a3d805b9e458e",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "member-introduction:filip-blagojević",
