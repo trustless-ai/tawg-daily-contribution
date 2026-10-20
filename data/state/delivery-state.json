@@ -4777,10 +4777,12 @@
     "reply_to_message_id": null,
     "safe_error_code": null,
     "schema_version": "tawg.delivery-attempt.v1",
-    "sent_at": null,
-    "status": "prepared",
-    "telegram_chat_id": null,
-    "telegram_message_ids": [],
+    "sent_at": "2026-10-20T11:00:38.295652Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5628
+    ],
     "updated_at": "2026-10-20T11:00:38.295652Z"
   },
   {
@@ -10170,5 +10172,26 @@
       5591
     ],
     "updated_at": "2026-10-18T16:20:59.779175Z"
+  },
+  {
+    "content_sha256": "2bd9a66e9f51ac50aad07125aa323cc679441b365701e36c19ee9256a77190f4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:5625",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:5625",
+    "message_count": 1,
+    "message_thread_id": 5583,
+    "prepared_at": "2026-10-20T11:01:24.990507Z",
+    "reply_text": "Good morning, Pavlo! 🌞 Hope it's a great one — lots of interesting work in flight right now!",
+    "reply_to_message_id": 5625,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-20T11:01:24.990507Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5630
+    ],
+    "updated_at": "2026-10-20T11:01:24.990507Z"
   }
 ]

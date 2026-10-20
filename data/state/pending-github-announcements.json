@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "HaoXuan40404",
-    "event_id": "github-announcement:pr_opened:aa1d89c65d2cee5fb765863f",
-    "kind": "pr_opened",
-    "number": 30,
-    "occurred_at": "2026-10-20T10:56:58Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "feat<verified-inference>: add model-pinned GPT-2 proofs with independent verification"
   }
 ]
