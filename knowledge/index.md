@@ -59,6 +59,7 @@ This vault compiles current, source-cited knowledge for the Daily Contribution a
 - [[repos/tawg-daily-contribution|tawg-daily-contribution]]
 - [[repos/trustless-agent-substrate|trustless-agent-substrate]]
 - [[repos/trustless-ai-landing|trustless-ai-landing]]
+- [[repos/verifiable-execution-claim-authorization|verifiable-execution-claim-authorization]]
 - [[repos/verify-layer|verify-layer]]
 - [[repos/zkie|zkie]]
 ## Acknowledgements
