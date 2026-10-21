@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_updated:149de86c2ac073e51715a3bb",
+    "kind": "pr_updated",
+    "number": 14,
+    "occurred_at": "2026-10-21T00:53:42Z",
+    "repository": "trustless-ai/tawg-daily-contribution",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Add Transformer study notes (English, from zero to complete)"
   }
 ]
