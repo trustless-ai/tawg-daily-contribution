@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "pipavlo82",
-    "event_id": "github-announcement:pr_opened:c34cf7c71ca3ed6706fc64f2",
-    "kind": "pr_opened",
-    "number": 12,
-    "occurred_at": "2026-10-22T17:13:11Z",
-    "repository": "trustless-ai/verifiable-execution-claim-authorization",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "research: ERC-8004 property-based conformance and mutation coverage"
   }
 ]
