@@ -4975,6 +4975,25 @@
     "updated_at": "2026-10-22T10:40:15.356445Z"
   },
   {
+    "content_sha256": "2c0b6988b4825a0b17c9bcc94503b5d9355b1404ba93f07936a7ca3b6da30db2",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:c34cf7c71ca3ed6706fc64f2",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:c34cf7c71ca3ed6706fc64f2",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-22T17:20:15.495926Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/verifiable-execution-claim-authorization](https://github.com/trustless-ai/verifiable-execution-claim-authorization)\n[#12 research: ERC-8004 property-based conformance and mutation coverage](https://github.com/trustless-ai/verifiable-execution-claim-authorization/pull/12)\nOpened by [pipavlo82](https://github.com/pipavlo82)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-22T17:20:15.495926Z"
+  },
+  {
     "content_sha256": "53b27ef1a93c58e9409e36c4c658ae06b5c4e0ee19083b2d5978b8add0b2bdb9",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:c80ff8f1ec57114056758ba2",
