@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "pipavlo82",
+    "event_id": "github-announcement:pr_merged:9bb4d831f99f916a9471d5cc",
+    "kind": "pr_merged",
+    "number": 83,
+    "occurred_at": "2026-10-22T15:43:12Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "fix(conformance): distinguish ungradable cases from semantic refutations (#79)"
   }
 ]
