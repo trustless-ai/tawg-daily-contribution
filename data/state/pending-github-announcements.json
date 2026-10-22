@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "pipavlo82",
+    "event_id": "github-announcement:pr_opened:d11438f82b3de277ca7eda30",
+    "kind": "pr_opened",
+    "number": 13,
+    "occurred_at": "2026-10-22T18:40:16Z",
+    "repository": "trustless-ai/verifiable-execution-claim-authorization",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "research: spec drift detection and evidence-based obligation coverage"
   }
 ]
