@@ -3505,6 +3505,27 @@
     "updated_at": "2026-09-08T16:25:15.220318Z"
   },
   {
+    "content_sha256": "73f79fd3c3db92f6a5f93acadf18e1eecaab8281830742ea46cd3095417a3745",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:ec10b28e860438dd269a97b0",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:ec10b28e860438dd269a97b0",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-22T21:45:17.162296Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#80 conformance-suite: refuse a manifest it cannot read, instead of calling it refuted](https://github.com/trustless-ai/recompute-kit/pull/80)\nCongratulations, [TMerlini](https://github.com/TMerlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-22T21:45:17.162296Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5691
+    ],
+    "updated_at": "2026-10-22T21:45:17.162296Z"
+  },
+  {
     "content_sha256": "2213b2ed0a00892fce877eb935de6f481695656ad775f4884163320443739d11",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:f1d30260f5b813513cc9b5c5",
