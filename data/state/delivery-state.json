@@ -5185,6 +5185,27 @@
     "updated_at": "2026-10-15T12:05:14.358855Z"
   },
   {
+    "content_sha256": "276ff61628d4bc52f3e0dd548d94b628a5dfda84295036887011ea0763afab35",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:e471db744ba67eef8865d29b",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:e471db744ba67eef8865d29b",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-22T02:30:19.520522Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/verifiable-execution-claim-authorization](https://github.com/trustless-ai/verifiable-execution-claim-authorization)\n[#9 feat: Agent Conformance Harness v0 — reusable executable pilot](https://github.com/trustless-ai/verifiable-execution-claim-authorization/pull/9)\nOpened by [pipavlo82](https://github.com/pipavlo82)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-22T02:30:19.520522Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5663
+    ],
+    "updated_at": "2026-10-22T02:30:19.520522Z"
+  },
+  {
     "content_sha256": "e5966761379417100bac182aadf59da6fb1531d46e9a54d01af6b00f94aa575f",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:eb7b2ef83b80a5b2f500371e",
