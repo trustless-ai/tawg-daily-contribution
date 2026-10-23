@@ -8,5 +8,25 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "pipavlo82",
+    "event_id": "github-announcement:pr_merged:f980c0148a371e940d5486c5",
+    "kind": "pr_merged",
+    "number": 11,
+    "occurred_at": "2026-10-23T00:03:17Z",
+    "repository": "trustless-ai/verifiable-execution-claim-authorization",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "test: isolate four reviewer-identified harness coverage gaps"
+  },
+  {
+    "author_login": "pipavlo82",
+    "event_id": "github-announcement:pr_updated:625a8c05e43133a03d001f96",
+    "kind": "pr_updated",
+    "number": 9,
+    "occurred_at": "2026-10-23T00:03:19Z",
+    "repository": "trustless-ai/verifiable-execution-claim-authorization",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat: Agent Conformance Harness v0 — reusable executable pilot"
   }
 ]
