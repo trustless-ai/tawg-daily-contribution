@@ -2287,6 +2287,25 @@
     "updated_at": "2026-09-11T18:05:11.806499Z"
   },
   {
+    "content_sha256": "e701c2d230d746be536f2b2b7fcbed40021881f7c909e2fbde36b9b7990c35a4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:62c89864d9de629873bf2cec",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:62c89864d9de629873bf2cec",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-23T17:45:15.831883Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#85 research: chain-neutral action subject and dual anchor-proof profiles v0](https://github.com/trustless-ai/recompute-kit/pull/85)\nCongratulations, [pipavlo82](https://github.com/pipavlo82)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-23T17:45:15.831883Z"
+  },
+  {
     "content_sha256": "281c06de7f6da67e3c2dd4d86ef26b89a76c5f4830d7f0a2de676ba6cea91268",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:62cb2cd1e2d7d782d5d54816",
