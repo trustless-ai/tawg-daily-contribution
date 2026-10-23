@@ -8,15 +8,5 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
-  },
-  {
-    "author_login": "pipavlo82",
-    "event_id": "github-announcement:pr_updated:3907389593c8f9005ac698b8",
-    "kind": "pr_updated",
-    "number": 85,
-    "occurred_at": "2026-10-23T01:36:55Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "research: chain-neutral action subject and dual anchor-proof profiles v0"
   }
 ]
