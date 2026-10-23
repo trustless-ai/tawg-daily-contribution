@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "pipavlo82",
+    "event_id": "github-announcement:pr_opened:435ec51001e0f3254f812062",
+    "kind": "pr_opened",
+    "number": 2,
+    "occurred_at": "2026-10-23T21:39:01Z",
+    "repository": "trustless-ai/recompute-lens",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat: agent action and anchor proof browser recipes v0"
   }
 ]
