@@ -4198,6 +4198,27 @@
     "updated_at": "2026-08-31T15:55:11.595175Z"
   },
   {
+    "content_sha256": "49a5d6ea9525e271ee91d4269243660c0a0f0ce999298445acadbb2e281e7b53",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:435ec51001e0f3254f812062",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:435ec51001e0f3254f812062",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-23T22:05:12.302362Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-lens](https://github.com/trustless-ai/recompute-lens)\n[#2 feat: agent action and anchor proof browser recipes v0](https://github.com/trustless-ai/recompute-lens/pull/2)\nOpened by [pipavlo82](https://github.com/pipavlo82)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-23T22:05:12.302362Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5729
+    ],
+    "updated_at": "2026-10-23T22:05:12.302362Z"
+  },
+  {
     "content_sha256": "799307c8f2dd83da7771c6bdee1915fad88e26c37c1bd0a4f12dd70ebf63b79f",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:4a88d1e38fb00fcace592a02",
