@@ -10676,5 +10676,26 @@
       5651
     ],
     "updated_at": "2026-10-21T10:58:11.491116Z"
+  },
+  {
+    "content_sha256": "a3736366aaaf0b248c83edd78740c460dae57c3c7d73e71f0b5ecfeebb7fcd50",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:5710",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:5710",
+    "message_count": 1,
+    "message_thread_id": 5583,
+    "prepared_at": "2026-10-23T13:53:21.095106Z",
+    "reply_text": "Good morning, Jimmy! ☀️ Hope you're having a great start to the day!",
+    "reply_to_message_id": 5710,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-23T13:53:21.095106Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5711
+    ],
+    "updated_at": "2026-10-23T13:53:21.095106Z"
   }
 ]
