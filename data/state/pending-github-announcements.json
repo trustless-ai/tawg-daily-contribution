@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "pipavlo82",
+    "event_id": "github-announcement:pr_merged:a4fefabc44e1501b7d45ab58",
+    "kind": "pr_merged",
+    "number": 9,
+    "occurred_at": "2026-10-23T02:29:03Z",
+    "repository": "trustless-ai/verifiable-execution-claim-authorization",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat: Agent Conformance Harness v0 — reusable executable pilot"
   }
 ]

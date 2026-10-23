@@ -112,11 +112,11 @@
     "updated_at": "2026-09-07T22:29:47Z"
   },
   {
-    "metadata_sha256": "a6f993f716096b5a943a173551e43c32405e89b3f222023f54ba067e35a0b84e",
+    "metadata_sha256": "77897f7ce4962eb30a7a51e01917005b8732eacbe42bc961f618e62c80b5ffcb",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-10-23T02:10:24Z"
+    "updated_at": "2026-10-23T02:40:21Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
@@ -133,11 +133,11 @@
     "updated_at": "2026-09-07T22:28:38Z"
   },
   {
-    "metadata_sha256": "29f46d04c3ee12cd658933850181f7ef80171a0b0af86b001436d2e05b466581",
+    "metadata_sha256": "82ae64131d776d1e1b2eed19401fb1f48f94d22f8f26ef1a33714930925a2647",
     "source_key": "verifiable-execution-claim-authorization",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/verifiable-execution-claim-authorization",
-    "updated_at": "2026-10-21T22:04:24Z"
+    "updated_at": "2026-10-23T02:29:35Z"
   },
   {
     "metadata_sha256": "0e893941906b396322aafbe1c6a769a1c18d8809eee8fc443b7d3bbcb7d8a897",
