@@ -20,16 +20,6 @@
     "title": "feat: ERC-8004 registry pilot for the reusable conformance harness"
   },
   {
-    "author_login": "cyjseagull",
-    "event_id": "github-announcement:pr_updated:45d2b28fd4cb73db8f287601",
-    "kind": "pr_updated",
-    "number": 33,
-    "occurred_at": "2026-10-24T06:38:42Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "fix clippy &&  fix run bench failed for the wrong path"
-  },
-  {
     "author_login": "JimmyShi22",
     "event_id": "github-announcement:pr_updated:6428e473499beb8bdb8c97b5",
     "kind": "pr_updated",
