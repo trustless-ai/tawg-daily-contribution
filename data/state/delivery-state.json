@@ -7808,6 +7808,25 @@
     "updated_at": "2026-09-10T02:10:12.595827Z"
   },
   {
+    "content_sha256": "a6e0ebfa503d47d690b4fa04657a28304a7252fe5c3384004b23d305b18ba64e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:c5b7f691e3d7f2d04a3934c6",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:c5b7f691e3d7f2d04a3934c6",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-24T17:15:16.507515Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#86 research: DEILS privacy blinding conformance v0](https://github.com/trustless-ai/recompute-kit/pull/86)\nNew commits from [pipavlo82](https://github.com/pipavlo82)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-24T17:15:16.507515Z"
+  },
+  {
     "content_sha256": "a36383d0e7ff4861a2803b176c89a6b2a19607ae66fd96f70fc6e4b147cba36a",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:c9fada42c155d13058f6106f",
