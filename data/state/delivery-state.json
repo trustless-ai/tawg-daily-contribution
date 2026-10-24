@@ -6424,6 +6424,25 @@
     "updated_at": "2026-09-01T11:10:12.575251Z"
   },
   {
+    "content_sha256": "b723b933351d9f5a4f1e9ae768b3896cc40945e4fce08a019bfdcc84d56b467a",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:45d2b28fd4cb73db8f287601",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:45d2b28fd4cb73db8f287601",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-24T06:50:15.383327Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#33 fix clippy \\&\\& fix run bench failed for the wrong path](https://github.com/trustless-ai/zkIE/pull/33)\nNew commits from [cyjseagull](https://github.com/cyjseagull)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-24T06:50:15.383327Z"
+  },
+  {
     "content_sha256": "90aa4f8f77752f5a183b67af8a9d42de4ef64a056c7e794e1cc3f4d0e0d326ea",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:46686ea7bf2253df0e57489c",
