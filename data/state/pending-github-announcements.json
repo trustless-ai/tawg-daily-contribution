@@ -18,15 +18,5 @@
     "repository": "trustless-ai/verifiable-execution-claim-authorization",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8004 registry pilot for the reusable conformance harness"
-  },
-  {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_merged:98c28df9b007529f23e09cf9",
-    "kind": "pr_merged",
-    "number": 31,
-    "occurred_at": "2026-10-24T07:38:44Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Hackathon: succinct committed inference and real inputs"
   }
 ]
