@@ -20,16 +20,6 @@
     "title": "feat: ERC-8004 registry pilot for the reusable conformance harness"
   },
   {
-    "author_login": "HaoXuan40404",
-    "event_id": "github-announcement:pr_merged:2abd8409c682c3dd6d93b6e9",
-    "kind": "pr_merged",
-    "number": 35,
-    "occurred_at": "2026-10-24T08:24:22Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "docs<readme>: clarify per-sequence proving costs"
-  },
-  {
     "author_login": "guozhengxuan",
     "event_id": "github-announcement:pr_merged:e1acde2785f13bd4a19de210",
     "kind": "pr_merged",
