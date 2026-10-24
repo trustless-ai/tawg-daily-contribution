@@ -3925,6 +3925,25 @@
     "updated_at": "2026-09-01T21:25:11.238628Z"
   },
   {
+    "content_sha256": "8ac01b200ddb2213382770cd99b3027a9ce03b2fad0a0516262e93099573066b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:0f4dcbfa8846016088e9cf68",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:0f4dcbfa8846016088e9cf68",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-24T03:35:12.849118Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#31 Hackathon: succinct committed inference and real inputs](https://github.com/trustless-ai/zkIE/pull/31)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-24T03:35:12.849118Z"
+  },
+  {
     "content_sha256": "c889654e13fa5fa8cca299b5d4a387ebf1a61bd30a2abd22fbe2c1ced2c7d45c",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:12706cbae0401a5cfb595219",
