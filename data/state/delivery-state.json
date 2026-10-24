@@ -1867,6 +1867,25 @@
     "updated_at": "2026-08-29T19:45:14.936877Z"
   },
   {
+    "content_sha256": "be25ebe78585e0e2356af815691aacc56a9dd55953dec536a45973f7dff0bc40",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:2abd8409c682c3dd6d93b6e9",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:2abd8409c682c3dd6d93b6e9",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-24T08:25:12.672387Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#35 docs\\<readme\\>: clarify per-sequence proving costs](https://github.com/trustless-ai/zkIE/pull/35)\nCongratulations, [HaoXuan40404](https://github.com/HaoXuan40404)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-24T08:25:12.672387Z"
+  },
+  {
     "content_sha256": "bab48aaea1b5fc6df44f1fcf3fab2b558a137dcee3d00fd37768b6c6ece53d78",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:2eb9bde87aa68b73ead64040",
