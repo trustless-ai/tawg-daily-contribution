@@ -18,5 +18,15 @@
     "repository": "trustless-ai/verifiable-execution-claim-authorization",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8004 registry pilot for the reusable conformance harness"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_updated:5e26fac46efd672e841655f3",
+    "kind": "pr_updated",
+    "number": 78,
+    "occurred_at": "2026-10-24T10:03:14Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "test_self_grading_nonempty: every admitted case must be checked"
   }
 ]
