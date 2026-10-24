@@ -18,15 +18,5 @@
     "repository": "trustless-ai/verifiable-execution-claim-authorization",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8004 registry pilot for the reusable conformance harness"
-  },
-  {
-    "author_login": "pipavlo82",
-    "event_id": "github-announcement:pr_opened:63ea56e9984f6f670263a26d",
-    "kind": "pr_opened",
-    "number": 86,
-    "occurred_at": "2026-10-24T15:18:17Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "research: DEILS privacy blinding conformance v0"
   }
 ]
