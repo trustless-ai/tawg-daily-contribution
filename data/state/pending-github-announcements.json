@@ -18,5 +18,25 @@
     "repository": "trustless-ai/verifiable-execution-claim-authorization",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8004 registry pilot for the reusable conformance harness"
+  },
+  {
+    "author_login": "cyjseagull",
+    "event_id": "github-announcement:pr_merged:d92c08178ad7eaa926dd4c16",
+    "kind": "pr_merged",
+    "number": 32,
+    "occurred_at": "2026-10-24T03:47:01Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "add rust toolchain && add project overview document"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_updated:47d212a0b90259a2f614a3c6",
+    "kind": "pr_updated",
+    "number": 31,
+    "occurred_at": "2026-10-24T03:47:04Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Hackathon: succinct committed inference and real inputs"
   }
 ]
