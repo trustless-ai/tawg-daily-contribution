@@ -8,5 +8,15 @@
     "repository": "trustless-ai/trustless-ai-landing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "semantic-abi: sequenced reveal layout (functional view preserved)"
+  },
+  {
+    "author_login": "pipavlo82",
+    "event_id": "github-announcement:pr_updated:ec9cdc064d60e0d742953dea",
+    "kind": "pr_updated",
+    "number": 10,
+    "occurred_at": "2026-10-24T01:09:20Z",
+    "repository": "trustless-ai/verifiable-execution-claim-authorization",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat: ERC-8004 registry pilot for the reusable conformance harness"
   }
 ]
