@@ -1951,6 +1951,27 @@
     "updated_at": "2026-10-05T01:40:24.550223Z"
   },
   {
+    "content_sha256": "d602b269d4e04b6df89c2d03c364a0a943352b54d0b38fa472eba715dd7e0667",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:377f760907d9cd792045c09c",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:377f760907d9cd792045c09c",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-24T07:55:12.102171Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#34 Update doc](https://github.com/trustless-ai/zkIE/pull/34)\nCongratulations, [cyjseagull](https://github.com/cyjseagull)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-24T07:55:12.102171Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5753
+    ],
+    "updated_at": "2026-10-24T07:55:12.102171Z"
+  },
+  {
     "content_sha256": "e24b6b14639863c54adfbc478876c43b2fda622e5aff98286bda55ed8e6edc87",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:3bd89c443f096ba5629ca6e2",
@@ -2831,6 +2852,27 @@
       4893
     ],
     "updated_at": "2026-09-24T23:20:25.915045Z"
+  },
+  {
+    "content_sha256": "2f015366c609fd119c9f9d56ffe7bbbabf6d2b85b2772c28a398d4c6e5339fb4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:98c28df9b007529f23e09cf9",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:98c28df9b007529f23e09cf9",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-24T07:55:12.102171Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#31 Hackathon: succinct committed inference and real inputs](https://github.com/trustless-ai/zkIE/pull/31)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-10-24T07:55:12.102171Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5754
+    ],
+    "updated_at": "2026-10-24T07:55:12.102171Z"
   },
   {
     "content_sha256": "a78f26c43e6eb92facd0dbd6e191040482734864a554dbda2b9f2a382839bb89",
