@@ -7745,6 +7745,25 @@
     "updated_at": "2026-09-21T12:10:13.895747Z"
   },
   {
+    "content_sha256": "2285ce787596699b1427a2a9da4f45e569bf0ad81704cbb42b380c4b4b24f322",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:c3b3585278e15d1ac24155ea",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:c3b3585278e15d1ac24155ea",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-24T12:45:15.832723Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/verifiable-execution-claim-authorization](https://github.com/trustless-ai/verifiable-execution-claim-authorization)\n[#10 feat: ERC-8004 registry pilot for the reusable conformance harness](https://github.com/trustless-ai/verifiable-execution-claim-authorization/pull/10)\nNew commits from [pipavlo82](https://github.com/pipavlo82)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-24T12:45:15.832723Z"
+  },
+  {
     "content_sha256": "b8ad6cda75681f04cf530c78f6e69ad275c0ab2c700070738d5e04c592a78549",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:c413f225eaa862fa604b291d",
