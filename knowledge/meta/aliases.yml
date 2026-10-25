@@ -1,4 +1,8 @@
 people:
+  archer:
+    display_names:
+    - Archer
+    handles: {}
   asher-li:
     display_names:
     - Asher li
