@@ -21,16 +21,6 @@
   },
   {
     "author_login": "JimmyShi22",
-    "event_id": "github-announcement:issue_opened:e5a1dd0224da3ce8cbdb2ee5",
-    "kind": "issue_opened",
-    "number": 41,
-    "occurred_at": "2026-10-26T16:37:25Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "[Performance] Horizontal batch opening to shrink proof size for on-chain"
-  },
-  {
-    "author_login": "JimmyShi22",
     "event_id": "github-announcement:issue_opened:f0f6cabd3f1855fef4ee6c68",
     "kind": "issue_opened",
     "number": 42,
