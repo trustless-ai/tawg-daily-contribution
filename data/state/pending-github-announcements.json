@@ -18,15 +18,5 @@
     "repository": "trustless-ai/verifiable-execution-claim-authorization",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8004 registry pilot for the reusable conformance harness"
-  },
-  {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:issue_opened:f0f6cabd3f1855fef4ee6c68",
-    "kind": "issue_opened",
-    "number": 42,
-    "occurred_at": "2026-10-26T16:45:05Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "[Docs] Build zkIE wiki: from crypto primitives to system design"
   }
 ]
