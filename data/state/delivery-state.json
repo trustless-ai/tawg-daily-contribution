@@ -1384,6 +1384,25 @@
     "updated_at": "2026-10-14T10:40:36.375332Z"
   },
   {
+    "content_sha256": "e0573d01931f9f83618602e0b4149d3110380139aa97c7b044f3923915ddcd7a",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:issue_opened:7c3756baaab166c928023b18",
+    "destination": "tawg",
+    "job_id": "github-announcement:issue_opened:7c3756baaab166c928023b18",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-26T16:55:11.591215Z",
+    "reply_text": "🆕 **New issue** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#38 \\[Feature\\] Integrate ERC-8274 for on-chain verification](https://github.com/trustless-ai/zkIE/issues/38)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-26T16:55:11.591215Z"
+  },
+  {
     "content_sha256": "371c3338d9e3a5c7e49fb8db93698a7fac685bfd1d184d27f981df0eec0f290e",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:issue_opened:84093bc63690343094713032",
