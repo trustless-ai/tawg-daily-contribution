@@ -1489,6 +1489,25 @@
     "updated_at": "2026-10-14T14:55:13.297391Z"
   },
   {
+    "content_sha256": "4dc36e7948e6ead57316d988ed79b1a6348f82e20882cd1eeb64f49cf42196bf",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:issue_opened:b3064574205fd4e72042d24d",
+    "destination": "tawg",
+    "job_id": "github-announcement:issue_opened:b3064574205fd4e72042d24d",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-26T16:55:11.591215Z",
+    "reply_text": "🆕 **New issue** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#39 \\[Feature\\] Support DeepSeek V4.1 Flash MoE model](https://github.com/trustless-ai/zkIE/issues/39)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-26T16:55:11.591215Z"
+  },
+  {
     "content_sha256": "3044ba1e36e694509af649be985217db2756d8047fae309bab385752560d780d",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:issue_opened:cf333087b169c78c41a5dcb6",
