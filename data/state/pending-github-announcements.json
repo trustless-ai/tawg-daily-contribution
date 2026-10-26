@@ -18,5 +18,65 @@
     "repository": "trustless-ai/verifiable-execution-claim-authorization",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8004 registry pilot for the reusable conformance harness"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:issue_opened:f1d56820beced3c19d18e709",
+    "kind": "issue_opened",
+    "number": 37,
+    "occurred_at": "2026-10-26T16:22:10Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "[UX] One-click demo CLI with auto-download model weights"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:issue_opened:7c3756baaab166c928023b18",
+    "kind": "issue_opened",
+    "number": 38,
+    "occurred_at": "2026-10-26T16:22:19Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "[Feature] Integrate ERC-8274 for on-chain verification"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:issue_opened:b3064574205fd4e72042d24d",
+    "kind": "issue_opened",
+    "number": 39,
+    "occurred_at": "2026-10-26T16:22:31Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "[Feature] Support DeepSeek V4.1 Flash MoE model"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:issue_opened:22818146d904dc2a2ef2a6c7",
+    "kind": "issue_opened",
+    "number": 40,
+    "occurred_at": "2026-10-26T16:22:40Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "[Performance] Optimization roadmap for proving speed"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:issue_opened:e5a1dd0224da3ce8cbdb2ee5",
+    "kind": "issue_opened",
+    "number": 41,
+    "occurred_at": "2026-10-26T16:37:25Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "[Performance] Horizontal batch opening to shrink proof size for on-chain"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:issue_opened:f0f6cabd3f1855fef4ee6c68",
+    "kind": "issue_opened",
+    "number": 42,
+    "occurred_at": "2026-10-26T16:45:05Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "[Docs] Build zkIE wiki: from crypto primitives to system design"
   }
 ]
