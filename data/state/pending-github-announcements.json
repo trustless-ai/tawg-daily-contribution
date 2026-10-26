@@ -21,16 +21,6 @@
   },
   {
     "author_login": "JimmyShi22",
-    "event_id": "github-announcement:issue_opened:7c3756baaab166c928023b18",
-    "kind": "issue_opened",
-    "number": 38,
-    "occurred_at": "2026-10-26T16:22:19Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "[Feature] Integrate ERC-8274 for on-chain verification"
-  },
-  {
-    "author_login": "JimmyShi22",
     "event_id": "github-announcement:issue_opened:b3064574205fd4e72042d24d",
     "kind": "issue_opened",
     "number": 39,
