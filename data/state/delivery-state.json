@@ -1531,6 +1531,25 @@
     "updated_at": "2026-09-03T11:20:19.783154Z"
   },
   {
+    "content_sha256": "731ec55b5fbdf4f4727cf44516d5514ba7818737be113e388041d206ccd3cea4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:issue_opened:f1d56820beced3c19d18e709",
+    "destination": "tawg",
+    "job_id": "github-announcement:issue_opened:f1d56820beced3c19d18e709",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-26T16:55:11.591215Z",
+    "reply_text": "🆕 **New issue** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#37 \\[UX\\] One-click demo CLI with auto-download model weights](https://github.com/trustless-ai/zkIE/issues/37)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-26T16:55:11.591215Z"
+  },
+  {
     "content_sha256": "beaf8e545368835916a1b9653f015c14502737b60dd44b5be8c235c5a0c0c467",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:0259305860acedab5296a003",
