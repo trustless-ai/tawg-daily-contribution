@@ -1594,6 +1594,25 @@
     "updated_at": "2026-09-03T11:20:19.783154Z"
   },
   {
+    "content_sha256": "25c1c82fca3407f92471f02c64414650d783aded0c38f2f41c273b5c9b2b0682",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:issue_opened:e5a1dd0224da3ce8cbdb2ee5",
+    "destination": "tawg",
+    "job_id": "github-announcement:issue_opened:e5a1dd0224da3ce8cbdb2ee5",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-26T16:55:11.591215Z",
+    "reply_text": "🆕 **New issue** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#41 \\[Performance\\] Horizontal batch opening to shrink proof size for on-chain](https://github.com/trustless-ai/zkIE/issues/41)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-26T16:55:11.591215Z"
+  },
+  {
     "content_sha256": "731ec55b5fbdf4f4727cf44516d5514ba7818737be113e388041d206ccd3cea4",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:issue_opened:f1d56820beced3c19d18e709",
