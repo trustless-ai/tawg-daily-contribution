@@ -21,16 +21,6 @@
   },
   {
     "author_login": "JimmyShi22",
-    "event_id": "github-announcement:issue_opened:22818146d904dc2a2ef2a6c7",
-    "kind": "issue_opened",
-    "number": 40,
-    "occurred_at": "2026-10-26T16:22:40Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "[Performance] Optimization roadmap for proving speed"
-  },
-  {
-    "author_login": "JimmyShi22",
     "event_id": "github-announcement:issue_opened:e5a1dd0224da3ce8cbdb2ee5",
     "kind": "issue_opened",
     "number": 41,
