@@ -1615,6 +1615,25 @@
     "updated_at": "2026-10-26T16:55:11.591215Z"
   },
   {
+    "content_sha256": "33816527d9c70c20cdd8291542aaee6a4666d6c151d9ba0e9043caf293b60557",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:issue_opened:f0f6cabd3f1855fef4ee6c68",
+    "destination": "tawg",
+    "job_id": "github-announcement:issue_opened:f0f6cabd3f1855fef4ee6c68",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-26T16:55:11.591215Z",
+    "reply_text": "🆕 **New issue** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#42 \\[Docs\\] Build zkIE wiki: from crypto primitives to system design](https://github.com/trustless-ai/zkIE/issues/42)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-26T16:55:11.591215Z"
+  },
+  {
     "content_sha256": "731ec55b5fbdf4f4727cf44516d5514ba7818737be113e388041d206ccd3cea4",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:issue_opened:f1d56820beced3c19d18e709",
