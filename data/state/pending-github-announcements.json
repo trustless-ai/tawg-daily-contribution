@@ -21,16 +21,6 @@
   },
   {
     "author_login": "JimmyShi22",
-    "event_id": "github-announcement:issue_opened:f1d56820beced3c19d18e709",
-    "kind": "issue_opened",
-    "number": 37,
-    "occurred_at": "2026-10-26T16:22:10Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "[UX] One-click demo CLI with auto-download model weights"
-  },
-  {
-    "author_login": "JimmyShi22",
     "event_id": "github-announcement:issue_opened:7c3756baaab166c928023b18",
     "kind": "issue_opened",
     "number": 38,
