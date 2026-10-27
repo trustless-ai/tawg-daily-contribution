@@ -4702,6 +4702,25 @@
     "updated_at": "2026-10-05T11:30:54.219727Z"
   },
   {
+    "content_sha256": "ce7abcd130faa616d52319c6b0580b429d65407d58651da5f907cbb5aa786223",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:5fd666f41bf40822c01b1324",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:5fd666f41bf40822c01b1324",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-10-27T16:10:14.030028Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#43 \\[perf\\] Gemma3 horizontal batch-opening benchmark probe](https://github.com/trustless-ai/zkIE/pull/43)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-27T16:10:14.030028Z"
+  },
+  {
     "content_sha256": "f79182a2be71cf8b2dbbb095cf923f3ec0bb380d540c229aa01fe5c5b035d902",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:63d399ec97dae45157d9d8ce",
