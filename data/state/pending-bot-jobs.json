@@ -7952,7 +7952,7 @@
     "welcome_target_record_id": null
   },
   {
-    "attempts": 221,
+    "attempts": 222,
     "classified_route": null,
     "created_at": "2026-10-27T01:14:54.506709Z",
     "job_id": "reply:tg:tawg:5883",
@@ -7975,7 +7975,7 @@
     "status": "pending",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:5883",
-    "updated_at": "2026-10-27T07:20:13.616397Z",
+    "updated_at": "2026-10-27T07:20:26.999907Z",
     "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
