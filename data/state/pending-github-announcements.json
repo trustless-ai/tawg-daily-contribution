@@ -18,5 +18,25 @@
     "repository": "trustless-ai/verifiable-execution-claim-authorization",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8004 registry pilot for the reusable conformance harness"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_opened:5fd666f41bf40822c01b1324",
+    "kind": "pr_opened",
+    "number": 43,
+    "occurred_at": "2026-10-27T15:49:48Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "[perf] Gemma3 horizontal batch-opening benchmark probe"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_opened:3faeea9eeaab782b1dc0262f",
+    "kind": "pr_opened",
+    "number": 44,
+    "occurred_at": "2026-10-27T16:01:11Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Feature: DeepSeek V4.1 Flash text-only end-to-end committed proving"
   }
 ]
