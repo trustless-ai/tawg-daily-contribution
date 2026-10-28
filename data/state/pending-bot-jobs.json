@@ -7952,7 +7952,7 @@
     "welcome_target_record_id": null
   },
   {
-    "attempts": 788,
+    "attempts": 789,
     "classified_route": null,
     "created_at": "2026-10-27T01:14:54.506709Z",
     "job_id": "reply:tg:tawg:5883",
@@ -7975,13 +7975,13 @@
     "status": "pending",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:5883",
-    "updated_at": "2026-10-28T09:44:59.328865Z",
+    "updated_at": "2026-10-28T09:45:14.201886Z",
     "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
   {
-    "attempts": 449,
+    "attempts": 450,
     "classified_route": null,
     "created_at": "2026-10-27T10:38:44.032446Z",
     "job_id": "reply:tg:tawg:5884",
@@ -8004,13 +8004,13 @@
     "status": "pending",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:5884",
-    "updated_at": "2026-10-28T09:44:59.328865Z",
+    "updated_at": "2026-10-28T09:45:14.201886Z",
     "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
   },
   {
-    "attempts": 0,
+    "attempts": 1,
     "classified_route": null,
     "created_at": "2026-10-28T09:45:14.201886Z",
     "job_id": "reply:tg:tawg:5895",
@@ -8028,7 +8028,7 @@
     "router_context_scope": null,
     "router_context_sha256": null,
     "router_version": null,
-    "safe_error_code": null,
+    "safe_error_code": "reply_route_model_process_failed",
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "pending",
     "trigger_kind": "greeting_candidate",
