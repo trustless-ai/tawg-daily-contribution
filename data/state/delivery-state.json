@@ -1321,6 +1321,25 @@
     "updated_at": "2026-10-27T00:00:32.248632Z"
   },
   {
+    "content_sha256": "1161fdbb6e0fb486a656a4bb87f3b127f7a3bde408ba084d0ba7786872408ca7",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-10-28T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-10-28T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-10-29T02:05:08.860752Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-10-27 23:00 → 2026-10-28 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Verdict binding proposed** — a concrete field list tying signed verdicts to chain ID, escrow address, job ID, deliverable hash and the agreed schema landed in the agentic commerce thread. [ERC-8183 reply](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/437)\n\n> **Anchor log went live** — the day-partitioned anchoring service is running on the pinned commit and writing one file per UTC day. [tg:tawg:5900]\n\n> **Evaluator side sharpened** — the thread worked through what a provider's hash commitment over the exact served bytes actually lets an evaluator check. [ERC-8183 post](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/436)\n\n## 🤝 **What moved**\n\n### ERC-8183\n\n_The evaluator and signing details moved from open questions toward a concrete, replay-resistant shape._\n\n- teppi-xyz **Sharpened** the evaluator side by pressing on what a provider's keccak256 commitment over the exact bytes served really lets a verifier check, which keeps agentic commerce settlement grounded in evidence rather than trust. [ERC-8183 post](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/436)\n- ted0x **Proposed** binding the signed verdict to chain ID, escrow address, job ID, deliverable hash and the agreed schema, so a verdict carries its own context and cannot be quietly reused in another job — the kind of guardrail agents need when they settle work across chains. [ERC-8183 reply](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/437)\n\n### anchor-log\n\n_Infrastructure moved from pull-request intent to a running service._\n\n- Baby Blue Viper **Shipped** the anchor-log service on the pinned commit 1fe5fb29104d, live and writing one file per UTC day as described in the pull request, giving the group a date-addressable record surface to build settlement checks against. [tg:tawg:5900]\n\n### zkIE\n\n_Identity work is heading into a fresh revision._\n\n- Jimmy Shi (@jimmyshi) **Kicked off** a zkIE update, moving the identity component into a new revision cycle so it stays in step with the settlement work around it. [tg:tawg:5897]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Whether the delivery hash commitment and the verdict binding fields belong in the ERC text itself, rather than only in thread replies.\n- Whether the one-file-per-UTC-day layout should become the reference shape for other settlement logs.\n\n### ✅ **TODOs**\n\n- Smoke-test the live anchor-log endpoint against the per-day file layout from the pull request, and confirm the service is still on the pinned commit.\n- Fold the verdict-binding proposal into the ERC-8183 draft so implementers find it without reading the whole thread.\n- Check in on zkIE once the update lands, and see whether any interface other TAWG work depends on shifts.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** a question about what an evaluator can verify turned into a concrete list of fields a signed verdict should bind to within the same day.\n>\n> That is a spec thread converting a worry into a checklist before lunch — keep that rhythm going, one careful clause at a time 🧾",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-10-29T02:05:08.860752Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
