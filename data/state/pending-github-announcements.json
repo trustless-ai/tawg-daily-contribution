@@ -18,5 +18,15 @@
     "repository": "trustless-ai/verifiable-execution-claim-authorization",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8004 registry pilot for the reusable conformance harness"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_updated:ff049d7731968a8aa02639f3",
+    "kind": "pr_updated",
+    "number": 44,
+    "occurred_at": "2026-10-28T21:08:22Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Feature: DeepSeek V4.1 Flash text-only end-to-end committed proving"
   }
 ]
