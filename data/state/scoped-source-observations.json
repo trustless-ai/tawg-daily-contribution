@@ -56,11 +56,11 @@
     "updated_at": "2026-08-09T13:10:53Z"
   },
   {
-    "metadata_sha256": "e787ff6affc5d83dbeff3b948a60179c91ea075786e67ba02dc94f09a9782b67",
+    "metadata_sha256": "9c6809fd7c3ccb0191e79694967f6412be4fcb043a680ee3c090195bf1b7c3ba",
     "source_key": "cross-reference-console",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/cross-reference-console",
-    "updated_at": "2026-10-17T04:44:06Z"
+    "updated_at": "2026-10-28T20:40:12Z"
   },
   {
     "metadata_sha256": "77d86bd328cd492589e2a35a2fb265ad74beb397d3869ec76a3baedee7ce0610",
@@ -112,11 +112,11 @@
     "updated_at": "2026-09-07T22:29:47Z"
   },
   {
-    "metadata_sha256": "5d300b4784cff55c2b9872adff83485078ef5486d21c447f15821aa1de522a5d",
+    "metadata_sha256": "a68f545a400a38873a4610881d650b3f25f8a5f3d5da19277da112866e59dd6e",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-10-27T22:50:37Z"
+    "updated_at": "2026-10-29T02:07:27Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
@@ -154,18 +154,18 @@
     "updated_at": "2026-10-26T01:59:58Z"
   },
   {
-    "metadata_sha256": "1e250322762f34c849d75ac570e3701be7eb36fe7276b2c2234770f9702f68ac",
+    "metadata_sha256": "444f7f93c9937744bcb6582f20044be65343e5cb44db512f2152fe421fdf834a",
     "source_key": "magicians-25098",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098",
-    "updated_at": "2026-10-25T13:38:58.373000Z"
+    "updated_at": "2026-10-28T13:31:38.769000Z"
   },
   {
-    "metadata_sha256": "6baeeeea0beef0f45568f4e60f84f24b9a1e870c7d697208921e5b448b2b6509",
+    "metadata_sha256": "98390ec3234b549e5c9e4a200bb55a6052e0d66479499d6cd3bb49c98e82fc4c",
     "source_key": "magicians-27902",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902",
-    "updated_at": "2026-10-27T11:25:25.449000Z"
+    "updated_at": "2026-10-28T06:11:08.186000Z"
   },
   {
     "metadata_sha256": "849e54875bb2a4f4bcd16e3666f74a61c2d107380a81a61c1c50a94b92b40a90",
