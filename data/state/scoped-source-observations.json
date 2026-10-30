@@ -112,11 +112,11 @@
     "updated_at": "2026-09-07T22:29:47Z"
   },
   {
-    "metadata_sha256": "100dc521b900f2951953c4362976521565b709c02fc63b71c180e99c134a5ebe",
+    "metadata_sha256": "1f6d611cd4b97b299dea4fdeb32af0996a9846a13730e3d4d60d8a1ad53a63cb",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-10-30T16:51:01Z"
+    "updated_at": "2026-10-30T17:21:15Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
@@ -147,11 +147,11 @@
     "updated_at": "2026-09-03T18:16:39Z"
   },
   {
-    "metadata_sha256": "8ae6e35a88722b7abcf76814905acf009d3b2cb6f523821ee347d800264ee961",
+    "metadata_sha256": "2180e8c8f867940812525cb569195caba5ac81e6858b1e14831e6fc2d02507c0",
     "source_key": "wyriwe-signing",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/wyriwe-signing",
-    "updated_at": "2026-10-30T16:33:03Z"
+    "updated_at": "2026-10-30T17:16:50Z"
   },
   {
     "metadata_sha256": "1ae9ccf45c890d810c4ca76fe697589da01de6230aadfd87720f284f77f267bf",
