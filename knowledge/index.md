@@ -61,6 +61,7 @@ This vault compiles current, source-cited knowledge for the Daily Contribution a
 - [[repos/trustless-ai-landing|trustless-ai-landing]]
 - [[repos/verifiable-execution-claim-authorization|verifiable-execution-claim-authorization]]
 - [[repos/verify-layer|verify-layer]]
+- [[repos/wyriwe-signing|wyriwe-signing]]
 - [[repos/zkie|zkie]]
 ## Acknowledgements
 
