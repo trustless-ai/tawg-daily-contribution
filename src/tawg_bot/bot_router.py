@@ -412,7 +412,7 @@ class BotReplyService:
     _MAX_PREPARE_ATTEMPTS = 3
     PROCESSING_LEASE = timedelta(minutes=10)
     _ROUTE_TIMEOUT_SECONDS = 60.0
-    # Routing has a dedicated $0.10 call budget; bound group history so long
+    # Routing has a dedicated $0.30 call budget; bound group history so long
     # channel backlogs do not dominate that budget.
     _ROUTE_CONTEXT_MAX_CHARS = 24_000
     _ROUTE_CONTEXT_MAX_PRIOR_RECORDS = 100
@@ -428,7 +428,7 @@ class BotReplyService:
         knowledge_state: KnowledgeStateStore | None = None,
         chat_id: int | None = None,
         max_budget_usd: str = "1.00",
-        route_max_budget_usd: str = "0.10",
+        route_max_budget_usd: str = "0.30",
         timeout_seconds: float = 300,
         scan_target_verifier: ScanTargetVerifier | None = None,
         github_current_client: GitHubAnnouncementClient | None = None,

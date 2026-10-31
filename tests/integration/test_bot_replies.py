@@ -2035,7 +2035,7 @@ async def test_contextual_route_is_persisted_before_existing_reply_flow(
     )
 
     assert [call["job_type"] for call in ai.calls] == ["route", "reply"]
-    assert ai.calls[0]["max_budget_usd"] == "0.10"
+    assert ai.calls[0]["max_budget_usd"] == "0.30"
     assert ai.calls[1]["max_budget_usd"] == "1.00"
     route_context = ai.calls[0]["context_pack"]
     assert "We need verifiable validation" in route_context
