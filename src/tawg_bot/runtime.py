@@ -35,6 +35,7 @@ from tawg_bot.daily import (
     DailyWindow,
     PreparedDaily,
 )
+from tawg_bot.daily_attempt_limit import DailyAttemptLimit
 from tawg_bot.daily_evidence import (
     DailyEvidenceCollector,
     GitHubActivityRecords,
@@ -636,7 +637,13 @@ class _LivePipeline:
         )
         prepared = await DailyService(
             self.root,
-            ai=self.ai,
+            ai=(
+                self.ai
+                if dry_run
+                else DailyAttemptLimit(
+                    self.root, window_id=window.window_id, checkpoint=self.checkpoint, ai=self.ai
+                )
+            ),
             timeout_seconds=_DAILY_TIMEOUT_SECONDS,
         ).prepare(window, readiness=readiness, evidence=evidence)
         if prepared is None:

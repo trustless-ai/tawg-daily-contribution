@@ -409,6 +409,8 @@ class _LocalErcContext:
 
 class BotReplyService:
     _ROUTER_VERSION = "contextual-ai-v5"
+    _MAX_PREPARE_ATTEMPTS = 3
+    PROCESSING_LEASE = timedelta(minutes=10)
     _ROUTE_TIMEOUT_SECONDS = 60.0
     _ROUTE_CONTEXT_MAX_CHARS = 64_000
     _ROUTE_CONTEXT_MAX_PRIOR_RECORDS = 100
@@ -469,7 +471,26 @@ class BotReplyService:
         ):
             self._discard_context_invalid_job(job, jobs, now)
             return None
-        if job.status is JobStatus.IGNORED:
+        if job.status in {JobStatus.IGNORED, JobStatus.CANCELLED}:
+            return None
+        if (
+            job.status is JobStatus.PROCESSING
+            and job.updated_at > now - self.PROCESSING_LEASE
+        ):
+            return None
+        if (
+            job.status in {JobStatus.PENDING, JobStatus.PROCESSING}
+            and job.attempts >= self._MAX_PREPARE_ATTEMPTS
+        ):
+            jobs[job_id] = job.model_copy(
+                update={
+                    "status": JobStatus.CANCELLED,
+                    "updated_at": now,
+                    "safe_error_code": job.safe_error_code or "reply_retry_exhausted",
+                }
+            )
+            self._publish_jobs(jobs, f"{job_id}:retry-exhausted")
+            print("tawg_event=reply_retry_exhausted", flush=True)
             return None
         member_kinds = {
             TriggerKind.MEMBER_WELCOME,
@@ -1004,15 +1025,22 @@ class BotReplyService:
             safe_error_code = self._safe_failure_code(failure_code, error)
             print(
                 "tawg_event=reply_prepare_error "
-                f"type={type(error).__name__} code={safe_error_code} "
-                f"detail={str(error)[:240]!r}",
+                f"type={type(error).__name__} code={safe_error_code}",
                 flush=True,
             )
             failed_jobs = self._load_jobs()
             current = failed_jobs[job_id]
+            permanent_model_error = (
+                isinstance(error, ClaudeCliError)
+                and error.kind in {"auth", "credit", "model", "budget"}
+            )
             failed_jobs[job_id] = current.model_copy(
                 update={
-                    "status": JobStatus.PENDING,
+                    "status": (
+                        JobStatus.CANCELLED
+                        if permanent_model_error or current.attempts >= self._MAX_PREPARE_ATTEMPTS
+                        else JobStatus.PENDING
+                    ),
                     "updated_at": now,
                     "safe_error_code": safe_error_code,
                 }
@@ -1159,6 +1187,8 @@ class BotReplyService:
 
     @staticmethod
     def _retryable_route_failure(error: ClaudeCliError) -> bool:
+        if error.kind in {"auth", "credit", "model", "budget"}:
+            return False
         message = str(error)
         return (
             message == "Claude Code structured output failed schema validation"
@@ -1176,6 +1206,8 @@ class BotReplyService:
             if isinstance(error, AiRouteRejected):
                 return "reply_route_model_schema_invalid"
             if isinstance(error, ClaudeCliError):
+                if error.kind in {"auth", "credit", "model", "budget"}:
+                    return f"reply_route_model_{error.kind}"
                 message = str(error)
                 if message == "Claude Code exceeded its time limit":
                     return "reply_route_model_timeout"
@@ -1224,6 +1256,8 @@ class BotReplyService:
             }.get(str(error), stage_code)
         if stage_code != "reply_model_failed" or not isinstance(error, ClaudeCliError):
             return stage_code
+        if error.kind in {"auth", "credit", "model", "budget"}:
+            return f"reply_model_{error.kind}"
         message = str(error)
         if message == "Claude Code exceeded its time limit":
             return "reply_model_timeout"

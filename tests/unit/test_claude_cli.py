@@ -36,6 +36,39 @@ class CapturingRunner:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("response", "kind"),
+    [
+        ({"type": "result", "subtype": "error_max_budget_usd", "is_error": True}, "budget"),
+        (
+            {"type": "result", "is_error": True, "result": "HTTP 402: Insufficient Balance"},
+            "credit",
+        ),
+        ({"type": "result", "is_error": True, "result": "HTTP 401: invalid api key"}, "auth"),
+        (
+            {"type": "result", "is_error": True, "result": "Not logged in · Please run /login"},
+            "auth",
+        ),
+        ({"type": "result", "is_error": True, "result": "HTTP 404: model not found"}, "model"),
+    ],
+)
+async def test_cli_classifies_errors_without_exposing_backend_output(
+    tmp_path: Path, response: dict, kind: str
+) -> None:
+    class ErrorRunner(CapturingRunner):
+        async def run(self, **kwargs):
+            return CompletedProcess(1, json.dumps(response).encode(), b"secret stderr token")
+
+    cli = ClaudeCli(root=ROOT, runner=ErrorRunner({}), runtime_root=tmp_path)
+    with pytest.raises(ClaudeCliError) as caught:
+        await cli.run(
+            job_type="route", context_pack="{}", operation_id="test", max_budget_usd="0.1"
+        )
+    assert caught.value.kind == kind
+    assert "secret" not in str(caught.value)
+
+
+@pytest.mark.asyncio
 async def test_process_timeout_terminates_the_cli_process_group(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
