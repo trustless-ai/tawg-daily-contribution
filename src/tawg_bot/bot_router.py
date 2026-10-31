@@ -412,7 +412,9 @@ class BotReplyService:
     _MAX_PREPARE_ATTEMPTS = 3
     PROCESSING_LEASE = timedelta(minutes=10)
     _ROUTE_TIMEOUT_SECONDS = 60.0
-    _ROUTE_CONTEXT_MAX_CHARS = 64_000
+    # Routing is the cheapest model stage. Keep group history small enough that a
+    # long channel backlog cannot exceed the dedicated $0.10 route-call budget.
+    _ROUTE_CONTEXT_MAX_CHARS = 16_000
     _ROUTE_CONTEXT_MAX_PRIOR_RECORDS = 100
     _LATEST_DISCUSSION_KNOWLEDGE_PATH = "knowledge/topics/erc-8183-agentic-commerce.md"
 

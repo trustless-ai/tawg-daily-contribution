@@ -436,6 +436,40 @@ async def test_real_greeting_candidate_gets_a_coordination_reply(tmp_path: Path)
 
 
 @pytest.mark.asyncio
+async def test_greeting_route_context_is_bounded_for_long_group_history(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "Good morning ☀️",
+        trigger_kind=TriggerKind.GREETING_CANDIDATE,
+        trigger_reply_to="tg:tawg:10",
+    )
+    records_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    existing = JsonlCollection(records_path, SourceRecord).decode(records_path.read_bytes())
+    history = [
+        _record(
+            f"tg:tawg:history-{index}",
+            f"Routine group update {index}: " + "context " * 150,
+            NOW - timedelta(minutes=20 - index),
+        )
+        for index in range(40)
+    ]
+    records_path.write_bytes(
+        JsonlCollection(records_path, SourceRecord).merged_bytes((*existing, *history))
+    )
+    ai = ContextualFakeAi("coordination", coordination_result())
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is not None
+    route_call = next(call for call in ai.calls if call["job_type"] == "route")
+    assert len(route_call["context_pack"]) <= 16_000
+
+
+@pytest.mark.asyncio
 async def test_group_greeting_cannot_be_silenced_by_an_ai_ignore_route(
     tmp_path: Path,
 ) -> None:
