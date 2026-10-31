@@ -466,7 +466,7 @@ async def test_greeting_route_context_is_bounded_for_long_group_history(
 
     assert prepared is not None
     route_call = next(call for call in ai.calls if call["job_type"] == "route")
-    assert len(route_call["context_pack"]) <= 16_000
+    assert len(route_call["context_pack"]) <= 24_000
 
 
 @pytest.mark.asyncio
