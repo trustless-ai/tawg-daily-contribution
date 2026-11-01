@@ -45,6 +45,7 @@ from tawg_bot.delivery import (
     DeliveryAmbiguous,
     DeliveryCheckpoint,
     DeliveryFailed,
+    DeliveryRejected,
     DeliveryService,
 )
 from tawg_bot.erc_query import ErcIntent, ErcQuery
@@ -715,6 +716,12 @@ class _LivePipeline:
                     message_thread_id=announcement_topic_id,
                     now=self.now,
                 )
+            except DeliveryRejected:
+                # A privacy (or other pre-send) rejection is terminal for this text but
+                # must not fail the whole tick; keep the event pending so an operator can
+                # investigate, and keep delivering the remaining announcements.
+                _safe_log("github_announcement_delivery", "announcement_rejected")
+                continue
             except (DeliveryAmbiguous, DeliveryFailed):
                 continue
             self.github_announcements.acknowledge(event.event_id)
