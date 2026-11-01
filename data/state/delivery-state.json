@@ -11661,5 +11661,24 @@
       5711
     ],
     "updated_at": "2026-10-23T13:53:21.095106Z"
+  },
+  {
+    "content_sha256": "69bc673870963c7429db56625ec8fd3934c6eeb432797430709dc5d6cb1aa7c6",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:5975",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:5975",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-01T05:19:34.631870Z",
+    "reply_text": "Good morning, Jimmy! 👋 Hope the day's off to a good start. If anything's on your mind — a question, an idea, or something you want to dig into — I'm here for it.",
+    "reply_to_message_id": 5975,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-01T05:19:34.631870Z"
   }
 ]
