@@ -11,6 +11,7 @@ import pytest
 
 import tawg_bot.runtime as runtime_module
 from tawg_bot.bot_router import PreparedReply
+from tawg_bot.daily import PreparedDaily
 from tawg_bot.github_announcements import (
     GitHubAnnouncement,
     GitHubAnnouncementKind,
@@ -196,6 +197,146 @@ async def test_delivery_sends_each_pending_announcement_to_configured_topic_and_
     assert [call[2:] for call in api.calls] == [(None, 3788), (None, 3788)]
     assert acknowledged == [event.event_id, issue_event.event_id]
     assert checkpoint.operations[-1].startswith("github-announcement-ack:")
+
+
+@pytest.mark.asyncio
+async def test_privacy_rejected_announcement_does_not_block_other_delivery(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scaffold(tmp_path)
+    rejected = GitHubAnnouncement(
+        event_id="github-announcement:issue_opened:" + "d" * 24,
+        kind=GitHubAnnouncementKind.ISSUE_OPENED,
+        repository="trustless-ai/agent-sdk",
+        number=28,
+        title="Contact private@example.com for access",
+        author_login="alice-dev",
+        occurred_at=NOW,
+    )
+    event = GitHubAnnouncement(
+        event_id="github-announcement:pr_opened:" + "e" * 24,
+        kind=GitHubAnnouncementKind.PR_OPENED,
+        repository="trustless-ai/agent-sdk",
+        number=29,
+        title="Add CI gate",
+        author_login="bob-dev",
+        occurred_at=NOW,
+    )
+    acknowledged: list[str] = []
+
+    class Announcements:
+        def pending(self) -> tuple[GitHubAnnouncement, ...]:
+            return (rejected, event)
+
+        def acknowledge(self, event_id: str) -> None:
+            acknowledged.append(event_id)
+
+    class Api:
+        def __init__(self) -> None:
+            self.calls: list[tuple[int, str, int | None, int | None]] = []
+
+        async def send_message(
+            self,
+            chat_id: int,
+            text: str,
+            reply_to_message_id: int | None = None,
+            message_thread_id: int | None = None,
+        ) -> SentMessage:
+            self.calls.append((chat_id, text, reply_to_message_id, message_thread_id))
+            return SentMessage(message_id=903, chat_id=chat_id)
+
+    api = Api()
+    monkeypatch.setenv("TAWG_TELEGRAM_CHAT_ID", "-10077")
+    monkeypatch.setenv("TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID", "3788")
+    monkeypatch.setattr(runtime_module.TelegramApi, "from_env", lambda **kwargs: api)
+    checkpoint = Checkpoint()
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=checkpoint, now=NOW)
+        pipeline.github_announcements = Announcements()  # type: ignore[assignment]
+
+        await pipeline.telegram_delivery()
+
+    assert len(api.calls) == 1
+    assert "**New PR**" in api.calls[0][1]
+    assert acknowledged == [event.event_id]
+
+
+@pytest.mark.asyncio
+async def test_privacy_rejected_reply_does_not_block_other_replies(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scaffold(tmp_path)
+
+    class Api:
+        def __init__(self) -> None:
+            self.calls: list[tuple[int, str, int | None, int | None]] = []
+
+        async def send_message(
+            self,
+            chat_id: int,
+            text: str,
+            reply_to_message_id: int | None = None,
+            message_thread_id: int | None = None,
+        ) -> SentMessage:
+            self.calls.append((chat_id, text, reply_to_message_id, message_thread_id))
+            return SentMessage(message_id=904, chat_id=chat_id)
+
+    api = Api()
+    monkeypatch.setenv("TAWG_TELEGRAM_CHAT_ID", "-10077")
+    monkeypatch.setattr(runtime_module.TelegramApi, "from_env", lambda **kwargs: api)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        pipeline.prepared_replies = [
+            PreparedReply(
+                "reply:test:rejected", 41, 55, "Contact private@example.com", (), "en", False
+            ),
+            PreparedReply("reply:test:clean", 42, 55, "ordinary reply", (), "en", False),
+        ]
+
+        await pipeline.telegram_delivery()
+
+    assert api.calls == [(-10077, "ordinary reply", 42, 55)]
+
+
+@pytest.mark.asyncio
+async def test_privacy_rejected_prepared_daily_does_not_raise(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    scaffold(tmp_path)
+
+    class Api:
+        def __init__(self) -> None:
+            self.calls: list[tuple[int, str, int | None, int | None]] = []
+
+        async def send_message(
+            self,
+            chat_id: int,
+            text: str,
+            reply_to_message_id: int | None = None,
+            message_thread_id: int | None = None,
+        ) -> SentMessage:
+            self.calls.append((chat_id, text, reply_to_message_id, message_thread_id))
+            return SentMessage(message_id=905, chat_id=chat_id)
+
+    api = Api()
+    monkeypatch.setenv("TAWG_TELEGRAM_CHAT_ID", "-10077")
+    monkeypatch.setattr(runtime_module.TelegramApi, "from_env", lambda **kwargs: api)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        pipeline.prepared_daily = PreparedDaily(
+            "daily:2026-08-28T00:00:00Z",
+            "Contact private@example.com",
+            ("Contact private@example.com",),
+            (),
+            False,
+        )
+
+        await pipeline.telegram_delivery()
+
+    assert api.calls == []
 
 
 @pytest.mark.asyncio

@@ -44,6 +44,7 @@ from tawg_bot.delivery import (
     DeliveryAmbiguous,
     DeliveryCheckpoint,
     DeliveryFailed,
+    DeliveryRejected,
     DeliveryService,
 )
 from tawg_bot.erc_query import ErcIntent, ErcQuery
@@ -708,6 +709,12 @@ class _LivePipeline:
                     message_thread_id=announcement_topic_id,
                     now=self.now,
                 )
+            except DeliveryRejected:
+                # A privacy (or other pre-send) rejection is terminal for this text but
+                # must not fail the whole tick; keep the event pending so an operator can
+                # investigate, and keep delivering the remaining announcements.
+                _safe_log("github_announcement_delivery", "announcement_rejected")
+                continue
             except (DeliveryAmbiguous, DeliveryFailed):
                 continue
             self.github_announcements.acknowledge(event.event_id)
@@ -726,16 +733,30 @@ class _LivePipeline:
                     attachments=reply.attachments,
                     now=self.now,
                 )
+            except DeliveryRejected:
+                # A pre-send rejection (privacy, member intent) must not fail the whole
+                # tick; keep the job ready so an operator can investigate, and keep
+                # delivering the remaining replies.
+                _safe_log("reply_delivery", "reply_rejected")
+                continue
             except (DeliveryAmbiguous, DeliveryFailed):
                 continue
         if self.prepared_daily is not None:
-            await delivery.deliver(
-                job_id=self.prepared_daily.window_id,
-                text=self.prepared_daily.telegram_text,
-                reply_to_message_id=None,
-                message_thread_id=None,
-                now=self.now,
-            )
+            try:
+                await delivery.deliver(
+                    job_id=self.prepared_daily.window_id,
+                    text=self.prepared_daily.telegram_text,
+                    reply_to_message_id=None,
+                    message_thread_id=None,
+                    now=self.now,
+                )
+            except DeliveryRejected:
+                # Unsafe daily text must not be sent and must not brick the tick.
+                _safe_log("daily_delivery", "daily_rejected")
+            except (DeliveryAmbiguous, DeliveryFailed):
+                # Retryable/ambiguous daily failures must not brick the tick either; the
+                # attempt stays in delivery-state for operator review.
+                pass
 
     async def maybe_ask_busy_question(self, now: datetime) -> None:
         """Ask another bot a short "what happened" question when the group got busy.
