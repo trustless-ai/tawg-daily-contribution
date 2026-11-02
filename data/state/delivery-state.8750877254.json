@@ -921,5 +921,24 @@
       6003
     ],
     "updated_at": "2026-11-02T23:28:05.820632Z"
+  },
+  {
+    "content_sha256": "caa619cd5125515b0527c9104625e7a820535eb5844911f1a0fb108705d5bb28",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:6004",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:6004",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-11-02T23:34:46.199868Z",
+    "reply_text": "gm Jimmy! 🌞 Trusty's here and ready — what would you like to dig into today: an ERC question, something in the repos, or a thread to catch up on?",
+    "reply_to_message_id": 6004,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-02T23:34:46.199868Z"
   }
 ]
