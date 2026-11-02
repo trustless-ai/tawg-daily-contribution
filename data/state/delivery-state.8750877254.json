@@ -900,5 +900,24 @@
     "telegram_chat_id": null,
     "telegram_message_ids": [],
     "updated_at": "2026-10-23T13:53:16.555623Z"
+  },
+  {
+    "content_sha256": "a795bed5aea44f374c552efb7309c2443ff51484341e4271228d739a0b784b07",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:6001",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:6001",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-11-02T23:28:05.820632Z",
+    "reply_text": "Hey Jimmy 👋 Good to see you! I'm here and ready — happy to dig into ERC questions, verification flows, or whatever Trustless AI work is on your mind. What can I help with?",
+    "reply_to_message_id": 6001,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-02T23:28:05.820632Z"
   }
 ]
