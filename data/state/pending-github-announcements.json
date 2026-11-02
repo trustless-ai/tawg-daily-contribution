@@ -38,5 +38,45 @@
     "repository": "trustless-ai/wyriwe-signing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "PROFILE.md draft 3: authenticated trust roots and execution (WG 5962-5967)"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_updated:68e25f65cbc715df9a41bc90",
+    "kind": "pr_updated",
+    "number": 45,
+    "occurred_at": "2026-11-02T16:31:36Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Soundness: repair committed-path verification (S1–S9)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:3b24157640464b15511531b1",
+    "kind": "pr_merged",
+    "number": 78,
+    "occurred_at": "2026-11-02T16:44:44Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "test_self_grading_nonempty: every admitted case must be checked"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_merged:98699d1afa13cf3ee0e3abe4",
+    "kind": "pr_merged",
+    "number": 84,
+    "occurred_at": "2026-11-02T16:44:57Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "tools: every test in tools/ must be invoked, and every invocation must exist"
+  },
+  {
+    "author_login": "Echo-Merlini",
+    "event_id": "github-announcement:pr_opened:82e7a4d53ca12cb7d54a1ce9",
+    "kind": "pr_opened",
+    "number": 87,
+    "occurred_at": "2026-11-02T16:48:37Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "uncovered.json: re-review and re-date the two requires_live exclusions (main CI red since 24 Oct)"
   }
 ]
