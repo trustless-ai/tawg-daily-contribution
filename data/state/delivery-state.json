@@ -8961,6 +8961,25 @@
     "updated_at": "2026-10-20T17:35:12.244798Z"
   },
   {
+    "content_sha256": "b25757114d406bacd223f912b91cd6e90144819c8fd7b8cc69bc7965cab4e518",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "member-introduction:ben",
+    "destination": "tawg",
+    "job_id": "member-introduction:ben",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-02T11:20:25.789122Z",
+    "reply_text": "@benohanlon — really glad GobRoss pulled you in. Welcome to Trustless AI! 🙌\n\nThis group grew the way the best open-source things usually do: people from all over the world bumping into each other through ERC work and side projects, then realizing the conversations were too interesting to leave at the edge of a pull request. Builders, researchers, reviewers, EIP authors — all chewing on the same knotty questions, often by shipping something and then arguing about it kindly afterwards.\n\nThe thread running through it all is simple to say and harder to do: moving from \"trust me\" to results anyone can check. An AI output you can trace, a blockchain primitive you can recompute yourself, a standard whose behavior you can verify rather than take on faith. Evidence over assurances.\n\nThere's no onboarding ritual here, so don't wait for one. Ask the question that's been nagging you, float a half-formed idea, poke at whatever's in progress, or just lurk and see what catches your eye. No forms, no ceremony.\n\nSo — what are you working on, or curious about, these days?",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-02T11:20:25.789122Z"
+  },
+  {
     "content_sha256": "a880fc247735647465e9d64d90c7132f81756f601f7397c7f96a3d805b9e458e",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "member-introduction:filip-blagojević",
