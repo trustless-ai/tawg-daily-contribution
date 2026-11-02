@@ -40,16 +40,6 @@
     "title": "PROFILE.md draft 3: authenticated trust roots and execution (WG 5962-5967)"
   },
   {
-    "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:98699d1afa13cf3ee0e3abe4",
-    "kind": "pr_merged",
-    "number": 84,
-    "occurred_at": "2026-11-02T16:44:57Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "tools: every test in tools/ must be invoked, and every invocation must exist"
-  },
-  {
     "author_login": "Echo-Merlini",
     "event_id": "github-announcement:pr_opened:82e7a4d53ca12cb7d54a1ce9",
     "kind": "pr_opened",
