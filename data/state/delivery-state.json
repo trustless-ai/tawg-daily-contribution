@@ -11976,5 +11976,24 @@
       5976
     ],
     "updated_at": "2026-11-01T05:19:34.631870Z"
+  },
+  {
+    "content_sha256": "1e9faa1b1d1d26666f248c6a4401148d7d6cfa572710fe0ef64644b3f52c6694",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:6001",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:6001",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-11-02T23:28:02.581030Z",
+    "reply_text": "Hey Jimmy! 👋 Trusty's here and ready. If you want to dig into anything — ERC work, verification flows, or a new idea worth shaping — just say the word.",
+    "reply_to_message_id": 6001,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-02T23:28:02.581030Z"
   }
 ]
