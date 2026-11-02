@@ -40,16 +40,6 @@
     "title": "PROFILE.md draft 3: authenticated trust roots and execution (WG 5962-5967)"
   },
   {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_updated:68e25f65cbc715df9a41bc90",
-    "kind": "pr_updated",
-    "number": 45,
-    "occurred_at": "2026-11-02T16:31:36Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Soundness: repair committed-path verification (S1–S9)"
-  },
-  {
     "author_login": "TMerlini",
     "event_id": "github-announcement:pr_merged:3b24157640464b15511531b1",
     "kind": "pr_merged",
