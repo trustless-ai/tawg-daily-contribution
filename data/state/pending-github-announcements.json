@@ -41,16 +41,6 @@
   },
   {
     "author_login": "TMerlini",
-    "event_id": "github-announcement:pr_merged:3b24157640464b15511531b1",
-    "kind": "pr_merged",
-    "number": 78,
-    "occurred_at": "2026-11-02T16:44:44Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "test_self_grading_nonempty: every admitted case must be checked"
-  },
-  {
-    "author_login": "TMerlini",
     "event_id": "github-announcement:pr_merged:98699d1afa13cf3ee0e3abe4",
     "kind": "pr_merged",
     "number": 84,
