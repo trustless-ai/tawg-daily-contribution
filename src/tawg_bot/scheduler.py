@@ -12,6 +12,7 @@ from typing import Protocol
 from pydantic import ValidationError
 
 from tawg_bot.daily import DailyWindow
+from tawg_bot.daily_attempt_limit import DailyAttemptLimit
 from tawg_bot.models import LayerSuccess
 from tawg_bot.repository_session import RepositoryConflict
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
@@ -66,7 +67,9 @@ class Scheduler:
         self._require_utc(now)
         success = self.load_success()
         latest_daily = DailyWindow.for_due_run(now).end
-        if success.l4 is None or success.l4 < latest_daily:
+        if (success.l4 is None or success.l4 < latest_daily) and not DailyAttemptLimit.exhausted(
+            self.root, DailyWindow.for_due_run(now).window_id
+        ):
             return Layer.L4
         if success.l2 is None or now - success.l2 >= timedelta(minutes=30):
             return Layer.L2

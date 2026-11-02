@@ -436,6 +436,40 @@ async def test_real_greeting_candidate_gets_a_coordination_reply(tmp_path: Path)
 
 
 @pytest.mark.asyncio
+async def test_greeting_route_context_is_bounded_for_long_group_history(
+    tmp_path: Path,
+) -> None:
+    job = seed(
+        tmp_path,
+        "Good morning ☀️",
+        trigger_kind=TriggerKind.GREETING_CANDIDATE,
+        trigger_reply_to="tg:tawg:10",
+    )
+    records_path = tmp_path / "data/telegram/2026/08/messages.jsonl"
+    existing = JsonlCollection(records_path, SourceRecord).decode(records_path.read_bytes())
+    history = [
+        _record(
+            f"tg:tawg:history-{index}",
+            f"Routine group update {index}: " + "context " * 150,
+            NOW - timedelta(minutes=20 - index),
+        )
+        for index in range(40)
+    ]
+    records_path.write_bytes(
+        JsonlCollection(records_path, SourceRecord).merged_bytes((*existing, *history))
+    )
+    ai = ContextualFakeAi("coordination", coordination_result())
+
+    prepared = await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    )
+
+    assert prepared is not None
+    route_call = next(call for call in ai.calls if call["job_type"] == "route")
+    assert len(route_call["context_pack"]) <= 24_000
+
+
+@pytest.mark.asyncio
 async def test_group_greeting_cannot_be_silenced_by_an_ai_ignore_route(
     tmp_path: Path,
 ) -> None:
@@ -2001,7 +2035,7 @@ async def test_contextual_route_is_persisted_before_existing_reply_flow(
     )
 
     assert [call["job_type"] for call in ai.calls] == ["route", "reply"]
-    assert ai.calls[0]["max_budget_usd"] == "0.10"
+    assert ai.calls[0]["max_budget_usd"] == "0.30"
     assert ai.calls[1]["max_budget_usd"] == "1.00"
     route_context = ai.calls[0]["context_pack"]
     assert "We need verifiable validation" in route_context
@@ -4359,6 +4393,86 @@ async def test_failed_model_attempt_returns_job_to_retryable_pending_state(
     assert persisted["attempts"] == 1
     assert persisted["safe_error_code"] == "reply_model_failed"
     assert "sensitive" not in json.dumps(persisted)
+
+
+@pytest.mark.asyncio
+async def test_existing_exhausted_pending_job_stops_without_calling_model(tmp_path: Path) -> None:
+    job = seed(tmp_path, "hello", trigger_kind=TriggerKind.GREETING_CANDIDATE)
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    persisted = json.loads(jobs_path.read_text())
+    persisted[0].update(attempts=868, safe_error_code="reply_route_model_process_failed")
+    jobs_path.write_text(json.dumps(persisted) + "\n")
+    ai = ContextualFakeAi("coordination", reply_result(chinese=False))
+    service = BotReplyService(tmp_path, ai=ai, bot_username="bot")
+
+    assert await service.prepare(job.job_id, now=NOW + timedelta(minutes=2)) is None
+    assert await service.prepare(job.job_id, now=NOW + timedelta(minutes=3)) is None
+    assert ai.calls == []
+    terminal = json.loads(jobs_path.read_text())[0]
+    assert terminal["status"] == "cancelled"
+    assert terminal["attempts"] == 868
+    assert terminal["safe_error_code"] == "reply_route_model_process_failed"
+
+
+@pytest.mark.asyncio
+async def test_active_processing_job_is_not_cancelled_or_reprocessed(tmp_path: Path) -> None:
+    job = seed(tmp_path, "hello")
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    persisted = json.loads(jobs_path.read_text())
+    persisted[0].update(status="processing", attempts=3)
+    jobs_path.write_text(json.dumps(persisted) + "\n")
+    ai = ContextualFakeAi("coordination", reply_result(chinese=False))
+    assert await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+        job.job_id, now=NOW + timedelta(minutes=2)
+    ) is None
+    assert ai.calls == []
+    assert json.loads(jobs_path.read_text())[0]["status"] == "processing"
+
+
+@pytest.mark.asyncio
+async def test_failure_becomes_terminal_on_third_attempt(tmp_path: Path) -> None:
+    job = seed(tmp_path, "@bot question")
+    jobs_path = tmp_path / "data/state/pending-bot-jobs.json"
+    persisted = json.loads(jobs_path.read_text())
+    persisted[0].update(attempts=2, safe_error_code="reply_model_failed")
+    jobs_path.write_text(json.dumps(persisted) + "\n")
+    ai = ContextualFakeAi(
+        "knowledge_question", reply_result(chinese=False), reply_error=RuntimeError("failure")
+    )
+    service = BotReplyService(tmp_path, ai=ai, bot_username="bot")
+    with pytest.raises(ReplyRejected):
+        await service.prepare(job.job_id, now=NOW + timedelta(minutes=2))
+    terminal = json.loads(jobs_path.read_text())[0]
+    assert terminal["status"] == "cancelled"
+    assert terminal["attempts"] == 3
+    assert terminal["safe_error_code"] == "reply_model_failed"
+    calls = len(ai.calls)
+    assert await service.prepare(job.job_id, now=NOW + timedelta(minutes=3)) is None
+    assert len(ai.calls) == calls
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("kind", ["auth", "credit", "model", "budget"])
+async def test_permanent_route_error_stops_without_retries(tmp_path: Path, kind: str) -> None:
+    job = seed(tmp_path, "hello", trigger_kind=TriggerKind.GREETING_CANDIDATE)
+
+    class FailedRouteAi:
+        calls = 0
+
+        async def run(self, **kwargs: Any) -> dict[str, Any]:
+            self.calls += 1
+            raise ClaudeCliError("Claude Code failed with exit status 1", kind=kind)
+
+    ai = FailedRouteAi()
+    with pytest.raises(ReplyRejected) as caught:
+        await BotReplyService(tmp_path, ai=ai, bot_username="bot").prepare(
+            job.job_id, now=NOW + timedelta(minutes=2)
+        )
+    assert caught.value.safe_code == f"reply_route_model_{kind}"
+    assert ai.calls == 1
+    persisted = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())[0]
+    assert persisted["status"] == "cancelled"
+    assert persisted["safe_error_code"] == f"reply_route_model_{kind}"
 
 
 @pytest.mark.asyncio

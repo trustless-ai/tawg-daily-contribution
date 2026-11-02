@@ -1384,6 +1384,27 @@
     "updated_at": "2026-10-31T01:20:10.000354Z"
   },
   {
+    "content_sha256": "3c6cc20f6930700816c3249a0c6bda332e7bbec40b9c512e315b1bf84ba4b002",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-11-01T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-11-01T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-01T23:00:21.124146Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-10-31 23:00 → 2026-11-01 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **ERC-8183 found common test ground** — the thread aligned on shared bindings and a replay test, then surfaced two signed-statement issues from practice. [ERC-8183 post](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/438)\n\n## 🤝 **What moved**\n\n### ERC-8183\n\n_The discussion moved toward a shared test baseline and a clearer set of edge cases._\n\n- agenticfinancegraph **Advanced** the ERC-8183 thread by confirming the shared bindings and replay test, then surfaced two signed-statement issues from hands-on work, giving the group concrete edge cases to design around. [ERC-8183 post](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/438)\n\n### community\n\n_A light exchange kept the channel easy to enter and the day's rhythm visible._\n\n- Jimmy Shi (@jimmyshi) **Kicked off** the day with a warm hello that gave the channel a low-friction entry point for questions and handoffs. [tg:tawg:5975]\n- Merlini (@gobross) **Answered** the morning hello, keeping the exchange going and making the room feel active for anyone dropping in. [tg:tawg:5977]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- The signed-statement issues raised in the thread could become short examples that make expected behavior easier to test.\n- The agreed bindings and replay test could be packaged as a compact checklist for new implementers.\n\n### ✅ **TODOs**\n\n- Collect the two signed-statement cases from the thread and write them up as concrete scenarios.\n- Draft a shared reference for the bindings and replay test so the next review round starts from common ground.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A thread that could have stalled on abstract agreement instead found a shared test baseline, then immediately surfaced two practical follow-up points from real signed-statement experience.\n>\n> The loop from consensus to concrete snags is exactly the kind of rhythm that makes a spec sturdier — keep the questions coming. 🧪",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-01T23:00:21.124146Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5978
+    ],
+    "updated_at": "2026-11-01T23:00:21.124146Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
@@ -1445,6 +1466,27 @@
       3806
     ],
     "updated_at": "2026-08-31T12:01:11.481378Z"
+  },
+  {
+    "content_sha256": "6659192486f29911e8634f0b124a2320ee255655ce0e79cf909ecdea71196788",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:issue_opened:18cb2898dffe2765563dfda5",
+    "destination": "tawg",
+    "job_id": "github-announcement:issue_opened:18cb2898dffe2765563dfda5",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-02T14:40:14.530276Z",
+    "reply_text": "🆕 **New issue** in [trustless-ai/wyriwe-signing](https://github.com/trustless-ai/wyriwe-signing)\n[#2 Open question 3: AnchorRegistry as the 'registry' option \\(deployed, permissionless, 23,903 gas\\)](https://github.com/trustless-ai/wyriwe-signing/issues/2)\nOpened by [giskard09](https://github.com/giskard09)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-02T14:40:14.530276Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5988
+    ],
+    "updated_at": "2026-11-02T14:40:14.530276Z"
   },
   {
     "content_sha256": "2e8407e0dd8ad3c6b7676c1ee30574d8bdf0b5b984461188e1e85e9f5fc535cf",
@@ -5395,6 +5437,27 @@
     "updated_at": "2026-09-08T15:50:22.890521Z"
   },
   {
+    "content_sha256": "53c12bcc232a133ad11c1c374bb7e6101576cb1b7ef02e6507202d108e4720bb",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:a239ba40d7bd1bb189796de4",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:a239ba40d7bd1bb189796de4",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-02T12:35:11.045226Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#46 fix\\(proof\\): proof soundness repairs S1-S6 \\(Fiat-Shamir challenges, LogUp binding, reverse verification, Argmax binding\\)](https://github.com/trustless-ai/zkIE/pull/46)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-02T12:35:11.045226Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5987
+    ],
+    "updated_at": "2026-11-02T12:35:11.045226Z"
+  },
+  {
     "content_sha256": "0156eed71e1a337420a642b9528b3a983310017626f8a05136ad0e4a109a9174",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:a3b8648ce4d3116fdb22ace4",
@@ -7705,6 +7768,27 @@
     "updated_at": "2026-09-29T16:10:09.497670Z"
   },
   {
+    "content_sha256": "35f2d417ad1669bb1df42ff7a504cf4f1d3a6dbf44a6cf36cd1f75ede7901bc0",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:9dfa71b2b87a005a376b5e90",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:9dfa71b2b87a005a376b5e90",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-02T16:20:19.416986Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#45 Soundness: repair committed-path verification \\(S1–S9\\)](https://github.com/trustless-ai/zkIE/pull/45)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-02T16:20:19.416986Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5989
+    ],
+    "updated_at": "2026-11-02T16:20:19.416986Z"
+  },
+  {
     "content_sha256": "a73a9935217193dbf844d11fd00c4ce5d1df58e10fe6af258d6ab238c9976e6b",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:a1048f0a267725a032d7cdde",
@@ -8940,6 +9024,27 @@
     "updated_at": "2026-10-20T17:35:12.244798Z"
   },
   {
+    "content_sha256": "b25757114d406bacd223f912b91cd6e90144819c8fd7b8cc69bc7965cab4e518",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "member-introduction:ben",
+    "destination": "tawg",
+    "job_id": "member-introduction:ben",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-02T11:20:25.789122Z",
+    "reply_text": "@benohanlon — really glad GobRoss pulled you in. Welcome to Trustless AI! 🙌\n\nThis group grew the way the best open-source things usually do: people from all over the world bumping into each other through ERC work and side projects, then realizing the conversations were too interesting to leave at the edge of a pull request. Builders, researchers, reviewers, EIP authors — all chewing on the same knotty questions, often by shipping something and then arguing about it kindly afterwards.\n\nThe thread running through it all is simple to say and harder to do: moving from \"trust me\" to results anyone can check. An AI output you can trace, a blockchain primitive you can recompute yourself, a standard whose behavior you can verify rather than take on faith. Evidence over assurances.\n\nThere's no onboarding ritual here, so don't wait for one. Ask the question that's been nagging you, float a half-formed idea, poke at whatever's in progress, or just lurk and see what catches your eye. No forms, no ceremony.\n\nSo — what are you working on, or curious about, these days?",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-02T11:20:25.789122Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5983
+    ],
+    "updated_at": "2026-11-02T11:20:25.789122Z"
+  },
+  {
     "content_sha256": "a880fc247735647465e9d64d90c7132f81756f601f7397c7f96a3d805b9e458e",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "member-introduction:filip-blagojević",
@@ -9043,6 +9148,27 @@
       5639
     ],
     "updated_at": "2026-10-20T17:30:41.687088Z"
+  },
+  {
+    "content_sha256": "d4ef3f4c5233d37b3644c85b6dfbbbe8b5eff4b5a7ca94eb04eb9c79106dec44",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "member-welcome:ben",
+    "destination": "tawg",
+    "job_id": "member-welcome:ben",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-02T11:17:04.922344Z",
+    "reply_text": "@benohanlon Welcome to Trustless AI! 👋",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-02T11:17:04.922344Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5982
+    ],
+    "updated_at": "2026-11-02T11:17:04.922344Z"
   },
   {
     "content_sha256": "ebfea3d16c6abc72e8ed2bb99d638e6cbab192ff136b816211c28077daef2627",
@@ -11661,5 +11787,26 @@
       5711
     ],
     "updated_at": "2026-10-23T13:53:21.095106Z"
+  },
+  {
+    "content_sha256": "69bc673870963c7429db56625ec8fd3934c6eeb432797430709dc5d6cb1aa7c6",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:5975",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:5975",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-01T05:19:34.631870Z",
+    "reply_text": "Good morning, Jimmy! 👋 Hope the day's off to a good start. If anything's on your mind — a question, an idea, or something you want to dig into — I'm here for it.",
+    "reply_to_message_id": 5975,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-01T05:19:34.631870Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      5976
+    ],
+    "updated_at": "2026-11-01T05:19:34.631870Z"
   }
 ]

@@ -24,6 +24,10 @@ from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 class ClaudeCliError(RuntimeError):
     """A safe harness failure that excludes prompts, output, and credentials."""
 
+    def __init__(self, message: str, *, kind: str | None = None) -> None:
+        super().__init__(message)
+        self.kind = kind
+
 
 @dataclass(frozen=True, slots=True)
 class CompletedProcess:
@@ -201,7 +205,10 @@ class ClaudeCli:
         finally:
             policy_path.unlink(missing_ok=True)
         if completed.returncode != 0:
-            raise ClaudeCliError(f"Claude Code failed with exit status {completed.returncode}")
+            raise ClaudeCliError(
+                f"Claude Code failed with exit status {completed.returncode}",
+                kind=self._process_error_kind(completed.stdout),
+            )
         if len(completed.stdout) > self._MAX_OUTPUT_BYTES:
             raise ClaudeCliError("Claude Code output exceeded its size limit")
         try:
@@ -242,6 +249,37 @@ class ClaudeCli:
         except ValidationError:
             raise ClaudeCliError("Claude Code structured output failed schema validation") from None
         return sanitized
+
+    @staticmethod
+    def _process_error_kind(stdout: bytes) -> str | None:
+        # The CLI often reports API errors in stdout, which may contain secrets or
+        # untrusted prompt data. Only persist fixed categories, never the text.
+        if len(stdout) > ClaudeCli._MAX_OUTPUT_BYTES:
+            return None
+        try:
+            output = json.loads(stdout)
+        except (UnicodeError, json.JSONDecodeError):
+            return None
+        if not isinstance(output, dict) or output.get("is_error") is not True:
+            return None
+        if output.get("subtype") == "error_max_budget_usd":
+            return "budget"
+        result = output.get("result")
+        if not isinstance(result, str):
+            return None
+        text = result.lower()
+        if "insufficient balance" in text or "insufficient credit" in text:
+            return "credit"
+        if (
+            "invalid api key" in text
+            or "authentication_error" in text
+            or "http 401" in text
+            or "not logged in · please run /login" in text
+        ):
+            return "auth"
+        if "model not found" in text or "invalid model" in text:
+            return "model"
+        return None
 
     def _assert_context_public(self, context_pack: str) -> None:
         try:

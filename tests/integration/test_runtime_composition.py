@@ -114,10 +114,7 @@ async def test_member_introduction_waits_for_the_l1_enabled_pipeline(
         updated_at=NOW,
     )
     (tmp_path / "data/state/pending-bot-jobs.json").write_text(
-        json.dumps(
-            [direct.model_dump(mode="json"), introduction.model_dump(mode="json")]
-        )
-        + "\n",
+        json.dumps([direct.model_dump(mode="json"), introduction.model_dump(mode="json")]) + "\n",
         encoding="utf-8",
     )
     prepared_ids: list[str] = []
@@ -345,20 +342,22 @@ async def test_consecutive_source_batches_retain_both_registry_observations(
         class Evidence:
             async def build(self, query: Any, *, now: datetime) -> Any:
                 erc_number = query.erc_numbers[0]
-                source = pipeline.registry.resolve(
-                    erc_number, frozenset(EvidenceKind)
-                )[0]
-                item = _pack().evidence[0].model_copy(
-                    update={
-                        "erc_number": erc_number,
-                        "source_key": source.source_key,
-                        "kind": source.kind,
-                        "authority": source.authority,
-                        "canonical_url": source.canonical_url,
-                        "citation_url": source.canonical_url,
-                        "observed_at": now,
-                        "content_sha256": hashes[erc_number],
-                    }
+                source = pipeline.registry.resolve(erc_number, frozenset(EvidenceKind))[0]
+                item = (
+                    _pack()
+                    .evidence[0]
+                    .model_copy(
+                        update={
+                            "erc_number": erc_number,
+                            "source_key": source.source_key,
+                            "kind": source.kind,
+                            "authority": source.authority,
+                            "canonical_url": source.canonical_url,
+                            "citation_url": source.canonical_url,
+                            "observed_at": now,
+                            "content_sha256": hashes[erc_number],
+                        }
+                    )
                 )
                 return _pack().model_copy(
                     update={
@@ -475,9 +474,7 @@ async def test_explicit_polling_intake_calls_get_updates(
     monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
     monkeypatch.setenv("TAWG_TELEGRAM_CHAT_ID", "-100123")
     async with httpx.AsyncClient() as client:
-        pipeline = _LivePipeline(
-            tmp_path, client=client, checkpoint=Checkpoint(), now=NOW
-        )
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
         await pipeline.telegram_intake(NOW)
 
     assert calls == [(73, 100)]
@@ -524,6 +521,7 @@ async def test_scheduled_knowledge_refresh_is_a_model_free_compatibility_noop(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     scaffold(tmp_path)
+
     class Refresh:
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             del args, kwargs
@@ -553,9 +551,7 @@ async def test_scheduled_daily_checkpoints_before_reply_preparation(
     async with httpx.AsyncClient() as client:
         pipeline = _LivePipeline(tmp_path, client=client, checkpoint=checkpoint, now=NOW)
 
-        async def prepare_daily(
-            selected: DailyWindow, *, dry_run: bool
-        ) -> PreparedDaily:
+        async def prepare_daily(selected: DailyWindow, *, dry_run: bool) -> PreparedDaily:
             assert selected == window
             assert not dry_run
             pipeline.prepared_daily = prepared
@@ -621,9 +617,7 @@ async def test_prepare_daily_persists_an_exact_validated_external_citation(
 ) -> None:
     scaffold(tmp_path)
     window = DailyWindow.for_due_run(NOW)
-    locator = (
-        "https://github.com/trustless-ai/recompute-kit/pull/15#issuecomment-5425745065"
-    )
+    locator = "https://github.com/trustless-ai/recompute-kit/pull/15#issuecomment-5425745065"
     evidence = DailyEvidence(
         evidence_id="gh:recompute-kit:comment:5425745065",
         source_kind="github",
@@ -631,10 +625,7 @@ async def test_prepare_daily_persists_an_exact_validated_external_citation(
         created_at=window.start + timedelta(hours=1),
         updated_at=window.start + timedelta(hours=1),
         author_person_id="zexoverz",
-        text=(
-            "Related review: "
-            "https://github.com/trustless-ai/recompute-kit/issues/99"
-        ),
+        text=("Related review: https://github.com/trustless-ai/recompute-kit/issues/99"),
     )
     prepared = PreparedDaily(window.window_id, "Daily", ("Daily",), (locator,), False)
 
@@ -661,9 +652,7 @@ async def test_prepare_daily_persists_an_exact_validated_external_citation(
         result = await pipeline.prepare_daily(window, dry_run=False)
 
     assert result == prepared
-    artifact = json.loads(
-        (tmp_path / "data/state/prepared-daily.json").read_text(encoding="utf-8")
-    )
+    artifact = json.loads((tmp_path / "data/state/prepared-daily.json").read_text(encoding="utf-8"))
     assert artifact["citations"] == [locator]
 
 
@@ -687,8 +676,7 @@ async def test_operator_preview_generates_fresh_rich_daily_under_a_distinct_job(
                     "destination": "tawg",
                     "status": "ambiguous",
                     "content_sha256": (
-                        "78bb59915ac2873a30dedb7416e039ade"
-                        "46b80ba602c4e20e85e5d842e507262"
+                        "78bb59915ac2873a30dedb7416e039ade46b80ba602c4e20e85e5d842e507262"
                     ),
                     "message_count": 1,
                     "delivery_format": "rich_markdown_v1",
@@ -735,9 +723,7 @@ async def test_operator_preview_generates_fresh_rich_daily_under_a_distinct_job(
     monkeypatch.setattr(runtime_module, "DailyService", Daily)
     monkeypatch.setattr(runtime_module, "DailyEvidenceCollector", Collector)
     async with httpx.AsyncClient() as client:
-        pipeline = _LivePipeline(
-            tmp_path, client=client, checkpoint=Checkpoint(), now=preview_now
-        )
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=preview_now)
         result = await pipeline.prepare_daily(window, dry_run=False)
 
     preview_id = "daily:preview-rich-v1:2026-08-27T23:00:00Z"
@@ -745,9 +731,7 @@ async def test_operator_preview_generates_fresh_rich_daily_under_a_distinct_job(
     assert result is not None
     assert result.window_id == preview_id
     assert result.telegram_text == "NEW CURRENT RICH DAILY"
-    artifact = json.loads(
-        (tmp_path / "data/state/prepared-daily.json").read_text(encoding="utf-8")
-    )
+    artifact = json.loads((tmp_path / "data/state/prepared-daily.json").read_text(encoding="utf-8"))
     assert artifact["window_id"] == preview_id
     assert artifact["telegram_text"] == "NEW CURRENT RICH DAILY"
     old_attempt = json.loads(state.read_text(encoding="utf-8"))[0]
@@ -797,9 +781,7 @@ def test_operator_preview_recovers_the_exact_persisted_artifact(
         encoding="utf-8",
     )
 
-    recovered = runtime_module._recover_rich_daily_preview(
-        tmp_path, delivery_job_id=preview_id
-    )
+    recovered = runtime_module._recover_rich_daily_preview(tmp_path, delivery_job_id=preview_id)
 
     assert recovered is not None
     assert recovered.window_id == preview_id
@@ -844,15 +826,11 @@ def test_operator_preview_rejects_a_changed_persisted_artifact(tmp_path: Path) -
     )
 
     with pytest.raises(RuntimeFailure, match="failed delivery binding"):
-        runtime_module._recover_rich_daily_preview(
-            tmp_path, delivery_job_id=preview_id
-        )
+        runtime_module._recover_rich_daily_preview(tmp_path, delivery_job_id=preview_id)
 
 
 @pytest.mark.parametrize("status", ["sending", "ambiguous"])
-def test_operator_preview_never_retries_an_unknown_delivery(
-    tmp_path: Path, status: str
-) -> None:
+def test_operator_preview_never_retries_an_unknown_delivery(tmp_path: Path, status: str) -> None:
     scaffold(tmp_path)
     preview_id = "daily:preview-rich-v1:2026-08-27T23:00:00Z"
     (tmp_path / "data/state/delivery-state.json").write_text(
@@ -876,9 +854,7 @@ def test_operator_preview_never_retries_an_unknown_delivery(
     )
 
     with pytest.raises(RuntimeFailure, match="requires operator review"):
-        runtime_module._recover_rich_daily_preview(
-            tmp_path, delivery_job_id=preview_id
-        )
+        runtime_module._recover_rich_daily_preview(tmp_path, delivery_job_id=preview_id)
 
 
 @pytest.mark.asyncio
@@ -889,10 +865,7 @@ async def test_operator_preview_delivered_state_is_a_model_free_noop(
     preview_now = datetime(2026, 8, 28, 1, 17, tzinfo=UTC)
     window = DailyWindow.for_due_run(preview_now)
     preview_id = "daily:preview-rich-v1:2026-08-27T23:00:00Z"
-    original_sha = (
-        "78bb59915ac2873a30dedb7416e039ade"
-        "46b80ba602c4e20e85e5d842e507262"
-    )
+    original_sha = "78bb59915ac2873a30dedb7416e039ade46b80ba602c4e20e85e5d842e507262"
     attempts = [
         {
             "schema_version": "tawg.delivery-attempt.v1",
@@ -931,9 +904,7 @@ async def test_operator_preview_delivered_state_is_a_model_free_noop(
 
     monkeypatch.setattr(runtime_module, "DailyService", Daily)
     async with httpx.AsyncClient() as client:
-        pipeline = _LivePipeline(
-            tmp_path, client=client, checkpoint=Checkpoint(), now=preview_now
-        )
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=preview_now)
         result = await pipeline.prepare_daily(window, dry_run=False)
 
     assert result is None
@@ -1060,9 +1031,7 @@ async def test_scheduled_daily_clears_prepared_output_after_persistence_rejectio
     async with httpx.AsyncClient() as client:
         pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
 
-        async def reject_persistence(
-            selected: DailyWindow, *, dry_run: bool
-        ) -> PreparedDaily:
+        async def reject_persistence(selected: DailyWindow, *, dry_run: bool) -> PreparedDaily:
             assert selected == window
             assert not dry_run
             pipeline.prepared_daily = prepared
@@ -1187,9 +1156,7 @@ async def test_reply_preparation_does_not_deliver_an_ai_ignored_job(
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             del args, kwargs
 
-        async def prepare(
-            self, job_id: str, *, now: datetime
-        ) -> PreparedReply | None:
+        async def prepare(self, job_id: str, *, now: datetime) -> PreparedReply | None:
             assert job_id == "reply:tg:tawg:10"
             assert now == NOW
             return None
@@ -1463,6 +1430,7 @@ async def test_model_free_knowledge_phase_does_not_suppress_pending_replies(
     )
 
     prepared_calls: list[str] = []
+
     class ReplyService:
         def __init__(self, *args: Any, **kwargs: Any) -> None:
             del args, kwargs
@@ -1561,9 +1529,7 @@ async def test_runtime_fails_after_final_checkpoint_when_a_phase_failed(
     monkeypatch.setattr(runtime_module, "Scheduler", Scheduler)
 
     with pytest.raises(RuntimeFailure, match="scheduled tick completed with phase failures"):
-        await ProductionRuntime(tmp_path, checkpoint=checkpoint).tick(
-            NOW, observe_only=False
-        )
+        await ProductionRuntime(tmp_path, checkpoint=checkpoint).tick(NOW, observe_only=False)
 
     assert checkpoint.operations == [f"layer-success:l4:{int(NOW.timestamp())}"]
 
@@ -1606,9 +1572,7 @@ async def test_runtime_fails_after_checkpoint_when_a_reply_job_failed(
     monkeypatch.setattr(runtime_module, "Scheduler", Scheduler)
 
     with pytest.raises(RuntimeFailure, match="reply job failures"):
-        await ProductionRuntime(tmp_path, checkpoint=checkpoint).tick(
-            NOW, observe_only=False
-        )
+        await ProductionRuntime(tmp_path, checkpoint=checkpoint).tick(NOW, observe_only=False)
 
     assert checkpoint.operations == [f"layer-success:l1:{int(NOW.timestamp())}"]
 
@@ -1739,6 +1703,7 @@ async def test_internal_checkpoint_conflict_retries_phase_in_a_fresh_repository_
         scaffold(root)
         async with httpx.AsyncClient() as client:
             if phase == "source":
+
                 class Scanner:
                     async def scan(self, **kwargs: object) -> ScopedScanResult:
                         del kwargs
@@ -1766,6 +1731,7 @@ async def test_internal_checkpoint_conflict_retries_phase_in_a_fresh_repository_
                 pipeline.github_announcements = EmptyAnnouncements()  # type: ignore[assignment]
                 await pipeline.source_check(NOW)
             else:
+
                 class DailyPipeline(_LivePipeline):
                     async def prepare_daily(
                         self,
@@ -2189,3 +2155,51 @@ async def test_knowledge_dry_run_uses_temporary_harness_and_leaves_repository_un
     assert snapshot() == before
     assert runtime_roots
     assert all(not path.exists() for path in runtime_roots)
+
+
+@pytest.mark.asyncio
+async def test_live_daily_model_calls_are_bounded_across_recreated_pipelines(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    scaffold(tmp_path)
+    window = DailyWindow.for_due_run(NOW)
+    calls = 0
+
+    class Collector:
+        def __init__(self, *args: Any, **kwargs: Any) -> None:
+            pass
+
+        async def collect(self, *args: Any, **kwargs: Any) -> tuple[Any, ...]:
+            return ()
+
+    class Model:
+        async def run(self, **kwargs: Any) -> dict[str, Any]:
+            nonlocal calls
+            calls += 1
+            raise ClaudeCliError("simulated failure")
+
+    class Daily:
+        def __init__(self, root: Path, *, ai: Any, **kwargs: Any) -> None:
+            self.ai = ai
+
+        async def prepare(self, *args: Any, **kwargs: Any) -> None:
+            await self.ai.run(
+                job_type="daily",
+                context_pack="{}",
+                operation_id="test",
+                max_budget_usd="2",
+                timeout_seconds=10,
+            )
+
+    monkeypatch.setattr(runtime_module, "DailyService", Daily)
+    monkeypatch.setattr(runtime_module, "DailyEvidenceCollector", Collector)
+    checkpoint = Checkpoint()
+    async with httpx.AsyncClient() as client:
+        for _ in range(4):
+            pipeline = _LivePipeline(
+                tmp_path, client=client, checkpoint=checkpoint, now=NOW, ai=Model()
+            )
+            with pytest.raises(RuntimeError):
+                await pipeline.prepare_daily(window, dry_run=False)
+    assert calls == 3
+    assert len([op for op in checkpoint.operations if op.startswith("daily-model-attempt:")]) == 3
