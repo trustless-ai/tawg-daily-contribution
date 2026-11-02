@@ -38,5 +38,15 @@
     "repository": "trustless-ai/wyriwe-signing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "PROFILE.md draft 3: authenticated trust roots and execution (WG 5962-5967)"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_opened:a239ba40d7bd1bb189796de4",
+    "kind": "pr_opened",
+    "number": 46,
+    "occurred_at": "2026-11-02T12:11:01Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "fix(proof): proof soundness repairs S1-S6 (Fiat-Shamir challenges, LogUp binding, reverse verification, Argmax binding)"
   }
 ]
