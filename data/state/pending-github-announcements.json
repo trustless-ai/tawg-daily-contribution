@@ -38,15 +38,5 @@
     "repository": "trustless-ai/wyriwe-signing",
     "schema_version": "tawg.github-announcement.v1",
     "title": "PROFILE.md draft 3: authenticated trust roots and execution (WG 5962-5967)"
-  },
-  {
-    "author_login": "giskard09",
-    "event_id": "github-announcement:issue_opened:18cb2898dffe2765563dfda5",
-    "kind": "issue_opened",
-    "number": 2,
-    "occurred_at": "2026-11-02T14:22:28Z",
-    "repository": "trustless-ai/wyriwe-signing",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Open question 3: AnchorRegistry as the 'registry' option (deployed, permissionless, 23,903 gas)"
   }
 ]
