@@ -1468,6 +1468,25 @@
     "updated_at": "2026-08-31T12:01:11.481378Z"
   },
   {
+    "content_sha256": "6659192486f29911e8634f0b124a2320ee255655ce0e79cf909ecdea71196788",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:issue_opened:18cb2898dffe2765563dfda5",
+    "destination": "tawg",
+    "job_id": "github-announcement:issue_opened:18cb2898dffe2765563dfda5",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-02T14:40:14.530276Z",
+    "reply_text": "🆕 **New issue** in [trustless-ai/wyriwe-signing](https://github.com/trustless-ai/wyriwe-signing)\n[#2 Open question 3: AnchorRegistry as the 'registry' option \\(deployed, permissionless, 23,903 gas\\)](https://github.com/trustless-ai/wyriwe-signing/issues/2)\nOpened by [giskard09](https://github.com/giskard09)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-02T14:40:14.530276Z"
+  },
+  {
     "content_sha256": "2e8407e0dd8ad3c6b7676c1ee30574d8bdf0b5b984461188e1e85e9f5fc535cf",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:issue_opened:22818146d904dc2a2ef2a6c7",
