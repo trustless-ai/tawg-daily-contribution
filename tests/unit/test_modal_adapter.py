@@ -97,6 +97,34 @@ class FakeSecret:
         return cls(name, required)
 
 
+class FakeVolume:
+    created: ClassVar[list[FakeVolume]] = []
+    commits: ClassVar[int] = 0
+    reloads: ClassVar[int] = 0
+
+    def __init__(self, name: str, version: int | None = None) -> None:
+        self.name = name
+        self.version = version
+        self.created.append(self)
+
+    @classmethod
+    def from_name(
+        cls,
+        name: str,
+        *,
+        create_if_missing: bool,
+        version: int | None = None,
+    ) -> FakeVolume:
+        assert create_if_missing
+        return cls(name, version)
+
+    def commit(self) -> None:
+        type(self).commits += 1
+
+    def reload(self) -> None:
+        type(self).reloads += 1
+
+
 class FakeImage:
     created: ClassVar[list[FakeImage]] = []
 
@@ -172,6 +200,7 @@ def _fake_modal_module() -> types.ModuleType:
     module.Image = FakeImage
     module.Retries = FakeRetries
     module.Secret = FakeSecret
+    module.Volume = FakeVolume
 
     def fastapi_endpoint(**config: Any) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
         def decorate(raw_f: Callable[..., Any]) -> Callable[..., Any]:
@@ -196,6 +225,10 @@ def modal_adapter(monkeypatch: pytest.MonkeyPatch) -> types.ModuleType:
     FakeApp.created.clear()
     FakeImage.created.clear()
     FakeSecret.calls.clear()
+    FakeVolume.created.clear()
+    FakeVolume.commits = 0
+    FakeVolume.reloads = 0
+    monkeypatch.delenv("TAWG_ENTRY_CANDIDATES_ENABLED", raising=False)
     monkeypatch.setitem(sys.modules, "modal", _fake_modal_module())
     monkeypatch.setitem(sys.modules, "fastapi", _fake_fastapi_module())
     sys.modules.pop("deploy.modal_app", None)
@@ -348,6 +381,58 @@ def test_adapter_separates_scheduled_trigger_from_single_writer_and_endpoint(
     assert FakeApp.created[0].functions == [worker, maintenance, endpoint]
 
 
+def test_production_mode_does_not_create_or_mount_inbox_volume(
+    modal_adapter: types.ModuleType,
+) -> None:
+    assert modal_adapter.inbox_volume is None
+    assert FakeVolume.created == []
+    assert "volumes" not in modal_adapter.repository_worker.config
+    assert "volumes" not in modal_adapter.telegram_webhook.config
+    image = FakeImage.created[0]
+    env_steps = [step for step in image.steps if step[0] == "env"]
+    assert "TAWG_TELEGRAM_INBOX_DIR" not in env_steps[0][1][0]
+
+
+@pytest.mark.asyncio
+async def test_dev_mode_mounts_inbox_volume_and_enqueues_before_spawn(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    FakeApp.created.clear()
+    FakeImage.created.clear()
+    FakeSecret.calls.clear()
+    FakeVolume.created.clear()
+    monkeypatch.setitem(sys.modules, "modal", _fake_modal_module())
+    monkeypatch.setitem(sys.modules, "fastapi", _fake_fastapi_module())
+    monkeypatch.setenv("TAWG_ENTRY_CANDIDATES_ENABLED", "true")
+    monkeypatch.setenv("TAWG_TELEGRAM_INBOX_DIR", str(tmp_path / "inbox"))
+    sys.modules.pop("deploy.modal_app", None)
+    module = importlib.import_module("deploy.modal_app")
+    monkeypatch.setenv("TAWG_TELEGRAM_WEBHOOK_SECRET", WEBHOOK_SECRET)
+    monkeypatch.setenv("TAWG_TELEGRAM_CHAT_ID", str(RAW_CHAT_ID))
+    monkeypatch.setenv("TAWG_TELEGRAM_BOT_USERNAME", "tawg_bot")
+    monkeypatch.setenv("GITHUB_TOKEN", GITHUB_TOKEN)
+
+    assert module.inbox_volume is not None
+    assert module.inbox_volume.version == 2
+    assert FakeVolume.created == [module.inbox_volume]
+    assert module.repository_worker.config["volumes"] == {
+        "/inbox": module.inbox_volume
+    }
+    assert module.telegram_webhook.config["volumes"] == {"/inbox": module.inbox_volume}
+    image = FakeImage.created[0]
+    env = next(step for step in image.steps if step[0] == "env")[1][0]
+    assert env["TAWG_TELEGRAM_INBOX_DIR"] == "/inbox"
+    assert env["TAWG_ENTRY_CANDIDATES_ENABLED"] == "true"
+
+    response = await module.telegram_webhook.raw_f(FakeRequest(_telegram_body()))
+
+    assert response.status_code == 200
+    assert module.repository_worker.spawned == [[701]]
+    assert list((tmp_path / "inbox").rglob("701.json"))
+    assert FakeVolume.commits >= 1
+
+
 def test_image_and_secret_cover_the_complete_runtime_without_source_secrets(
     modal_adapter: types.ModuleType,
 ) -> None:
@@ -439,6 +524,7 @@ def test_image_and_secret_cover_the_complete_runtime_without_source_secrets(
         "TAWG_REPOSITORY_PERSIST_MODE": "full",
         "TAWG_MODAL_BRANCH": "main",
         "TAWG_DEV_MODE": "false",
+        "TAWG_ENTRY_CANDIDATES_ENABLED": "false",
     }
 
 
@@ -448,6 +534,10 @@ def test_dev_mode_mounts_tawg_dev_secret_after_shared_secrets(
     FakeApp.created.clear()
     FakeImage.created.clear()
     FakeSecret.calls.clear()
+    FakeVolume.created.clear()
+    FakeVolume.commits = 0
+    FakeVolume.reloads = 0
+    monkeypatch.delenv("TAWG_ENTRY_CANDIDATES_ENABLED", raising=False)
     monkeypatch.setitem(sys.modules, "modal", _fake_modal_module())
     monkeypatch.setitem(sys.modules, "fastapi", _fake_fastapi_module())
     monkeypatch.setenv("TAWG_DEV_MODE", "true")

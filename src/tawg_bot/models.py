@@ -142,6 +142,7 @@ class TriggerKind(StrEnum):
     MENTION = "mention"
     REPLY_TO_BOT = "reply_to_bot"
     GREETING_CANDIDATE = "greeting_candidate"
+    MESSAGE_CANDIDATE = "message_candidate"
     MEMBER_WELCOME = "member_welcome"
     MEMBER_INTRODUCTION = "member_introduction"
 
@@ -298,14 +299,16 @@ class PendingBotJob(StrictModel):
         ):
             raise ValueError("knowledge mutation receipt requires a completed correction route")
         if self.status is JobStatus.IGNORED and (
-            self.trigger_kind is not TriggerKind.GREETING_CANDIDATE
+            self.trigger_kind
+            not in {TriggerKind.GREETING_CANDIDATE, TriggerKind.MESSAGE_CANDIDATE}
             or self.classified_route is not BotRoute.IGNORE
             or self.prepared_reply_text is not None
             or self.prepared_language is not None
             or self.prepared_citations
         ):
             raise ValueError(
-                "ignored reply state must be a greeting candidate with no deliverable content"
+                "ignored reply state must be a greeting candidate or message candidate "
+                "with no deliverable content"
             )
         return self
 

@@ -7,7 +7,7 @@ import pytest
 
 from tawg_bot.models import Relation, SourceRecord, SourceType
 from tawg_bot.query import SourceQuery
-from tawg_bot.telegram_intake import TelegramIntake
+from tawg_bot.telegram_intake import TelegramIntake, commit_intake_state
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
 ROOT = Path(__file__).parents[2]
@@ -19,7 +19,7 @@ class FakeTelegramApi:
         self.updates = updates
         self.offsets: list[int] = []
 
-    async def get_all_updates(self, offset: int, limit: int = 100) -> list[dict[str, Any]]:
+    async def get_updates_page(self, offset: int, limit: int = 100) -> list[dict[str, Any]]:
         self.offsets.append(offset)
         return self.updates
 
@@ -439,7 +439,7 @@ async def test_paths_and_bot_commands_do_not_create_reply_jobs(tmp_path: Path) -
 
 
 @pytest.mark.asyncio
-async def test_intake_persists_all_target_messages_jobs_and_cursor_atomically(
+async def test_intake_persists_all_target_messages_jobs_before_cursor_commit(
     tmp_path: Path,
 ) -> None:
     seed_repository(tmp_path)
@@ -482,6 +482,10 @@ async def test_intake_persists_all_target_messages_jobs_and_cursor_atomically(
     jobs = json.loads((tmp_path / "data/state/pending-bot-jobs.json").read_text())
     assert [job["trigger_record_id"] for job in jobs] == ["tg:tawg:503"]
     assert jobs[0]["message_thread_id"] == 700
+    cursors = json.loads((tmp_path / "data/state/source-cursors.json").read_text())
+    assert cursors["telegram_offset"] == 100
+    assert result.pending_cursors is not None
+    commit_intake_state(tmp_path, cursors=result.pending_cursors)
     cursors = json.loads((tmp_path / "data/state/source-cursors.json").read_text())
     assert cursors["telegram_offset"] == 107
     assert not (tmp_path / "data/state/telegram-webhook-receipts.json").exists()

@@ -579,3 +579,25 @@ def test_checkpoint_script_keeps_generic_push_failure_non_conflict_and_private(
     assert completed.returncode not in {0, 75}
     assert completed.stdout == b""
     assert completed.stderr == b""
+
+
+def test_dev_deploy_explicitly_enables_entry_candidates() -> None:
+    dev = load_workflow("modal-deploy-dev.yml")
+    dev_step = next(
+        step
+        for step in dev["jobs"]["deploy"]["steps"]
+        if step.get("name") == "Deploy verified Modal dev app"
+    )
+    assert dev_step["env"]["TAWG_ENTRY_CANDIDATES_ENABLED"] == "true"
+
+    prod = load_workflow("modal-deploy.yml")
+    prod_step = next(
+        step
+        for step in prod["jobs"]["deploy"]["steps"]
+        if step.get("name") == "Deploy verified Modal app"
+    )
+    assert "TAWG_ENTRY_CANDIDATES_ENABLED" not in prod_step.get("env", {})
+
+    assert "TAWG_ENTRY_CANDIDATES_ENABLED" in (
+        ROOT / "deploy/modal_app.py"
+    ).read_text(encoding="utf-8")

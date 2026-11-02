@@ -38,7 +38,7 @@ from tawg_bot.scheduler import IntakePolicy
 from tawg_bot.scoped_scanner import ScopedScanResult
 from tawg_bot.source_registry import EvidenceKind, SourceRegistry
 from tawg_bot.telegram_api import SentMessage, TelegramApiError
-from tawg_bot.telegram_intake import ingest_envelopes
+from tawg_bot.telegram_intake import IntakeResult, ingest_envelopes
 from tawg_bot.telegram_webhook import TelegramWebhookEntity, TelegramWebhookEnvelope
 from tests.integration.test_live_knowledge_refresh import _pack
 from tests.support.runtime_repository import copy_static_runtime_tree
@@ -437,8 +437,17 @@ async def test_telegram_intake_checkpoints_before_model_work(
             del api
             return cls()
 
-        async def collect(self, now: datetime) -> None:
+        async def collect(self, now: datetime) -> IntakeResult:
             assert now == NOW
+            return IntakeResult(
+                received=0,
+                persisted=0,
+                filtered=0,
+                rejected=0,
+                jobs_created=0,
+                next_offset=0,
+                changed_paths=(),
+            )
 
     monkeypatch.setattr(runtime_module, "TelegramApi", Api)
     monkeypatch.setattr(runtime_module, "TelegramIntake", Intake)
@@ -466,7 +475,7 @@ async def test_explicit_polling_intake_calls_get_updates(
             del client
             return cls()
 
-        async def get_all_updates(self, offset: int, limit: int = 100) -> list[Any]:
+        async def get_updates_page(self, offset: int, limit: int = 100) -> list[Any]:
             calls.append((offset, limit))
             return []
 
@@ -1826,7 +1835,7 @@ async def test_webhook_runtime_checkpoints_before_bounded_threaded_delivery(
             del client
             return cls()
 
-        async def get_all_updates(self, *args: Any, **kwargs: Any) -> list[Any]:
+        async def get_updates_page(self, *args: Any, **kwargs: Any) -> list[Any]:
             del args, kwargs
             raise AssertionError("webhook runtime must never poll getUpdates")
 
@@ -1890,7 +1899,7 @@ async def test_duplicate_webhook_replays_explicitly_failed_delivery_safely(
             del client
             return cls()
 
-        async def get_all_updates(self, *args: Any, **kwargs: Any) -> list[Any]:
+        async def get_updates_page(self, *args: Any, **kwargs: Any) -> list[Any]:
             del args, kwargs
             raise AssertionError("webhook runtime must never poll getUpdates")
 

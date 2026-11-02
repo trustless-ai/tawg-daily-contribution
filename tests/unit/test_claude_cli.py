@@ -173,6 +173,23 @@ def outer_route() -> dict:
     }
 
 
+def outer_route_entry() -> dict:
+    return {
+        "type": "result",
+        "subtype": "success",
+        "is_error": False,
+        "num_turns": 1,
+        "total_cost_usd": 0.01,
+        "structured_output": {
+            "schema_version": "tawg.route-entry-result.v1",
+            "decision": "reply",
+            "addressed_to_bot": True,
+            "route": "coordination",
+            "context_scope": "conversation",
+        },
+    }
+
+
 @pytest.mark.asyncio
 async def test_route_job_uses_the_strict_toolless_classifier_contract(
     tmp_path: Path,
@@ -218,7 +235,40 @@ async def test_route_job_uses_the_strict_toolless_classifier_contract(
         "knowledge",
         "erc",
     ]
+    assert "decision" not in schema["required"]
+    assert "addressed_to_bot" not in schema["properties"]
     assert "Classify exactly one current Telegram trigger" in runner.policy
+    assert "addressed_to_bot" not in runner.policy
+
+
+@pytest.mark.asyncio
+async def test_route_entry_job_uses_isolated_decision_contract(
+    tmp_path: Path,
+) -> None:
+    runner = CapturingRunner(outer_route_entry())
+    cli = ClaudeCli(
+        root=ROOT,
+        runner=runner,
+        executable="claude",
+        source_environment={"PATH": "/usr/bin"},
+        runtime_root=tmp_path,
+    )
+
+    result = await cli.run(
+        job_type="route_entry",
+        context_pack='{"context_schema":"tawg.route-context.v1"}',
+        operation_id="reply:tg:tawg:101:entry",
+        max_budget_usd="0.20",
+        timeout_seconds=45,
+    )
+
+    assert result["schema_version"] == "tawg.route-entry-result.v1"
+    assert result["decision"] == "reply"
+    assert result["addressed_to_bot"] is True
+    schema = json.loads(runner.argv[runner.argv.index("--json-schema") + 1])
+    assert {"decision", "addressed_to_bot"} <= set(schema["required"])
+    assert schema["properties"]["decision"]["enum"] == ["reply", "ignore"]
+    assert "addressed_to_bot" in runner.policy
 
 
 @pytest.mark.asyncio

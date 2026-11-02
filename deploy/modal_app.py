@@ -9,6 +9,7 @@ from collections.abc import AsyncIterator, Iterator
 from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import Any
 
 import modal
 from fastapi import Request, Response
@@ -17,6 +18,7 @@ from tawg_bot.bot_identity import configured_bot_id
 from tawg_bot.privacy import PrivacyFilter
 from tawg_bot.repository_session import RepositorySession
 from tawg_bot.runtime import ProductionRuntime
+from tawg_bot.telegram_inbox import enqueue_envelope
 from tawg_bot.telegram_webhook import (
     MAX_BODY_BYTES,
     TelegramWebhookConfig,
@@ -34,6 +36,9 @@ _REPOSITORY_PERSIST_MODE = os.environ.get(
     "none" if os.environ.get("TAWG_REPOSITORY_PERSIST_ENABLED", "true") == "false" else "full",
 )
 _DEV_MODE = os.environ.get("TAWG_DEV_MODE", "false") == "true"
+_ENTRY_CANDIDATES_ENABLED = (
+    os.environ.get("TAWG_ENTRY_CANDIDATES_ENABLED", "false").casefold() == "true"
+)
 _RUNTIME_ROOT = Path("/opt/tawg")
 _PRIVACY_CONFIG = _RUNTIME_ROOT / "config/privacy.yml"
 _LOCAL_PRIVACY_CONFIG = Path(__file__).parents[1] / "config/privacy.yml"
@@ -116,6 +121,14 @@ image = (
             "TAWG_REPOSITORY_PERSIST_MODE": _REPOSITORY_PERSIST_MODE,
             "TAWG_MODAL_BRANCH": _BRANCH,
             "TAWG_DEV_MODE": "true" if _DEV_MODE else "false",
+            "TAWG_ENTRY_CANDIDATES_ENABLED": (
+                "true" if _ENTRY_CANDIDATES_ENABLED else "false"
+            ),
+            **(
+                {"TAWG_TELEGRAM_INBOX_DIR": "/inbox"}
+                if _ENTRY_CANDIDATES_ENABLED
+                else {}
+            ),
         }
     )
     .workdir(str(_RUNTIME_ROOT))
@@ -147,6 +160,17 @@ if dev_secret is not None:
     worker_secrets.append(dev_secret)
     webhook_secrets.append(dev_secret)
 app = modal.App(_APP_NAME)
+inbox_volume = (
+    modal.Volume.from_name(
+        "tawg-telegram-inbox", create_if_missing=True, version=2
+    )
+    if _ENTRY_CANDIDATES_ENABLED
+    else None
+)
+
+
+def _volume_config() -> dict[str, Any]:
+    return {"volumes": {"/inbox": inbox_volume}} if inbox_volume is not None else {}
 
 
 def _normalizer() -> TelegramWebhookNormalizer:
@@ -207,33 +231,67 @@ async def _bounded_body(stream: AsyncIterator[bytes]) -> bytes | None:
     image=image,
     secrets=worker_secrets,
     max_containers=1,
+    **_volume_config(),
     timeout=_WORKER_TIMEOUT_SECONDS,
     retries=modal.Retries(max_retries=_WORKER_RETRIES),
 )
-async def repository_worker(envelope_payload: dict[str, object] | None = None) -> None:
-    """Run one webhook ingestion or maintenance repository session."""
+async def repository_worker(
+    payload: dict[str, object] | list[int] | None = None,
+) -> None:
+    """Run one webhook or maintenance repository session.
+
+    The durable-inbox path is dev-only. With the feature disabled this function keeps
+    the original envelope-payload behavior and does not touch a Volume.
+    """
     now = datetime.now(UTC)
-    operation_kind = "webhook" if envelope_payload is not None else "maintenance"
+    operation_kind = "webhook" if payload is not None else "maintenance"
     print(f"tawg_event=worker_started operation={operation_kind}", flush=True)
     try:
+        new_update_ids = (
+            payload
+            if _ENTRY_CANDIDATES_ENABLED and isinstance(payload, list)
+            else None
+        )
+        envelope_payload = (
+            payload
+            if not _ENTRY_CANDIDATES_ENABLED and isinstance(payload, dict)
+            else None
+        )
         envelope = (
             TelegramWebhookEnvelope.model_validate(envelope_payload)
             if envelope_payload is not None
             else None
         )
         operation_id = (
-            f"webhook:{envelope.update_id}"
+            f"webhook:{new_update_ids[0]}"
+            if new_update_ids
+            else f"webhook:{envelope.update_id}"
             if envelope is not None
             else f"maintenance:{int(now.timestamp())}"
         )
 
         async def run_runtime(root: Path) -> None:
             runtime = ProductionRuntime.from_environment(root)
+            if _ENTRY_CANDIDATES_ENABLED:
+                assert inbox_volume is not None
+                inbox_volume.reload()
+                if new_update_ids is not None:
+                    await runtime.process_inbox(
+                        now,
+                        new_update_ids=tuple(new_update_ids),
+                        persist=inbox_volume.commit,
+                    )
+                else:
+                    if _BRANCH == "main":
+                        await runtime.maintenance_tick(now, observe_only=False)
+                    # dev maintenance is sync-only; process only delivery-ready inbox state.
+                    await runtime.process_inbox(now, persist=inbox_volume.commit)
+                inbox_volume.commit()
+                return
             if envelope is not None:
                 await runtime.ingest_webhook_envelope(envelope, now=now)
             elif _BRANCH == "main":
                 await runtime.maintenance_tick(now, observe_only=False)
-            # dev maintenance is sync-only; the merge already happened above
 
         merge_branch = None if _BRANCH == "main" else "main"
         with _repository_environment():
@@ -267,6 +325,7 @@ async def scheduled_maintenance() -> None:
 @app.function(
     image=image,
     secrets=webhook_secrets,
+    **_volume_config(),
     timeout=_ENDPOINT_TIMEOUT_SECONDS,
 )
 @modal.fastapi_endpoint(method="POST")
@@ -302,6 +361,19 @@ async def telegram_webhook(request: Request) -> Response:
         return Response(status_code=200)
     if decision.disposition is TelegramWebhookDisposition.REJECT or decision.envelope is None:
         return Response(status_code=400)
+    if _ENTRY_CANDIDATES_ENABLED:
+        try:
+            assert inbox_volume is not None
+            inbox_volume.reload()
+            enqueue_envelope(decision.envelope, now=datetime.now(UTC))
+            inbox_volume.commit()
+        except Exception:
+            return Response(status_code=503)
+        try:
+            await repository_worker.spawn.aio([decision.envelope.update_id])
+        except Exception:
+            return Response(status_code=503)
+        return Response(status_code=200)
     try:
         await repository_worker.spawn.aio(decision.envelope.model_dump(mode="json"))
     except Exception:

@@ -26,6 +26,7 @@ from tawg_bot.conversation_context import (
 )
 from tawg_bot.corrections import CorrectionService
 from tawg_bot.erc_query import ErcIntent, ErcQuery, ErcQueryPlanner
+from tawg_bot.feature_flags import ENTRY_ROUTER_VERSION
 from tawg_bot.github_announcements import (
     GitHubAnnouncementClient,
     GitHubAnnouncementRejected,
@@ -151,6 +152,15 @@ class BotRouter:
         trigger_text: str = "",
     ) -> BotRoute:
         """Clamp an AI decision to the controller's non-negotiable authority boundary."""
+        if trigger_kind is TriggerKind.MESSAGE_CANDIDATE:
+            if route in {
+                BotRoute.IGNORE,
+                BotRoute.COORDINATION,
+                BotRoute.KNOWLEDGE_QUESTION,
+                BotRoute.REFUSE,
+            }:
+                return route
+            return BotRoute.IGNORE
         if trigger_kind is TriggerKind.GREETING_CANDIDATE and route is BotRoute.IGNORE:
             if _UNAMBIGUOUS_GROUP_GREETING.fullmatch(trigger_text):
                 return BotRoute.COORDINATION
@@ -161,6 +171,27 @@ class BotRouter:
 
     def erc_query(self, text: str) -> ErcQuery | None:
         return self._erc_planner.plan(text)
+
+
+def fallback_route(
+    *,
+    trigger_kind: TriggerKind,
+    trigger_text: str,
+    bot_username: str,
+) -> tuple[BotRoute, RouteContextScope]:
+    """Return an executable route without another AI call when entry fails."""
+    router = BotRouter(bot_username)
+    if trigger_kind in {TriggerKind.MENTION, TriggerKind.REPLY_TO_BOT}:
+        if router.erc_query(trigger_text) is not None:
+            return BotRoute.KNOWLEDGE_QUESTION, RouteContextScope.ERC
+        return BotRoute.REFUSE, RouteContextScope.CONVERSATION
+    if trigger_kind is TriggerKind.GREETING_CANDIDATE:
+        # Entry mode must respect AI IGNORE and must not reply on model failure. The
+        # legacy forced-greeting reply stays in authorize_ai_route for non-entry mode.
+        return BotRoute.IGNORE, RouteContextScope.CONVERSATION
+    if trigger_kind is TriggerKind.MESSAGE_CANDIDATE:
+        return BotRoute.IGNORE, RouteContextScope.CONVERSATION
+    return BotRoute.COORDINATION, RouteContextScope.CONVERSATION
 
 
 @dataclass(frozen=True, slots=True)
@@ -339,7 +370,7 @@ class ReplyAi(Protocol):
     async def run(
         self,
         *,
-        job_type: Literal["reply", "route"],
+        job_type: Literal["reply", "route", "route_entry"],
         context_pack: str,
         operation_id: str,
         max_budget_usd: str,
@@ -434,10 +465,12 @@ class BotReplyService:
         github_current_client: GitHubAnnouncementClient | None = None,
         invinoveritas_client: SafeJsonHttpClient | None = None,
         invinoveritas_api_key: str | None = None,
+        entry_candidates_enabled: bool = False,
     ) -> None:
         self.root = root.resolve()
         self.ai = ai
         self.router = BotRouter(bot_username)
+        self.entry_candidates_enabled = entry_candidates_enabled
         self.live_evidence = live_evidence
         self.knowledge_state = knowledge_state
         if chat_id is not None and (isinstance(chat_id, bool) or not isinstance(chat_id, int)):
@@ -609,7 +642,31 @@ class BotReplyService:
                 and processing.router_context_sha256 == route_context.sha256
                 and processing.router_version == self._ROUTER_VERSION
             )
-            if not routing_is_current:
+            if self.entry_candidates_enabled:
+                if processing.classified_route is None or processing.routed_at is None:
+                    route, context_scope = fallback_route(
+                        trigger_kind=processing.trigger_kind,
+                        trigger_text=trigger.text_original,
+                        bot_username=self.router.bot_username,
+                    )
+                    processing = processing.model_copy(
+                        update={
+                            "classified_route": route,
+                            "router_context_scope": context_scope,
+                            "router_context_sha256": route_context.sha256,
+                            "router_version": ENTRY_ROUTER_VERSION,
+                            "routed_at": now,
+                            "verification_artifact": None,
+                        }
+                    )
+                    jobs[job_id] = processing
+                    self._publish_jobs(jobs, f"{job_id}:entry-fallback")
+                else:
+                    route = processing.classified_route
+                    context_scope = (
+                        processing.router_context_scope or RouteContextScope.CONVERSATION
+                    )
+            elif not routing_is_current:
                 if processing.classified_route is not None:
                     processing = processing.model_copy(
                         update={

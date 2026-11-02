@@ -6,16 +6,18 @@ import asyncio
 import hashlib
 import json
 import os
-from dataclasses import dataclass, replace
+from collections.abc import Callable
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from time import monotonic
+from typing import Any
 
 import httpx
 from pydantic import ValidationError
 
-from tawg_bot.bot_identity import configured_bot_id
+from tawg_bot.bot_identity import configured_bot_id, delivery_state_relative_path
 from tawg_bot.bot_router import (
     BotReplyService,
     PreparedReply,
@@ -48,8 +50,10 @@ from tawg_bot.delivery import (
     DeliveryRejected,
     DeliveryService,
 )
+from tawg_bot.entry_router import EntryDecider
 from tawg_bot.erc_query import ErcIntent, ErcQuery
 from tawg_bot.evidence_fetch import RestrictedEvidenceFetcher
+from tawg_bot.feature_flags import entry_candidates_enabled
 from tawg_bot.github_announcements import (
     GitHubAnnouncementBatch,
     GitHubAnnouncementScanner,
@@ -66,6 +70,7 @@ from tawg_bot.models import (
     DeliveryStatus,
     JobStatus,
     PendingBotJob,
+    PreparedAttachment,
     TriggerKind,
 )
 from tawg_bot.persist_mode import PersistMode, configured_persist_mode
@@ -76,11 +81,37 @@ from tawg_bot.scheduler import IntakePolicy, Scheduler
 from tawg_bot.scoped_scanner import ScopedScanResult, ScopedSourceScanner
 from tawg_bot.source_registry import SourceRegistry
 from tawg_bot.telegram_api import TelegramApi
+from tawg_bot.telegram_inbox import (
+    INBOX_MAX_ATTEMPTS,
+    INBOX_RECOVERY_BUDGET_SECONDS,
+    INBOX_RETRY_BACKOFF_SECONDS,
+    InboxEntry,
+    InboxStatus,
+    cleanup_terminal_orphans,
+    inbox_bot_key,
+    inbox_root,
+    oldest_undecided_age_seconds,
+    select_drain_entries,
+)
+from tawg_bot.telegram_inbox import (
+    entries as inbox_entries,
+)
+from tawg_bot.telegram_inbox import (
+    get_entry as get_inbox_entry,
+)
+from tawg_bot.telegram_inbox import (
+    remove_entry as remove_inbox_entry,
+)
+from tawg_bot.telegram_inbox import (
+    save_state as save_inbox_state,
+)
 from tawg_bot.telegram_intake import (
     MemberWelcomeReconciler,
     TelegramIntake,
     WebhookIntakeResult,
+    commit_intake_state,
     ingest_envelopes,
+    persist_recovered_envelope,
 )
 from tawg_bot.telegram_webhook import TelegramWebhookEnvelope
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
@@ -206,6 +237,21 @@ class ScriptCheckpoint(DeliveryCheckpoint):
             raise RuntimeFailure("repository checkpoint failed")
 
 
+@dataclass(frozen=True, slots=True)
+class InboxDrainReport:
+    selected: int
+    delivered: int
+    pending: int
+    ambiguous: int
+    remaining: int
+    backlog_seen: int
+    backlog_selected: int
+    oldest_undecided_age_seconds: int
+    maintenance_only: bool
+    cleaned: int = 0
+    needs_attention: int = 0
+
+
 class ProductionRuntime:
     def __init__(self, root: Path, *, checkpoint: DeliveryCheckpoint) -> None:
         self.root = root.resolve()
@@ -248,21 +294,576 @@ class ProductionRuntime:
                 bot_id=bot_id,
                 persist_mode=persist_mode,
             )
-            result = ingest_envelopes(
-                root=self.root,
-                group_slug=_TELEGRAM_GROUP_SLUG,
-                bot_username=bot_username,
-                envelopes=(envelope,),
-                now=now,
-                telegram_chat_id=pipeline._chat_id(),
-                bot_id=bot_id,
-                persist_mode=persist_mode,
-            )
+            if pipeline.entry_candidates_enabled:
+                result = ingest_envelopes(
+                    root=self.root,
+                    group_slug=_TELEGRAM_GROUP_SLUG,
+                    bot_username=bot_username,
+                    envelopes=(envelope,),
+                    now=now,
+                    telegram_chat_id=pipeline._chat_id(),
+                    bot_id=bot_id,
+                    persist_mode=persist_mode,
+                    defer_receipts=True,
+                )
+                if result.candidate_job_ids:
+                    await EntryDecider(
+                        self.root,
+                        ai=pipeline.ai,
+                        bot_username=bot_username,
+                        now=now,
+                    ).decide(result.candidate_job_ids)
+                commit_intake_state(
+                    self.root,
+                    receipts=result.pending_receipts,
+                    bot_id=bot_id,
+                )
+            else:
+                result = ingest_envelopes(
+                    root=self.root,
+                    group_slug=_TELEGRAM_GROUP_SLUG,
+                    bot_username=bot_username,
+                    envelopes=(envelope,),
+                    now=now,
+                    telegram_chat_id=pipeline._chat_id(),
+                    bot_id=bot_id,
+                    persist_mode=persist_mode,
+                )
             pipeline.telegram_synced_at = now
             await self.checkpoint.publish(f"telegram-webhook:{envelope.update_id}", self.root)
             await pipeline.publish_repository()
             await pipeline.telegram_delivery()
         return result
+
+    async def process_inbox(
+        self,
+        now: datetime,
+        *,
+        new_update_ids: tuple[int, ...] | None = None,
+        persist: Callable[[], None] | None = None,
+    ) -> InboxDrainReport:
+        """Drain the durable bot inbox.
+
+        Only an actual new-message event may run the entry decision. Maintenance may
+        resume already-decided/delivery work and alert on stuck undecided entries, but
+        never calls the entry AI.
+        """
+        root = inbox_root()
+        bot_key = inbox_bot_key()
+        if root is None:
+            return InboxDrainReport(0, 0, 0, 0, 0, 0, 0, 0, new_update_ids is None)
+        all_entries = inbox_entries(root=root, bot_key=bot_key)
+        cleaned = 0
+        if new_update_ids is None:
+            # Finish idempotent terminal cleanup left by a crash between persisting
+            # a terminal state and writing the tombstone (or unlinking the files).
+            cleaned = cleanup_terminal_orphans(root=root, bot_key=bot_key)
+            if cleaned and persist is not None:
+                persist()
+        selection = select_drain_entries(
+            all_entries,
+            new_update_ids=(
+                frozenset(new_update_ids) if new_update_ids is not None else None
+            ),
+            now=now,
+        )
+        if selection.maintenance_only:
+            stuck = [
+                entry
+                for entry in all_entries
+                if entry.status is InboxStatus.ENQUEUED
+            ]
+            if stuck:
+                oldest_age = oldest_undecided_age_seconds(
+                    now=now, root=root, bot_key=bot_key
+                )
+                print(
+                    "tawg_event=inbox_alert "
+                    f"status=undecided_pending count={len(stuck)} "
+                    f"oldest_age_seconds={oldest_age} "
+                    "reason=no_new_message_event",
+                    flush=True,
+                )
+            attention = [
+                entry
+                for entry in all_entries
+                if entry.status is InboxStatus.NEEDS_ATTENTION
+            ]
+            if attention:
+                oldest = min(entry.enqueued_at for entry in attention)
+                print(
+                    "tawg_event=inbox_alert "
+                    f"status=needs_attention count={len(attention)} "
+                    f"oldest_age_seconds={max(0, int((now - oldest).total_seconds()))} "
+                    "reason=retry_exhausted",
+                    flush=True,
+                )
+            ambiguous_entries = [
+                entry
+                for entry in all_entries
+                if entry.status is InboxStatus.AMBIGUOUS
+            ]
+            if ambiguous_entries:
+                oldest = min(entry.enqueued_at for entry in ambiguous_entries)
+                print(
+                    "tawg_event=inbox_alert "
+                    f"status=ambiguous count={len(ambiguous_entries)} "
+                    f"oldest_age_seconds={max(0, int((now - oldest).total_seconds()))} "
+                    "reason=delivery_ambiguous",
+                    flush=True,
+                )
+
+        def persist_entry(value: InboxEntry) -> None:
+            save_inbox_state(value, root=root, bot_key=bot_key)
+            if persist is not None:
+                persist()
+
+        deadline = monotonic() + INBOX_RECOVERY_BUDGET_SECONDS
+        delivered = 0
+        pending = 0
+        ambiguous = 0
+        backlog_ids = {
+            entry.update_id
+            for entry in selection.selected
+            if entry.status is InboxStatus.ENQUEUED
+            and entry.update_id not in selection.new_event_updates
+        }
+        processed_backlog_ids: set[int] = set()
+        processed = 0
+        seen_updates: set[int] = set()
+        for entry in selection.selected:
+            if monotonic() >= deadline:
+                break
+            if entry.update_id in seen_updates:
+                continue
+            seen_updates.add(entry.update_id)
+            latest = get_inbox_entry(
+                root=root, bot_key=bot_key, update_id=entry.update_id
+            )
+            if latest is None:
+                # The entry reached its tombstone or was removed after the snapshot.
+                continue
+            if latest.status in {InboxStatus.DELIVERED, InboxStatus.TERMINAL}:
+                # Terminal cleanup only: no pipeline, no entry AI, no reply rewrite.
+                # remove_entry is idempotent, so a crash mid-cleanup can be retried.
+                remove_inbox_entry(latest, root=root, bot_key=bot_key)
+                if persist is not None:
+                    persist()
+                cleaned += 1
+                processed += 1
+                continue
+            if latest.status in {
+                InboxStatus.AMBIGUOUS,
+                InboxStatus.NEEDS_ATTENTION,
+            }:
+                continue
+            entry = latest
+            allow_entry = entry.status is InboxStatus.ENQUEUED
+            updated = await self._process_with_retries(
+                entry,
+                now,
+                allow_entry=allow_entry,
+                persist=persist_entry,
+                root=root,
+                bot_key=bot_key,
+            )
+            persist_entry(updated)
+            if (
+                updated.status is InboxStatus.NEEDS_ATTENTION
+                and entry.status is not InboxStatus.NEEDS_ATTENTION
+            ):
+                # Covers both exception exhaustion and ordinary DeliveryFailed
+                # exhaustion; the entry is retained for operator recovery.
+                self._alert_inbox(updated, now)
+            if updated.status in {InboxStatus.DELIVERED, InboxStatus.TERMINAL}:
+                remove_inbox_entry(updated, root=root, bot_key=bot_key)
+                if persist is not None:
+                    persist()
+                delivered += 1
+            elif updated.status is InboxStatus.AMBIGUOUS:
+                ambiguous += 1
+            else:
+                pending += 1
+            if entry.update_id in backlog_ids:
+                processed_backlog_ids.add(entry.update_id)
+            processed += 1
+
+        remaining = selection.backlog_remaining + len(
+            backlog_ids - processed_backlog_ids
+        )
+        report = InboxDrainReport(
+            selected=len(selection.selected),
+            delivered=delivered,
+            pending=pending,
+            ambiguous=ambiguous,
+            remaining=remaining,
+            backlog_seen=selection.backlog_seen,
+            backlog_selected=selection.backlog_selected,
+            oldest_undecided_age_seconds=selection.oldest_undecided_age_seconds,
+            maintenance_only=selection.maintenance_only,
+            cleaned=cleaned,
+            needs_attention=selection.needs_attention,
+        )
+        print(
+            "tawg_event=inbox_drain "
+            f"maintenance_only={report.maintenance_only} "
+            f"new_events={len(selection.new_event_updates)} "
+            f"selected={report.selected} delivered={delivered} "
+            f"pending={pending} ambiguous={ambiguous} cleaned={cleaned} "
+            f"backlog_seen={report.backlog_seen} "
+            f"backlog_selected={selection.backlog_selected} "
+            f"backlog_remaining={remaining} "
+            f"retry_selected={selection.retry_selected} "
+            f"needs_attention={selection.needs_attention} "
+            f"oldest_undecided_age_seconds={report.oldest_undecided_age_seconds} "
+            f"processed={processed}",
+            flush=True,
+        )
+        return report
+
+    async def _process_with_retries(
+        self,
+        entry: InboxEntry,
+        now: datetime,
+        *,
+        allow_entry: bool,
+        persist: Callable[[InboxEntry], None],
+        root: Path,
+        bot_key: str,
+    ) -> InboxEntry:
+        """Bounded, event-local retries. No periodic scanner and no new-message dependency."""
+        current = entry
+        while True:
+            try:
+                return await self._process_inbox_entry(
+                    current,
+                    now,
+                    allow_entry=allow_entry,
+                    persist=persist,
+                )
+            except RepositoryConflict:
+                # A non-fast-forward conflict must escape to RepositorySession so it
+                # abandons the stale checkout and replays once from a fresh clone.
+                raise
+            except Exception:
+                # _process_inbox_entry may already have committed ENTRY_DECIDED or
+                # DELIVERY_PENDING (including prepared text). Never overwrite that with
+                # the stale caller copy.
+                latest = get_inbox_entry(
+                    root=root, bot_key=bot_key, update_id=current.update_id
+                )
+                if latest is None:
+                    return current.model_copy(
+                        update={"status": InboxStatus.TERMINAL, "next_attempt_at": None}
+                    )
+                if latest.status in {
+                    InboxStatus.DELIVERED,
+                    InboxStatus.TERMINAL,
+                    InboxStatus.AMBIGUOUS,
+                    InboxStatus.NEEDS_ATTENTION,
+                }:
+                    return latest
+                attempts = latest.attempts + 1
+                if attempts >= INBOX_MAX_ATTEMPTS:
+                    exhausted = latest.model_copy(
+                        update={
+                            "status": InboxStatus.NEEDS_ATTENTION,
+                            "attempts": attempts,
+                            "safe_error_code": "inbox_retry_exhausted",
+                            "next_attempt_at": None,
+                        }
+                    )
+                    persist(exhausted)
+                    return exhausted
+                current = latest.model_copy(
+                    update={
+                        "attempts": attempts,
+                        "safe_error_code": "inbox_worker_failed",
+                        "next_attempt_at": now
+                        + timedelta(seconds=INBOX_RETRY_BACKOFF_SECONDS),
+                    }
+                )
+                persist(current)
+                await asyncio.sleep(INBOX_RETRY_BACKOFF_SECONDS)
+
+    async def _process_inbox_entry(
+        self,
+        entry: InboxEntry,
+        now: datetime,
+        *,
+        allow_entry: bool,
+        persist: Callable[[InboxEntry], None],
+    ) -> InboxEntry:
+        if entry.status in {InboxStatus.AMBIGUOUS, InboxStatus.NEEDS_ATTENTION}:
+            return entry
+        bot_username = _configured_bot_username()
+        bot_id = configured_bot_id()
+        persist_mode = configured_persist_mode()
+        terminal = self._terminal_delivery_status(entry, bot_id, persist_mode)
+        if terminal is not None:
+            return entry.model_copy(
+                update={"status": terminal, "next_attempt_at": None}
+            )
+        async with httpx.AsyncClient(timeout=30) as client:
+            pipeline = _LivePipeline(
+                self.root,
+                client=client,
+                checkpoint=self.checkpoint,
+                now=now,
+                bot_id=bot_id,
+                persist_mode=persist_mode,
+            )
+            result = ingest_envelopes(
+                root=self.root,
+                group_slug=_TELEGRAM_GROUP_SLUG,
+                bot_username=bot_username,
+                envelopes=(entry.envelope,),
+                now=now,
+                telegram_chat_id=pipeline._chat_id(),
+                bot_id=bot_id,
+                persist_mode=persist_mode,
+                defer_receipts=True,
+            )
+            if entry.status is InboxStatus.ENQUEUED:
+                if not allow_entry:
+                    return entry
+                if result.candidate_job_ids:
+                    await EntryDecider(
+                        self.root,
+                        ai=pipeline.ai,
+                        bot_username=bot_username,
+                        now=now,
+                    ).decide(result.candidate_job_ids)
+                jobs = self._inbox_jobs(pipeline, entry)
+                if not jobs:
+                    return entry.model_copy(
+                        update={
+                            "status": InboxStatus.TERMINAL,
+                            "safe_error_code": "no_candidate",
+                            "attempts": entry.attempts + 1,
+                        }
+                    )
+                entry = entry.model_copy(
+                    update={
+                        "status": InboxStatus.ENTRY_DECIDED,
+                        "jobs": tuple(job.persistence_payload() for job in jobs),
+                        "attempts": entry.attempts + 1,
+                    }
+                )
+                persist(entry)
+            else:
+                # A committed receipt makes ingest a replay, so rebuild trigger evidence
+                # from the immutable envelope before restoring the saved job state.
+                persist_recovered_envelope(
+                    root=self.root,
+                    group_slug=_TELEGRAM_GROUP_SLUG,
+                    envelope=entry.envelope,
+                    now=now,
+                    telegram_chat_id=pipeline._chat_id(),
+                    bot_id=bot_id,
+                    persist_mode=persist_mode,
+                )
+                self._restore_inbox_jobs(entry.jobs)
+
+            if entry.status is InboxStatus.DELIVERY_PENDING and entry.prepared_replies:
+                # Restore the exact READY reply text. Never regenerate on retry: a new
+                # text would not match the delivery intent's stored content hash.
+                pipeline.prepared_replies = self._prepared_from_payloads(
+                    entry.prepared_replies
+                )
+            else:
+                await pipeline.publish_repository()
+                prepared = self._prepared_payloads(pipeline.prepared_replies)
+                latest_jobs = _filter_bot_local_jobs(
+                    [
+                        job
+                        for job in pipeline._load_jobs()
+                        if job.trigger_record_id == entry.envelope.source_id
+                    ],
+                    bot_id=pipeline.bot_id,
+                    persist_mode=pipeline.persist_mode,
+                )
+                entry = entry.model_copy(
+                    update={
+                        "status": InboxStatus.DELIVERY_PENDING,
+                        "jobs": tuple(job.persistence_payload() for job in latest_jobs),
+                        "prepared_replies": prepared,
+                    }
+                )
+                persist(entry)
+
+            await pipeline.telegram_delivery()
+            job_ids = {str(payload["job_id"]) for payload in entry.jobs}
+            status = self._inbox_delivery_status(pipeline, job_ids)
+            if status is InboxStatus.DELIVERY_PENDING:
+                return self._schedule_inbox_retry(entry, now)
+            commit_intake_state(
+                self.root,
+                receipts=result.pending_receipts,
+                bot_id=bot_id,
+            )
+            await self.checkpoint.publish(
+                f"inbox:{entry.update_id}:{status.value}",
+                self.root,
+            )
+            return entry.model_copy(
+                update={"status": status, "next_attempt_at": None}
+            )
+
+    def _schedule_inbox_retry(self, entry: InboxEntry, now: datetime) -> InboxEntry:
+        attempts = entry.attempts + 1
+        if attempts >= INBOX_MAX_ATTEMPTS:
+            return entry.model_copy(
+                update={
+                    "status": InboxStatus.NEEDS_ATTENTION,
+                    "attempts": attempts,
+                    "safe_error_code": "inbox_retry_exhausted",
+                    "next_attempt_at": None,
+                }
+            )
+        return entry.model_copy(
+            update={
+                "attempts": attempts,
+                "safe_error_code": "inbox_worker_failed",
+                "next_attempt_at": now
+                + timedelta(seconds=INBOX_RETRY_BACKOFF_SECONDS),
+            }
+        )
+
+    @staticmethod
+    def _alert_inbox(entry: InboxEntry, now: datetime) -> None:
+        print(
+            "tawg_event=inbox_alert "
+            f"update_id={entry.update_id} status={entry.status.value} "
+            f"attempts={entry.attempts} "
+            f"age_seconds={max(0, int((now - entry.enqueued_at).total_seconds()))} "
+            "reason=retry_exhausted",
+            flush=True,
+        )
+
+    def _terminal_delivery_status(
+        self,
+        entry: InboxEntry,
+        bot_id: int | None,
+        persist_mode: PersistMode,
+    ) -> InboxStatus | None:
+        job_ids = {str(payload["job_id"]) for payload in entry.jobs}
+        if not job_ids:
+            return None
+        path = self.root / delivery_state_relative_path(
+            bot_id, persist_mode=persist_mode
+        )
+        if not path.is_file():
+            return None
+        try:
+            attempts = json.loads(path.read_text(encoding="utf-8"))
+            parsed = [DeliveryAttempt.model_validate(item) for item in attempts]
+        except (OSError, UnicodeError, ValueError, ValidationError):
+            return None
+        relevant = [attempt for attempt in parsed if attempt.job_id in job_ids]
+        delivered_ids = {
+            attempt.job_id
+            for attempt in relevant
+            if attempt.status is DeliveryStatus.DELIVERED
+        }
+        ambiguous_ids = {
+            attempt.job_id
+            for attempt in relevant
+            if attempt.status is DeliveryStatus.AMBIGUOUS
+        }
+        if ambiguous_ids:
+            return InboxStatus.AMBIGUOUS
+        if job_ids <= delivered_ids:
+            return InboxStatus.DELIVERED
+        return None
+
+    @staticmethod
+    def _prepared_payloads(replies: list[PreparedReply]) -> tuple[dict[str, Any], ...]:
+        payloads: list[dict[str, Any]] = []
+        for reply in replies:
+            payload = asdict(reply)
+            payload["attachments"] = [
+                attachment.model_dump(mode="json")
+                for attachment in reply.attachments
+            ]
+            payloads.append(payload)
+        return tuple(payloads)
+
+    @staticmethod
+    def _prepared_from_payloads(
+        payloads: tuple[dict[str, Any], ...],
+    ) -> list[PreparedReply]:
+        replies: list[PreparedReply] = []
+        for payload in payloads:
+            data = dict(payload)
+            data["attachments"] = tuple(
+                PreparedAttachment.model_validate(item)
+                for item in data.get("attachments", ())
+            )
+            replies.append(PreparedReply(**data))
+        return replies
+
+    def _inbox_jobs(
+        self,
+        pipeline: _LivePipeline,
+        entry: InboxEntry,
+    ) -> list[PendingBotJob]:
+        jobs = [
+            job
+            for job in pipeline._load_jobs()
+            if job.trigger_record_id == entry.envelope.source_id
+            and job.status
+            not in {JobStatus.IGNORED, JobStatus.CANCELLED, JobStatus.DELIVERED}
+        ]
+        return _filter_bot_local_jobs(
+            jobs,
+            bot_id=pipeline.bot_id,
+            persist_mode=pipeline.persist_mode,
+        )
+
+    def _restore_inbox_jobs(self, payloads: tuple[dict[str, object], ...]) -> None:
+        if not payloads:
+            return
+        path = self.root / "data/state/pending-bot-jobs.json"
+        existing = json.loads(path.read_text(encoding="utf-8")) if path.exists() else []
+        by_id = {
+            job.job_id: job
+            for job in (PendingBotJob.model_validate(item) for item in existing)
+        }
+        for payload in payloads:
+            job = PendingBotJob.model_validate(payload)
+            by_id[job.job_id] = job
+        path.write_text(
+            json.dumps(
+                [by_id[job_id].persistence_payload() for job_id in sorted(by_id)],
+                ensure_ascii=False,
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+
+    @staticmethod
+    def _inbox_delivery_status(
+        pipeline: _LivePipeline,
+        job_ids: set[str],
+    ) -> InboxStatus:
+        if job_ids & pipeline.delivery_ambiguous_job_ids:
+            return InboxStatus.AMBIGUOUS
+        if job_ids & pipeline.delivery_failed_job_ids:
+            return InboxStatus.DELIVERY_PENDING
+        jobs = [job for job in pipeline._load_jobs() if job.job_id in job_ids]
+        delivered = pipeline.delivery_delivered_job_ids
+        rejected = pipeline.delivery_rejected_job_ids
+        if job_ids and job_ids <= delivered | rejected:
+            return InboxStatus.DELIVERED if delivered & job_ids else InboxStatus.TERMINAL
+        if jobs and all(
+            job.status in {JobStatus.IGNORED, JobStatus.CANCELLED, JobStatus.DELIVERED}
+            for job in jobs
+        ):
+            return InboxStatus.TERMINAL
+        return InboxStatus.DELIVERY_PENDING
 
     async def _scheduled_tick(
         self,
@@ -271,6 +872,17 @@ class ProductionRuntime:
         observe_only: bool,
         intake_policy: IntakePolicy,
     ) -> None:
+        if (
+            intake_policy is IntakePolicy.POLL
+            and configured_persist_mode() is PersistMode.RECEIPT_ONLY
+        ):
+            # Receipt-only polling cannot durably checkpoint its cursor and
+            # bot-scoped jobs in the repository. The dev mirror is webhook-only;
+            # refuse loudly instead of silently replaying an old offset on a new
+            # clone or leaving orphaned jobs.
+            raise RuntimeFailure(
+                "receipt-only polling is disabled; use the durable webhook inbox"
+            )
         async with httpx.AsyncClient(timeout=30) as client:
             pipeline = _LivePipeline(
                 self.root,
@@ -278,6 +890,8 @@ class ProductionRuntime:
                 checkpoint=self.checkpoint,
                 now=now,
                 member_introductions_enabled=True,
+                bot_id=configured_bot_id(),
+                persist_mode=configured_persist_mode(),
             )
             result = await Scheduler(self.root, pipeline=pipeline).tick(
                 now,
@@ -431,11 +1045,37 @@ class _LivePipeline:
         self.member_introductions_enabled = member_introductions_enabled
         self.bot_id = bot_id
         self.persist_mode = persist_mode
+        self.entry_candidates_enabled = entry_candidates_enabled()
+        if self.entry_candidates_enabled:
+            print("tawg_event=entry_candidates_enabled enabled=true", flush=True)
+        self.delivery_delivered_job_ids: set[str] = set()
+        self.delivery_ambiguous_job_ids: set[str] = set()
+        self.delivery_failed_job_ids: set[str] = set()
+        self.delivery_rejected_job_ids: set[str] = set()
 
     async def telegram_intake(self, now: datetime) -> None:
         api = TelegramApi.from_env(client=self.client)
         intake = TelegramIntake.from_env(root=self.root, api=api)
-        await intake.collect(now)
+        result = await intake.collect(now)
+        if self.entry_candidates_enabled and result.candidate_job_ids:
+            await EntryDecider(
+                self.root,
+                ai=self.ai,
+                bot_username=os.environ.get("TAWG_TELEGRAM_BOT_USERNAME", ""),
+                now=now,
+            ).decide(result.candidate_job_ids)
+        if result.received:
+            # Make the fetched page (including replay-deduplicated local files)
+            # durable before advancing the local cursor. Telegram confirms the
+            # previous page on the next getUpdates with a greater offset; if the
+            # cursor were advanced locally first, a failed checkpoint followed by
+            # a same-directory tick could confirm data that only exists in this
+            # disposable checkout. On conflict this raises before the local cursor
+            # write, so RepositorySession can replay from the old offset.
+            await self.checkpoint.publish(
+                f"telegram-intake-messages:{int(now.timestamp())}", self.root
+            )
+        commit_intake_state(self.root, cursors=result.pending_cursors)
         self.telegram_synced_at = now
         await self.checkpoint.publish(f"telegram-intake:{int(now.timestamp())}", self.root)
 
@@ -697,6 +1337,10 @@ class _LivePipeline:
             bot_id=self.bot_id,
             persist_mode=self.persist_mode,
         )
+        self.delivery_delivered_job_ids = set()
+        self.delivery_ambiguous_job_ids = set()
+        self.delivery_failed_job_ids = set()
+        self.delivery_rejected_job_ids = set()
         pending_announcements = self.github_announcements.pending()
         announcement_topic_id: int | None = None
         if pending_announcements:
@@ -744,10 +1388,16 @@ class _LivePipeline:
                 # A pre-send rejection (privacy, member intent) must not fail the whole
                 # tick; keep the job ready so an operator can investigate, and keep
                 # delivering the remaining replies.
+                self.delivery_rejected_job_ids.add(reply.job_id)
                 _safe_log("reply_delivery", "reply_rejected")
                 continue
-            except (DeliveryAmbiguous, DeliveryFailed):
+            except DeliveryAmbiguous:
+                self.delivery_ambiguous_job_ids.add(reply.job_id)
                 continue
+            except DeliveryFailed:
+                self.delivery_failed_job_ids.add(reply.job_id)
+                continue
+            self.delivery_delivered_job_ids.add(reply.job_id)
         if self.prepared_daily is not None:
             try:
                 await delivery.deliver(
@@ -900,6 +1550,7 @@ class _LivePipeline:
                 github_current_client=getattr(self.github_announcements, "client", None),
                 invinoveritas_client=self.invinoveritas_client,
                 invinoveritas_api_key=self.invinoveritas_api_key,
+                entry_candidates_enabled=self.entry_candidates_enabled,
             )
             try:
                 prepared = await service.prepare(job.job_id, now=self.now)

@@ -54,6 +54,8 @@ async def test_contextual_router_returns_one_closed_route() -> None:
     assert decision.route is BotRoute.KNOWLEDGE_CORRECTION
     assert decision.context_scope.value == "conversation"
     assert decision.context_sha256 == "a" * 64
+    assert decision.decision == "reply"
+    assert decision.addressed_to_bot is False
     assert ai.calls == [
         {
             "job_type": "route",
@@ -63,6 +65,69 @@ async def test_contextual_router_returns_one_closed_route() -> None:
             "timeout_seconds": 45,
         }
     ]
+
+
+@pytest.mark.asyncio
+async def test_entry_router_requires_structured_decision_and_address() -> None:
+    ai = FakeRouteAi(
+        {
+            "schema_version": "tawg.route-entry-result.v1",
+            "decision": "reply",
+            "addressed_to_bot": True,
+            "route": "coordination",
+            "context_scope": "conversation",
+        }
+    )
+
+    decision = await ContextualAiRouter(ai, entry_mode=True).classify(
+        _context(),
+        operation_id="reply:tg:tawg:101:entry",
+        max_budget_usd="0.20",
+        timeout_seconds=45,
+    )
+
+    assert decision.route is BotRoute.COORDINATION
+    assert decision.decision == "reply"
+    assert decision.addressed_to_bot is True
+    assert ai.calls[0]["job_type"] == "route_entry"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "result",
+    [
+        {
+            "schema_version": "tawg.route-entry-result.v1",
+            "route": "coordination",
+            "context_scope": "conversation",
+            "addressed_to_bot": False,
+        },
+        {
+            "schema_version": "tawg.route-entry-result.v1",
+            "decision": "ignore",
+            "addressed_to_bot": False,
+            "route": "coordination",
+            "context_scope": "conversation",
+        },
+        {
+            "schema_version": "tawg.route-entry-result.v1",
+            "decision": "reply",
+            "addressed_to_bot": False,
+            "route": "ignore",
+            "context_scope": "conversation",
+        },
+    ],
+)
+async def test_entry_router_rejects_missing_or_inconsistent_decisions(
+    result: dict[str, object],
+) -> None:
+    with pytest.raises(AiRouteRejected):
+        await ContextualAiRouter(FakeRouteAi(result), entry_mode=True).classify(
+            _context(),
+            operation_id="reply:tg:tawg:101:entry",
+            max_budget_usd="0.20",
+            timeout_seconds=45,
+        )
 
 
 @pytest.mark.asyncio
