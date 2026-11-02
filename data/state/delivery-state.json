@@ -5416,6 +5416,25 @@
     "updated_at": "2026-09-08T15:50:22.890521Z"
   },
   {
+    "content_sha256": "53c12bcc232a133ad11c1c374bb7e6101576cb1b7ef02e6507202d108e4720bb",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:a239ba40d7bd1bb189796de4",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:a239ba40d7bd1bb189796de4",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-02T12:35:11.045226Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#46 fix\\(proof\\): proof soundness repairs S1-S6 \\(Fiat-Shamir challenges, LogUp binding, reverse verification, Argmax binding\\)](https://github.com/trustless-ai/zkIE/pull/46)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-02T12:35:11.045226Z"
+  },
+  {
     "content_sha256": "0156eed71e1a337420a642b9528b3a983310017626f8a05136ad0e4a109a9174",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:a3b8648ce4d3116fdb22ace4",
