@@ -11997,5 +11997,24 @@
       6002
     ],
     "updated_at": "2026-11-02T23:28:02.581030Z"
+  },
+  {
+    "content_sha256": "eb8075cb737cf7b60cc7772b7a5956e603948b912fe6d0184dd7b84f1a38bf60",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:6004",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:6004",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-11-02T23:34:42.462323Z",
+    "reply_text": "gm @Jimmyshi ☀️ Trusty's here and ready. Anything you'd like to dig into — ERC follow-ups, a verification question, or just a chat about what's moving?",
+    "reply_to_message_id": 6004,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-02T23:34:42.462323Z"
   }
 ]
