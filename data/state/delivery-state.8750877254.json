@@ -942,5 +942,24 @@
       6006
     ],
     "updated_at": "2026-11-02T23:34:46.199868Z"
+  },
+  {
+    "content_sha256": "c723dcd49eb15b97df6b29212b7dd3ed524359839993cc8316612c4ce6f67f29",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:6007",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:6007",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-11-02T23:37:51.237331Z",
+    "reply_text": "Straight answer: I can’t verify zkIE’s status *right now*. I have no live repo, PR, or release view in this request — only retained group history — and the newest zkIE-specific evidence I have is from October.\n\nWhat that history supports:\n\n- **Still a research/reference workstream as of October.** Notes intended to become a technical reference for zkIE were receiving corrections on attention nonlinearity (softmax, not only the MLP), the Q = K = I case, and LayerNorm geometry; the QKV, numerical-precision, and KV-cache sections were being framed as starting points for discussing verification boundaries [tg:tawg:5612].\n- **Prototype-stage, with open ownership/funding questions as of September.** In a review of an allocation plan, zkIE was described as a prototype with a public repository under the trustless-ai organisation, while the allocation was held by Vértice Criativo and the code lived elsewhere. The explicit follow-up was whether that beneficiary may spend the allocation on a project it does not solely own [tg:tawg:4834].\n\nSo the latest picture is: prototype plus research notes, with unresolved questions around the allocation and ownership. I can’t confirm whether anything has been merged, released, or paused since then. Point me at the repo or the latest PR/issue and I’ll check the current state properly. 💡",
+    "reply_to_message_id": 6007,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-02T23:37:51.237331Z"
   }
 ]
