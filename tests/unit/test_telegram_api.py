@@ -8,22 +8,27 @@ from tawg_bot.telegram_api import TelegramApi, TelegramApiError
 
 
 @pytest.mark.asyncio
-async def test_get_all_updates_pages_until_empty_without_leaking_token() -> None:
+async def test_get_updates_page_makes_one_request_without_confirming_a_next_page() -> None:
     offsets: list[int] = []
 
     def handler(request: httpx.Request) -> httpx.Response:
         form = parse_qs(request.content.decode())
-        offset = int(form["offset"][0])
-        offsets.append(offset)
-        result = [{"update_id": 10}, {"update_id": 11}] if offset == 10 else []
-        return httpx.Response(200, json={"ok": True, "result": result})
+        offsets.append(int(form["offset"][0]))
+        return httpx.Response(
+            200,
+            json={"ok": True, "result": [{"update_id": 10}, {"update_id": 11}]},
+        )
 
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
-        api = TelegramApi(token="123456:super-secret-token-value-abcdefgh", client=client)
-        updates = await api.get_all_updates(10)
+        api = TelegramApi(
+            token="123456:super-secret-token-value-abcdefgh", client=client
+        )
+        updates = await api.get_updates_page(10)
 
     assert [item["update_id"] for item in updates] == [10, 11]
-    assert offsets == [10, 12]
+    # A second request with offset 12 would let Telegram permanently confirm
+    # updates 10 and 11 before the caller has persisted them.
+    assert offsets == [10]
 
 
 @pytest.mark.asyncio
@@ -36,7 +41,7 @@ async def test_api_errors_are_token_safe() -> None:
     async with httpx.AsyncClient(transport=httpx.MockTransport(handler)) as client:
         api = TelegramApi(token=token, client=client)
         with pytest.raises(TelegramApiError) as captured:
-            await api.get_all_updates(0)
+            await api.get_updates_page(0)
 
     assert token not in str(captured.value)
 

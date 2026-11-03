@@ -73,4 +73,5 @@ jobs:
           TAWG_MODAL_BRANCH: dev
           TAWG_REPOSITORY_PERSIST_MODE: receipt-only
           TAWG_DEV_MODE: "true"
+          TAWG_ENTRY_CANDIDATES_ENABLED: "true"
         run: modal deploy deploy/modal_app.py

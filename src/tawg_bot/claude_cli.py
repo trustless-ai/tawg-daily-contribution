@@ -90,7 +90,7 @@ class AsyncioProcessRunner:
         return CompletedProcess(process.returncode or 0, stdout, stderr)
 
 
-JobType = Literal["knowledge", "reply", "daily", "route", "ask_question"]
+JobType = Literal["knowledge", "reply", "daily", "route", "route_entry", "ask_question"]
 
 
 class ClaudeCli:
@@ -102,6 +102,7 @@ class ClaudeCli:
         "reply": "v3",
         "daily": "v1",
         "route": "v2",
+        "route_entry": "v1",
         "ask_question": "v1",
     }
     _BACKEND_ENV = frozenset(

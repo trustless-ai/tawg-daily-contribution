@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import asyncio
 import json
+import os
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -14,6 +15,7 @@ from typing import Protocol
 from uuid import uuid4
 
 from tawg_bot.daily import PreparedDaily
+from tawg_bot.entry_router import EntryReport
 from tawg_bot.telegram_export import TelegramDesktopImporter
 from tawg_bot.telegram_webhook import MAX_BODY_BYTES, TelegramWebhookEnvelope
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
@@ -62,6 +64,8 @@ def _parser() -> argparse.ArgumentParser:
     daily.add_argument("--window-end", type=_utc_timestamp, required=True)
     migration = commands.add_parser("migrate-open-knowledge")
     migration.add_argument("--now", type=_utc_timestamp)
+    entry_migration = commands.add_parser("migrate-entry-decisions")
+    entry_migration.add_argument("--now", type=_utc_timestamp)
     github_baseline = commands.add_parser("bootstrap-github-announcements")
     github_baseline.add_argument("--now", type=_utc_timestamp)
     commands.add_parser("vault-lint")
@@ -114,6 +118,16 @@ def main(
         print(
             f"repositories={summary.repository_count} "
             f"changed_paths={len(summary.changed_paths)} messages_sent=0"
+        )
+        return 0
+    if args.command == "migrate-entry-decisions":
+        now = args.now or (clock or (lambda: datetime.now(UTC)))()
+        entry_report = asyncio.run(_migrate_entry_decisions(root, now=now))
+        print(
+            f"candidates={entry_report.candidates} decided={entry_report.decided} "
+            f"ai_calls={entry_report.ai_calls} ignored={entry_report.ignored} "
+            f"failed={entry_report.failed} "
+            f"privacy_rejected={entry_report.privacy_rejected}"
         )
         return 0
     operational = runtime or _production_runtime(root)
@@ -249,6 +263,19 @@ async def _bootstrap_github_announcements(
         repository_count=len(batch.state.repositories),
         changed_paths=changed,
     )
+
+
+async def _migrate_entry_decisions(root: Path, *, now: datetime) -> EntryReport:
+    from tawg_bot.claude_cli import ClaudeCli
+    from tawg_bot.entry_router import EntryDecider
+
+    decider = EntryDecider(
+        root,
+        ai=ClaudeCli(root=root),
+        bot_username=os.environ.get("TAWG_TELEGRAM_BOT_USERNAME", ""),
+        now=now,
+    )
+    return await decider.migrate_legacy()
 
 
 if __name__ == "__main__":

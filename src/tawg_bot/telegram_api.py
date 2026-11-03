@@ -56,26 +56,24 @@ class TelegramApi:
             raise TelegramApiError("TELEGRAM_BOT_TOKEN is not configured")
         return cls(token=token, client=client)
 
-    async def get_all_updates(self, offset: int, limit: int = 100) -> list[dict[str, Any]]:
+    async def get_updates_page(
+        self, offset: int, limit: int = 100
+    ) -> list[dict[str, Any]]:
+        """Fetch one page without advancing the offset beyond durable state.
+
+        Telegram confirms every update below the offset of the next ``getUpdates``
+        request. Paginating inside this client would confirm page N before the
+        caller has durably persisted it. Callers must therefore persist and
+        checkpoint one page before issuing a request with a greater offset.
+        """
         if offset < 0:
             raise ValueError("Telegram update offset cannot be negative")
         if not 1 <= limit <= 100:
             raise ValueError("Telegram update limit must be between 1 and 100")
-        updates: list[dict[str, Any]] = []
-        next_offset = offset
-        while True:
-            page = await self._call(
-                "getUpdates",
-                {"offset": next_offset, "limit": limit, "timeout": 0},
-            )
-            if not page:
-                return updates
-            page_ids = [self._update_id(item) for item in page]
-            advanced_offset = max(page_ids) + 1
-            if advanced_offset <= next_offset:
-                raise TelegramApiError("Telegram update pagination did not advance")
-            updates.extend(page)
-            next_offset = advanced_offset
+        return await self._call(
+            "getUpdates",
+            {"offset": offset, "limit": limit, "timeout": 0},
+        )
 
     async def send_message(
         self,

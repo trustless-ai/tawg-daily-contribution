@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://trustless-ai.example/schemas/route_entry-result.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "decision",
+    "addressed_to_bot",
+    "route",
+    "context_scope"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "tawg.route-entry-result.v1"
+    },
+    "decision": {
+      "type": "string",
+      "enum": ["reply", "ignore"]
+    },
+    "addressed_to_bot": {
+      "type": "boolean"
+    },
+    "route": {
+      "type": "string",
+      "enum": [
+        "knowledge_question",
+        "identity_correction",
+        "knowledge_correction",
+        "source_suggestion",
+        "coordination",
+        "verification",
+        "refuse",
+        "ignore"
+      ]
+    },
+    "context_scope": {
+      "type": "string",
+      "enum": ["conversation", "knowledge", "erc"]
+    },
+    "artifact": {
+      "type": ["string", "null"],
+      "maxLength": 4096
+    }
+  }
+}

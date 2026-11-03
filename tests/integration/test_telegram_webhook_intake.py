@@ -536,10 +536,12 @@ def test_webhook_direct_reply_and_greeting_use_the_shared_trigger_classifier(
     assert jobs[0]["message_thread_id"] == 16
 
 
-def test_delivered_bot_message_ids_reads_bot_scoped_state(tmp_path: Path) -> None:
-    """A receipt-only worker persists its delivered ids under
-    ``delivery-state.<bot_id>.json``. The intake layer must recognise a reply to that
-    worker's own message as REPLY_TO_BOT, not only replies to the shared worker."""
+def test_delivered_bot_message_ids_reads_only_this_bots_state(tmp_path: Path) -> None:
+    """A dev mirror must not treat production-bot replies as its own privilege.
+
+    The shared ``delivery-state.json`` belongs to the full-persistence worker. A
+    receipt-only dev worker may only read ``delivery-state.<bot_id>.json``.
+    """
     from tawg_bot.telegram_intake import _delivered_bot_message_ids
 
     (tmp_path / "data/state").mkdir(parents=True, exist_ok=True)
@@ -553,8 +555,131 @@ def test_delivered_bot_message_ids_reads_bot_scoped_state(tmp_path: Path) -> Non
     payload[0]["telegram_message_ids"] = [901]
     bot_scoped.write_text(json.dumps(payload) + "\n", encoding="utf-8")
 
-    ids = _delivered_bot_message_ids(tmp_path, chat_id=-100424242)
-    assert ids == {900, 901}
+    mirror_ids = _delivered_bot_message_ids(
+        tmp_path,
+        chat_id=-100424242,
+        bot_id=8750877254,
+        persist_mode=PersistMode.RECEIPT_ONLY,
+    )
+    production_ids = _delivered_bot_message_ids(
+        tmp_path,
+        chat_id=-100424242,
+        bot_id=1111111111,
+        persist_mode=PersistMode.FULL,
+    )
+    legacy_ids = _delivered_bot_message_ids(
+        tmp_path,
+        chat_id=-100424242,
+        bot_id=None,
+        persist_mode=PersistMode.FULL,
+    )
+
+    assert mirror_ids == {901}
+    assert production_ids == {900}
+    assert legacy_ids == {900}
+    assert 900 not in mirror_ids
+
+
+def test_cross_bot_reply_does_not_grant_reply_to_bot_trigger(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("TAWG_ENTRY_CANDIDATES_ENABLED", "true")
+    seed_repository(tmp_path)
+    seed_delivered_bot_message(tmp_path, 900)
+    bot_scoped = tmp_path / "data/state/delivery-state.8750877254.json"
+    bot_scoped.write_text(
+        json.dumps(
+            [
+                {
+                    **json.loads(
+                        (tmp_path / "data/state/delivery-state.json").read_text()
+                    )[0],
+                    "telegram_message_ids": [901],
+                }
+            ]
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    reply_to_production = envelope(
+        update_id=730,
+        message_id=90,
+        text="ordinary reply to production bot",
+        reply_to_message_id=900,
+    )
+    reply_to_dev = envelope(
+        update_id=731,
+        message_id=91,
+        text="ordinary reply to dev bot",
+        reply_to_message_id=901,
+    )
+
+    result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(reply_to_production, reply_to_dev),
+        now=NOW,
+        telegram_chat_id=-100424242,
+        bot_id=8750877254,
+        persist_mode=PersistMode.RECEIPT_ONLY,
+    )
+
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    # Assert the complete job set, not a dict keyed by message id: a duplicate
+    # scoped/unscoped job for the same trigger would otherwise collapse.
+    assert [
+        (job["job_id"], job["trigger_kind"]) for job in jobs
+    ] == [
+        ("reply:8750877254:tg:tawg:90", "message_candidate"),
+        ("reply:8750877254:tg:tawg:91", "reply_to_bot"),
+    ]
+    assert result.persisted == 2
+
+
+def test_receipt_only_reply_to_own_creates_exactly_one_scoped_job(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("TAWG_ENTRY_CANDIDATES_ENABLED", "true")
+    seed_repository(tmp_path)
+    seed_delivered_bot_message(tmp_path, 901)
+    scoped = tmp_path / "data/state/delivery-state.8750877254.json"
+    scoped.write_text(
+        (tmp_path / "data/state/delivery-state.json").read_text(),
+        encoding="utf-8",
+    )
+    reply = envelope(
+        update_id=732,
+        message_id=92,
+        text="Could you clarify?",
+        reply_to_message_id=901,
+    )
+
+    result = ingest_envelopes(
+        root=tmp_path,
+        group_slug="tawg",
+        bot_username="tawg_bot",
+        envelopes=(reply,),
+        now=NOW,
+        telegram_chat_id=-100424242,
+        bot_id=8750877254,
+        persist_mode=PersistMode.RECEIPT_ONLY,
+    )
+
+    jobs = json.loads(
+        (tmp_path / "data/state/pending-bot-jobs.json").read_text(encoding="utf-8")
+    )
+    assert result.jobs_created == 1
+    assert [(job["job_id"], job["trigger_kind"]) for job in jobs] == [
+        ("reply:8750877254:tg:tawg:92", "reply_to_bot")
+    ]
+    assert not any(
+        job["job_id"] == "reply:tg:tawg:92" for job in jobs
+    )
 
 
 def test_member_welcome_creates_one_immediate_job_and_one_l1_introduction_job(
