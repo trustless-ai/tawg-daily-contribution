@@ -48,5 +48,25 @@
     "repository": "trustless-ai/zkIE",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Soundness: repair committed-path verification (S1–S9)"
+  },
+  {
+    "author_login": "Echo-Merlini",
+    "event_id": "github-announcement:pr_merged:b13fcf9ace6e5e3bd46805e0",
+    "kind": "pr_merged",
+    "number": 87,
+    "occurred_at": "2026-11-03T22:58:40Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "uncovered.json: re-review and re-date the two requires_live exclusions (main CI red since 24 Oct)"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_updated:4c13e352f2681acea09e7f32",
+    "kind": "pr_updated",
+    "number": 81,
+    "occurred_at": "2026-11-03T23:04:12Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "tools: account for every hash and address quoted in a .md"
   }
 ]
