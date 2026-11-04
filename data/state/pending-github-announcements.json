@@ -58,5 +58,15 @@
     "repository": "trustless-ai/zkIE",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Soundness: repair committed-path verification (S1–S9)"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_updated:377c36a98750532ddeb79c93",
+    "kind": "pr_updated",
+    "number": 45,
+    "occurred_at": "2026-11-04T10:52:34Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Soundness: repair committed-path verification (S1–S9)"
   }
 ]
