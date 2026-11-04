@@ -48,5 +48,25 @@
     "repository": "trustless-ai/zkIE",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Soundness: repair committed-path verification (S1–S9)"
+  },
+  {
+    "author_login": "pipavlo82",
+    "event_id": "github-announcement:pr_merged:562cf473e126c45f6fc734d4",
+    "kind": "pr_merged",
+    "number": 10,
+    "occurred_at": "2026-11-04T00:19:30Z",
+    "repository": "trustless-ai/verifiable-execution-claim-authorization",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat: ERC-8004 registry pilot for the reusable conformance harness"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_updated:e3d4f10c98e25b0b97006907",
+    "kind": "pr_updated",
+    "number": 45,
+    "occurred_at": "2026-11-04T00:43:40Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Soundness: repair committed-path verification (S1–S9)"
   }
 ]
