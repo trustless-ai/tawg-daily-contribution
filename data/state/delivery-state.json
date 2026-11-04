@@ -6896,13 +6896,13 @@
     "prepared_at": "2026-11-04T10:55:10.362949Z",
     "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#45 Soundness: repair committed-path verification \\(S1–S9\\)](https://github.com/trustless-ai/zkIE/pull/45)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
     "reply_to_message_id": null,
-    "safe_error_code": null,
+    "safe_error_code": "recovered_sending",
     "schema_version": "tawg.delivery-attempt.v1",
     "sent_at": null,
-    "status": "sending",
+    "status": "ambiguous",
     "telegram_chat_id": null,
     "telegram_message_ids": [],
-    "updated_at": "2026-11-04T10:55:10.362949Z"
+    "updated_at": "2026-11-04T10:56:56.687158Z"
   },
   {
     "content_sha256": "5f35cf04f308316609f163b7f716e70c6d2e383b6addc32df6514ef1fe49f3be",
