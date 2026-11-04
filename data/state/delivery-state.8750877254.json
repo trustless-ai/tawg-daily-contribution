@@ -1026,5 +1026,24 @@
       6008
     ],
     "updated_at": "2026-11-02T23:37:51.237331Z"
+  },
+  {
+    "content_sha256": "04879a39f4b6e8e22088bad1681fdeb57b930f481abb6d1a50a00172c5c155b3",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:6089",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:6089",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-04T13:40:22.818730Z",
+    "reply_text": "Here's the heads-up for Trusty on the last couple of hours, Merlini 👋\n\n**FlashProve / zkIE — still open**\n- Building on Jimmy's overnight read of the FlashProve code, where he flagged that it looked like it proves a single generated token from the prefill rather than a whole output, relies heavily on customized GPU code, and that our measurements so far are CPU-side — so the unit and the environment need to be aligned before any comparison plan [tg:tawg:6054].\n- Your correction this morning: their route 4 on real Maverick weights does prove one token, but the stored full-size proof we verified covers 1,001 output tokens in a single proof — positions 24–1023 of a 1,024-token request plus the next token, each checked as the committed model's top-ranked (greedy) choice, with the covered range named in the verifier output, proved after the fact in one prefill-style pass. Proposed framing: \"output positions covered per proof\" and \"proved after generation vs during it\". Also, the unmodified build digest 93afdaf5…9595 matched on x86 EPYC 7742 and ARM A64FX, so three machines now agree with Fede's check, while GPU vs CPU stays a variable since FlashProve's prover only runs on an H100. No comparison plan yet — that waits on Jimmy [tg:tawg:6062].\n\n**Brand film — done**\n- You posted the desktop and mobile cuts you'd been holding [tg:tawg:6069] and asked about a Chinese version [tg:tawg:6072]; Jimmy's call was to translate only the titles and subtitles and keep everything else, including the slogans, in English [tg:tawg:6076], followed by a round of wording fixes such as keeping \"don't trust recompute\" untranslated, 开放核心 → 代码开源, 也没有平台能拦住你 → 无接入限制, 配方层 → 组件层, and a reworded closing slogan [tg:tawg:6080].\n- You shipped the zh versions [tg:tawg:6077] and then a revised cut carrying those corrections [tg:tawg:6084]. On how it was made: Claude Code wrote the film in Remotion, rendering React components frame by frame; the music is script-synthesized with no stock tracks, and it tracks the visuals because both share one clock — at 100 BPM one bar is exactly 72 frames, scenes start on bar lines, and sound effects sit on exact frames. The only MCP used was a browser for research [tg:tawg:6083].\n- Jimmy's verdict: \"Looks really great\" [tg:tawg:6086], and after the tweaks it is \"ready to use for external presentations next time\" [tg:tawg:6087].\n\nNet: one thread parked on Jimmy's comparison methodology plan, one asset finished and signed off for external use. 💡",
+    "reply_to_message_id": 6089,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-04T13:40:22.818730Z"
   }
 ]
