@@ -6298,6 +6298,27 @@
     "updated_at": "2026-10-18T19:35:15.911682Z"
   },
   {
+    "content_sha256": "58b0c1bb786897e4c1be1dac49a389b4a2c6595af3a0d21e2e3cfc7fa174d170",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:05603e15f018a44430fc12cc",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:05603e15f018a44430fc12cc",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-04T18:10:15.179461Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/FlashProve](https://github.com/trustless-ai/FlashProve)\n[#1 feat: ERC-8274 verifier — no\\_std Rust port of FlashProve cp\\_verify](https://github.com/trustless-ai/FlashProve/pull/1)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-04T18:10:15.179461Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6115
+    ],
+    "updated_at": "2026-11-04T18:10:15.179461Z"
+  },
+  {
     "content_sha256": "dd2b5a7fb6e598eb44e56f5cdd3d8d6cb8ea7c902a681da05706eccda90ae66f",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:08c6cce8e6f50077da3b0d81",
