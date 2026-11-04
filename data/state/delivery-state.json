@@ -12663,5 +12663,24 @@
       6005
     ],
     "updated_at": "2026-11-02T23:34:42.462323Z"
+  },
+  {
+    "content_sha256": "dc08741802431a9ecebc9e3eb5a9205a94c7c713fa0b780f324794eb89b0c947",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:6063",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:6063",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-04T11:21:14.806440Z",
+    "reply_text": "Good morning, Merlini! ☀️ Great to see you — hope today treats you well. Lots of good energy in the group; if there's anything you want a hand with, just say the word.",
+    "reply_to_message_id": 6063,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-04T11:21:14.806440Z"
   }
 ]
