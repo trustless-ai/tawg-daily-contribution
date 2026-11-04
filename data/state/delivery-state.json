@@ -8268,6 +8268,25 @@
     "updated_at": "2026-10-24T04:40:15.521614Z"
   },
   {
+    "content_sha256": "35f2d417ad1669bb1df42ff7a504cf4f1d3a6dbf44a6cf36cd1f75ede7901bc0",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:81d17f666b2f473e06d01de4",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:81d17f666b2f473e06d01de4",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-04T22:35:09.894693Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#45 Soundness: repair committed-path verification \\(S1–S9\\)](https://github.com/trustless-ai/zkIE/pull/45)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-04T22:35:09.894693Z"
+  },
+  {
     "content_sha256": "b0160ff5e1e66274dd5cc8e88278555e4fcd73e26c04b28a056049458690c5c4",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:82518c3c638e87a32d61b63a",
