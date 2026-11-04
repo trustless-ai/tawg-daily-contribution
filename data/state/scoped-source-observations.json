@@ -14,6 +14,13 @@
     "updated_at": "2026-08-23T11:08:45Z"
   },
   {
+    "metadata_sha256": "35c47f76b3363d90c4e0e6bee2209b08f9c735bcdb9d0d8245ab6d0835ac0e0c",
+    "source_key": "FlashProve",
+    "source_kind": "github_repository",
+    "source_locator": "https://github.com/trustless-ai/FlashProve",
+    "updated_at": "2026-11-04T16:44:00Z"
+  },
+  {
     "metadata_sha256": "0ec12b7455e62b90412c83e847f262ff3ed6fde4af6286ef8c878787fb0440b6",
     "source_key": "agent-contracts-examples",
     "source_kind": "github_repository",
@@ -112,11 +119,11 @@
     "updated_at": "2026-09-07T22:29:47Z"
   },
   {
-    "metadata_sha256": "2df09d34f0210d1717985e625652f8f4cacf79c229fb1147231e28ffb5efdf62",
+    "metadata_sha256": "9ee0b860861c4ed669703a48ff3ea073cc0b0d6239ee1543ae6aafc91f25e078",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-11-04T16:20:24Z"
+    "updated_at": "2026-11-04T16:55:19Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
