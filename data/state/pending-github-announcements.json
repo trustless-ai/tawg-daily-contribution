@@ -68,5 +68,25 @@
     "repository": "trustless-ai/zkIE",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Soundness: repair committed-path verification (S1–S9)"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_updated:49983af223098a33d7238b8c",
+    "kind": "pr_updated",
+    "number": 45,
+    "occurred_at": "2026-11-04T17:18:29Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Soundness: repair committed-path verification (S1–S9)"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_opened:5d56e1b7ab56d69aa2416a58",
+    "kind": "pr_opened",
+    "number": 1,
+    "occurred_at": "2026-11-04T17:21:03Z",
+    "repository": "trustless-ai/FlashProve",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat: ERC-8274 verifier — no_std Rust port of FlashProve cp_verify"
   }
 ]
