@@ -81,16 +81,6 @@
   },
   {
     "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_updated:d3dd60691f25df788a3ff1c1",
-    "kind": "pr_updated",
-    "number": 1,
-    "occurred_at": "2026-11-05T07:39:35Z",
-    "repository": "trustless-ai/FlashProve",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "feat: ERC-8274 verifier — no_std Rust port of FlashProve cp_verify"
-  },
-  {
-    "author_login": "JimmyShi22",
     "event_id": "github-announcement:pr_updated:c2bcef64b859e7a9932d752d",
     "kind": "pr_updated",
     "number": 45,
