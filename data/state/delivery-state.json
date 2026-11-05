@@ -9179,10 +9179,10 @@
     "prepared_at": "2026-11-05T01:15:15.673057Z",
     "reply_text": "🔄 **PR updated** in [trustless-ai/FlashProve](https://github.com/trustless-ai/FlashProve)\n[#1 feat: ERC-8274 verifier — no\\_std Rust port of FlashProve cp\\_verify](https://github.com/trustless-ai/FlashProve/pull/1)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
     "reply_to_message_id": null,
-    "safe_error_code": null,
+    "safe_error_code": "telegram_outcome_unknown",
     "schema_version": "tawg.delivery-attempt.v1",
     "sent_at": null,
-    "status": "sending",
+    "status": "ambiguous",
     "telegram_chat_id": null,
     "telegram_message_ids": [],
     "updated_at": "2026-11-05T01:15:15.673057Z"
