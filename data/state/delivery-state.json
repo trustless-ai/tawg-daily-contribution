@@ -6571,6 +6571,27 @@
     "updated_at": "2026-09-21T17:50:15.951022Z"
   },
   {
+    "content_sha256": "58b0c1bb786897e4c1be1dac49a389b4a2c6595af3a0d21e2e3cfc7fa174d170",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:17fa477a313806c5f4e071f8",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:17fa477a313806c5f4e071f8",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-05T13:40:18.313653Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/FlashProve](https://github.com/trustless-ai/FlashProve)\n[#1 feat: ERC-8274 verifier — no\\_std Rust port of FlashProve cp\\_verify](https://github.com/trustless-ai/FlashProve/pull/1)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-05T13:40:18.313653Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6159
+    ],
+    "updated_at": "2026-11-05T13:40:18.313653Z"
+  },
+  {
     "content_sha256": "35f2d417ad1669bb1df42ff7a504cf4f1d3a6dbf44a6cf36cd1f75ede7901bc0",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:19a75ba0a99db36e0fb53035",
@@ -8560,6 +8581,27 @@
       4922
     ],
     "updated_at": "2026-09-25T21:15:49.278618Z"
+  },
+  {
+    "content_sha256": "35f2d417ad1669bb1df42ff7a504cf4f1d3a6dbf44a6cf36cd1f75ede7901bc0",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:87ebf0f671b7093c537f5a4b",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:87ebf0f671b7093c537f5a4b",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-05T13:40:18.313653Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#45 Soundness: repair committed-path verification \\(S1–S9\\)](https://github.com/trustless-ai/zkIE/pull/45)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-05T13:40:18.313653Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6158
+    ],
+    "updated_at": "2026-11-05T13:40:18.313653Z"
   },
   {
     "content_sha256": "a73a9935217193dbf844d11fd00c4ce5d1df58e10fe6af258d6ab238c9976e6b",
