@@ -119,11 +119,11 @@
     "updated_at": "2026-09-07T22:29:47Z"
   },
   {
-    "metadata_sha256": "5aeb2a5babbd6efb13d63a9e5fcf93a1343af3ac7112a13207e1b319ec344d5e",
+    "metadata_sha256": "0e6d14926a638b82fc919593caa4768e32eb123954b4d948bd4a0646bfab6910",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-11-05T03:50:23Z"
+    "updated_at": "2026-11-05T04:26:38Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
