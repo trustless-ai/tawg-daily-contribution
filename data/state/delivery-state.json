@@ -4639,6 +4639,27 @@
     "updated_at": "2026-09-28T10:36:07.518694Z"
   },
   {
+    "content_sha256": "faf215041bd12eff58f912935930afc732bfd6856fe4b1f323642d1e3bb6f8c3",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:2deb25c6ce51852061f98c99",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:2deb25c6ce51852061f98c99",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-05T03:55:14.300358Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/.github](https://github.com/trustless-ai/.github)\n[#6 docs\\(profile\\): add Telegram join link, restructure repos, add zkIE/recompute-kit/veca](https://github.com/trustless-ai/.github/pull/6)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-05T03:55:14.300358Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6137
+    ],
+    "updated_at": "2026-11-05T03:55:14.300358Z"
+  },
+  {
     "content_sha256": "9ac66baebb18d22dbee21898307fd83d57ccc007f0fb933c331c38255bdce05d",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:318416b77e480914bb71663e",
