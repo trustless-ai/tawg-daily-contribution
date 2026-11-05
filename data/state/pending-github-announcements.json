@@ -78,5 +78,25 @@
     "repository": "trustless-ai/FlashProve",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8274 verifier — no_std Rust port of FlashProve cp_verify"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_updated:f40978c1e6eb6ac4e7553511",
+    "kind": "pr_updated",
+    "number": 1,
+    "occurred_at": "2026-11-05T04:48:09Z",
+    "repository": "trustless-ai/FlashProve",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat: ERC-8274 verifier — no_std Rust port of FlashProve cp_verify"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_updated:8fff882b4313d78d9526a933",
+    "kind": "pr_updated",
+    "number": 45,
+    "occurred_at": "2026-11-05T04:59:41Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Soundness: repair committed-path verification (S1–S9)"
   }
 ]
