@@ -80,16 +80,6 @@
     "title": "feat: ERC-8274 verifier — no_std Rust port of FlashProve cp_verify"
   },
   {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_updated:74652f4a0f66b253a02d982d",
-    "kind": "pr_updated",
-    "number": 45,
-    "occurred_at": "2026-11-06T11:08:59Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Soundness: repair committed-path verification (S1–S9)"
-  },
-  {
     "author_login": "babyblueviper1",
     "event_id": "github-announcement:pr_opened:9165296aa451f684a4872889",
     "kind": "pr_opened",
