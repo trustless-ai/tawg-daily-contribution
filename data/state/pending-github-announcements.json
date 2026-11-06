@@ -81,16 +81,6 @@
   },
   {
     "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_merged:148b8aaa4e160ca04a4ca045",
-    "kind": "pr_merged",
-    "number": 6,
-    "occurred_at": "2026-11-06T00:21:31Z",
-    "repository": "trustless-ai/.github",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "docs(profile): add Telegram join link, restructure repos, add zkIE/recompute-kit/veca"
-  },
-  {
-    "author_login": "JimmyShi22",
     "event_id": "github-announcement:pr_updated:405e3d0da022dfab78181101",
     "kind": "pr_updated",
     "number": 45,
