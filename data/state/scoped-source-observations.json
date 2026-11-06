@@ -77,11 +77,11 @@
     "updated_at": "2026-08-16T17:53:22Z"
   },
   {
-    "metadata_sha256": "97cc5a8753132cf55d6c254e2b95b22f7bd8c8bedc8d781a8046de0a1faf5364",
+    "metadata_sha256": "e7c701d45fe9a0c98ecda8fe8c42a7e91008fd44fc9d454fb35ed16ab607a3bb",
     "source_key": "flashprove-onchain-verifier",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/flashprove-onchain-verifier",
-    "updated_at": "2026-11-06T00:32:40Z"
+    "updated_at": "2026-11-06T00:40:38Z"
   },
   {
     "metadata_sha256": "8f584058b935d11bd58556e6b4845a9adb312621c1aef40ba2b1e963fcdf281e",
@@ -126,11 +126,11 @@
     "updated_at": "2026-09-07T22:29:47Z"
   },
   {
-    "metadata_sha256": "8357c0bcc7510eecfccaabe9fdc60247193e1c0ae1fb123df36fa9e060b7ec9d",
+    "metadata_sha256": "2c901ab6cbfc4b9e7861c434cf325a6ac54797790fc603da8eb55f714de3c646",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-11-06T00:30:25Z"
+    "updated_at": "2026-11-06T01:05:20Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
