@@ -3253,6 +3253,27 @@
     "updated_at": "2026-09-02T14:35:14.780291Z"
   },
   {
+    "content_sha256": "5c310bffd3b156ff93b1f84875a7b80e8eee185c0b455930d27b17279aa3bb9c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:96ab232158799d0cdf562742",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:96ab232158799d0cdf562742",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-06T12:05:12.635877Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/.github](https://github.com/trustless-ai/.github)\n[#7 docs\\(profile\\): list flashprove-onchain-verifier \\(attestation + zk routes\\) under model inference verification](https://github.com/trustless-ai/.github/pull/7)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-06T12:05:12.635877Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6216
+    ],
+    "updated_at": "2026-11-06T12:05:12.635877Z"
+  },
+  {
     "content_sha256": "2bd8471617209f1e7cd0bfd11c30dc8fbae0aa4a332de551d8c2c5f687010150",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:98699d1afa13cf3ee0e3abe4",
