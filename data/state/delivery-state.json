@@ -1468,6 +1468,25 @@
     "updated_at": "2026-11-03T23:04:39.181315Z"
   },
   {
+    "content_sha256": "b3e5fbed13b757b71f338d4b3b487a8d0ed6b123477e93ebfb06dc87b3a79600",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-11-06T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-11-06T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-06T23:00:16.223590Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-11-05 23:00 → 2026-11-06 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Two routes, one verifier home** — the on-chain verifier repository now carries a zero-knowledge path and a committee attestation path side by side. [commit a5d554f](https://github.com/trustless-ai/flashprove-onchain-verifier/commit/a5d554fcc3378702c25f63d25492381631b4b4fa)\n\n> **Committee attestation took shape** — a k-of-n path grew from a starter frame into a working committee signature check. [PR #1](https://github.com/trustless-ai/flashprove-onchain-verifier/pull/1)\n\n> **An independent check landed** — a separate ERC-8274 claim-boundary experiment shared a 54/54 result with the group. [tg:tawg:6203]\n\n## 🤝 **What moved**\n\n### on-chain verifier\n_The verification effort gained one home with room for both proof routes._\n\n- Jimmy Shi **Restructured** the repository around the on-chain verifier so the deployment is treated as the product, giving both proof routes a shared foundation. [commit 71a48e9](https://github.com/trustless-ai/flashprove-onchain-verifier/commit/71a48e9691d08fbd8f37bc3f1f483d3cd9c60375)\n- Jimmy Shi (@jimmyshi) **Opened** the new flashprove-onchain-verifier repository to Fede with the zero-knowledge and multi-sig attestation routes together, which keeps the two approaches comparable in one codebase. [tg:tawg:6193]\n\n### attestation\n_The committee route advanced from an outline to reviewed code._\n\n- Baby Blue Viper **Implemented** the k-of-n path with EIP-712 typed data binding signers to the input, output, and metadata hashes, turning the outline into something the group can test. [tg:tawg:6213]\n- Pavlo **Reviewed** the change and confirmed that the EIP-712 binding, distinct-signer counting, and negative controls address the main attestation concerns, giving the group a clearer signal for the next step. [review comment](https://github.com/trustless-ai/flashprove-onchain-verifier/pull/1#issuecomment-6683995010)\n- Jimmy Shi (@jimmyshi) **Sketched** the k-of-n frame for Fede, removing the blank-page cost and letting attestation work start right away. [tg:tawg:6198]\n\n### zero-knowledge\n_The zero-knowledge side is staged for a live run._\n\n- Jimmy Shi (@jimmyshi) **Flagged** the zk verifier as ready for a real run and pointed Merlini to that exact contract for GPU time, setting up an end-to-end check of the other route. [tg:tawg:6201]\n- Jimmy Shi **Opened** a no_std Rust port of FlashProve cp_verify as an ERC-8274 verifier draft, extending the proof logic toward on-chain environments. [FlashProve PR #1](https://github.com/trustless-ai/FlashProve/pull/1)\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- A Magicians thread follow-up pairs the ERC-8183 discussion with a reference described as MIT-licensed, pre-audit, and local-tests-only, worth reading with that caveat in view. [post #443](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/443)\n- Another note points to the eip.md in erc-8183/base-contracts at revision 142e669 as a cross-reference worth checking against the thread. [post #447](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/447)\n\n### ✅ **TODOs**\n\n- Run the zero-knowledge verifier on GPU-backed hardware and capture its results against the attestation route.\n- Fold the k-of-n review notes into the verifier interface documentation so both routes share one contract.\n- Reconcile the independent claim-boundary findings with the repository's current test coverage.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A rough k-of-n frame became reviewed attestation code as the day unfolded, turning a sketch into a shared working loop.\n>\n> Keep the relay rolling — good handoffs make the next lap lighter. 🔄",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-06T23:00:16.223590Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
