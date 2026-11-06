@@ -5542,6 +5542,27 @@
     "updated_at": "2026-09-30T02:25:27.371362Z"
   },
   {
+    "content_sha256": "9eac5d7431e1c20555eb3e5f837b8aa98cc0ac00e26df4f242da6038ec62f543",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:9165296aa451f684a4872889",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:9165296aa451f684a4872889",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-06T11:35:06.537084Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/flashprove-onchain-verifier](https://github.com/trustless-ai/flashprove-onchain-verifier)\n[#1 feat\\(attestation\\): k-of-n committee signature check](https://github.com/trustless-ai/flashprove-onchain-verifier/pull/1)\nOpened by [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-06T11:35:06.537084Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6215
+    ],
+    "updated_at": "2026-11-06T11:35:06.537084Z"
+  },
+  {
     "content_sha256": "2a2ddeb88990cc05a1f5fb92d430bd252ec1c528274213876a5cb33262848730",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:91bbc4179a28ba83392761fe",
@@ -8518,6 +8539,27 @@
       6157
     ],
     "updated_at": "2026-11-05T13:05:15.826747Z"
+  },
+  {
+    "content_sha256": "35f2d417ad1669bb1df42ff7a504cf4f1d3a6dbf44a6cf36cd1f75ede7901bc0",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:74652f4a0f66b253a02d982d",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:74652f4a0f66b253a02d982d",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-06T11:35:06.537084Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#45 Soundness: repair committed-path verification \\(S1–S9\\)](https://github.com/trustless-ai/zkIE/pull/45)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-06T11:35:06.537084Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6214
+    ],
+    "updated_at": "2026-11-06T11:35:06.537084Z"
   },
   {
     "content_sha256": "b6a40ee9749c791f0c46b0b2253df3ae5fc38fdc3cdcc2ef61fa2ff73b7fa210",
