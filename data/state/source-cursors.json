@@ -19,7 +19,7 @@
     "repo:recompute-kit:metadata_sha256": "d8fd69e6f26f96dec1eaf4e0700af5dceda8da979ec5f1f2ab353eacb1a2170d",
     "repo:recompute-lens:metadata_sha256": "9b28d22c422b38f7ee826cd5b93c0b81eecf70d34de30b2bbcd5da706025ba8a",
     "repo:semantic-abi:metadata_sha256": "ece1e475af6f8511e81c50dd8fcf10cd43f32d479fbafc341d387bd2075d983e",
-    "repo:tawg-daily-contribution:metadata_sha256": "77c0cb4bc1715e3ab4e9786d0bdde579e720cce82651520e792f86ceb6df1747",
+    "repo:tawg-daily-contribution:metadata_sha256": "414a5f9ad1624d4a13b7c2148f481ec1ffa65b9aa7f7905eec3f826d04295744",
     "repo:trustless-agent-substrate:metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
     "repo:trustless-ai-landing:metadata_sha256": "018b14008b1ecec6b427b82bec73ebdeae887737ce62a5c6a11b90f18bf1d550",
     "repo:verifiable-execution-claim-authorization:metadata_sha256": "e8c8e0b806902da24ffba67c6149e71f4b2fe4bc97972f2b6d92dfc21cf99a52",
@@ -31,7 +31,7 @@
   "knowledge_updated_at": null,
   "magicians": {
     "topic:25098:metadata_sha256": "22996c8f2695c20d5d325f359884b092c93a947194c17f0260b02bfb5feaf4e3",
-    "topic:27902:metadata_sha256": "b11bf5aa1de8b0e13382be3ee60079977cbbc75c757b08a402b8f80134de783a",
+    "topic:27902:metadata_sha256": "e3e67c310d5896bdc76afa6495208e93d62b7cf86070071d283e14acfa7b8f96",
     "topic:28851:metadata_sha256": "849e54875bb2a4f4bcd16e3666f74a61c2d107380a81a61c1c50a94b92b40a90",
     "topic:28920:metadata_sha256": "98be34ed80675aeb23430d48387068061d62aedee8ce0b5cb57c2eac638c1c99",
     "topic:29274:metadata_sha256": "3c2cd6c60247f86be2fcbf57d7fa41ddf942712cbfa26543711bc90f6abdab7f"
