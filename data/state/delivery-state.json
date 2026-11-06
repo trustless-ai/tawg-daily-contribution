@@ -13711,5 +13711,24 @@
       6064
     ],
     "updated_at": "2026-11-04T11:21:14.806440Z"
+  },
+  {
+    "content_sha256": "44dac829c214741a39a753e2c27393d20a76c3f72a7f2c83796c963ae1d740a5",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:6190",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:6190",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-06T01:16:12.969233Z",
+    "reply_text": "Good morning, Jimmy 🌞 Hope the day's off to a good start. It's been a lively stretch in here — the verification work has real momentum behind it. Take your coffee, and give us a shout whenever you're ready to pick the benchmark thread back up.",
+    "reply_to_message_id": 6190,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-06T01:16:12.969233Z"
   }
 ]
