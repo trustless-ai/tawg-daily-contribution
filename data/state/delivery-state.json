@@ -13774,5 +13774,26 @@
       6191
     ],
     "updated_at": "2026-11-06T01:16:12.969233Z"
+  },
+  {
+    "content_sha256": "ee741cf34fb3108ea39c4376578a3c224dac4332c4985f0386ef6e0912f41f3e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:6205",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:6205",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-06T04:46:09.605305Z",
+    "reply_text": "Good night, Pavlo 🌙 Rest well — today's claim-boundary work was a solid step for the 8274 verification track. See you in the morning!",
+    "reply_to_message_id": 6205,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-06T04:46:09.605305Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6207
+    ],
+    "updated_at": "2026-11-06T04:46:09.605305Z"
   }
 ]
