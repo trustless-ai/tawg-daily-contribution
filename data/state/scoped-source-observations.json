@@ -7,11 +7,11 @@
     "updated_at": "2026-10-07T14:02:17Z"
   },
   {
-    "metadata_sha256": "c6bfd3ca24dcb872062084a0a8863babaf6719a4d787a12b08b8e9f878f48a38",
+    "metadata_sha256": "7b6e56ed3a8d52a2433892419a339da4ee22642b897e0c37db0da9a84df09b57",
     "source_key": ".github",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/.github",
-    "updated_at": "2026-08-23T11:08:45Z"
+    "updated_at": "2026-11-06T00:21:36Z"
   },
   {
     "metadata_sha256": "35c47f76b3363d90c4e0e6bee2209b08f9c735bcdb9d0d8245ab6d0835ac0e0c",
@@ -77,11 +77,11 @@
     "updated_at": "2026-08-16T17:53:22Z"
   },
   {
-    "metadata_sha256": "1c73cebb03ecd603f49e899d237d71a6524453f11d94220055d4c2446b6ba517",
-    "source_key": "flashprove-rust-verifier",
+    "metadata_sha256": "97cc5a8753132cf55d6c254e2b95b22f7bd8c8bedc8d781a8046de0a1faf5364",
+    "source_key": "flashprove-onchain-verifier",
     "source_kind": "github_repository",
-    "source_locator": "https://github.com/trustless-ai/flashprove-rust-verifier",
-    "updated_at": "2026-11-05T23:55:30Z"
+    "source_locator": "https://github.com/trustless-ai/flashprove-onchain-verifier",
+    "updated_at": "2026-11-06T00:32:40Z"
   },
   {
     "metadata_sha256": "8f584058b935d11bd58556e6b4845a9adb312621c1aef40ba2b1e963fcdf281e",
@@ -126,11 +126,11 @@
     "updated_at": "2026-09-07T22:29:47Z"
   },
   {
-    "metadata_sha256": "49e09d984ebc3ef89a974db727288b147bfe28f906f68a1176e04d90198cddf6",
+    "metadata_sha256": "8357c0bcc7510eecfccaabe9fdc60247193e1c0ae1fb123df36fa9e060b7ec9d",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-11-05T23:55:19Z"
+    "updated_at": "2026-11-06T00:30:25Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",

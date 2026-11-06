@@ -1993,6 +1993,27 @@
     "updated_at": "2026-09-06T13:10:48.780416Z"
   },
   {
+    "content_sha256": "daeebf5f895a2c00b001cc76a731be3c1241ca42c7b50730052842140e7bbe62",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:148b8aaa4e160ca04a4ca045",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:148b8aaa4e160ca04a4ca045",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-06T00:35:11.777930Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/.github](https://github.com/trustless-ai/.github)\n[#6 docs\\(profile\\): add Telegram join link, restructure repos, add zkIE/recompute-kit/veca](https://github.com/trustless-ai/.github/pull/6)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-06T00:35:11.777930Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6188
+    ],
+    "updated_at": "2026-11-06T00:35:11.777930Z"
+  },
+  {
     "content_sha256": "039c01ce1be5afaf8a20d9d759d882cdbf8a6aaf835ab3dacacca75984b033e7",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:1739f5e7f962e198635ba977",
@@ -7216,6 +7237,27 @@
     "telegram_chat_id": null,
     "telegram_message_ids": [],
     "updated_at": "2026-11-04T01:15:16.630216Z"
+  },
+  {
+    "content_sha256": "35f2d417ad1669bb1df42ff7a504cf4f1d3a6dbf44a6cf36cd1f75ede7901bc0",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:405e3d0da022dfab78181101",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:405e3d0da022dfab78181101",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-06T00:35:11.777930Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#45 Soundness: repair committed-path verification \\(S1–S9\\)](https://github.com/trustless-ai/zkIE/pull/45)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-06T00:35:11.777930Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6189
+    ],
+    "updated_at": "2026-11-06T00:35:11.777930Z"
   },
   {
     "content_sha256": "ddb5422c1a08a85bb6d4af80abf5cd6ec5deb4d42e0ba8d847231e4a42d90268",

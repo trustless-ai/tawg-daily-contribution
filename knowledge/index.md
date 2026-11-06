@@ -50,6 +50,7 @@ This vault compiles current, source-cited knowledge for the Daily Contribution a
 - [[repos/composed-attestation-note|composed-attestation-note]]
 - [[repos/cross-reference-console|cross-reference-console]]
 - [[repos/eip7702-rescue|eip7702-rescue]]
+- [[repos/flashprove-onchain-verifier|flashprove-onchain-verifier]]
 - [[repos/flashprove-rust-verifier|flashprove-rust-verifier]]
 - [[repos/flashprove|flashprove]]
 - [[repos/observation-conditions-note|observation-conditions-note]]
