@@ -8963,7 +8963,7 @@
     "router_version": "contextual-ai-v5",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "ready",
+    "status": "delivered",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:6205",
     "updated_at": "2026-11-06T04:46:09.605305Z",
