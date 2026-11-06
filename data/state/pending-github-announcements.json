@@ -78,15 +78,5 @@
     "repository": "trustless-ai/FlashProve",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8274 verifier — no_std Rust port of FlashProve cp_verify"
-  },
-  {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_merged:96ab232158799d0cdf562742",
-    "kind": "pr_merged",
-    "number": 7,
-    "occurred_at": "2026-11-06T11:45:20Z",
-    "repository": "trustless-ai/.github",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "docs(profile): list flashprove-onchain-verifier (attestation + zk routes) under model inference verification"
   }
 ]
