@@ -9001,7 +9001,7 @@
     "welcome_target_record_id": null
   },
   {
-    "attempts": 1,
+    "attempts": 2,
     "classified_route": "ignore",
     "created_at": "2026-11-07T11:44:20.182334Z",
     "job_id": "reply:tg:tawg:6233",
@@ -9015,16 +9015,16 @@
     "repair_of_job_id": null,
     "repair_reason_code": null,
     "reply_to_message_id": 6233,
-    "routed_at": "2026-11-07T11:44:20.182334Z",
+    "routed_at": "2026-11-07T12:34:22.060633Z",
     "router_context_scope": "conversation",
-    "router_context_sha256": "0a61cd152b7d29e9a678e858f3fff027377c93565fbcd335ba3e1ce1621b0b5e",
+    "router_context_sha256": "da318528005c7f4673c63fe679a9f3b7a992fa25d0a560d2a2c2036ca8dbf4d7",
     "router_version": "contextual-ai-v5",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
     "status": "ignored",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:6233",
-    "updated_at": "2026-11-07T11:44:20.182334Z",
+    "updated_at": "2026-11-07T12:34:22.060633Z",
     "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
