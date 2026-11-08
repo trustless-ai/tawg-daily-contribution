@@ -1489,6 +1489,27 @@
     "updated_at": "2026-11-06T23:00:16.223590Z"
   },
   {
+    "content_sha256": "6aac7ece9490a75f650a5c1808110e103cca57c57c3a714ce5face16ce8a75a1",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-11-08T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-11-08T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-08T23:00:21.218693Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-11-07 23:00 → 2026-11-08 23:00 UTC_\n\n## ⚡ **Highlights**\n> **MCP hardening opened, then independently checked** — the test-runner allowlist fix drew an offline reproduction that confirmed the shell metacharacter guard and named one residual gap. [PR #88](https://github.com/trustless-ai/recompute-kit/pull/88)\n\n> **Revamped identity assets drew strong peer praise** — the refreshed logo work and video cut were welcomed for the careful manual work behind the vectorization. [tg:tawg:6257]\n\n## 🤝 **What moved**\n\n### zkIE\n_A deeper proving rework arrived, pairing correctness work with speed._\n\n- Jimmy Shi **Opened** a proving-stack refactor that pairs soundness hardening with a performance overhaul, giving the proving path a firmer correctness baseline and faster runs for everyone building on it. [PR #47](https://github.com/trustless-ai/zkIE/pull/47)\n\n### recompute-kit\n_The tool-safety work picked up an independent verification pass._\n\n- Pavlo (@pavlentyy82) **Reviewed** the test-runner allowlist change and reproduced the argument guard offline, confirming the shell metacharacter checks hold while flagging that arbitrary HTTPS repositories are still accepted — the kind of independent check that keeps a security fix honest. [tg:tawg:6274]\n\n### brand & press\n_Visual identity work moved from draft assets toward deliverables the group can share._\n\n- Merlini (@gobross) **Opened** a dedicated media-and-press channel for designs, logos, videos and press packs, giving the visual side a shared space where anyone can adjust and contribute. [tg:tawg:6240]\n- Merlini (@gobross) **Charted** the finishing path for the identity assets, flagging the manual vectorization and lossless outline versions still needed so the marks scale cleanly across every surface. [tg:tawg:6249]\n- Merlini (@gobross) **Outlined** a video-and-audio harness that is partly built and named the compute ceiling that currently stretches a track to hours, making the next infrastructure need concrete. [tg:tawg:6260]\n- Pavlo (@pavlentyy82) **Flagged** the audio track as the last polish item on the video cut, pointing finishing attention at the detail that most shapes how the piece lands. [tg:tawg:6259]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n- Decide how repository inputs should be constrained in the tool: reject arbitrary HTTPS remotes outright or gate them behind an explicit allowlist.\n- Compare a heavier GPU box against a lighter video model to see which shortens media render cycles without losing quality.\n- Treat the press-and-media channel as the single home for brand assets, with lossless exports stored next to the working files.\n\n### ✅ **TODOs**\n- Finish the manual vectorization and lossless outline versions of the identity assets.\n- Run an audio polish pass on the video cut.\n- Resolve the remaining repository-acceptance gap raised in the review of PR #88.\n- Line up a review pass on the proving refactor, checking the soundness claims alongside the speed changes.\n\n## 🤖 **Trusty's take**\n> **Today's spark:** A security fix and its independent offline reproduction showed up within hours of each other, closing the loop while the change was still fresh.\n>\n> Keep that rhythm rolling: ship, double-check, ship again. The bots are taking notes. 🤖",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-08T23:00:21.218693Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6275
+    ],
+    "updated_at": "2026-11-08T23:00:21.218693Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
