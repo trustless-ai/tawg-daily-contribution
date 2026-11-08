@@ -78,15 +78,5 @@
     "repository": "trustless-ai/FlashProve",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8274 verifier — no_std Rust port of FlashProve cp_verify"
-  },
-  {
-    "author_login": "Echo-Merlini",
-    "event_id": "github-announcement:pr_opened:47167c9fa852d2bc2b0b353e",
-    "kind": "pr_opened",
-    "number": 88,
-    "occurred_at": "2026-11-08T20:04:04Z",
-    "repository": "trustless-ai/recompute-kit",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "fix(mcp): recompute_repo only runs allowlisted test runners (+ pin mcp<2)"
   }
 ]
