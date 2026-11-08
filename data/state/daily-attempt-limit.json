@@ -1,5 +1,5 @@
 {
-  "attempts": 3,
+  "attempts": 1,
   "schema_version": "tawg.daily-attempt-limit.v1",
-  "window_id": "daily:2026-11-07T23:00:00Z"
+  "window_id": "daily:2026-11-08T23:00:00Z"
 }
