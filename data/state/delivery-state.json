@@ -9360,6 +9360,27 @@
     "updated_at": "2026-11-05T05:00:28.839871Z"
   },
   {
+    "content_sha256": "3ba9533633ad56e804151061d132a6fce4d143a467158d78f57b56685da8dde3",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:941ecf0a7b2ef07e3fd349a1",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:941ecf0a7b2ef07e3fd349a1",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-09T00:45:13.479610Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#88 fix\\(mcp\\): recompute\\_repo only runs allowlisted test runners \\(+ pin mcp\\<2\\)](https://github.com/trustless-ai/recompute-kit/pull/88)\nNew commits from [Echo-Merlini](https://github.com/Echo-Merlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-09T00:45:13.479610Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6277
+    ],
+    "updated_at": "2026-11-09T00:45:13.479610Z"
+  },
+  {
     "content_sha256": "ba31c843c33e417e13b5d37f88569019a9d9e8571bf2301b556d4d4de1029a4d",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:948fd1c716cdbcd5c45c5a67",
