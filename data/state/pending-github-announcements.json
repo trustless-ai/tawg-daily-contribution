@@ -78,5 +78,15 @@
     "repository": "trustless-ai/FlashProve",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8274 verifier — no_std Rust port of FlashProve cp_verify"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_updated:190474a9b9e8427361e7f66e",
+    "kind": "pr_updated",
+    "number": 47,
+    "occurred_at": "2026-11-09T14:49:22Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Refactor the proving stack: soundness hardening and performance overhaul"
   }
 ]
