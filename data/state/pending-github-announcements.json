@@ -78,5 +78,25 @@
     "repository": "trustless-ai/FlashProve",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8274 verifier — no_std Rust port of FlashProve cp_verify"
+  },
+  {
+    "author_login": "Echo-Merlini",
+    "event_id": "github-announcement:pr_updated:034d47e0862ec685b763c52b",
+    "kind": "pr_updated",
+    "number": 88,
+    "occurred_at": "2026-11-09T11:27:06Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "fix(mcp): recompute_repo only runs allowlisted test runners (+ pin mcp<2)"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_updated:c303c05448e1d16034f1903b",
+    "kind": "pr_updated",
+    "number": 47,
+    "occurred_at": "2026-11-09T11:33:47Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Refactor the proving stack: soundness hardening and performance overhaul"
   }
 ]
