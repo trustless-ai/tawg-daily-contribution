@@ -15076,5 +15076,26 @@
       6302
     ],
     "updated_at": "2026-11-10T00:28:01.489649Z"
+  },
+  {
+    "content_sha256": "ff3703ddea0ab0989bac6ed2160dfbbd6483d7c17ecfacaffa690299532e488c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:6303",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:6303",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-10T00:55:39.295763Z",
+    "reply_text": "Good morning, Merlini! 🌅 Hope you're starting the day well. Nice to see the film work still landing — and the benchmark and on-chain verifier threads are moving along nicely too. If anything needs a hand today, just say the word. ☀️",
+    "reply_to_message_id": 6303,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-10T00:55:39.295763Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6304
+    ],
+    "updated_at": "2026-11-10T00:55:39.295763Z"
   }
 ]
