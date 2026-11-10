@@ -8079,6 +8079,25 @@
     "updated_at": "2026-11-04T17:35:11.415968Z"
   },
   {
+    "content_sha256": "6bfb89225b9c8c5392677a11ae288612e1ab3ac31589fdde717a6a29be3bc3b4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:4a04ba2a5451dab1a4a8bb83",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:4a04ba2a5451dab1a4a8bb83",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-10T02:40:13.397085Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#47 Refactor the proving stack: soundness hardening and performance overhaul](https://github.com/trustless-ai/zkIE/pull/47)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-10T02:40:13.397085Z"
+  },
+  {
     "content_sha256": "171ec8b363a1007b30f1e374fd62535af97e186f1314a2e3a23c4592552d1424",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:4a17b36f58e2292a052b3d80",
