@@ -9195,10 +9195,10 @@
     "router_version": "contextual-ai-v5",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "ready",
+    "status": "delivered",
     "trigger_kind": "greeting_candidate",
     "trigger_record_id": "tg:tawg:6324",
-    "updated_at": "2026-11-10T12:46:17.852816Z",
+    "updated_at": "2026-11-10T12:46:47.215711Z",
     "verification_artifact": null,
     "welcome_target_person_id": null,
     "welcome_target_record_id": null
