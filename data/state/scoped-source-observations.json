@@ -126,11 +126,11 @@
     "updated_at": "2026-09-07T22:29:47Z"
   },
   {
-    "metadata_sha256": "e3af7f689dd271c0bc497b250bd52da1a669053d9e67d3a011180f8d83e289c8",
+    "metadata_sha256": "101658b7706bfe5b8855174b9be059e96d5ef43f63033ba4a00c9454444c18a9",
     "source_key": "tawg-daily-contribution",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/tawg-daily-contribution",
-    "updated_at": "2026-11-11T19:05:22Z"
+    "updated_at": "2026-11-11T20:05:58Z"
   },
   {
     "metadata_sha256": "1fa2d7d4e8c07715911f243a3626cc3528375db44ef9bc96454bdeb243b1a6c0",
@@ -182,11 +182,11 @@
     "updated_at": "2026-11-10T20:02:05.157000Z"
   },
   {
-    "metadata_sha256": "0f9d9a9e3f0c5b2f38fe19bf9abc0cff6a2e2dae07dc063185958a6fa17f3552",
+    "metadata_sha256": "d35c21199b85b51bebe7205c1169f5efbac25189e3f3d8165106b05606560380",
     "source_key": "magicians-27902",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902",
-    "updated_at": "2026-11-11T19:04:15.686000Z"
+    "updated_at": "2026-11-11T19:51:55.093000Z"
   },
   {
     "metadata_sha256": "849e54875bb2a4f4bcd16e3666f74a61c2d107380a81a61c1c50a94b92b40a90",
