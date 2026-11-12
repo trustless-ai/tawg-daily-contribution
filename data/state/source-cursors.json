@@ -9,7 +9,7 @@
     "repo:ccip-router:metadata_sha256": "d42fd5fbf4386988a82b08f668b90f5f3bcf0d48b6c03e65f6751a7ece8901b0",
     "repo:collapsed-state-note:metadata_sha256": "974900faa9bff12fff5d8f423c73ac3716ebf3aeec9d4c4e5e9adc2c571ce8a1",
     "repo:composed-attestation-note:metadata_sha256": "60f7ba1d43361919172cb4941a991e1cda1927bd707578ad1bbaaa392e99d4b3",
-    "repo:cross-reference-console:metadata_sha256": "cb38fe2cbba3643d79330375877b5c217d184ef99713f33d8e35a5f8a513c57f",
+    "repo:cross-reference-console:metadata_sha256": "54cb37dec261a869decd632371e4dc7636d6e5fa677b8b8557aa485cc7f420e2",
     "repo:eip7702-rescue:metadata_sha256": "77d86bd328cd492589e2a35a2fb265ad74beb397d3869ec76a3baedee7ce0610",
     "repo:flashprove-onchain-verifier:metadata_sha256": "0903a6dab1a07d95d9c693076c531b1aab44194791754fe8758e8f5e7394c301",
     "repo:flashprove-rust-verifier:metadata_sha256": "1c73cebb03ecd603f49e899d237d71a6524453f11d94220055d4c2446b6ba517",

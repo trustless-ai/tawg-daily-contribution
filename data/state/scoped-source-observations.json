@@ -63,11 +63,11 @@
     "updated_at": "2026-08-09T13:10:53Z"
   },
   {
-    "metadata_sha256": "cb38fe2cbba3643d79330375877b5c217d184ef99713f33d8e35a5f8a513c57f",
+    "metadata_sha256": "54cb37dec261a869decd632371e4dc7636d6e5fa677b8b8557aa485cc7f420e2",
     "source_key": "cross-reference-console",
     "source_kind": "github_repository",
     "source_locator": "https://github.com/trustless-ai/cross-reference-console",
-    "updated_at": "2026-11-04T00:16:06Z"
+    "updated_at": "2026-11-12T00:12:36Z"
   },
   {
     "metadata_sha256": "77d86bd328cd492589e2a35a2fb265ad74beb397d3869ec76a3baedee7ce0610",
