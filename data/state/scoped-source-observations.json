@@ -175,11 +175,11 @@
     "updated_at": "2026-10-31T16:21:43Z"
   },
   {
-    "metadata_sha256": "f4135d2c962ca8f710f8cceed2e8110d6f784db4292f22222af5c375dcfe749b",
+    "metadata_sha256": "c744ce46c102fca23fa78ef1dd100c000386a07047b00fd48be97f77251e27f0",
     "source_key": "magicians-25098",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098",
-    "updated_at": "2026-11-10T20:02:05.157000Z"
+    "updated_at": "2026-11-12T18:04:04.937000Z"
   },
   {
     "metadata_sha256": "93f9d93c66d54e9eac71a5746b85079a02f77cf375b9f9c8bfb0e5e00ebf9392",
