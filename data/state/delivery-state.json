@@ -15748,5 +15748,24 @@
       6325
     ],
     "updated_at": "2026-11-10T12:46:47.215711Z"
+  },
+  {
+    "content_sha256": "f68ab907d6c6e0647e1ebc6b5c83b4801c525a25cd3c8025cb112524e0258655",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:6343",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:6343",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-11-12T12:18:24.570796Z",
+    "reply_text": "Good morning, Merlini ☀️ Hope the day's off to a good start. I'm here and ready — if there's anything on the Trustless AI work you'd like to dig into, verify, or write up, just point me at it.",
+    "reply_to_message_id": 6343,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-12T12:18:24.570796Z"
   }
 ]
