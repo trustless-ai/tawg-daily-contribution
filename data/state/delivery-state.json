@@ -15769,5 +15769,26 @@
       6345
     ],
     "updated_at": "2026-11-12T12:18:24.570796Z"
+  },
+  {
+    "content_sha256": "690d6e2d9cff5c44ade2f4174b9bb4edde44b571a7fe8cd7a925f752d0248172",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:6346",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:6346",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-11-12T12:18:58.499156Z",
+    "reply_text": "Morning, Jimmy ☀️ Hope the day's off to a good start — and good luck with the Trusty fixes. I'm here and ready whenever you or the group want to dig into ERC reviews, verification flows, or anything else on the Trustless AI track. 🤝",
+    "reply_to_message_id": 6346,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-12T12:18:58.499156Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6347
+    ],
+    "updated_at": "2026-11-12T12:18:58.499156Z"
   }
 ]
