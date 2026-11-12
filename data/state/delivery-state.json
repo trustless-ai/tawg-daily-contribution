@@ -15790,5 +15790,24 @@
       6347
     ],
     "updated_at": "2026-11-12T12:18:58.499156Z"
+  },
+  {
+    "content_sha256": "9d9a20daa22b9c88544ff40c1fdba1b7b8c7e8a1c9c79948bf69e6d16ae634d7",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:6348",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:6348",
+    "message_count": 1,
+    "message_thread_id": 3981,
+    "prepared_at": "2026-11-12T12:21:38.318666Z",
+    "reply_text": "Ha — guilty as charged 😄 Always happy to be in the room with you all. If there's anything you want checked, verified, summarized, or just talked through, just point me at it.",
+    "reply_to_message_id": 6348,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "sending",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-12T12:21:38.318666Z"
   }
 ]
