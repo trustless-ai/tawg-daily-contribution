@@ -4,12 +4,14 @@ from __future__ import annotations
 
 import json
 import re
-from collections.abc import Mapping
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
+from difflib import SequenceMatcher
 from pathlib import Path
 from time import monotonic
 from typing import Any, Literal, Protocol
+from urllib.parse import urlsplit, urlunsplit
 
 import yaml
 from pydantic import field_validator
@@ -57,10 +59,44 @@ _IDEAS_HEADING = "### 💡 **Ideas to follow**"
 _TODOS_HEADING = "### ✅ **TODOs**"
 _QUIET_HIGHLIGHT = "No source-backed highlight landed in this window."
 _TRUSTY_SPARK_PREFIX = "**Today's spark:** "
+_CITATION_SURROUNDING = "\"'`<>[](){}.,;:!?"
+_CITATION_HOST = re.compile(r"[a-z0-9.-]+")
+_MARKDOWN_LINK_PARTS = re.compile(r"(\[[^\[\]\n]+\]\()([^()\s]+)(\))")
+_CITATION_RULE = (
+    "Every citation in telegram_text must also appear verbatim in the citations list, "
+    "and each citation must be copied verbatim from the `citation` field of an evidence "
+    "item in the context pack; URLs or ids that merely appear inside an evidence `text` "
+    "excerpt are not citable."
+)
+_MAX_NAMED_CITATIONS = 3
+_MAX_SUGGESTED_CITATIONS = 3
+_MAX_SIMILARITY_CHARS = 200
+
+
+@dataclass(frozen=True, slots=True)
+class DailyCitationDiagnostics:
+    """Privacy-safe, structural facts about rejected Daily citations."""
+
+    unknown_count: int
+    hosts: tuple[str, ...]
 
 
 class DailyRejected(ValueError):
     """Raised when Daily preparation is stale, ungrounded, or off-policy."""
+
+    code: str | None
+    citation_diagnostics: DailyCitationDiagnostics | None
+
+    def __init__(
+        self,
+        message: str,
+        *,
+        code: str | None = None,
+        citation_diagnostics: DailyCitationDiagnostics | None = None,
+    ) -> None:
+        super().__init__(message)
+        self.code = code
+        self.citation_diagnostics = citation_diagnostics
 
 
 @dataclass(frozen=True, slots=True)
@@ -138,6 +174,131 @@ class PreparedDaily:
     messages: tuple[str, ...]
     citations: tuple[str, ...]
     quiet_day: bool
+
+
+def canonicalize_citation(value: str) -> str:
+    """Canonicalize a citation for safe, identity-preserving comparison only."""
+    text = value.strip().strip(_CITATION_SURROUNDING).strip()
+    without_slash = text.rstrip("/")
+    if without_slash:
+        text = without_slash
+    try:
+        parsed = urlsplit(text)
+        port = parsed.port
+    except ValueError:
+        return text
+    if (
+        parsed.scheme.casefold() not in {"http", "https"}
+        or not parsed.netloc
+        or parsed.username is not None
+        or parsed.password is not None
+    ):
+        return text
+    host = (parsed.hostname or "").casefold().rstrip(".")
+    if host.startswith("www."):
+        host = host[4:]
+    if not host:
+        return text
+    netloc = host if port is None else f"{host}:{port}"
+    return urlunsplit(
+        (
+            parsed.scheme.casefold(),
+            netloc,
+            parsed.path.rstrip("/"),
+            parsed.query,
+            parsed.fragment,
+        )
+    )
+
+
+def _citation_rewrites(produced: Iterable[str], allowed: set[str]) -> dict[str, str]:
+    by_canonical: dict[str, list[str]] = {}
+    for citation in allowed:
+        by_canonical.setdefault(canonicalize_citation(citation), []).append(citation)
+    rewrites: dict[str, str] = {}
+    for citation in produced:
+        if citation in allowed:
+            continue
+        matches = by_canonical.get(canonicalize_citation(citation), [])
+        if len(matches) == 1:
+            rewrites[citation] = matches[0]
+    return rewrites
+
+
+def _rewrite_text_citations(text: str, rewrites: Mapping[str, str]) -> str:
+    def replace_link(match: re.Match[str]) -> str:
+        citation = match.group(2)
+        return f"{match.group(1)}{rewrites.get(citation, citation)}{match.group(3)}"
+
+    def replace_plain(match: re.Match[str]) -> str:
+        citation = match.group(1)
+        return f"[{rewrites.get(citation, citation)}]"
+
+    rewritten = _MARKDOWN_LINK_PARTS.sub(replace_link, text)
+    return _PLAIN_CITATION.sub(replace_plain, rewritten)
+
+
+def _nearest_citations(unknown: list[str], allowed: set[str]) -> list[str]:
+    if not allowed or not unknown:
+        return []
+    probes = [citation[:_MAX_SIMILARITY_CHARS] for citation in unknown[:_MAX_NAMED_CITATIONS]]
+    scored = [
+        (
+            -max(
+                SequenceMatcher(None, probe, candidate[:_MAX_SIMILARITY_CHARS]).ratio()
+                for probe in probes
+            ),
+            candidate,
+        )
+        for candidate in allowed
+    ]
+    scored.sort()
+    return [candidate for _, candidate in scored[:_MAX_SUGGESTED_CITATIONS]]
+
+
+def _citation_hosts(citations: Iterable[str]) -> tuple[str, ...]:
+    hosts: set[str] = set()
+    for citation in citations:
+        try:
+            parsed = urlsplit(citation.strip())
+            host = (parsed.hostname or "").casefold().rstrip(".")
+        except ValueError:
+            continue
+        if host.startswith("www."):
+            host = host[4:]
+        if _CITATION_HOST.fullmatch(host):
+            hosts.add(host)
+    return tuple(sorted(hosts))
+
+
+def _citation_rejection(
+    prefix: str,
+    unknown: set[str],
+    allowed: set[str],
+    *,
+    problem: str = "are not allowlisted evidence citations",
+) -> DailyRejected:
+    offenders = sorted(unknown)
+    named = ", ".join(f"`{citation}`" for citation in offenders[:_MAX_NAMED_CITATIONS])
+    if len(offenders) > _MAX_NAMED_CITATIONS:
+        named += f" (+{len(offenders) - _MAX_NAMED_CITATIONS} more)"
+    nearest = _nearest_citations(offenders, allowed)
+    suggestions = (
+        " Nearest allowlisted citations: "
+        + ", ".join(f"`{citation}`" for citation in nearest)
+        + "."
+        if nearest
+        else ""
+    )
+    return DailyRejected(
+        f"{prefix}: {len(offenders)} draft citation(s) {problem}: {named}. "
+        f"{_CITATION_RULE}{suggestions}",
+        code="daily_citation_unknown",
+        citation_diagnostics=DailyCitationDiagnostics(
+            unknown_count=len(offenders),
+            hosts=_citation_hosts(offenders),
+        ),
+    )
 
 
 class DailyService:
@@ -426,6 +587,16 @@ class DailyService:
             result = _DailyResult.model_validate(raw)
         except ValueError as error:
             raise DailyRejected("invalid Daily model output") from error
+        allowed_citations = {item.citation for item in evidence}
+        produced_citations = (
+            set(result.citations)
+            | set(_PLAIN_CITATION.findall(result.telegram_text))
+            | set(_MARKDOWN_CITATION.findall(result.telegram_text))
+        )
+        rewrites = _citation_rewrites(produced_citations, allowed_citations)
+        if rewrites:
+            result.citations = [rewrites.get(citation, citation) for citation in result.citations]
+            result.telegram_text = _rewrite_text_citations(result.telegram_text, rewrites)
         if (
             result.window_id != window.window_id
             or result.window_start != window.start
@@ -489,7 +660,6 @@ class DailyService:
             ):
                 raise DailyRejected("Daily output has an unexpected top-level section")
 
-        allowed_citations = {item.citation for item in evidence}
         highlights_lines = lines[
             section_indices["Highlights"] + 1 : section_indices["What moved"]
         ]
@@ -508,13 +678,24 @@ class DailyService:
             raise DailyRejected("Daily contains an invalid Telegram mention")
         if len(result.citations) != len(set(result.citations)):
             raise DailyRejected("Daily citation list contains duplicates")
-        if not set(result.citations).issubset(allowed_citations):
-            raise DailyRejected("Daily citation references unknown evidence")
+        unknown_citations = set(result.citations) - allowed_citations
+        if unknown_citations:
+            raise _citation_rejection(
+                "Daily citation references unknown evidence",
+                unknown_citations,
+                allowed_citations,
+            )
         text_citations = set(_PLAIN_CITATION.findall(result.telegram_text)) | set(
             _MARKDOWN_CITATION.findall(result.telegram_text)
         )
-        if not text_citations.issubset(set(result.citations)):
-            raise DailyRejected("Daily text contains an unknown citation")
+        unknown_text_citations = text_citations - set(result.citations)
+        if unknown_text_citations:
+            raise _citation_rejection(
+                "Daily text contains an unknown citation",
+                unknown_text_citations,
+                allowed_citations,
+                problem="appear in telegram_text but not in the result citations list",
+            )
         if evidence and (
             result.quiet_day or not set(result.citations).intersection(allowed_citations)
         ):
