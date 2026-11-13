@@ -69,5 +69,4 @@ jobs:
         env:
           MODAL_TOKEN_ID: ${{ secrets.MODAL_TOKEN_ID }}
           MODAL_TOKEN_SECRET: ${{ secrets.MODAL_TOKEN_SECRET }}
-          TAWG_ENTRY_CANDIDATES_ENABLED: "true"
         run: modal deploy deploy/modal_app.py
