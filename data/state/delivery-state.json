@@ -15853,5 +15853,26 @@
       6349
     ],
     "updated_at": "2026-11-12T12:21:38.318666Z"
+  },
+  {
+    "content_sha256": "dc354ff9f1736be06f1474b9651f6b71de869a5d9d3f7227070f2a3725887e1b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:6360",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:6360",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-13T09:46:05.536033Z",
+    "reply_text": "Welcome, @SUPERMAN_I4G! 👋 Great to have you here — and thanks for the nudge, Merlini.\n\nA quick intro: **Trustless AI** is an open organization where builders, researchers, reviewers and EIP authors work on making AI results something people can check rather than simply believe — moving from \"trust me\" to outcomes anyone can inspect, verify or recompute.\n\nIn practice that spans a few threads you'll see around here: zero-knowledge inference (zkIE), on-chain proof verification around ERC-8274's `IProofVerifier` with both a ZK route and a k-of-n attestation route, reproducible benchmarks where each number carries an independently signed verifier check, and research on the trust boundaries between a proof, a claim and an action.\n\nThe shared habit is simple: claims backed by artifacts anyone can rerun — proofs, signed rows, negative controls, open repos. Jump in wherever interests you: ask a question, float an idea, or pick up a thread. No formality needed.",
+    "reply_to_message_id": 6360,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-13T09:46:05.536033Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6362
+    ],
+    "updated_at": "2026-11-13T09:46:05.536033Z"
   }
 ]
