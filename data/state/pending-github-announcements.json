@@ -78,5 +78,15 @@
     "repository": "trustless-ai/FlashProve",
     "schema_version": "tawg.github-announcement.v1",
     "title": "feat: ERC-8274 verifier — no_std Rust port of FlashProve cp_verify"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_opened:2269150085543753b28411bc",
+    "kind": "pr_opened",
+    "number": 15,
+    "occurred_at": "2026-11-13T00:12:59Z",
+    "repository": "trustless-ai/tawg-daily-contribution",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "fix(daily): make citation rejections actionable and self-healing"
   }
 ]
