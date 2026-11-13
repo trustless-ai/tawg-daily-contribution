@@ -92,6 +92,7 @@ This vault compiles current, source-cited knowledge for the Daily Contribution a
 - [[acknowledgements/zidan|Zidan]]
 - [[acknowledgements/繁星之上-2|繁星之上]]
 - [[acknowledgements/繁星之上|繁星之上]]
+- [[acknowledgements/𝐆𝐄𝐄𝐊𓃵|𝐆𝐄𝐄𝐊𓃵]]
 ## Timelines
 
 - [[timeline/2026-06|June 2026]]
