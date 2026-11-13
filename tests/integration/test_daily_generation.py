@@ -257,6 +257,163 @@ async def test_daily_stops_after_two_rejected_model_drafts(tmp_path: Path) -> No
 
 
 @pytest.mark.asyncio
+async def test_daily_rewrites_a_single_allowlisted_citation_variant(tmp_path: Path) -> None:
+    _seed(tmp_path)
+    canonical = "https://github.com/trustless-ai/agent-ercs/pull/7"
+    variant = "https://GitHub.com/trustless-ai/agent-ercs/pull/7/"
+    evidence = (
+        *_evidence(tmp_path),
+        DailyEvidence(
+            evidence_id="gh:agent-ercs:pr:7",
+            source_kind="github",
+            source_url=canonical,
+            created_at=datetime(2026, 8, 23, 15, tzinfo=UTC),
+            updated_at=datetime(2026, 8, 23, 15, tzinfo=UTC),
+            author_person_id=None,
+            text="The agent-ercs validation notes were refreshed.",
+        ),
+    )
+    output = _fixture("daily-active")
+    output["citations"] = [variant]
+    output["telegram_text"] = output["telegram_text"].replace(
+        "[tg:tawg:1]", f"[{variant}]"
+    )
+    ai = FakeAi(output)
+
+    prepared = await DailyService(tmp_path, ai=ai).prepare(
+        WINDOW, readiness=_ready(), evidence=evidence
+    )
+
+    assert prepared is not None
+    assert prepared.citations == (canonical,)
+    assert prepared.telegram_text.count(f"[{canonical}]") == 2
+    assert variant not in prepared.telegram_text
+    assert len(ai.calls) == 1
+
+
+@pytest.mark.asyncio
+async def test_daily_rejects_an_ambiguous_canonical_citation_variant(tmp_path: Path) -> None:
+    _seed(tmp_path)
+    canonical = "https://github.com/trustless-ai/agent-ercs/pull/8"
+    variant = "https://WWW.GitHub.com/trustless-ai/agent-ercs/pull/8"
+    evidence = (
+        *_evidence(tmp_path),
+        DailyEvidence(
+            evidence_id="gh:agent-ercs:pr:8",
+            source_kind="github",
+            source_url=canonical,
+            created_at=datetime(2026, 8, 23, 15, tzinfo=UTC),
+            updated_at=datetime(2026, 8, 23, 15, tzinfo=UTC),
+            author_person_id=None,
+            text="The first agent-ercs validation note landed.",
+        ),
+        DailyEvidence(
+            evidence_id="gh:agent-ercs:pr:8-slash",
+            source_kind="github",
+            source_url=f"{canonical}/",
+            created_at=datetime(2026, 8, 23, 16, tzinfo=UTC),
+            updated_at=datetime(2026, 8, 23, 16, tzinfo=UTC),
+            author_person_id=None,
+            text="The second agent-ercs validation note landed.",
+        ),
+    )
+    output = _fixture("daily-active")
+    output["citations"] = [variant]
+    output["telegram_text"] = output["telegram_text"].replace(
+        "[tg:tawg:1]", f"[{variant}]"
+    )
+
+    with pytest.raises(DailyRejected) as raised:
+        await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+            WINDOW, readiness=_ready(), evidence=evidence
+        )
+
+    assert raised.value.code == "daily_citation_unknown"
+    assert variant in str(raised.value)
+
+
+@pytest.mark.asyncio
+async def test_daily_citation_rejection_tells_the_model_which_citation_and_why(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    fabricated = "https://example.invalid/drafts/unknown-token"
+    output = _fixture("daily-active")
+    output["citations"] = [fabricated]
+    output["telegram_text"] = output["telegram_text"].replace(
+        "[tg:tawg:1]", f"[{fabricated}]"
+    )
+    ai = SequenceAi([output, output])
+
+    with pytest.raises(DailyRejected) as raised:
+        await DailyService(tmp_path, ai=ai).prepare(
+            WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )
+
+    message = str(raised.value)
+    assert raised.value.code == "daily_citation_unknown"
+    assert fabricated in message
+    assert "copied verbatim from the `citation` field" in message
+    assert "not citable" in message
+    assert "Nearest allowlisted citations:" in message
+    assert "tg:tawg:1" in message
+    diagnostics = raised.value.citation_diagnostics
+    assert diagnostics is not None
+    assert diagnostics.unknown_count == 1
+    assert diagnostics.hosts == ("example.invalid",)
+    retry_context = json.loads(ai.calls[1]["context_pack"])
+    feedback = retry_context["trigger"]["revision_feedback"]
+    assert fabricated in feedback
+    assert "copied verbatim" in feedback
+
+
+@pytest.mark.asyncio
+async def test_daily_text_only_citation_failure_keeps_the_unknown_code(tmp_path: Path) -> None:
+    _seed(tmp_path)
+    output = _fixture("daily-active")
+    output["telegram_text"] = output["telegram_text"].replace(
+        "- A second review of the edge cases would help turn the proposal into a shared "
+        "decision.",
+        "- A second review of the edge cases would help turn the proposal into a shared "
+        "decision. [made-up:9]",
+    )
+
+    with pytest.raises(DailyRejected) as raised:
+        await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+            WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )
+
+    assert raised.value.code == "daily_citation_unknown"
+    assert str(raised.value).startswith("Daily text contains an unknown citation")
+    assert "made-up:9" in str(raised.value)
+
+
+@pytest.mark.asyncio
+async def test_rejected_citation_never_reaches_persisted_state(tmp_path: Path) -> None:
+    _seed(tmp_path)
+    fabricated = "https://example.invalid/private-token-abc"
+    output = _fixture("daily-active")
+    output["citations"] = [fabricated]
+    output["telegram_text"] = output["telegram_text"].replace(
+        "[tg:tawg:1]", f"[{fabricated}]"
+    )
+
+    with pytest.raises(DailyRejected):
+        await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+            WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )
+
+    assert not (tmp_path / "data/state/prepared-daily.json").exists()
+    persisted = "\n".join(
+        path.read_text(encoding="utf-8", errors="ignore")
+        for path in sorted((tmp_path / "data").rglob("*"))
+        if path.is_file()
+    )
+    assert "private-token-abc" not in persisted
+
+
+
+@pytest.mark.asyncio
 async def test_daily_retry_shares_the_original_model_timeout(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

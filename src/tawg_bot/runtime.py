@@ -194,10 +194,16 @@ _DAILY_REJECTION_CODES = {
 
 
 def _daily_rejection_code(error: DailyRejected) -> str:
+    if error.code is not None:
+        return error.code
     reason = str(error)
     exact = _DAILY_REJECTION_CODES.get(reason)
     if exact is not None:
         return exact
+    if reason.startswith(
+        ("Daily citation references unknown evidence", "Daily text contains an unknown citation")
+    ):
+        return "daily_citation_unknown"
     if reason.startswith("Daily output has an invalid required section:"):
         return "daily_sections_invalid"
     if reason.endswith(" is not fresh through the Daily cutoff"):
@@ -1206,7 +1212,17 @@ class _LivePipeline:
             raise RuntimeFailure("Daily persistence failed") from None
         except DailyRejected as error:
             self.prepared_daily = None
-            _safe_log("daily_validation", _daily_rejection_code(error))
+            code = _daily_rejection_code(error)
+            diagnostics = error.citation_diagnostics
+            if diagnostics is None:
+                _safe_log("daily_validation", code)
+            else:
+                _safe_log(
+                    "daily_validation",
+                    code,
+                    unknown_count=diagnostics.unknown_count,
+                    hosts=",".join(diagnostics.hosts) if diagnostics.hosts else "none",
+                )
             raise RuntimeFailure("Daily validation failed") from None
         except ClaudeCliError as error:
             self.prepared_daily = None
@@ -1713,6 +1729,7 @@ def _load_delivery_attempts(root: Path) -> tuple[DeliveryAttempt, ...]:
     return attempts
 
 
-def _safe_log(phase: str, code: str, *, erc: int | None = None) -> None:
+def _safe_log(phase: str, code: str, *, erc: int | None = None, **facts: int | str) -> None:
     suffix = f" erc={erc}" if erc is not None else ""
-    print(f"tawg_event=phase_failed phase={phase} code={code}{suffix}", flush=True)
+    details = "".join(f" {name}={value}" for name, value in facts.items())
+    print(f"tawg_event=phase_failed phase={phase} code={code}{suffix}{details}", flush=True)
