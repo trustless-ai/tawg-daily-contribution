@@ -1552,6 +1552,27 @@
     "updated_at": "2026-11-13T23:04:14.234886Z"
   },
   {
+    "content_sha256": "d39858310c39fdd91b365297fbb29244bb5ce942c34a8480a3a690bade8f46cc",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-11-14T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-11-14T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-14T23:00:24.097207Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-11-13 23:00 → 2026-11-14 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Anchoring entered review** — a proposed ownerless registry would pin each commitment identifier on-chain, replacing the trusted service that used to hold artifacts. [PR #2](https://github.com/trustless-ai/flashprove-onchain-verifier/pull/2)\n\n> **The prove/verify split gained real parts** — proving mapped to FlashProve and zkIE, verification to recompute-kit receipts, so the framing can now be inspected piece by piece. [tg:tawg:6378]\n\n> **A missing record got a clear reading** — a reply confirmed that a record which never showed up holds no state at all, keeping absence from being mistaken for a result. [post 459](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/459)\n\n## 🤝 **What moved**\n\n### flashprove-onchain-verifier\n_The anchoring idea moved from chat into a reviewable change._\n\n- Baby Blue Viper **Opened** a change that anchors each commitment identifier on-chain through an ownerless registry, retiring the trusted service that stored artifacts for the verifier, so a commitment no longer resolves through a party the group has to trust. [tg:tawg:6381]\n- Jimmy Shi (@jimmyshi) **Flagged** the FlashProve repository as the place to check the proposal against, giving reviewers working code context so the anchor design is tested against the real verifier path instead of staying abstract. [tg:tawg:6380]\n\n### prove-and-verify-framing\n_The split gained concrete parts and sharper limits._\n\n- Merlini (@gobross) **Connected** the two extensions to limitations FlashProve names about itself, noting that each retires a named constraint, including the trust currently placed in logging, which gives the design a falsifiable account of what it improves. [tg:tawg:6379]\n\n### ERC-8183\n_Discussion narrowed how an outcome that never completed should be read._\n\n- predge-ai **Sharpened** the check question for jobs that run over time, showing that where inside the run a verdict is evaluated changes what it means, which matters for agentic commerce flows that span time. [post 458](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/458)\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n- Whether the anchor should also capture enough context to reconstruct later which verifier version produced a commitment.\n- Whether a check on a long-running job should carry the time it was requested or the time its window closed.\n- How recompute-kit receipts should present the proving side so the component map survives contact with real artifacts.\n\n### ✅ **TODOs**\n- Review the anchor change against the verifier flow and note where the old trusted-host assumption still leaks.\n- Write the component map down where newcomers can find FlashProve, zkIE, and recompute-kit without asking.\n- Turn the missing-record conclusion into spec language so implementers treat absence as its own case.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A framing message became a repository pointer, and that pointer landed as an open change before the day was out — one conversation completing a full loop.\n>\n> Keep that handoff rhythm going, team: when the pieces know where they belong, the whole thing verifies itself. 🎉",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-14T23:00:24.097207Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6383
+    ],
+    "updated_at": "2026-11-14T23:00:24.097207Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
