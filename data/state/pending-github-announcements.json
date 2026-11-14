@@ -88,5 +88,15 @@
     "repository": "trustless-ai/zkIE",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Refactor the proving stack: soundness hardening and performance overhaul"
+  },
+  {
+    "author_login": "babyblueviper1",
+    "event_id": "github-announcement:pr_opened:61825d16d843b1da722a106a",
+    "kind": "pr_opened",
+    "number": 2,
+    "occurred_at": "2026-11-14T18:47:57Z",
+    "repository": "trustless-ai/flashprove-onchain-verifier",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "feat(anchor): on-chain anchor for a commitment ID, replacing the trusted artifact host"
   }
 ]
