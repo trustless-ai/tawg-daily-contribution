@@ -336,6 +336,83 @@ async def test_acknowledge_removes_only_the_delivered_event(tmp_path: Path) -> N
 
 
 @pytest.mark.asyncio
+async def test_rejected_announcement_enters_deadletter_and_leaves_pending(
+    tmp_path: Path,
+) -> None:
+    client = GitHubClient()
+    scanner = GitHubAnnouncementScanner(tmp_path, client=client)
+    publish(tmp_path, scanner, await scanner.bootstrap(now=NOW))
+    client.head = "b" * 40
+    client.issue_numbers.append(8)
+    batch = await scanner.scan(now=NOW + timedelta(minutes=30))
+    publish(tmp_path, scanner, batch)
+    rejected = batch.pending[0].event_id
+    rejected_at = NOW + timedelta(minutes=31)
+
+    assert scanner.reject(
+        rejected, "unredacted_personal_data", now=rejected_at
+    ) is True
+    scanner.acknowledge(rejected)
+
+    deadletter = json.loads(
+        (tmp_path / "data/state/github-announcement-deadletter.json").read_text()
+    )
+    assert deadletter == [
+        {
+            "event_id": rejected,
+            "reason_code": "unredacted_personal_data",
+            "rejected_at": "2026-08-29T15:31:00Z",
+        }
+    ]
+    assert scanner.pending() == batch.pending[1:]
+    assert scanner.reject(
+        rejected, "unredacted_personal_data", now=rejected_at
+    ) is False
+    assert len(json.loads(
+        (tmp_path / "data/state/github-announcement-deadletter.json").read_text()
+    )) == 1
+
+
+@pytest.mark.asyncio
+async def test_corrupt_deadletter_state_is_rejected(tmp_path: Path) -> None:
+    client = GitHubClient()
+    scanner = GitHubAnnouncementScanner(tmp_path, client=client)
+    publish(tmp_path, scanner, await scanner.bootstrap(now=NOW))
+    (tmp_path / "data/state/github-announcement-deadletter.json").write_text(
+        "{not-json\n", encoding="utf-8"
+    )
+
+    with pytest.raises(GitHubAnnouncementRejected, match="dead-letter"):
+        scanner.pending()
+    with pytest.raises(GitHubAnnouncementRejected, match="dead-letter"):
+        scanner.deadletter()
+
+
+def test_stuck_health_alerts_only_on_set_change_or_six_hour_timeout(
+    tmp_path: Path,
+) -> None:
+    scanner = GitHubAnnouncementScanner(tmp_path, client=GitHubClient())
+    first = "github-announcement:pr_updated:" + "a" * 24
+    second = "github-announcement:pr_updated:" + "b" * 24
+
+    assert scanner.report_stuck_if_due((first,), now=NOW) is True
+    health = json.loads(
+        (tmp_path / "data/state/github-announcement-health.json").read_text()
+    )
+    assert health == {
+        "reported_event_ids": [first],
+        "last_reported_at": "2026-08-29T15:00:00Z",
+    }
+    assert scanner.report_stuck_if_due((first,), now=NOW + timedelta(hours=1)) is False
+    assert scanner.report_stuck_if_due((first,), now=NOW + timedelta(hours=6)) is True
+    assert scanner.report_stuck_if_due(
+        (first, second), now=NOW + timedelta(hours=6, seconds=1)
+    ) is True
+    assert scanner.report_stuck_if_due((), now=NOW + timedelta(hours=7)) is True
+    assert scanner.report_stuck_if_due((), now=NOW + timedelta(hours=8)) is False
+
+
+@pytest.mark.asyncio
 async def test_invalid_or_incomplete_github_page_fails_without_state_change(
     tmp_path: Path,
 ) -> None:
