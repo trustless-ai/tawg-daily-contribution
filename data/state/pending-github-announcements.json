@@ -88,5 +88,15 @@
     "repository": "trustless-ai/zkIE",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Refactor the proving stack: soundness hardening and performance overhaul"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_merged:518f093e0744725ef82055ed",
+    "kind": "pr_merged",
+    "number": 16,
+    "occurred_at": "2026-11-16T13:53:59Z",
+    "repository": "trustless-ai/tawg-daily-contribution",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "fix: dead-letter terminal GitHub announcements and alert on stuck queue"
   }
 ]
