@@ -175,25 +175,25 @@
     "updated_at": "2026-10-31T16:21:43Z"
   },
   {
-    "metadata_sha256": "8c0de9e4e9f91fced9131666bd98c53702376bf536c48f436afb52be08bfcac0",
+    "metadata_sha256": "140837dcfdff2aaa04debaa5354803244ca8eba99d6eed0d526c870dc7eb96d2",
     "source_key": "magicians-25098",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098",
-    "updated_at": "2026-11-16T16:57:09.866000Z"
+    "updated_at": "2026-11-16T17:37:48.453000Z"
   },
   {
-    "metadata_sha256": "3b251391b36903e753a2985139eae48980ce72fc5eacfc4e81fea52676f92720",
+    "metadata_sha256": "75c9d48face2f130209be8d3e121abef4c59ad20a07389747b26d492d92dca2a",
     "source_key": "magicians-27902",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902",
-    "updated_at": "2026-11-16T16:30:05.443000Z"
+    "updated_at": "2026-11-16T17:22:08.017000Z"
   },
   {
-    "metadata_sha256": "849e54875bb2a4f4bcd16e3666f74a61c2d107380a81a61c1c50a94b92b40a90",
+    "metadata_sha256": "877cdce1850c48442db647f2b04e9a4d5286e6e04434b4aca1fb7eda1ab88f1a",
     "source_key": "magicians-28851",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8312-bounded-agent-actions/28851",
-    "updated_at": "2026-10-10T12:14:24.976000Z"
+    "updated_at": "2026-11-16T17:23:41.656000Z"
   },
   {
     "metadata_sha256": "98be34ed80675aeb23430d48387068061d62aedee8ce0b5cb57c2eac638c1c99",
