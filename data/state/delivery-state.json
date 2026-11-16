@@ -2728,6 +2728,25 @@
     "updated_at": "2026-10-05T01:40:24.550223Z"
   },
   {
+    "content_sha256": "c679feb71759a3965201bb4b0b94e0a41661f5ad8fa24ad57934a7006fd2c094",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:518f093e0744725ef82055ed",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:518f093e0744725ef82055ed",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-16T14:00:46.294572Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/tawg-daily-contribution](https://github.com/trustless-ai/tawg-daily-contribution)\n[#16 fix: dead-letter terminal GitHub announcements and alert on stuck queue](https://github.com/trustless-ai/tawg-daily-contribution/pull/16)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-16T14:00:46.294572Z"
+  },
+  {
     "content_sha256": "56ff04f604d90c1142f207b4f09b5271fcf2bea13d625392fb0842e515666751",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:51e14a66e7865a98bd6a105c",
