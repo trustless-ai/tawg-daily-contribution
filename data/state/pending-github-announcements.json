@@ -88,5 +88,15 @@
     "repository": "trustless-ai/zkIE",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Refactor the proving stack: soundness hardening and performance overhaul"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_merged:ec35ea6ba0ac6c28cbfc3239",
+    "kind": "pr_merged",
+    "number": 15,
+    "occurred_at": "2026-11-16T02:55:41Z",
+    "repository": "trustless-ai/tawg-daily-contribution",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "fix(daily): make citation rejections actionable and self-healing"
   }
 ]
