@@ -15,7 +15,12 @@ import tawg_bot.runtime as runtime_module
 from tawg_bot.bot_router import PreparedReply, ReplyRejected
 from tawg_bot.claude_cli import ClaudeCli as RealClaudeCli
 from tawg_bot.claude_cli import ClaudeCliError, CompletedProcess
-from tawg_bot.daily import DailyRejected, DailyWindow, PreparedDaily
+from tawg_bot.daily import (
+    DailyCitationDiagnostics,
+    DailyRejected,
+    DailyWindow,
+    PreparedDaily,
+)
 from tawg_bot.daily_evidence import DailyEvidence
 from tawg_bot.github_announcements import (
     GitHubAnnouncementBatch,
@@ -1001,6 +1006,45 @@ async def test_scheduled_daily_logs_bounded_validation_code_without_raw_error(
     captured = capsys.readouterr().out
     assert f"code={safe_code}" in captured
     assert sensitive_fragment not in captured
+
+
+@pytest.mark.asyncio
+async def test_scheduled_daily_citation_failure_logs_structural_facts_only(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    scaffold(tmp_path)
+    window = DailyWindow.for_due_run(NOW)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+
+        async def prepare_daily(selected: DailyWindow, *, dry_run: bool) -> PreparedDaily:
+            assert selected == window
+            assert not dry_run
+            raise DailyRejected(
+                "Daily citation references unknown evidence: "
+                "`https://example.invalid/private/path?token=abc`",
+                code="daily_citation_unknown",
+                citation_diagnostics=DailyCitationDiagnostics(
+                    unknown_count=2,
+                    hosts=("example.invalid",),
+                ),
+            )
+
+        monkeypatch.setattr(pipeline, "prepare_daily", prepare_daily)
+        with pytest.raises(RuntimeFailure, match="Daily validation failed"):
+            await pipeline.daily_prepare(window.window_id)
+
+    captured = capsys.readouterr().out
+    assert (
+        "tawg_event=phase_failed phase=daily_validation code=daily_citation_unknown"
+        in captured
+    )
+    assert "unknown_count=2" in captured
+    assert "hosts=example.invalid" in captured
+    assert "private" not in captured
+    assert "token" not in captured
 
 
 @pytest.mark.asyncio
