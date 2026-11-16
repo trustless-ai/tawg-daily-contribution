@@ -443,6 +443,7 @@ def test_modal_deploy_workflow_verifies_before_pinned_least_privilege_deploy() -
     assert deploy_step["env"] == {
         "MODAL_TOKEN_ID": "${{ secrets.MODAL_TOKEN_ID }}",
         "MODAL_TOKEN_SECRET": "${{ secrets.MODAL_TOKEN_SECRET }}",
+        "TAWG_ENTRY_CANDIDATES_ENABLED": "true",
     }
     run_bodies = [step["run"] for step in job["steps"] if "run" in step]
     assert all("${{ secrets." not in run for run in run_bodies)
@@ -596,7 +597,7 @@ def test_dev_deploy_explicitly_enables_entry_candidates() -> None:
         for step in prod["jobs"]["deploy"]["steps"]
         if step.get("name") == "Deploy verified Modal app"
     )
-    assert "TAWG_ENTRY_CANDIDATES_ENABLED" not in prod_step.get("env", {})
+    assert prod_step["env"]["TAWG_ENTRY_CANDIDATES_ENABLED"] == "true"
 
     assert "TAWG_ENTRY_CANDIDATES_ENABLED" in (
         ROOT / "deploy/modal_app.py"
