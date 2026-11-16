@@ -4303,6 +4303,25 @@
     "updated_at": "2026-10-22T21:45:17.162296Z"
   },
   {
+    "content_sha256": "0e5d581e5e18f5b60d68581521a6663c0186a41f5b5023d96ceb65aed4658835",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:ec35ea6ba0ac6c28cbfc3239",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:ec35ea6ba0ac6c28cbfc3239",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-16T03:10:13.836702Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/tawg-daily-contribution](https://github.com/trustless-ai/tawg-daily-contribution)\n[#15 fix\\(daily\\): make citation rejections actionable and self-healing](https://github.com/trustless-ai/tawg-daily-contribution/pull/15)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-16T03:10:13.836702Z"
+  },
+  {
     "content_sha256": "2213b2ed0a00892fce877eb935de6f481695656ad775f4884163320443739d11",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:f1d30260f5b813513cc9b5c5",
