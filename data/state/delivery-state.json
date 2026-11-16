@@ -6697,6 +6697,25 @@
     "updated_at": "2026-11-09T23:20:18.521287Z"
   },
   {
+    "content_sha256": "ccfb2dc9d851f24cddeadde05fb1750793badae8b2e2ddd0b088d93e92c277cc",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:04266f1b52dc393cbe80c890",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:04266f1b52dc393cbe80c890",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-16T14:00:46.294572Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/wyriwe-signing](https://github.com/trustless-ai/wyriwe-signing)\n[#1 PROFILE.md draft 3: authenticated trust roots and execution \\(WG 5962-5967\\)](https://github.com/trustless-ai/wyriwe-signing/pull/1)\nNew commits from [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-16T14:00:46.294572Z"
+  },
+  {
     "content_sha256": "8ca632e22a7ea925674221879d9dd3e226a9d63cc2b6c66a16108b912560acca",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:04cbf7a8dbde7324b9f0daee",
