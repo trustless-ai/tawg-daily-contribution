@@ -13,6 +13,21 @@ from typing import Any
 
 import yaml
 
+_NUMERIC_ID_RANGE = re.compile(r"(\d{4})-(\d{4})")
+
+
+def _is_ascending_numeric_id_range(value: str) -> bool:
+    """Recognise a working-group style ID span such as ``5962-5967``.
+
+    The phone matcher treats any digit run with 8+ digits and an embedded hyphen as a
+    phone number. That misclassifies numeric ranges used in public titles. Only the
+    narrow ascending 4+4 shape is exempt; the classic 3+4 local-number shape
+    (for example ``555-1234``) is not.
+    """
+
+    match = _NUMERIC_ID_RANGE.fullmatch(value)
+    return match is not None and int(match.group(1)) < int(match.group(2))
+
 
 class PrivacyViolation(ValueError):
     """Raised when content is unsafe for a public boundary."""
@@ -48,7 +63,10 @@ class PrivacyResult:
 
 class PrivacyFilter:
     _EMAIL = re.compile(r"(?<![\w.+-])[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}(?![\w.-])", re.I)
-    _PHONE = re.compile(r"(?<!\w)(?!\d{4}-\d{2}-\d{2}\b)\+?\d[\d ()-]{7,}\d(?!\w)")
+    _PHONE = re.compile(
+        r"(?<!\w)(?!\d{4}-\d{2}-\d{2}\b)"
+        r"(?:\+?\d[\d ()-]{7,}\d|\d{3}-\d{4})(?!\w)"
+    )
     _IPV4 = re.compile(
         r"(?<!\d)(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}"
         r"(?:25[0-5]|2[0-4]\d|1?\d?\d)(?!\d)"
@@ -162,6 +180,8 @@ class PrivacyFilter:
 
         def replace_phone(match: re.Match[str]) -> str:
             value = match.group(0)
+            if _is_ascending_numeric_id_range(value):
+                return value
             if any(start <= match.start() and match.end() <= end for start, end in public_urls):
                 return value
             if any(
