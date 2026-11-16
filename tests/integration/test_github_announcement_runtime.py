@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -18,7 +18,7 @@ from tawg_bot.github_announcements import (
     PublicGitHubHttpClient,
 )
 from tawg_bot.runtime import RuntimeFailure, _LivePipeline
-from tawg_bot.telegram_api import SentMessage
+from tawg_bot.telegram_api import SentMessage, TelegramApiAmbiguousError
 from tests.support.runtime_repository import copy_static_runtime_tree
 
 ROOT = Path(__file__).parents[2]
@@ -165,6 +165,10 @@ async def test_delivery_sends_each_pending_announcement_to_configured_topic_and_
         def acknowledge(self, event_id: str) -> None:
             acknowledged.append(event_id)
 
+        def report_stuck_if_due(self, stuck_event_ids: object, *, now: object) -> bool:
+            del stuck_event_ids, now
+            return False
+
     class Api:
         def __init__(self) -> None:
             self.calls: list[tuple[int, str, int | None, int | None]] = []
@@ -224,6 +228,7 @@ async def test_privacy_rejected_announcement_does_not_block_other_delivery(
         occurred_at=NOW,
     )
     acknowledged: list[str] = []
+    dead_lettered: list[tuple[str, str]] = []
 
     class Announcements:
         def pending(self) -> tuple[GitHubAnnouncement, ...]:
@@ -231,6 +236,15 @@ async def test_privacy_rejected_announcement_does_not_block_other_delivery(
 
         def acknowledge(self, event_id: str) -> None:
             acknowledged.append(event_id)
+
+        def reject(self, event_id: str, reason_code: str, *, now: object) -> bool:
+            del now
+            dead_lettered.append((event_id, reason_code))
+            return True
+
+        def report_stuck_if_due(self, stuck_event_ids: object, *, now: object) -> bool:
+            del stuck_event_ids, now
+            return False
 
     class Api:
         def __init__(self) -> None:
@@ -259,7 +273,8 @@ async def test_privacy_rejected_announcement_does_not_block_other_delivery(
 
     assert len(api.calls) == 1
     assert "**New PR**" in api.calls[0][1]
-    assert acknowledged == [event.event_id]
+    assert dead_lettered == [(rejected.event_id, "unredacted_personal_data")]
+    assert acknowledged == [rejected.event_id, event.event_id]
 
 
 @pytest.mark.asyncio
@@ -407,6 +422,144 @@ def test_github_announcement_topic_rejects_missing_or_invalid_configuration(
 
     with pytest.raises(RuntimeFailure, match=name):
         _LivePipeline._github_announcement_topic_id()
+
+
+def seed_pending(root: Path, events: tuple[GitHubAnnouncement, ...]) -> None:
+    (root / "data/state/pending-github-announcements.json").write_text(
+        json.dumps([event.model_dump(mode="json") for event in events]) + "\n",
+        encoding="utf-8",
+    )
+
+
+@pytest.mark.asyncio
+async def test_privacy_rejected_announcement_is_dead_lettered_and_logged_once(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    scaffold(tmp_path)
+    rejected = GitHubAnnouncement(
+        event_id="github-announcement:issue_opened:" + "f" * 24,
+        kind=GitHubAnnouncementKind.ISSUE_OPENED,
+        repository="trustless-ai/agent-sdk",
+        number=30,
+        title="Contact private@example.com for access",
+        author_login="alice-dev",
+        occurred_at=NOW,
+    )
+    seed_pending(tmp_path, (rejected,))
+
+    class Api:
+        def __init__(self) -> None:
+            self.calls: list[tuple[int, str, int | None, int | None]] = []
+
+        async def send_message(
+            self,
+            chat_id: int,
+            text: str,
+            reply_to_message_id: int | None = None,
+            message_thread_id: int | None = None,
+        ) -> SentMessage:
+            self.calls.append((chat_id, text, reply_to_message_id, message_thread_id))
+            return SentMessage(message_id=906, chat_id=chat_id)
+
+    api = Api()
+    monkeypatch.setenv("TAWG_TELEGRAM_CHAT_ID", "-10077")
+    monkeypatch.setenv("TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID", "3788")
+    monkeypatch.setattr(runtime_module.TelegramApi, "from_env", lambda **kwargs: api)
+
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        await pipeline.telegram_delivery()
+        first_output = capsys.readouterr().out
+        await pipeline.telegram_delivery()
+        second_output = capsys.readouterr().out
+
+    assert api.calls == []
+    assert json.loads(
+        (tmp_path / "data/state/pending-github-announcements.json").read_text()
+    ) == []
+    deadletter = json.loads(
+        (tmp_path / "data/state/github-announcement-deadletter.json").read_text()
+    )
+    assert [item["event_id"] for item in deadletter] == [rejected.event_id]
+    assert deadletter[0]["reason_code"] == "unredacted_personal_data"
+    assert deadletter[0]["rejected_at"].endswith("Z")
+    assert first_output.count("announcement_rejected") == 1
+    assert "reason_code=unredacted_personal_data" in first_output
+    assert "announcement_rejected" not in second_output
+
+
+@pytest.mark.asyncio
+async def test_stuck_announcements_are_not_resent_and_alert_is_deduplicated(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    scaffold(tmp_path)
+    first = GitHubAnnouncement(
+        event_id="github-announcement:pr_updated:" + "1" * 24,
+        kind=GitHubAnnouncementKind.PR_UPDATED,
+        repository="trustless-ai/zkIE",
+        number=45,
+        title="Soundness repair",
+        author_login="alice-dev",
+        occurred_at=NOW,
+    )
+    second = GitHubAnnouncement(
+        event_id="github-announcement:pr_updated:" + "2" * 24,
+        kind=GitHubAnnouncementKind.PR_UPDATED,
+        repository="trustless-ai/zkIE",
+        number=47,
+        title="Proving stack refactor",
+        author_login="bob-dev",
+        occurred_at=NOW,
+    )
+    seed_pending(tmp_path, (first, second))
+
+    class AmbiguousApi:
+        def __init__(self) -> None:
+            self.calls: list[tuple[int, str, int | None, int | None]] = []
+
+        async def send_message(
+            self,
+            chat_id: int,
+            text: str,
+            reply_to_message_id: int | None = None,
+            message_thread_id: int | None = None,
+        ) -> SentMessage:
+            self.calls.append((chat_id, text, reply_to_message_id, message_thread_id))
+            raise TelegramApiAmbiguousError("Telegram outcome is unknown")
+
+    api = AmbiguousApi()
+    monkeypatch.setenv("TAWG_TELEGRAM_CHAT_ID", "-10077")
+    monkeypatch.setenv("TAWG_TELEGRAM_GITHUB_ANNOUNCEMENT_TOPIC_ID", "3788")
+    monkeypatch.setattr(runtime_module.TelegramApi, "from_env", lambda **kwargs: api)
+
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+        await pipeline.telegram_delivery()
+        first_output = capsys.readouterr().out
+        assert len(api.calls) == 2
+
+        pipeline.now = NOW + timedelta(minutes=1)
+        await pipeline.telegram_delivery()
+        second_output = capsys.readouterr().out
+        assert len(api.calls) == 2
+
+        pipeline.now = NOW + timedelta(hours=6, minutes=1)
+        await pipeline.telegram_delivery()
+        third_output = capsys.readouterr().out
+        assert len(api.calls) == 2
+
+    assert first_output.count("announcement_stuck") == 1
+    assert "count=2" in first_output
+    assert "telegram_outcome_unknown:2" in first_output
+    assert "announcement_stuck" not in second_output
+    assert third_output.count("announcement_stuck") == 1
+    assert json.loads(
+        (tmp_path / "data/state/pending-github-announcements.json").read_text()
+    ) == [first.model_dump(mode="json"), second.model_dump(mode="json")]
 
 
 @pytest.mark.asyncio

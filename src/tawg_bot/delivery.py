@@ -38,6 +38,12 @@ from tawg_bot.unit_of_work import RepositoryUnitOfWork, safe_operation_id
 class DeliveryRejected(ValueError):
     """Raised before Telegram is called when an intent is unsafe."""
 
+    code: str | None
+
+    def __init__(self, message: str, *, code: str | None = None) -> None:
+        super().__init__(message)
+        self.code = code
+
 
 class DeliveryFailed(RuntimeError):
     """Raised for an explicit, safely retryable delivery failure."""
@@ -118,8 +124,11 @@ class DeliveryService:
         messages = self._split(text)
         try:
             self.privacy.assert_public(text)
-        except PrivacyViolation:
-            raise DeliveryRejected("delivery text failed privacy validation") from None
+        except PrivacyViolation as error:
+            raise DeliveryRejected(
+                "delivery text failed privacy validation",
+                code=str(error),
+            ) from None
         content_sha = hashlib.sha256(text.encode("utf-8")).hexdigest()
         attempts = self._load_attempts()
         existing = attempts.get(job_id)
@@ -186,8 +195,11 @@ class DeliveryService:
         )
         try:
             self.privacy.assert_public(text)
-        except PrivacyViolation:
-            raise DeliveryRejected("delivery text failed final privacy validation") from None
+        except PrivacyViolation as error:
+            raise DeliveryRejected(
+                "delivery text failed final privacy validation",
+                code=str(error),
+            ) from None
         if job_id.startswith(self._MEMBER_JOB_PREFIXES):
             self._require_active_member_intent(
                 self._load_jobs_if_present(),
@@ -362,12 +374,20 @@ class DeliveryService:
                 max_messages=self._MAX_MESSAGES,
             )
         except (TelegramTextSplitError, ValueError):
-            raise DeliveryRejected("delivery cannot fit in at most two Telegram messages") from None
+            raise DeliveryRejected(
+                "delivery cannot fit in at most two Telegram messages",
+                code="delivery_split_invalid",
+            ) from None
 
     @staticmethod
     def _actual_delivery_format(sent: list[SentMessage]) -> str:
         delivery_formats = {item.delivery_format for item in sent}
         return next(iter(delivery_formats)) if len(delivery_formats) == 1 else "mixed_v1"
+
+    def attempt(self, job_id: str) -> DeliveryAttempt | None:
+        """Return the durable delivery attempt recorded for ``job_id``, if any."""
+
+        return self._load_attempts().get(job_id)
 
     def _load_attempts(self) -> dict[str, DeliveryAttempt]:
         path = self.root / self._state_path

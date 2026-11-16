@@ -11,7 +11,7 @@ from collections.abc import Iterable, Mapping
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
 from pathlib import Path
-from typing import Any, Literal, Protocol, cast
+from typing import Annotated, Any, Literal, Protocol, cast
 from urllib.parse import quote
 
 import httpx
@@ -22,6 +22,8 @@ from tawg_bot.models import StrictModel
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
 _REPOSITORY = re.compile(r"^trustless-ai/[A-Za-z0-9_.-]{1,100}$")
+_ANNOUNCEMENT_EVENT_ID_PATTERN = r"^github-announcement:[a-z_]+:[a-f0-9]{24}$"
+_AnnouncementEventId = Annotated[str, Field(pattern=_ANNOUNCEMENT_EVENT_ID_PATTERN)]
 _LOGIN = re.compile(r"^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?(?:\[bot\])?$")
 _GIT_SHA = re.compile(r"^[a-f0-9]{40,64}$")
 _MAX_GITHUB_PAGES = 10
@@ -260,7 +262,7 @@ class GitHubAnnouncementState(StrictModel):
 
 class GitHubAnnouncement(StrictModel):
     schema_version: Literal["tawg.github-announcement.v1"] = "tawg.github-announcement.v1"
-    event_id: str = Field(pattern=r"^github-announcement:[a-z_]+:[a-f0-9]{24}$")
+    event_id: _AnnouncementEventId
     kind: GitHubAnnouncementKind
     repository: str = Field(pattern=_REPOSITORY.pattern)
     number: int = Field(ge=1)
@@ -281,11 +283,36 @@ class GitHubAnnouncementBatch(StrictModel):
     pending: tuple[GitHubAnnouncement, ...]
 
 
+class GitHubAnnouncementDeadLetter(StrictModel):
+    """Terminal, privacy-rejected announcement retained for operator review."""
+
+    event_id: _AnnouncementEventId
+    reason_code: str = Field(min_length=1, max_length=128)
+    rejected_at: datetime
+
+    _rejected_at_utc = field_validator("rejected_at")(_require_utc)
+
+
+class GitHubAnnouncementHealth(StrictModel):
+    """Persistent watermark for the ``announcement_stuck`` operator alert."""
+
+    reported_event_ids: tuple[_AnnouncementEventId, ...] = ()
+    last_reported_at: datetime | None = None
+
+    @field_validator("last_reported_at")
+    @classmethod
+    def last_reported_at_is_utc(cls, value: datetime | None) -> datetime | None:
+        return None if value is None else _require_utc(value)
+
+
 class GitHubAnnouncementScanner:
     """Fetch public organization metadata and stage a retry-safe announcement queue."""
 
     STATE_PATH = "data/state/github-announcement-state.json"
     PENDING_PATH = "data/state/pending-github-announcements.json"
+    DEADLETTER_PATH = "data/state/github-announcement-deadletter.json"
+    HEALTH_PATH = "data/state/github-announcement-health.json"
+    HEALTH_REPORT_INTERVAL = timedelta(hours=6)
 
     def __init__(
         self,
@@ -343,7 +370,7 @@ class GitHubAnnouncementScanner:
             [item.model_dump(mode="json") for item in batch.pending],
         )
 
-    def pending(self) -> tuple[GitHubAnnouncement, ...]:
+    def _load_pending(self) -> tuple[GitHubAnnouncement, ...]:
         path = self.root / self.PENDING_PATH
         try:
             if path.is_symlink() or not path.is_file():
@@ -360,8 +387,128 @@ class GitHubAnnouncementScanner:
             raise GitHubAnnouncementRejected("pending GitHub announcements are duplicated")
         return pending
 
+    def pending(self) -> tuple[GitHubAnnouncement, ...]:
+        pending = self._load_pending()
+        deadlettered = {item.event_id for item in self.deadletter()}
+        return tuple(item for item in pending if item.event_id not in deadlettered)
+
+    def deadletter(self) -> tuple[GitHubAnnouncementDeadLetter, ...]:
+        """Return terminal announcement rejections (empty when never recorded)."""
+
+        path = self.root / self.DEADLETTER_PATH
+        if not path.exists():
+            return ()
+        try:
+            if path.is_symlink() or not path.is_file():
+                raise OSError
+            raw = json.loads(path.read_text(encoding="utf-8"))
+            if not isinstance(raw, list):
+                raise ValueError
+            entries = tuple(
+                GitHubAnnouncementDeadLetter.model_validate(item) for item in raw
+            )
+        except (OSError, UnicodeError, ValueError, ValidationError, json.JSONDecodeError):
+            raise GitHubAnnouncementRejected(
+                "GitHub announcement dead-letter state is invalid"
+            ) from None
+        if len({item.event_id for item in entries}) != len(entries):
+            raise GitHubAnnouncementRejected(
+                "dead-lettered GitHub announcements are duplicated"
+            )
+        return entries
+
+    def reject(self, event_id: str, reason_code: str, *, now: datetime) -> bool:
+        """Record a terminal rejection, returning ``True`` only the first time."""
+
+        _require_utc(now)
+        entries = self.deadletter()
+        if any(item.event_id == event_id for item in entries):
+            return False
+        try:
+            entry = GitHubAnnouncementDeadLetter(
+                event_id=event_id,
+                reason_code=reason_code,
+                rejected_at=now,
+            )
+        except ValidationError:
+            raise GitHubAnnouncementRejected(
+                "GitHub announcement rejection is invalid"
+            ) from None
+        updated = tuple(
+            sorted(
+                (*entries, entry),
+                key=lambda item: (item.rejected_at, item.event_id),
+            )
+        )
+        digest = hashlib.sha256(event_id.encode("utf-8")).hexdigest()[:24]
+        uow = RepositoryUnitOfWork(
+            self.root,
+            operation_id=f"github-announcement-deadletter:{digest}",
+        )
+        uow.register_external_evidence(())
+        uow.stage_json(
+            self.DEADLETTER_PATH,
+            [item.model_dump(mode="json") for item in updated],
+        )
+        uow.publish()
+        return True
+
+    def health(self) -> GitHubAnnouncementHealth:
+        """Return the last stuck-announcement report watermark."""
+
+        path = self.root / self.HEALTH_PATH
+        if not path.exists():
+            return GitHubAnnouncementHealth()
+        try:
+            if path.is_symlink() or not path.is_file():
+                raise OSError
+            raw = path.read_text(encoding="utf-8")
+            return GitHubAnnouncementHealth.model_validate_json(raw)
+        except (OSError, UnicodeError, ValidationError):
+            raise GitHubAnnouncementRejected(
+                "GitHub announcement health state is invalid"
+            ) from None
+
+    def report_stuck_if_due(
+        self,
+        stuck_event_ids: Iterable[str],
+        *,
+        now: datetime,
+    ) -> bool:
+        """Persist a stuck-set snapshot and say whether an alert should be emitted.
+
+        Alerts fire only when the set of stuck announcements changes or when the same
+        non-empty set has gone unreported for ``HEALTH_REPORT_INTERVAL``. Empty sets
+        that were already empty stay silent so a healthy tick logs nothing.
+        """
+
+        _require_utc(now)
+        current = tuple(sorted(set(stuck_event_ids)))
+        previous = self.health()
+        previous_ids = frozenset(previous.reported_event_ids)
+        current_ids = frozenset(current)
+        changed = current_ids != previous_ids
+        overdue = bool(current) and (
+            previous.last_reported_at is None
+            or now - previous.last_reported_at >= self.HEALTH_REPORT_INTERVAL
+        )
+        if not (changed and (current or previous_ids)) and not overdue:
+            return False
+        report = GitHubAnnouncementHealth(
+            reported_event_ids=current,
+            last_reported_at=now,
+        )
+        uow = RepositoryUnitOfWork(
+            self.root,
+            operation_id=f"github-announcement-health:{int(now.timestamp())}",
+        )
+        uow.register_external_evidence(())
+        uow.stage_json(self.HEALTH_PATH, report.model_dump(mode="json"))
+        uow.publish()
+        return True
+
     def acknowledge(self, event_id: str) -> None:
-        pending = self.pending()
+        pending = self._load_pending()
         remaining = tuple(item for item in pending if item.event_id != event_id)
         if len(remaining) == len(pending):
             return

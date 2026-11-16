@@ -1358,6 +1358,7 @@ class _LivePipeline:
         self.delivery_failed_job_ids = set()
         self.delivery_rejected_job_ids = set()
         pending_announcements = self.github_announcements.pending()
+        stuck_announcements: dict[str, str] = {}
         announcement_topic_id: int | None = None
         if pending_announcements:
             try:
@@ -1376,13 +1377,43 @@ class _LivePipeline:
                     message_thread_id=announcement_topic_id,
                     now=self.now,
                 )
-            except DeliveryRejected:
-                # A privacy (or other pre-send) rejection is terminal for this text but
-                # must not fail the whole tick; keep the event pending so an operator can
-                # investigate, and keep delivering the remaining announcements.
-                _safe_log("github_announcement_delivery", "announcement_rejected")
+            except DeliveryRejected as error:
+                # A pre-send rejection is terminal for this text: the rendered
+                # announcement can never become safe on a later tick. Dead-letter it,
+                # acknowledge it, and log only the first rejection so the queue cannot
+                # retry (and log) forever.
+                reason_code = error.code or "delivery_rejected"
+                first_rejection = self.github_announcements.reject(
+                    event.event_id,
+                    reason_code,
+                    now=self.now,
+                )
+                self.github_announcements.acknowledge(event.event_id)
+                digest = event.event_id.rsplit(":", 1)[-1]
+                await self.checkpoint.publish(
+                    f"github-announcement-deadletter:{digest}",
+                    self.root,
+                )
+                if first_rejection:
+                    _safe_log(
+                        "github_announcement_delivery",
+                        "announcement_rejected",
+                        reason_code=reason_code,
+                    )
                 continue
-            except (DeliveryAmbiguous, DeliveryFailed):
+            except (DeliveryAmbiguous, DeliveryFailed) as error:
+                # Never resend: these may already be visible in the group. Keep the
+                # event pending for operator review and report the stuck-set instead.
+                try:
+                    attempt = delivery.attempt(event.event_id)
+                except DeliveryRejected:
+                    attempt = None
+                safe_code = attempt.safe_error_code if attempt is not None else None
+                stuck_announcements[event.event_id] = safe_code or (
+                    "delivery_ambiguous"
+                    if isinstance(error, DeliveryAmbiguous)
+                    else "delivery_failed"
+                )
                 continue
             self.github_announcements.acknowledge(event.event_id)
             digest = event.event_id.rsplit(":", 1)[-1]
@@ -1390,6 +1421,8 @@ class _LivePipeline:
                 f"github-announcement-ack:{digest}",
                 self.root,
             )
+        if announcement_topic_id is not None or not pending_announcements:
+            await self._report_stuck_announcements(stuck_announcements)
         for reply in self.prepared_replies:
             try:
                 await delivery.deliver(
@@ -1430,6 +1463,33 @@ class _LivePipeline:
                 # Retryable/ambiguous daily failures must not brick the tick either; the
                 # attempt stays in delivery-state for operator review.
                 pass
+
+    async def _report_stuck_announcements(self, stuck: dict[str, str]) -> None:
+        """Emit one structured alert when the pending-stuck set changes or ages out."""
+
+        if not self.github_announcements.report_stuck_if_due(stuck, now=self.now):
+            return
+        ordered = sorted(stuck)
+        displayed = [event_id.rsplit(":", 1)[-1][:8] for event_id in ordered[:8]]
+        if len(ordered) > len(displayed):
+            displayed.append(f"+{len(ordered) - len(displayed)}")
+        distribution: dict[str, int] = {}
+        for code in stuck.values():
+            distribution[code] = distribution.get(code, 0) + 1
+        _safe_log(
+            "github_announcement_delivery",
+            "announcement_stuck",
+            count=len(stuck),
+            event_ids=",".join(displayed) or "none",
+            error_codes=",".join(
+                f"{code}:{count}" for code, count in sorted(distribution.items())
+            )
+            or "none",
+        )
+        await self.checkpoint.publish(
+            f"github-announcement-health:{int(self.now.timestamp())}",
+            self.root,
+        )
 
     async def maybe_ask_busy_question(self, now: datetime) -> None:
         """Ask another bot a short "what happened" question when the group got busy.

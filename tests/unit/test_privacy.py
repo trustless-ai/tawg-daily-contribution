@@ -41,6 +41,38 @@ def test_dash_delimited_unix_timestamp_is_not_redacted_as_phone(
     assert result.sanitized_text == value
 
 
+def test_working_group_numeric_range_is_not_a_phone(redactor: PrivacyFilter) -> None:
+    text = (
+        "PROFILE.md draft 3: authenticated trust roots and execution "
+        "(WG 5962-5967)"
+    )
+
+    result = redactor.inspect(text)
+
+    assert result.accepted is True
+    assert result.sanitized_text == text
+    redactor.assert_public(text)
+
+
+@pytest.mark.parametrize(
+    "phone",
+    (
+        "010-12345678",
+        "+86 138 0000 0000",
+        "555-1234-999",
+        "555-1234",
+    ),
+)
+def test_numeric_range_exemption_keeps_phone_shapes_redacted(
+    redactor: PrivacyFilter,
+    phone: str,
+) -> None:
+    result = redactor.inspect(f"Call {phone} now")
+
+    assert phone not in result.sanitized_text
+    assert "[REDACTED_PHONE]" in result.sanitized_text
+
+
 def test_rejected_text_is_not_copied_into_failure_record(redactor: PrivacyFilter) -> None:
     source = "seed phrase: alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima"
     result = redactor.inspect(source)
