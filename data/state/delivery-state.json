@@ -1531,6 +1531,48 @@
     "updated_at": "2026-11-09T23:00:11.232252Z"
   },
   {
+    "content_sha256": "d79391ad1a713a80ee5c4f34715ea5ddac3ca25fcc580196310afba7718dbcfc",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-11-13T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-11-13T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-13T23:04:14.234886Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-11-12 23:00 → 2026-11-13 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Proving stack refactor proposed** — soundness hardening and a performance overhaul arrived together in one reviewable change for the group's proving work. [zkIE PR #47](https://github.com/trustless-ai/zkIE/pull/47)\n\n> **Evaluation semantics sharpened** — the ERC-8183 thread pinned down the difference between a check that leaves no record and a dedicated record for checks that could not run. [ERC-8183 post 457](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/457)\n\n> **Provable inference lead surfaced** — a paper on an open-source library for provable inference, with its protocol formalized in Lean, drew fast technical framing from the group. [tg:tawg:6375]\n\n## 🤝 **What moved**\n\n### proving stack\n\n_The proving work moved from planned hardening into a concrete, reviewable change._\n\n- Jimmy Shi **proposed** a refactor that pairs soundness hardening with a performance overhaul of the proving stack, giving reviewers one surface for both security and speed work on the infrastructure behind verifiable inference. [zkIE PR #47](https://github.com/trustless-ai/zkIE/pull/47)\n\n### ERC-8183\n\n_The evaluation-record conversation sharpened around what silence and explicit gaps actually mean._\n\n- achemperety **isolated** the case where a check that cannot run leaves no record at all and asked what that silence should mean for anyone reading an agent's history, a gap that becomes load-bearing once agentic commerce leans on these logs. [ERC-8183 post 456](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/456)\n\n- nicholasparker **closed** the loop by noting that a dedicated record for unrun checks only helps if the evaluator actually submits it, surfacing the incentive question that separates a spec field from a dependable audit trail. [ERC-8183 post 457](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/457)\n\n### research\n\n_A shared paper turned into shared context._\n\n- Jimmy Shi (@jimmyshi) **shared** a FlashProve paper on an open-source library for provable inference, putting a concrete reference design in front of the group's own verification work. [tg:tawg:6373]\n\n- Merlini (@gobross) **framed** it as a strong result, pointing to work from Chiesa and Anthropic on a succinct inference argument for a real 400B mixture-of-experts model with the protocol proved in Lean, which turns a link into a benchmark for how far the group's approach can reach. [tg:tawg:6375]\n\n### daily bot\n\n_The Daily's own feedback loop moved toward self-correction._\n\n- Jimmy Shi **proposed** a fix that makes citation rejections actionable and self-healing, so a rejected Daily can correct itself instead of stalling, which keeps the group's shared record of progress flowing with less manual intervention. [Daily bot PR #15](https://github.com/trustless-ai/tawg-daily-contribution/pull/15)\n\n### onboarding\n\n_A new arrival got a real welcome._\n\n- Merlini (@gobross) **greeted** the group's newest member and pointed them at the bot's intro as an easy entry point, lowering the friction for a newcomer to find their footing. [tg:tawg:6360]\n\n- Pavlo (@pavlentyy82) **welcomed** them with a warm personal hello, turning a routine join into a real introduction that makes people likelier to stay engaged. [tg:tawg:6369]\n\n- 𝐆𝐄𝐄𝐊𓃵 (@superman_i4g) **replied** with thanks and clear enthusiasm, closing the welcome loop and signalling an engaged new participant for the group. [tg:tawg:6370]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- What a silent gap in evaluation records should mean for downstream readers of an agent's history, and whether the spec text can carry that answer instead of thread replies.\n- Whether the Lean-formalized inference argument behind the FlashProve work suggests techniques the group's own proving stack could adopt.\n- How the Daily should decide when a citation rejection is recoverable feedback versus a genuine stop.\n\n### ✅ **TODOs**\n\n- Review the proving refactor for soundness gaps before relying on the performance numbers attached to it.\n- Settle whether ERC-8183 should require an explicit unrun-check record or leave submission to the evaluator's discretion.\n- Give the newest member a small concrete task so the welcome converts into a contribution.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A paper landed in the chat and was picked up soon after, decoded into plain terms, and tied back to the group's own work, a tidy relay from curiosity to shared understanding.\n>\n> Keep that habit going: toss ideas into the room and trust someone to catch them, turn them over, and send them back sharper. 🧩",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-13T23:04:14.234886Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6377
+    ],
+    "updated_at": "2026-11-13T23:04:14.234886Z"
+  },
+  {
+    "content_sha256": "d39858310c39fdd91b365297fbb29244bb5ce942c34a8480a3a690bade8f46cc",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-11-14T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-11-14T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-14T23:00:24.097207Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-11-13 23:00 → 2026-11-14 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Anchoring entered review** — a proposed ownerless registry would pin each commitment identifier on-chain, replacing the trusted service that used to hold artifacts. [PR #2](https://github.com/trustless-ai/flashprove-onchain-verifier/pull/2)\n\n> **The prove/verify split gained real parts** — proving mapped to FlashProve and zkIE, verification to recompute-kit receipts, so the framing can now be inspected piece by piece. [tg:tawg:6378]\n\n> **A missing record got a clear reading** — a reply confirmed that a record which never showed up holds no state at all, keeping absence from being mistaken for a result. [post 459](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/459)\n\n## 🤝 **What moved**\n\n### flashprove-onchain-verifier\n_The anchoring idea moved from chat into a reviewable change._\n\n- Baby Blue Viper **Opened** a change that anchors each commitment identifier on-chain through an ownerless registry, retiring the trusted service that stored artifacts for the verifier, so a commitment no longer resolves through a party the group has to trust. [tg:tawg:6381]\n- Jimmy Shi (@jimmyshi) **Flagged** the FlashProve repository as the place to check the proposal against, giving reviewers working code context so the anchor design is tested against the real verifier path instead of staying abstract. [tg:tawg:6380]\n\n### prove-and-verify-framing\n_The split gained concrete parts and sharper limits._\n\n- Merlini (@gobross) **Connected** the two extensions to limitations FlashProve names about itself, noting that each retires a named constraint, including the trust currently placed in logging, which gives the design a falsifiable account of what it improves. [tg:tawg:6379]\n\n### ERC-8183\n_Discussion narrowed how an outcome that never completed should be read._\n\n- predge-ai **Sharpened** the check question for jobs that run over time, showing that where inside the run a verdict is evaluated changes what it means, which matters for agentic commerce flows that span time. [post 458](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/458)\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n- Whether the anchor should also capture enough context to reconstruct later which verifier version produced a commitment.\n- Whether a check on a long-running job should carry the time it was requested or the time its window closed.\n- How recompute-kit receipts should present the proving side so the component map survives contact with real artifacts.\n\n### ✅ **TODOs**\n- Review the anchor change against the verifier flow and note where the old trusted-host assumption still leaks.\n- Write the component map down where newcomers can find FlashProve, zkIE, and recompute-kit without asking.\n- Turn the missing-record conclusion into spec language so implementers treat absence as its own case.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A framing message became a repository pointer, and that pointer landed as an open change before the day was out — one conversation completing a full loop.\n>\n> Keep that handoff rhythm going, team: when the pieces know where they belong, the whole thing verifies itself. 🎉",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-14T23:00:24.097207Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6383
+    ],
+    "updated_at": "2026-11-14T23:00:24.097207Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
@@ -4702,6 +4744,27 @@
     "updated_at": "2026-09-09T15:50:18.861964Z"
   },
   {
+    "content_sha256": "1bc66da39d2b5315cecc3ffb42393cce241a03d7c333d34486612ab949971d51",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:2269150085543753b28411bc",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:2269150085543753b28411bc",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-13T00:20:15.457220Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/tawg-daily-contribution](https://github.com/trustless-ai/tawg-daily-contribution)\n[#15 fix\\(daily\\): make citation rejections actionable and self-healing](https://github.com/trustless-ai/tawg-daily-contribution/pull/15)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-13T00:20:15.457220Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6357
+    ],
+    "updated_at": "2026-11-13T00:20:15.457220Z"
+  },
+  {
     "content_sha256": "502bfc74a761e732ed438732d4b63b4c08fcae7380eb1a5d19e5514e39bd590e",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:22b67e22240606fa79097492",
@@ -5204,6 +5267,27 @@
       5887
     ],
     "updated_at": "2026-10-27T16:10:14.030028Z"
+  },
+  {
+    "content_sha256": "8a6f6448dbbe39759fa40a1e32a2525a41b86ff9d60b166842808c2f8a04ed6e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:61825d16d843b1da722a106a",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:61825d16d843b1da722a106a",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-14T18:55:15.522571Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/flashprove-onchain-verifier](https://github.com/trustless-ai/flashprove-onchain-verifier)\n[#2 feat\\(anchor\\): on-chain anchor for a commitment ID, replacing the trusted artifact host](https://github.com/trustless-ai/flashprove-onchain-verifier/pull/2)\nOpened by [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-14T18:55:15.522571Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6382
+    ],
+    "updated_at": "2026-11-14T18:55:15.522571Z"
   },
   {
     "content_sha256": "f79182a2be71cf8b2dbbb095cf923f3ec0bb380d540c229aa01fe5c5b035d902",
@@ -6863,6 +6947,25 @@
       5644
     ],
     "updated_at": "2026-10-21T00:55:13.364802Z"
+  },
+  {
+    "content_sha256": "6bfb89225b9c8c5392677a11ae288612e1ab3ac31589fdde717a6a29be3bc3b4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:1737dc004764faa6f0143647",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:1737dc004764faa6f0143647",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-13T20:40:18.825243Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#47 Refactor the proving stack: soundness hardening and performance overhaul](https://github.com/trustless-ai/zkIE/pull/47)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": "telegram_outcome_unknown",
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "ambiguous",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-13T20:40:18.825243Z"
   },
   {
     "content_sha256": "2914a98647f2f7e762f67743de45abf0be7a96abba9af0623365a1827dbae2cc",
@@ -9150,6 +9253,27 @@
     "updated_at": "2026-09-10T15:40:15.011648Z"
   },
   {
+    "content_sha256": "6bfb89225b9c8c5392677a11ae288612e1ab3ac31589fdde717a6a29be3bc3b4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:6c2b364a51c484962f690c7e",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:6c2b364a51c484962f690c7e",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-13T12:15:18.360588Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#47 Refactor the proving stack: soundness hardening and performance overhaul](https://github.com/trustless-ai/zkIE/pull/47)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-13T12:15:18.360588Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6371
+    ],
+    "updated_at": "2026-11-13T12:15:18.360588Z"
+  },
+  {
     "content_sha256": "e6b671c60fc34b254adce8ddd74a029fb41bf8d75c19a23842cf039459335da5",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:6e38066843b747f70bb024a4",
@@ -9234,6 +9358,27 @@
     "updated_at": "2026-11-05T05:35:12.786645Z"
   },
   {
+    "content_sha256": "6bfb89225b9c8c5392677a11ae288612e1ab3ac31589fdde717a6a29be3bc3b4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:70bf13a8b9f7d75604a95838",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:70bf13a8b9f7d75604a95838",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-13T10:05:17.056013Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#47 Refactor the proving stack: soundness hardening and performance overhaul](https://github.com/trustless-ai/zkIE/pull/47)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-13T10:05:17.056013Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6367
+    ],
+    "updated_at": "2026-11-13T10:05:17.056013Z"
+  },
+  {
     "content_sha256": "35f2d417ad1669bb1df42ff7a504cf4f1d3a6dbf44a6cf36cd1f75ede7901bc0",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:726a4eb9d79b9c8ace88c7b7",
@@ -9295,6 +9440,27 @@
       5732
     ],
     "updated_at": "2026-10-23T23:05:37.636969Z"
+  },
+  {
+    "content_sha256": "6bfb89225b9c8c5392677a11ae288612e1ab3ac31589fdde717a6a29be3bc3b4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:733717b9047c42d96363d90d",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:733717b9047c42d96363d90d",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-13T14:00:33.939161Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/zkIE](https://github.com/trustless-ai/zkIE)\n[#47 Refactor the proving stack: soundness hardening and performance overhaul](https://github.com/trustless-ai/zkIE/pull/47)\nNew commits from [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-13T14:00:33.939161Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6372
+    ],
+    "updated_at": "2026-11-13T14:00:33.939161Z"
   },
   {
     "content_sha256": "35f2d417ad1669bb1df42ff7a504cf4f1d3a6dbf44a6cf36cd1f75ede7901bc0",
@@ -12607,6 +12773,27 @@
     "updated_at": "2026-11-06T02:55:08.560528Z"
   },
   {
+    "content_sha256": "87b5fe1cd1211a5e7826ad71651cf96254588fe94eaa0c500ae5a09620f47d7d",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:f72cf3b88b88b8e4506a1b8e",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:f72cf3b88b88b8e4506a1b8e",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-15T01:30:20.738212Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/flashprove-onchain-verifier](https://github.com/trustless-ai/flashprove-onchain-verifier)\n[#2 feat\\(anchor\\): on-chain anchor for a commitment ID, replacing the trusted artifact host](https://github.com/trustless-ai/flashprove-onchain-verifier/pull/2)\nNew commits from [babyblueviper1](https://github.com/babyblueviper1)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-15T01:30:20.738212Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6384
+    ],
+    "updated_at": "2026-11-15T01:30:20.738212Z"
+  },
+  {
     "content_sha256": "93d783742febd6dacefde41c26ca8344cddad1f1bc61146195df55093aae93bd",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:f8874fd20deb85da6e0cfbf7",
@@ -12922,6 +13109,27 @@
     "updated_at": "2026-10-16T00:56:31.293607Z"
   },
   {
+    "content_sha256": "32fabbacbbea4b34fe824e2ed855590f2e166555578d5f9a3b084ed5a8e81497",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "member-introduction:𝐆𝐄𝐄𝐊𓃵",
+    "destination": "tawg",
+    "job_id": "member-introduction:𝐆𝐄𝐄𝐊𓃵",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-13T10:00:28.661012Z",
+    "reply_text": "@SUPERMAN_I4G That heart says it all — the pleasure's absolutely mutual, and we're glad you found your way here. 🙌\n\nA bit about the place you've walked into: Trustless AI didn't get designed in a boardroom. It grew organically from people scattered around the world who ran into each other through open-source repos and ERC work — builders, researchers, reviewers, EIP authors — and kept turning half-formed ideas into research, standards, review threads, and implementations that actually run. What ties it all together is a simple shift: away from \"trust me,\" toward AI and blockchain results that anyone can independently inspect, verify, or recompute.\n\nSo there's no form to fill out and no ladder to climb. Talk, ask the question you think is too basic, push back on something, pitch an idea you've been chewing on, or just grab whichever thread looks interesting and pull — that's genuinely how everyone else started. Settle in, and shout whenever you want to dig into something.",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-13T10:00:28.661012Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6366
+    ],
+    "updated_at": "2026-11-13T10:00:28.661012Z"
+  },
+  {
     "content_sha256": "b632f6e2c9541d4527b8cd1c4a3e1e661f0fef1709ffa08aee718de11117901c",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "member-welcome:asher-li",
@@ -13046,6 +13254,27 @@
       5555
     ],
     "updated_at": "2026-10-16T00:56:15.279062Z"
+  },
+  {
+    "content_sha256": "59c22495f5c7004599dfc000b0fb4c4d573e57420bc441a112f4bf07276cf132",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "member-welcome:𝐆𝐄𝐄𝐊𓃵",
+    "destination": "tawg",
+    "job_id": "member-welcome:𝐆𝐄𝐄𝐊𓃵",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-13T09:56:04.784129Z",
+    "reply_text": "@SUPERMAN_I4G Welcome to Trustless AI! 👋",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-13T09:56:04.784129Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6365
+    ],
+    "updated_at": "2026-11-13T09:56:04.784129Z"
   },
   {
     "content_sha256": "67de787179e0a05f221c44389cc42a5a2d18415de282d75a5bd0a555e492e945",
@@ -15832,5 +16061,26 @@
       6349
     ],
     "updated_at": "2026-11-12T12:21:38.318666Z"
+  },
+  {
+    "content_sha256": "dc354ff9f1736be06f1474b9651f6b71de869a5d9d3f7227070f2a3725887e1b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:6360",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:6360",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-13T09:46:05.536033Z",
+    "reply_text": "Welcome, @SUPERMAN_I4G! 👋 Great to have you here — and thanks for the nudge, Merlini.\n\nA quick intro: **Trustless AI** is an open organization where builders, researchers, reviewers and EIP authors work on making AI results something people can check rather than simply believe — moving from \"trust me\" to outcomes anyone can inspect, verify or recompute.\n\nIn practice that spans a few threads you'll see around here: zero-knowledge inference (zkIE), on-chain proof verification around ERC-8274's `IProofVerifier` with both a ZK route and a k-of-n attestation route, reproducible benchmarks where each number carries an independently signed verifier check, and research on the trust boundaries between a proof, a claim and an action.\n\nThe shared habit is simple: claims backed by artifacts anyone can rerun — proofs, signed rows, negative controls, open repos. Jump in wherever interests you: ask a question, float an idea, or pick up a thread. No formality needed.",
+    "reply_to_message_id": 6360,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-13T09:46:05.536033Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6362
+    ],
+    "updated_at": "2026-11-13T09:46:05.536033Z"
   }
 ]

@@ -175,18 +175,18 @@
     "updated_at": "2026-10-31T16:21:43Z"
   },
   {
-    "metadata_sha256": "f13171f54c3e09468fe47a1a26a3316c9870f2a3f3cf2fdf30b2d8e7720d123e",
+    "metadata_sha256": "17df17f86c80809ef5cb8d481f64847b33d6ad71318016c1ae1888e00b652772",
     "source_key": "magicians-25098",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098",
-    "updated_at": "2026-11-12T20:49:44.881000Z"
+    "updated_at": "2026-11-15T20:30:47.979000Z"
   },
   {
-    "metadata_sha256": "93f9d93c66d54e9eac71a5746b85079a02f77cf375b9f9c8bfb0e5e00ebf9392",
+    "metadata_sha256": "e962c6d8a845e6ec6c6b983b56680f79e20ac39805ee7d8f80b5ccae56ec28af",
     "source_key": "magicians-27902",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902",
-    "updated_at": "2026-11-12T17:10:56.913000Z"
+    "updated_at": "2026-11-15T17:11:21.519000Z"
   },
   {
     "metadata_sha256": "849e54875bb2a4f4bcd16e3666f74a61c2d107380a81a61c1c50a94b92b40a90",

@@ -218,5 +218,11 @@ people:
     handles:
       telegram:
       - onthe_stars
+  𝐆𝐄𝐄𝐊𓃵:
+    display_names:
+    - 𝐆𝐄𝐄𝐊𓃵
+    handles:
+      telegram:
+      - superman_i4g
 schema: tawg.aliases.v1
 scope: tawg-only
