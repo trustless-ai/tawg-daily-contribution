@@ -55,6 +55,9 @@ _SECTION_HEADINGS = {
     "Next up": "## 🚀 **Next up**",
     "Trusty's take": "## 🤖 **Trusty's take**",
 }
+_FIXED_TEMPLATE_EMOJI_COUNT = len(_EMOJI.findall(_TITLE_LINE)) + sum(
+    len(_EMOJI.findall(heading)) for heading in _SECTION_HEADINGS.values()
+)
 _IDEAS_HEADING = "### 💡 **Ideas to follow**"
 _TODOS_HEADING = "### ✅ **TODOs**"
 _QUIET_HIGHLIGHT = "No source-backed highlight landed in this window."
@@ -71,6 +74,8 @@ _CITATION_RULE = (
 _MAX_NAMED_CITATIONS = 3
 _MAX_SUGGESTED_CITATIONS = 3
 _MAX_SIMILARITY_CHARS = 200
+_MAX_NAMED_TONE_TERMS = 3
+_MAX_TRAILING_RESIDUE_CHARS = 60
 
 
 @dataclass(frozen=True, slots=True)
@@ -301,6 +306,15 @@ def _citation_rejection(
     )
 
 
+def _disallowed_tone_terms(text: str) -> list[str]:
+    """Return the distinct matched tone violations, lowercased and bounded."""
+    return list(
+        dict.fromkeys(
+            match.group(0).casefold() for match in _DISALLOWED_TONE.finditer(text)
+        )
+    )[:_MAX_NAMED_TONE_TERMS]
+
+
 class DailyService:
     def __init__(
         self,
@@ -414,6 +428,8 @@ class DailyService:
             if item.path.startswith("knowledge/")
         ]
         schema = self._json_mapping(self.root / "src/tawg_bot/schemas/daily-result.v1.json")
+        emoji_limit = int(self.policy["max_emoji"])
+        body_emoji_budget = max(0, emoji_limit - _FIXED_TEMPLATE_EMOJI_COUNT)
         trigger = {
             "operation": "prepare_daily_catch_up",
             "window_id": window.window_id,
@@ -445,7 +461,17 @@ class DailyService:
                     "payout",
                     "on-chain credit",
                 ],
+                "forbidden_terms_rule": (
+                    "Matching any one of these forbidden terms anywhere in "
+                    "telegram_text, in any casing, rejects the whole draft."
+                ),
                 "max_emoji": self.policy["max_emoji"],
+                "emoji_budget_rule": (
+                    f"The fixed template already uses {_FIXED_TEMPLATE_EMOJI_COUNT} "
+                    f"emoji in the title line and section headings, so the body can "
+                    f"use at most {body_emoji_budget} more; telegram_text as a whole "
+                    f"must stay within {emoji_limit} emoji."
+                ),
                 "citation_rule": (
                     "Every active Highlight quote and every concrete What moved list item "
                     "contains no other citation and ends with exactly one exact allowlisted "
@@ -488,7 +514,9 @@ class DailyService:
                     "From Trusty's observer perspective, synthesize one already-established "
                     "collaboration event and end with a playful team-wide encouragement. Add "
                     "no names, mentions, URLs, citations, rankings, or new source-dependent "
-                    "facts."
+                    "facts. The closing sentence must end with exactly one emoji and nothing "
+                    "after it: no punctuation, no further words, and no extra line after the "
+                    "emoji."
                 ),
             },
             "window_evidence": evidence_payload,
@@ -616,11 +644,18 @@ class DailyService:
                 language_text = language_text.replace(label, "")
         if _NON_ENGLISH_SCRIPT.search(language_text):
             raise DailyRejected("Daily output must be English")
-        if len(_EMOJI.findall(result.telegram_text)) > int(self.policy["max_emoji"]):
-            raise DailyRejected("Daily output exceeds the emoji limit")
-        tone_violation = _DISALLOWED_TONE.search(result.telegram_text)
-        if tone_violation:
-            raise DailyRejected("Daily output contains ranking or persona language")
+        emoji_count = len(_EMOJI.findall(result.telegram_text))
+        emoji_limit = int(self.policy["max_emoji"])
+        if emoji_count > emoji_limit:
+            raise DailyRejected(
+                f"Daily output exceeds the emoji limit: {emoji_count} > {emoji_limit}"
+            )
+        tone_terms = _disallowed_tone_terms(result.telegram_text)
+        if tone_terms:
+            raise DailyRejected(
+                "Daily output contains ranking or persona language: "
+                + ", ".join(tone_terms)
+            )
         lines = result.telegram_text.splitlines()
         if len(lines) < 2:
             raise DailyRejected("Daily title or UTC window is missing")
@@ -885,8 +920,16 @@ class DailyService:
         ):
             raise DailyRejected("Daily Trusty's take contains source-dependent detail")
         emoji = list(_EMOJI.finditer(punchline))
-        if not emoji or punchline[emoji[-1].end() :].strip():
-            raise DailyRejected("Daily Trusty's take must end with an emoji")
+        if not emoji:
+            raise DailyRejected(
+                "Daily Trusty's take must end with an emoji: no emoji found"
+            )
+        residue = punchline[emoji[-1].end() :].strip()
+        if residue:
+            raise DailyRejected(
+                "Daily Trusty's take must end with an emoji: trailing "
+                f"{residue[:_MAX_TRAILING_RESIDUE_CHARS]!r}"
+            )
 
     @staticmethod
     def _validate_trailing_citation(

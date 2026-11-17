@@ -927,67 +927,38 @@ async def test_operator_preview_delivered_state_is_a_model_free_noop(
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    ("rejection", "safe_code", "sensitive_fragment"),
+    ("rejection", "safe_code"),
     [
-        (
-            "Daily factual bullet lacks a valid citation",
-            "daily_citation_invalid",
-            "factual bullet",
-        ),
+        ("Daily factual bullet lacks a valid citation", "daily_citation_invalid"),
         (
             "Daily contributor lacks a confirmed Telegram mention",
             "daily_mention_invalid",
-            "Telegram mention",
         ),
-        (
-            "invalid Daily model output",
-            "daily_model_output_invalid",
-            "model output",
-        ),
-        (
-            "Daily title must match the exact UTC window",
-            "daily_title_invalid",
-            "exact UTC window",
-        ),
-        (
-            "Daily title must match the Rich Markdown contract",
-            "daily_title_invalid",
-            "Rich Markdown",
-        ),
-        (
-            "Daily UTC window must match the fixed window",
-            "daily_window_invalid",
-            "fixed window",
-        ),
-        (
-            "Daily highlight lacks a valid citation",
-            "daily_citation_invalid",
-            "highlight",
-        ),
+        ("invalid Daily model output", "daily_model_output_invalid"),
+        ("Daily title must match the exact UTC window", "daily_title_invalid"),
+        ("Daily title must match the Rich Markdown contract", "daily_title_invalid"),
+        ("Daily UTC window must match the fixed window", "daily_window_invalid"),
+        ("Daily highlight lacks a valid citation", "daily_citation_invalid"),
         (
             "Daily Trusty's take contains source-dependent detail",
             "daily_grounding_invalid",
-            "source-dependent detail",
         ),
         (
             "Daily concrete progress bullet uses an invalid Rich Markdown list marker",
             "daily_structure_invalid",
-            "list marker",
         ),
         (
             "Daily output has an invalid required section: Next up",
             "daily_sections_invalid",
-            "Next up",
         ),
     ],
 )
-async def test_scheduled_daily_logs_bounded_validation_code_without_raw_error(
+async def test_scheduled_daily_logs_validation_code_with_bounded_reason(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
     rejection: str,
     safe_code: str,
-    sensitive_fragment: str,
 ) -> None:
     scaffold(tmp_path)
     window = DailyWindow.for_due_run(NOW)
@@ -1005,11 +976,46 @@ async def test_scheduled_daily_logs_bounded_validation_code_without_raw_error(
 
     captured = capsys.readouterr().out
     assert f"code={safe_code}" in captured
-    assert sensitive_fragment not in captured
+    assert f"reason={rejection}" in captured
 
 
 @pytest.mark.asyncio
-async def test_scheduled_daily_citation_failure_logs_structural_facts_only(
+async def test_scheduled_daily_validation_reason_is_one_collapsed_line(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    scaffold(tmp_path)
+    window = DailyWindow.for_due_run(NOW)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+
+        async def prepare_daily(selected: DailyWindow, *, dry_run: bool) -> PreparedDaily:
+            assert selected == window
+            assert not dry_run
+            raise DailyRejected(
+                "Daily output contains ranking or persona language: priority\n"
+                "\tsecond   line of detail"
+            )
+
+        monkeypatch.setattr(pipeline, "prepare_daily", prepare_daily)
+        with pytest.raises(RuntimeFailure, match="Daily validation failed"):
+            await pipeline.daily_prepare(window.window_id)
+
+    log_lines = [
+        line
+        for line in capsys.readouterr().out.splitlines()
+        if "phase=daily_validation" in line
+    ]
+    assert log_lines == [
+        "tawg_event=phase_failed phase=daily_validation code=daily_tone_invalid "
+        "reason=Daily output contains ranking or persona language: priority "
+        "second line of detail"
+    ]
+
+
+@pytest.mark.asyncio
+async def test_scheduled_daily_citation_failure_logs_reason_and_structural_facts(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
@@ -1041,10 +1047,9 @@ async def test_scheduled_daily_citation_failure_logs_structural_facts_only(
         "tawg_event=phase_failed phase=daily_validation code=daily_citation_unknown"
         in captured
     )
+    assert "reason=Daily citation references unknown evidence:" in captured
     assert "unknown_count=2" in captured
     assert "hosts=example.invalid" in captured
-    assert "private" not in captured
-    assert "token" not in captured
 
 
 @pytest.mark.asyncio
