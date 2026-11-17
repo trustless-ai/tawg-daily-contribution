@@ -3925,6 +3925,25 @@
     "updated_at": "2026-09-22T20:35:44.841948Z"
   },
   {
+    "content_sha256": "f83c83a2d759f9f08ce9e72dda3b41c9809fc5cc0c0ca98753ea6943291a9222",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:c59c4fcf6a02cd367092f9b1",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:c59c4fcf6a02cd367092f9b1",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-17T00:41:43.913210Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/tawg-daily-contribution](https://github.com/trustless-ai/tawg-daily-contribution)\n[#17 fix\\(daily\\): record rejection reasons and align the tone output contract](https://github.com/trustless-ai/tawg-daily-contribution/pull/17)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-17T00:41:43.913210Z"
+  },
+  {
     "content_sha256": "476db8fee6870ab071e29500b12ca24dfe4c1e8d7a3488a9406cba8b3cf7fa82",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:c82ac8c14d50d6c26560dc84",
