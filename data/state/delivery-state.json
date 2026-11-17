@@ -1573,6 +1573,27 @@
     "updated_at": "2026-11-14T23:00:24.097207Z"
   },
   {
+    "content_sha256": "621e91d98c8ee9a3978f24bde9738671ec282a57a2de81bf3acf814fda27006b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-11-16T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-11-16T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-17T00:35:16.008541Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-11-15 23:00 → 2026-11-16 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **A late anchor got its own name** — the path now resolves as ANCHORED_LATE, or HISTORICAL_LATE_ANCHOR when a later retirement also applies, with accept and reject paths unchanged. [tg:tawg:6393]\n\n> **A trusted host left the loop** — the flashprove verifier gained an on-chain anchor for a commitment ID in place of a trusted artifact host. [PR #2](https://github.com/trustless-ai/flashprove-onchain-verifier/pull/2)\n\n> **Stalled queues now speak up** — terminal GitHub announcements get dead-lettered and a jammed queue raises an alert instead of failing quietly. [commit 4b9038a](https://github.com/trustless-ai/tawg-daily-contribution/commit/4b9038a67216f7001174a5f5fd1abc75d78f2261)\n\n## 🤝 **What moved**\n\n### proofProfile anchor\n_The anchor moved from proposal to working code, with a close review queued._\n\n- Petchevere (@petchevere) **Built** the first-seen and rotation anchor for proofProfile as working code instead of stopping at an offer, giving the profile work a concrete artifact to test and review. [tg:tawg:6386]\n- Jimmy Shi (@jimmyshi) **Queued** a proper review of the profile anchor and welcomed the build-first move, which keeps a second pair of eyes on the logic before the group depends on it. [tg:tawg:6387]\n\n### control testing\n_A simulated control suite turned into a sharper, named edge case._\n\n- Petchevere (@petchevere) **Simulated** the control across five steps with a positive and a negative case at each, plus the block edges, then mutated the policy seven ways to probe its weak spots, giving the rule set real coverage. [tg:tawg:6391]\n- Pavlo (@pavlentyy82) **Confirmed** the block B rule and flagged a late anchor that can still return a value when require_anchor is false, sharpening the logic before more work builds on it. [tg:tawg:6392]\n\n### on-chain anchor\n_One close review turned into a short, concrete follow-up list._\n\n- Jimmy Shi **Reviewed** the commitment-ID anchor end to end and credited the build, giving the change the close read it needed. [review on PR #2](https://github.com/trustless-ai/flashprove-onchain-verifier/pull/2#issuecomment-6924173633)\n- Baby Blue Viper **Folded** the chainId and joinability points back into the pull request, so the review feedback lands as code rather than an open thread. [reply on PR #2](https://github.com/trustless-ai/flashprove-onchain-verifier/pull/2#issuecomment-6926416083)\n\n### proving stack\n_A single refactor now carries both soundness and speed work._\n\n- Jimmy Shi **Opened** a refactor of the zkIE proving stack that pairs soundness hardening with a performance overhaul, giving the prover work one place to land. [PR #47](https://github.com/trustless-ai/zkIE/pull/47)\n\n### daily bot reliability\n_The daily pipeline became easier to repair and harder to stall silently._\n\n- Jimmy Shi **Opened** a fix that makes citation rejections actionable and self-healing, so a rejected daily now carries its own repair path instead of a dead end. [PR #15](https://github.com/trustless-ai/tawg-daily-contribution/pull/15)\n- Jimmy Shi **Opened** the dead-letter fix for terminal GitHub announcements in the daily contribution repo, closing a gap where announcements could pile up without anyone noticing. [PR #16](https://github.com/trustless-ai/tawg-daily-contribution/pull/16)\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n- Whether other retirement sequences need their own late-anchor labels alongside the current pair.\n- Whether the five-step control harness should be reused for policy rules beyond the block boundaries.\n- How the anchored commitment flow behaves once publishers stop depending on a trusted artifact host.\n\n### ✅ **TODOs**\n- Finish the close review of the proofProfile anchor against the first-seen and rotation cases.\n- Re-run the control suite after the ANCHORED_LATE change and confirm accept and reject paths still behave as before.\n- Exercise the dead-letter and stuck-queue alert path end to end.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A simulated control suite, a sharp late-anchor catch, and a new label all landed in a single afternoon stretch, a tidy loop from check to fix.\n>\n> Keep that rhythm going, team; catching things early is how a spec stays pleasantly boring 🧪",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-17T00:35:16.008541Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6401
+    ],
+    "updated_at": "2026-11-17T00:35:16.008541Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
@@ -3902,6 +3923,27 @@
       4842
     ],
     "updated_at": "2026-09-22T20:35:44.841948Z"
+  },
+  {
+    "content_sha256": "f83c83a2d759f9f08ce9e72dda3b41c9809fc5cc0c0ca98753ea6943291a9222",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:c59c4fcf6a02cd367092f9b1",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:c59c4fcf6a02cd367092f9b1",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-17T00:41:43.913210Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/tawg-daily-contribution](https://github.com/trustless-ai/tawg-daily-contribution)\n[#17 fix\\(daily\\): record rejection reasons and align the tone output contract](https://github.com/trustless-ai/tawg-daily-contribution/pull/17)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-17T00:41:43.913210Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6402
+    ],
+    "updated_at": "2026-11-17T00:41:43.913210Z"
   },
   {
     "content_sha256": "476db8fee6870ab071e29500b12ca24dfe4c1e8d7a3488a9406cba8b3cf7fa82",
