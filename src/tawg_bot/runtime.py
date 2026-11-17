@@ -133,6 +133,7 @@ _BUSY_QUESTION_TIMEOUT_SECONDS = 60
 _BUSY_QUESTION_BUDGET_USD = "0.05"
 _PROCESSING_LEASE = timedelta(minutes=10)
 _MAX_REPLIES_PER_TICK = 10
+_LOG_REASON_CHARS = 240
 _TELEGRAM_GROUP_SLUG = "tawg"
 _RICH_DAILY_PREVIEW_SOURCE_ID = "daily:2026-08-27T23:00:00Z"
 _RICH_DAILY_PREVIEW_SOURCE_SHA256 = (
@@ -200,6 +201,9 @@ def _daily_rejection_code(error: DailyRejected) -> str:
     exact = _DAILY_REJECTION_CODES.get(reason)
     if exact is not None:
         return exact
+    for prefix in sorted(_DAILY_REJECTION_CODES, key=len, reverse=True):
+        if reason.startswith(prefix):
+            return _DAILY_REJECTION_CODES[prefix]
     if reason.startswith(
         ("Daily citation references unknown evidence", "Daily text contains an unknown citation")
     ):
@@ -1214,12 +1218,14 @@ class _LivePipeline:
             self.prepared_daily = None
             code = _daily_rejection_code(error)
             diagnostics = error.citation_diagnostics
+            reason = _log_safe_text(str(error))
             if diagnostics is None:
-                _safe_log("daily_validation", code)
+                _safe_log("daily_validation", code, reason=reason)
             else:
                 _safe_log(
                     "daily_validation",
                     code,
+                    reason=reason,
                     unknown_count=diagnostics.unknown_count,
                     hosts=",".join(diagnostics.hosts) if diagnostics.hosts else "none",
                 )
@@ -1787,6 +1793,11 @@ def _load_delivery_attempts(root: Path) -> tuple[DeliveryAttempt, ...]:
     if len({attempt.delivery_id for attempt in attempts}) != len(attempts):
         raise RuntimeFailure("duplicate delivery state for Rich Daily preview")
     return attempts
+
+
+def _log_safe_text(value: str, *, limit: int = _LOG_REASON_CHARS) -> str:
+    """Collapse a rejection reason into one bounded, single-line log fact."""
+    return " ".join(value.split())[:limit].rstrip()
 
 
 def _safe_log(phase: str, code: str, *, erc: int | None = None, **facts: int | str) -> None:
