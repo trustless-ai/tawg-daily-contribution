@@ -9,6 +9,7 @@ from typing import Any
 import httpx
 import pytest
 
+import tawg_bot.daily as daily_module
 import tawg_bot.runtime as runtime_module
 from tawg_bot.daily import DailyReadiness, DailyService, DailyWindow
 from tawg_bot.daily_evidence import DailyEvidenceCollector, GitHubActivityRecords
@@ -294,7 +295,16 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
             "payout",
             "on-chain credit",
         ],
+        "forbidden_terms_rule": (
+            "Matching any one of these forbidden terms anywhere in telegram_text, in any "
+            "casing, rejects the whole draft."
+        ),
         "max_emoji": 10,
+        "emoji_budget_rule": (
+            "The fixed template already uses 5 emoji in the title line and section "
+            "headings, so the body can use at most 5 more; telegram_text as a whole must "
+            "stay within 10 emoji."
+        ),
         "ordering_rule": (
             "Order directions and items by contribution impact and importance, without saying "
             "that anyone is ranked or scored."
@@ -335,9 +345,23 @@ async def test_daily_collects_current_window_live_text_without_persisting_bodies
         "trustys_take_rule": (
             "From Trusty's observer perspective, synthesize one already-established "
             "collaboration event and end with a playful team-wide encouragement. Add no names, "
-            "mentions, URLs, citations, rankings, or new source-dependent facts."
+            "mentions, URLs, citations, rankings, or new source-dependent facts. The closing "
+            "sentence must end with exactly one emoji and nothing after it: no punctuation, no "
+            "further words, and no extra line after the emoji."
         ),
     }
+    fixed_emoji = len(daily_module._EMOJI.findall(daily_module._TITLE_LINE)) + sum(
+        len(daily_module._EMOJI.findall(heading))
+        for heading in daily_module._SECTION_HEADINGS.values()
+    )
+    contract = trigger["output_contract"]
+    assert contract["emoji_budget_rule"] == (
+        f"The fixed template already uses {fixed_emoji} emoji in the title line and "
+        f"section headings, so the body can use at most {10 - fixed_emoji} more; "
+        f"telegram_text as a whole must stay within 10 emoji."
+    )
+    assert "exactly one emoji and nothing after it" in contract["trustys_take_rule"]
+    assert "rejects the whole draft" in contract["forbidden_terms_rule"]
     assert {
         path.relative_to(tmp_path).as_posix(): path.read_bytes()
         for path in tmp_path.rglob("*")

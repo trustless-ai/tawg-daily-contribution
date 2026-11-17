@@ -754,6 +754,58 @@ async def test_daily_allows_non_latin_contributor_label_but_still_requires_engli
 
 
 @pytest.mark.asyncio
+async def test_daily_tone_rejection_names_the_matched_terms(tmp_path: Path) -> None:
+    _seed(tmp_path)
+    output = _fixture("daily-active")
+    output["telegram_text"] += (
+        "\n- Alice tops the leaderboard. Alice ranked first. Leaderboard again."
+    )
+
+    with pytest.raises(DailyRejected) as caught:
+        await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+            WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )
+
+    assert str(caught.value) == (
+        "Daily output contains ranking or persona language: leaderboard, ranked"
+    )
+
+
+@pytest.mark.asyncio
+async def test_daily_emoji_rejection_reports_the_actual_count(tmp_path: Path) -> None:
+    _seed(tmp_path)
+    output = _fixture("daily-active")
+    output["telegram_text"] += " 🥇🏆🎉"
+
+    with pytest.raises(DailyRejected) as caught:
+        await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+            WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )
+
+    assert str(caught.value) == "Daily output exceeds the emoji limit: 11 > 10"
+
+
+@pytest.mark.asyncio
+async def test_daily_trustys_take_rejection_reports_trailing_residue(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    output = _fixture("daily-active")
+    output["telegram_text"] = output["telegram_text"].replace(
+        "Keep poking the edges, TAWG. 🤖", "Keep poking the edges, TAWG. 🤖."
+    )
+
+    with pytest.raises(DailyRejected) as caught:
+        await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+            WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )
+
+    assert str(caught.value) == (
+        "Daily Trusty's take must end with an emoji: trailing '.'"
+    )
+
+
+@pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("mutation", "message"),
     [
