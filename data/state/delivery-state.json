@@ -4219,6 +4219,25 @@
     "updated_at": "2026-09-07T16:15:16.980303Z"
   },
   {
+    "content_sha256": "1655bcf6d8856532601fad3387de05f7a8a2120250ffcdeec10275c0a67e15b0",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:e0a272307eac848c84712bf0",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:e0a272307eac848c84712bf0",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-17T01:50:13.308835Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/flashprove-onchain-verifier](https://github.com/trustless-ai/flashprove-onchain-verifier)\n[#2 feat\\(anchor\\): on-chain anchor for a commitment ID, replacing the trusted artifact host](https://github.com/trustless-ai/flashprove-onchain-verifier/pull/2)\nCongratulations, [babyblueviper1](https://github.com/babyblueviper1)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-17T01:50:13.308835Z"
+  },
+  {
     "content_sha256": "b26af50afb3fad6a9d305ca45636c23007f9012de049e6ab742ee1a96a4adfa4",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:e15e438af35ea1c612c49ca0",
