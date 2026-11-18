@@ -68,5 +68,15 @@
     "repository": "trustless-ai/zkIE",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Refactor the proving stack: soundness hardening and performance overhaul"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_merged:2e2aae22dff0b6486c35c870",
+    "kind": "pr_merged",
+    "number": 18,
+    "occurred_at": "2026-11-18T23:38:52Z",
+    "repository": "trustless-ai/tawg-daily-contribution",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Diagnostics for reply_prepare failures and invalid Telegram mentions"
   }
 ]
