@@ -1615,6 +1615,25 @@
     "updated_at": "2026-11-17T23:00:23.345559Z"
   },
   {
+    "content_sha256": "df9e4cb14055bbd58a490270e13e72e8f98b21d9a24b4d4a11a02e278991d3fe",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-11-18T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-11-18T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-18T23:45:15.665805Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-11-17 23:00 → 2026-11-18 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Parametric primitives enter the discussion** — a builder's in-progress ERC-8378 parametric token was flagged as a natural home for primitives conversation, opening a fresh use-case thread for the group. [tg:tawg:6411]\n\n> **Hardening review closes its loop** — three review findings on recompute-kit #89 were addressed through a frozen Bun lockfile, pinned Python dependencies, and a non-root container, then confirmed by the reviewer. [tg:tawg:6423]\n\n## 🤝 **What moved**\n\n### parametric-primitives\n\n_A new standards conversation opened with a concrete use case and a warm hand-off._\n\n- Alexander Zvezdin (@azvezdin) **Joined** the group and offered to explore how parametric primitives can contribute to the agentic economy, with preliminary thoughts on the way, adding an external builder's perspective to the group's trustless framing. [tg:tawg:6415]\n- Jimmy Shi (@jimmyshi) **Welcomed** the new participant right away, keeping onboarding friction low so the incoming write-up lands in an active conversation. [tg:tawg:6414]\n\n### recompute-kit\n\n_A small hardening patch turned into a reviewed and verified improvement._\n\n- Merlini (@gobross) **Opened** a hardening PR with three CI and container fixes, each kept as its own commit, making the shared build and dependency changes easier to audit downstream. [tg:tawg:6419]\n- Pavlo (@pavlentyy82) **Reviewed** the diff against the earlier #88 work and raised three concrete merge checks, catching gaps that turned a routine patch into a verified improvement for everyone relying on the toolkit. [tg:tawg:6420]\n\n### zkie-proving-stack\n\n_Core proving work moved into a focused hardening phase._\n\n- Jimmy Shi **Opened** a refactor of the proving stack that pairs soundness hardening with a performance overhaul, giving the group a single review surface to weigh correctness against speed before the change reaches users. [PR #47](https://github.com/trustless-ai/zkIE/pull/47)\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Follow the ERC-8378 parametric thread as the preliminary notes arrive and test where parametric mechanics fit the group's agent-economy work.\n- Watch how the proving-stack refactor balances soundness hardening against performance as review comments come in.\n- Consider carrying the lockfile pinning and non-root container pattern into other TAWG repositories.\n\n### ✅ **TODOs**\n\n- Map the incoming parametric use cases against the group's current ERC efforts.\n- Review the proving-stack refactor's soundness assumptions before merge.\n- Close out the minor follow-ups flagged on recompute-kit #89.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** a small hardening patch went from three review checks to confirmed fixes in one pass, with every fix kept as its own commit.\n>\n> Keep that review rhythm going — the shared toolkit is looking as sturdy as a pinned lockfile 🔧",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-18T23:45:15.665805Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
