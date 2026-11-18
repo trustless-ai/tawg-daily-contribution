@@ -13277,6 +13277,25 @@
     "updated_at": "2026-10-29T02:10:08.199207Z"
   },
   {
+    "content_sha256": "071e0d73d2dcaffbc26da45b2b86ded52a6dacb05e479ac580bfdec8201fedcd",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "member-introduction:alexander-zvezdin",
+    "destination": "tawg",
+    "job_id": "member-introduction:alexander-zvezdin",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-18T10:35:05.533146Z",
+    "reply_text": "@azvezdin, so glad you found your way in! A parametric token primitive like ERC-8378 is exactly the kind of thing worth thinking through out loud — the use cases multiply the moment other people start imagining them alongside you, and honestly, that's pretty much how this whole group came to exist.\n\nTrustless AI grew organically from people scattered around the world who first crossed paths through open-source and ERC work: builders, researchers, reviewers, EIP authors, all nudging ideas forward into research, standards, reviews, and code that actually runs. What holds it together is a shared direction — moving away from \"trust me\" and toward AI and blockchain results that anyone can independently inspect, verify, or recompute.\n\nSo bring those primitives straight in. Float a half-formed use case, question an assumption, propose something you're chewing on, or just jump into whatever catches your eye. There's no ceremony here and no such thing as too early a question.\n\nReally happy to have another person who thinks in primitives in the room. 🙌",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-18T10:35:05.533146Z"
+  },
+  {
     "content_sha256": "12ad6cc2ec2e43a23a7c3416d29388b304e354272ca059a270ff48a0be3e9906",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "member-introduction:asher-li",
