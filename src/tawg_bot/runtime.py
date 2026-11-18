@@ -134,6 +134,7 @@ _BUSY_QUESTION_BUDGET_USD = "0.05"
 _PROCESSING_LEASE = timedelta(minutes=10)
 _MAX_REPLIES_PER_TICK = 10
 _LOG_REASON_CHARS = 240
+_REPLY_REASON_CHARS = 200
 _TELEGRAM_GROUP_SLUG = "tawg"
 _RICH_DAILY_PREVIEW_SOURCE_ID = "daily:2026-08-27T23:00:00Z"
 _RICH_DAILY_PREVIEW_SOURCE_SHA256 = (
@@ -177,6 +178,10 @@ _DAILY_REJECTION_CODES = {
     "Daily must integrate Appreciation into What moved": "daily_tone_invalid",
     "Daily contributor lacks a confirmed Telegram mention": "daily_mention_invalid",
     "Daily contains an invalid Telegram mention": "daily_mention_invalid",
+    "Daily clear-day output contains an invalid Telegram mention": "daily_mention_invalid",
+    "Daily What moved direction line contains an invalid Telegram mention": (
+        "daily_mention_invalid"
+    ),
     "Daily citation has conflicting contributor mappings": "daily_mention_invalid",
     "quiet Daily invents source-backed progress": "daily_grounding_invalid",
     "quiet Daily has an invalid highlight": "daily_grounding_invalid",
@@ -1640,7 +1645,7 @@ class _LivePipeline:
                     self.prepared_replies.append(prepared)
             except ReplyRejected as error:
                 self.reply_failures.append(f"{job.job_id}:{error.safe_code}")
-                _safe_log("reply_prepare", error.safe_code)
+                _safe_log("reply_prepare", error.safe_code, reason=_safe_reason(str(error)))
                 continue
 
     def _reload_registry(self) -> None:
@@ -1798,6 +1803,11 @@ def _load_delivery_attempts(root: Path) -> tuple[DeliveryAttempt, ...]:
 def _log_safe_text(value: str, *, limit: int = _LOG_REASON_CHARS) -> str:
     """Collapse a rejection reason into one bounded, single-line log fact."""
     return " ".join(value.split())[:limit].rstrip()
+
+
+def _safe_reason(value: str) -> str:
+    """Collapse a reply rejection message into one bounded log-safe reason."""
+    return _log_safe_text(value, limit=_REPLY_REASON_CHARS)
 
 
 def _safe_log(phase: str, code: str, *, erc: int | None = None, **facts: int | str) -> None:

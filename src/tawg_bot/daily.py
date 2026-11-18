@@ -315,6 +315,15 @@ def _disallowed_tone_terms(text: str) -> list[str]:
     )[:_MAX_NAMED_TONE_TERMS]
 
 
+def _first_telegram_mention(lines: Iterable[str]) -> str | None:
+    """Return the first invalid Telegram mention so rejections can name it."""
+    for line in lines:
+        match = _TELEGRAM_MENTION.search(line)
+        if match is not None:
+            return match.group(0)
+    return None
+
+
 class DailyService:
     def __init__(
         self,
@@ -709,8 +718,12 @@ class DailyService:
             lines[: section_indices["What moved"] + 1]
             + lines[section_indices["Next up"] :]
         )
-        if any(_TELEGRAM_MENTION.search(line) for line in outside_what_moved):
-            raise DailyRejected("Daily contains an invalid Telegram mention")
+        outside_mention = _first_telegram_mention(outside_what_moved)
+        if outside_mention is not None:
+            raise DailyRejected(
+                "Daily contains an invalid Telegram mention outside What moved: "
+                f"{outside_mention}"
+            )
         if len(result.citations) != len(set(result.citations)):
             raise DailyRejected("Daily citation list contains duplicates")
         unknown_citations = set(result.citations) - allowed_citations
@@ -752,8 +765,13 @@ class DailyService:
                 set(result.citations),
                 mention_labels,
             )
-        elif any(_TELEGRAM_MENTION.search(line) for line in what_moved_lines):
-            raise DailyRejected("Daily contains an invalid Telegram mention")
+        else:
+            clear_day_mention = _first_telegram_mention(what_moved_lines)
+            if clear_day_mention is not None:
+                raise DailyRejected(
+                    "Daily clear-day output contains an invalid Telegram mention: "
+                    f"{clear_day_mention}"
+                )
         return result
 
     @staticmethod
@@ -807,7 +825,10 @@ class DailyService:
             mention_matches = list(_TELEGRAM_MENTION.finditer(line))
             if expected_label is None:
                 if mention_matches:
-                    raise DailyRejected("Daily contains an invalid Telegram mention")
+                    raise DailyRejected(
+                        "Daily What moved direction line contains an invalid "
+                        f"Telegram mention: {mention_matches[0].group(0)}"
+                    )
             else:
                 expected_match = _TELEGRAM_MENTION.search(expected_label)
                 if (

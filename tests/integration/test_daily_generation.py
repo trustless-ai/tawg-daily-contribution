@@ -542,7 +542,13 @@ async def test_daily_rejects_borrowing_a_confirmed_handle_for_unmapped_evidence(
     )
     output["citations"].append("tg:tawg:2")
 
-    with pytest.raises(DailyRejected, match="Telegram mention"):
+    with pytest.raises(
+        DailyRejected,
+        match=(
+            "Daily What moved direction line contains an invalid Telegram mention: "
+            "@alice_tg"
+        ),
+    ):
         await DailyService(tmp_path, ai=FakeAi(output)).prepare(
             WINDOW, readiness=_ready(), evidence=evidence
         )
@@ -562,9 +568,36 @@ async def test_daily_rejects_a_confirmed_mention_outside_what_moved(
         "Alice (@alice_tg), that's one less fog bank for the builders.",
     )
 
-    with pytest.raises(DailyRejected, match="Telegram mention"):
+    with pytest.raises(
+        DailyRejected,
+        match=(
+            "Daily contains an invalid Telegram mention outside What moved: @alice_tg"
+        ),
+    ):
         await DailyService(tmp_path, ai=FakeAi(output)).prepare(
             WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+        )
+
+
+@pytest.mark.asyncio
+async def test_daily_clear_day_rejects_a_mention_with_the_offending_handle(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path, active=False)
+    output = _fixture("daily-quiet")
+    output["telegram_text"] = output["telegram_text"].replace(
+        "No source-backed progress landed in this window.",
+        "No source-backed progress landed in this window. @quiet_handle",
+    )
+
+    with pytest.raises(
+        DailyRejected,
+        match=(
+            "Daily clear-day output contains an invalid Telegram mention: @quiet_handle"
+        ),
+    ):
+        await DailyService(tmp_path, ai=FakeAi(output)).prepare(
+            WINDOW, readiness=_ready(), evidence=()
         )
 
 
