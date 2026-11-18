@@ -20,7 +20,7 @@
     "router_version": "ai-member-introduction-v1",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "ready",
+    "status": "delivered",
     "trigger_kind": "member_introduction",
     "trigger_record_id": "tg:tawg:6411",
     "updated_at": "2026-11-18T10:35:05.533146Z",
