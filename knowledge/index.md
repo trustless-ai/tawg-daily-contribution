@@ -68,6 +68,7 @@ This vault compiles current, source-cited knowledge for the Daily Contribution a
 - [[repos/zkie|zkie]]
 ## Acknowledgements
 
+- [[acknowledgements/alexander-zvezdin|Alexander Zvezdin]]
 - [[acknowledgements/asher-li|Asher li]]
 - [[acknowledgements/baby-blue-viper|Baby Blue Viper]]
 - [[acknowledgements/ben|👉 Ben]]

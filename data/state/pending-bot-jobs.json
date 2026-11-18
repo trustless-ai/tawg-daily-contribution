@@ -236,6 +236,11 @@
     "classified_route": "coordination",
     "created_at": "2026-11-18T10:33:53.108878Z",
     "job_id": "member-welcome:alexander-zvezdin",
+    "knowledge_mutation_paths": [
+      "knowledge/acknowledgements/alexander-zvezdin.md",
+      "knowledge/index.md"
+    ],
+    "knowledge_mutation_trigger_sha256": "cc7343a24d22e684efecdb8f0804c512757f89da91108d14aadcbf8d5a374ee4",
     "message_thread_id": null,
     "prepared_attachments": [],
     "prepared_citations": [],
@@ -252,7 +257,7 @@
     "router_version": "template-member-welcome-v1",
     "safe_error_code": null,
     "schema_version": "tawg.pending-bot-job.v1",
-    "status": "ready",
+    "status": "delivered",
     "trigger_kind": "member_welcome",
     "trigger_record_id": "tg:tawg:6411",
     "updated_at": "2026-11-18T10:33:53.108878Z",
