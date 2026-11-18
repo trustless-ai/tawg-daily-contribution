@@ -2413,6 +2413,25 @@
     "updated_at": "2026-10-24T08:25:12.672387Z"
   },
   {
+    "content_sha256": "d77b2bf9995e9704d92f86e3d635b8f7c8ddc8ee59e9dfd9c582494e09a29626",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:2e2aae22dff0b6486c35c870",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:2e2aae22dff0b6486c35c870",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-18T23:50:58.989953Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/tawg-daily-contribution](https://github.com/trustless-ai/tawg-daily-contribution)\n[#18 Diagnostics for reply\\_prepare failures and invalid Telegram mentions](https://github.com/trustless-ai/tawg-daily-contribution/pull/18)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-18T23:50:58.989953Z"
+  },
+  {
     "content_sha256": "bab48aaea1b5fc6df44f1fcf3fab2b558a137dcee3d00fd37768b6c6ece53d78",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:2eb9bde87aa68b73ead64040",
