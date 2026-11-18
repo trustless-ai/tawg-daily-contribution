@@ -1,4 +1,10 @@
 people:
+  alexander-zvezdin:
+    display_names:
+    - Alexander Zvezdin
+    handles:
+      telegram:
+      - azvezdin
   archer:
     display_names:
     - Archer
