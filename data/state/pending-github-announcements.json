@@ -68,5 +68,15 @@
     "repository": "trustless-ai/zkIE",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Refactor the proving stack: soundness hardening and performance overhaul"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_updated:cb6bd6a7c69b9340e069ea81",
+    "kind": "pr_updated",
+    "number": 47,
+    "occurred_at": "2026-11-18T01:36:48Z",
+    "repository": "trustless-ai/zkIE",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Refactor the proving stack: soundness hardening and performance overhaul"
   }
 ]
