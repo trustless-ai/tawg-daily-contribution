@@ -1347,9 +1347,10 @@ async def test_reply_preparation_continues_after_one_job_fails(
         "reply:tg:tawg:11",
         "reply:tg:tawg:12",
     ]
-    assert "tawg_event=phase_failed phase=reply_prepare code=reply_test_failed" in (
-        capsys.readouterr().out
-    )
+    assert (
+        "tawg_event=phase_failed phase=reply_prepare code=reply_test_failed "
+        "reason=safe failure"
+    ) in (capsys.readouterr().out)
 
 
 @pytest.mark.asyncio
