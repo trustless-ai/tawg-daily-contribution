@@ -6634,6 +6634,27 @@
     "updated_at": "2026-10-15T12:05:14.358855Z"
   },
   {
+    "content_sha256": "ca867a92c2417de793b64569698b279c6eb0cd9d786c5b9d961f0a41bce1f24b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:e2a70b619cbb5168855d2190",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:e2a70b619cbb5168855d2190",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-18T12:55:38.335802Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#89 Harden CI and container \\(pin actions, lockfile, non-root\\)](https://github.com/trustless-ai/recompute-kit/pull/89)\nOpened by [Echo-Merlini](https://github.com/Echo-Merlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-18T12:55:38.335802Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6418
+    ],
+    "updated_at": "2026-11-18T12:55:38.335802Z"
+  },
+  {
     "content_sha256": "276ff61628d4bc52f3e0dd548d94b628a5dfda84295036887011ea0763afab35",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:e471db744ba67eef8865d29b",
