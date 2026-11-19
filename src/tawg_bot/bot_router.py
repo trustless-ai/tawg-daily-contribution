@@ -2032,6 +2032,13 @@ class BotReplyService:
                 json.JSONDecodeError,
             ) as error:
                 raise ReplyRejected("invalid delivery state for direct reply") from error
+        # Mirrored delivery-state files can repeat a delivery_id. Keep the record from
+        # the last path in sorted order (the main delivery-state.json wins) so the audit
+        # still confirms every delivery id is unique after deduplication.
+        by_delivery_id: dict[str, DeliveryAttempt] = {}
+        for attempt in attempts:
+            by_delivery_id[attempt.delivery_id] = attempt
+        attempts = list(by_delivery_id.values())
         delivery_ids = {attempt.delivery_id for attempt in attempts}
         if len(delivery_ids) != len(attempts):
             raise ReplyRejected("duplicate delivery audit for direct reply")
