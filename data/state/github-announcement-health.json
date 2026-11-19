@@ -1,12 +1,4 @@
 {
-  "last_reported_at": "2026-11-18T20:30:25.997664Z",
-  "reported_event_ids": [
-    "github-announcement:pr_updated:1737dc004764faa6f0143647",
-    "github-announcement:pr_updated:377c36a98750532ddeb79c93",
-    "github-announcement:pr_updated:3d863dccbb1769b2edd9c983",
-    "github-announcement:pr_updated:aa19f908b40b30bbfc39c6bc",
-    "github-announcement:pr_updated:cd2a4c07a6f313484f4ef362",
-    "github-announcement:pr_updated:ec9cdc064d60e0d742953dea",
-    "github-announcement:pr_updated:ed91d7b2bb1ff9fec89f5686"
-  ]
+  "last_reported_at": "2026-11-19T00:20:11.672766Z",
+  "reported_event_ids": []
 }
