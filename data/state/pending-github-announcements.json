@@ -8,15 +8,5 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
-  },
-  {
-    "author_login": "pipavlo82",
-    "event_id": "github-announcement:pr_merged:b16884f7d55f1a5d33b6a08b",
-    "kind": "pr_merged",
-    "number": 14,
-    "occurred_at": "2026-11-19T12:13:16Z",
-    "repository": "trustless-ai/verifiable-execution-claim-authorization",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "research: integrate PR12/PR13 with frozen ERC-8404 Core"
   }
 ]
