@@ -1,4 +1,6 @@
 {
-  "last_reported_at": "2026-11-19T00:20:11.672766Z",
-  "reported_event_ids": []
+  "last_reported_at": "2026-11-19T03:00:32.624965Z",
+  "reported_event_ids": [
+    "github-announcement:pr_merged:429c37277b6f3a21f70d27d2"
+  ]
 }
