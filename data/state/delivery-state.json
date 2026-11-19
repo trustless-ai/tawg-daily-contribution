@@ -3818,6 +3818,25 @@
     "updated_at": "2026-11-03T23:07:41.930440Z"
   },
   {
+    "content_sha256": "1890b757bdac7a2ce2de7d74f0570ef8de9754e4c4b87396aabe61f6c4fde307",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:b16884f7d55f1a5d33b6a08b",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:b16884f7d55f1a5d33b6a08b",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-19T12:25:08.599673Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/verifiable-execution-claim-authorization](https://github.com/trustless-ai/verifiable-execution-claim-authorization)\n[#14 research: integrate PR12/PR13 with frozen ERC-8404 Core](https://github.com/trustless-ai/verifiable-execution-claim-authorization/pull/14)\nCongratulations, [pipavlo82](https://github.com/pipavlo82)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-19T12:25:08.599673Z"
+  },
+  {
     "content_sha256": "2bffa42fbd4474c277246d7ae1ba184dba9d6a501c0fa621b8438733d4ce2ff2",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:b19067e51b65e099ec613d63",
