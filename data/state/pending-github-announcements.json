@@ -1,12 +1,1 @@
-[
-  {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_opened:3cfb00d52a4ead8f44d02b77",
-    "kind": "pr_opened",
-    "number": 19,
-    "occurred_at": "2026-11-19T00:24:01Z",
-    "repository": "trustless-ai/tawg-daily-contribution",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Deduplicate delivery audit across mirrored delivery-state files"
-  }
-]
+[]
