@@ -5164,6 +5164,27 @@
     "updated_at": "2026-09-29T18:45:13.249166Z"
   },
   {
+    "content_sha256": "1443733fc996494b881f3a6812686f0a324f890d6a757904084ba3ad1be190b3",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:3cfb00d52a4ead8f44d02b77",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:3cfb00d52a4ead8f44d02b77",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-19T00:25:11.942468Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/tawg-daily-contribution](https://github.com/trustless-ai/tawg-daily-contribution)\n[#19 Deduplicate delivery audit across mirrored delivery-state files](https://github.com/trustless-ai/tawg-daily-contribution/pull/19)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-19T00:25:11.942468Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6427
+    ],
+    "updated_at": "2026-11-19T00:25:11.942468Z"
+  },
+  {
     "content_sha256": "059271b2751b693e47ab36b6af186638178b3fc04890803a6ab229b81ef94ecb",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:3faeea9eeaab782b1dc0262f",
