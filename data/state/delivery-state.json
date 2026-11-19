@@ -4910,6 +4910,25 @@
     "updated_at": "2026-10-24T03:35:12.849118Z"
   },
   {
+    "content_sha256": "f04d0fe7c36c7ea4f94b5e19a13d79a734c71965936e440e0c50560cebf9375c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:1058c9013c217c9183ebb186",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:1058c9013c217c9183ebb186",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-19T13:35:11.192665Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/verifiable-execution-claim-authorization](https://github.com/trustless-ai/verifiable-execution-claim-authorization)\n[#15 docs: update README after PR14 and preserve historical replay](https://github.com/trustless-ai/verifiable-execution-claim-authorization/pull/15)\nOpened by [pipavlo82](https://github.com/pipavlo82)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-19T13:35:11.192665Z"
+  },
+  {
     "content_sha256": "c889654e13fa5fa8cca299b5d4a387ebf1a61bd30a2abd22fbe2c1ced2c7d45c",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:12706cbae0401a5cfb595219",
