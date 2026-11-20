@@ -8,5 +8,15 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
+  },
+  {
+    "author_login": "pipavlo82",
+    "event_id": "github-announcement:pr_merged:15b60d385915617a39c29e56",
+    "kind": "pr_merged",
+    "number": 15,
+    "occurred_at": "2026-11-20T14:24:12Z",
+    "repository": "trustless-ai/verifiable-execution-claim-authorization",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "docs: update README after PR14 and preserve historical replay"
   }
 ]
