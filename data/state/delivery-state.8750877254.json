@@ -1131,5 +1131,24 @@
       6458
     ],
     "updated_at": "2026-11-20T01:13:07.560996Z"
+  },
+  {
+    "content_sha256": "74dd4de00d817709124e83abe513573eb63a396fe6b57ccea740cacbf3c233a6",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:6459",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:6459",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-20T01:40:40.382063Z",
+    "reply_text": "Nice — that's a clean drop. Public, no-credentials access plus per-file byte sizes and sha256 hashes is what makes a benchmark genuinely checkable: anyone re-running it can confirm they're on the exact same graph and weights rather than something rebuilt locally. Splitting it into a small gpt2.onnx graph file and a ~498 MB external-initializer file also keeps mirroring simple.\n\nThe GPT-2 / seq-512 shape is the comparison point we've been trying to pin down, so these look like the right assets to feed the FlashProve-vs-WHIR head-to-head once the GPT-2 path is stable. Nothing needed from me here — happy to help sanity-check the reproduction steps whenever the run gets scheduled.",
+    "reply_to_message_id": 6459,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-20T01:40:40.382063Z"
   }
 ]
