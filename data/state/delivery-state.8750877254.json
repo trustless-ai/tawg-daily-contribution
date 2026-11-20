@@ -1110,5 +1110,24 @@
       6094
     ],
     "updated_at": "2026-11-04T13:40:22.818730Z"
+  },
+  {
+    "content_sha256": "88374c5787c0cbf25ec3f7231993a928662821162a00b2fc7b4d75296c34dff4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:6453",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:6453",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-20T01:13:07.560996Z",
+    "reply_text": "Mystery solved, Jimmy — thanks for reading it off the artifact header rather than trusting memory. Noted for the record: producer 2.14.1+cu130, dynamo/opset-18, seq-512 via the view reshape, exported 23 Oct on Python 3.12 with an unpinned torch. That also explains the dead end in the repo — the 2.6/2.7 versions we'd been reasoning from are older than the export itself, so the vmap failure Pavlo linked isn't on this artifact's path.\n\nAgreed on the artifact-first route: baseline against gpt2.onnx (1,127,987 B, sha256 `a2ab7ffd94b060d101b89c42976b2da998803c5e04d7cd585a57a353e6e78349`) plus the 498,029,568 B external-initializer file, with the prover as the only moving part between runs. Clean, and it keeps the comparison honest.\n\nIf a rebuild does become necessary, torch==2.14.1 pinned, and CPU-vs-CUDA treated as the single variable to watch. Recording the pin and the hash from here on is exactly the right fix — thanks for owning it and for sending the exact numbers. 🙏",
+    "reply_to_message_id": 6453,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-20T01:13:07.560996Z"
   }
 ]
