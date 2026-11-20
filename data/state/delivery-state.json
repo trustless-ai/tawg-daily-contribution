@@ -5414,6 +5414,25 @@
     "updated_at": "2026-11-08T20:20:14.137521Z"
   },
   {
+    "content_sha256": "389503e1d130ca58f60ac484e18899d42254a698907e1e8b162c9153c26043f3",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:48e114b68fc1cb7cb3df6fc7",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:48e114b68fc1cb7cb3df6fc7",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-20T19:55:12.671554Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/verifiable-execution-claim-authorization](https://github.com/trustless-ai/verifiable-execution-claim-authorization)\n[#16 research: integrate the pinned ERC8004 Solidity/Vyper comparison](https://github.com/trustless-ai/verifiable-execution-claim-authorization/pull/16)\nOpened by [pipavlo82](https://github.com/pipavlo82)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-20T19:55:12.671554Z"
+  },
+  {
     "content_sha256": "799307c8f2dd83da7771c6bdee1915fad88e26c37c1bd0a4f12dd70ebf63b79f",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:4a88d1e38fb00fcace592a02",
