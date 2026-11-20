@@ -8,15 +8,5 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
-  },
-  {
-    "author_login": "Echo-Merlini",
-    "event_id": "github-announcement:pr_opened:2f96cde5e06034ced75faec9",
-    "kind": "pr_opened",
-    "number": 48,
-    "occurred_at": "2026-11-20T09:55:55Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Add field-element proof-size sizer for ShardDagProof (+ GPT-2 example)"
   }
 ]
