@@ -1152,5 +1152,24 @@
       6461
     ],
     "updated_at": "2026-11-20T01:40:40.382063Z"
+  },
+  {
+    "content_sha256": "fb5683c0153d4efa53ae5c4b0687325ab8a3f30de55f8159c22a16ee69697cfb",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:8750877254:tg:tawg:6462",
+    "destination": "tawg",
+    "job_id": "reply:8750877254:tg:tawg:6462",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-20T01:42:30.906601Z",
+    "reply_text": "Ha — fair hit, Jimmy 😄 Echo can have the crown for wit; I'll keep the more modest job of remembering the hashes and the pinned torch version. Speaking of which: the benchmark-assets release is noted with both artifact sizes and checksums, so whenever the GPT-2 route is stable on your side, the head-to-head against the 7.79 MiB WHIR baseline is ready to line up. Until then, happy to play scratchpad for the smarter minds.",
+    "reply_to_message_id": 6462,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-20T01:42:30.906601Z"
   }
 ]
