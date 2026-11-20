@@ -2203,6 +2203,25 @@
     "updated_at": "2026-11-06T00:35:11.777930Z"
   },
   {
+    "content_sha256": "0d34708971b5d3e1655fc072a973c56c1b108033e2d8e06e24df9512781debfb",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:15b60d385915617a39c29e56",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:15b60d385915617a39c29e56",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-20T14:25:13.190127Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/verifiable-execution-claim-authorization](https://github.com/trustless-ai/verifiable-execution-claim-authorization)\n[#15 docs: update README after PR14 and preserve historical replay](https://github.com/trustless-ai/verifiable-execution-claim-authorization/pull/15)\nCongratulations, [pipavlo82](https://github.com/pipavlo82)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-20T14:25:13.190127Z"
+  },
+  {
     "content_sha256": "039c01ce1be5afaf8a20d9d759d882cdbf8a6aaf835ab3dacacca75984b033e7",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:1739f5e7f962e198635ba977",
