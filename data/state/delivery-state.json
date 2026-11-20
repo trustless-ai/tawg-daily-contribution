@@ -1657,6 +1657,27 @@
     "updated_at": "2026-11-19T23:00:18.706900Z"
   },
   {
+    "content_sha256": "28d400e93db8be1084c23e71b5db67e5373995fde9381479953abc251352e2e9",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-11-20T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-11-20T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-20T23:00:28.508013Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-11-19 23:00 → 2026-11-20 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Byte-verified close on the model question** — the re-check matched on bytes, size, and per-op mix straight from the artifact, so the conclusion no longer rests on anyone's word. [tg:tawg:6467]\n\n> **ERC-8004 comparison integrated** — the pinned Solidity/Vyper research landed as a reviewable PR, giving the second-backend pilot a documented comparison to build on. [PR #16](https://github.com/trustless-ai/verifiable-execution-claim-authorization/pull/16)\n\n> **Proof-size sizer opened in zkIE** — a field-element estimator for ShardDagProof arrives with a GPT-2 worked example. [PR #48](https://github.com/trustless-ai/zkIE/pull/48)\n\n> **Docs refreshed with history intact** — the README now covers the post-PR14 state while the historical replay stays preserved for auditors. [PR #15](https://github.com/trustless-ai/verifiable-execution-claim-authorization/pull/15)\n\n## 🤝 **What moved**\n\n### benchmark verification\n_Reproducibility moved from assertion to a check anyone can repeat._\n\n- Jimmy Shi (@jimmyshi) **Published** the benchmark bundle as a public, credential-free release with a stated file size and hash, giving every reviewer the same object to inspect — that is the foundation for evidence that does not depend on trust. [tg:tawg:6459]\n- Jimmy Shi (@jimmyshi) **Confirmed** the close by matching bytes, total size, and per-op mix directly from the published artifact, settling the model question — conclusions backed by re-runnable checks are exactly what the group is trying to make normal. [tg:tawg:6467]\n\n### claim authorization\n_The claim-authorization work moved from experimentation into documented, reviewable research._\n\n- Pavlo **Merged** the README refresh that describes the post-PR14 state while preserving the historical replay, so readers can follow both the current picture and the path that produced it — documentation with provenance keeps the repository trustworthy for future reviewers. [PR #15](https://github.com/trustless-ai/verifiable-execution-claim-authorization/pull/15)\n- Pavlo **Opened** the research PR integrating the pinned ERC-8004 Solidity/Vyper comparison, so the second-backend pilot now has a pinned, reviewable reference rather than an informal one — a concrete step toward verifiable cross-implementation claims. [PR #16](https://github.com/trustless-ai/verifiable-execution-claim-authorization/pull/16)\n- Merlini (@gobross) **Reviewed** with a quick structural first look confirming the change leaves src/ untouched and Core intact at the file level, and offered an independent re-run — careful review like this lets a second backend develop without putting the core at risk. [tg:tawg:6473]\n\n### zkIE\n_Proof-size estimation gained a concrete, example-backed path._\n\n- Echo **Opened** PR #48 with a field-element proof-size sizer for ShardDagProof plus a GPT-2 example, replacing rough estimates with a measurable approach — that makes sizing and cost discussions concrete for everyone building on zkIE. [PR #48](https://github.com/trustless-ai/zkIE/pull/48)\n\n### ONNX export\n_A fresh outside lead opened a possible route through a known export issue._\n\n- Pavlo (@pavlentyy82) **Shared** a matching PyTorch issue describing a similar vmap/contiguity failure, handing the export investigation a concrete external lead to test — quick pointers like this save a debugging cycle the whole group would otherwise spend. [tg:tawg:6447]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n- Re-run the published GPT-2 artifact across a second backend and compare the per-op mix side by side, so the close becomes a reusable cross-backend check.\n- Grow the pinned Solidity/Vyper comparison into a shared reference that other implementers can diff their own designs against.\n\n### ✅ **TODOs**\n- Follow through on the independent re-run offered for the second-backend review and record the outcome.\n- Try the linked PyTorch report against the current export failure and document whether it reproduces.\n- Exercise the new proof-size sizer on a second model shape to see how it scales.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** the cleanest close of the day came from making a claim checkable — the artifact did the arguing, and the uncertainty simply ran out of oxygen.\n>\n> A clean loop like that is the collaboration version of a checksum that finally matches — keep the rhythm rolling 🌀",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-20T23:00:28.508013Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6474
+    ],
+    "updated_at": "2026-11-20T23:00:28.508013Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
