@@ -8,15 +8,5 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
-  },
-  {
-    "author_login": "pipavlo82",
-    "event_id": "github-announcement:pr_opened:48e114b68fc1cb7cb3df6fc7",
-    "kind": "pr_opened",
-    "number": 16,
-    "occurred_at": "2026-11-20T19:21:51Z",
-    "repository": "trustless-ai/verifiable-execution-claim-authorization",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "research: integrate the pinned ERC8004 Solidity/Vyper comparison"
   }
 ]
