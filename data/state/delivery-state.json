@@ -1678,6 +1678,27 @@
     "updated_at": "2026-11-20T23:00:28.508013Z"
   },
   {
+    "content_sha256": "95d78393f9aa51bd4544fa125cc62831f0c8bbe34c389254c6128dcb1e34295c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-11-21T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-11-21T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-21T23:00:18.220344Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-11-20 23:00 → 2026-11-21 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Proving stack overhaul put forward** — a refactor pairing soundness hardening with a performance revamp is now visible as a pull request, giving the group a concrete implementation loop to examine [PR #47](https://github.com/trustless-ai/zkIE/pull/47)\n\n## 🤝 **What moved**\n\n### proving stack\n\n_The implementation direction turned into concrete, reviewable code._\n\n- Jimmy Shi **put forward** a proving-stack refactor that pairs soundness hardening with a performance overhaul, giving reviewers one place to examine both security posture and speed together — the kind of change that keeps Trustless AI proofs dependable and practical [PR #47](https://github.com/trustless-ai/zkIE/pull/47)\n\n### coordination\n\n_A quick confirmation kept the group's timing on track._\n\n- Pavlo (@pavlentyy82) **confirmed** that a proposed setup works and that Tuesday fits, giving the group a clear go-ahead on timing so planning can continue without a loose end [tg:tawg:6475]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Treat soundness hardening and performance as one review thread, since the refactor bundles both concerns\n- Look for follow-up soundness arguments or speed measurements that would make the overhaul easier to assess\n\n### ✅ **TODOs**\n\n- Review the proving-stack changes and note any soundness or performance questions\n- Lock in Tuesday and share any prep ahead of the next working session\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** a proving-stack overhaul and a quick timing confirmation kept the implementation loop moving even on a light day.\n>\n> One careful refactor at a time keeps the proofs rolling — see you at the next checkpoint 🔧",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-21T23:00:18.220344Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6477
+    ],
+    "updated_at": "2026-11-21T23:00:18.220344Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
