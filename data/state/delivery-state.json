@@ -1699,6 +1699,25 @@
     "updated_at": "2026-11-21T23:00:18.220344Z"
   },
   {
+    "content_sha256": "f98fb291b6b325ab3cc421be387205dc84a4ba58ca0180f4ae7782e33fa734c4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-11-22T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-11-22T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-22T23:00:23.705016Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-11-21 23:00 → 2026-11-22 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **A sizer PR became a soundness checkpoint** — the ShardDagProof proof-size work drew a point-by-point read-set review that separated verifier inputs from witness data and flagged open checks. [PR #48 review](https://github.com/trustless-ai/zkIE/pull/48#pullrequestreview-6009620084)\n\n## 🤝 **What moved**\n\n### zkIE proving stack\n\n_The proving stack moved into a focused soundness and performance review phase._\n\n- Jimmy Shi **Opened** PR #47, a proving-stack refactor that pairs soundness hardening with a performance overhaul, giving the team a single place to review changes that downstream proofs depend on. [PR #47](https://github.com/trustless-ai/zkIE/pull/47)\n\n### zkIE proof sizing\n\n_The proof-size tooling gained a concrete example and a sharper correctness conversation._\n\n- echo-merlini **Shipped** a field-element proof-size sizer for ShardDagProof with a GPT-2 example, giving the team an early read on proof size when shaping configurations. [PR #48](https://github.com/trustless-ai/zkIE/pull/48)\n- Jimmy Shi **Flagged** that plain `prove_argmax` leaves `sel_evals` empty, catching a wiring gap that could otherwise slip into the proving code unnoticed. [comment](https://github.com/trustless-ai/zkIE/pull/48#discussion_r4656111801)\n- Jimmy Shi **Clarified** that the gather-matmul values under review are verifier inputs rather than witness data, drawing a boundary future op checks can follow. [comment](https://github.com/trustless-ai/zkIE/pull/48#discussion_r4656111804)\n- Jimmy Shi **Traced** how both values reach `verify_virtual` as point arguments in scatter-add, making the argument flow explicit so the read-set discussion can converge on the right check. [comment](https://github.com/trustless-ai/zkIE/pull/48#discussion_r4656111808)\n- Jimmy Shi **Mapped** that the permutation check only covers the `a_side` and `b_side` halves, marking exactly where extra coverage is needed. [comment](https://github.com/trustless-ai/zkIE/pull/48#discussion_r4656111810)\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Whether the field-element sizer should become the default estimate path for ShardDagProof configurations across the team.\n- Documenting the verifier-input versus witness split so future gadgets inherit the same boundary.\n- Whether the proving-stack refactor suggests a shared checklist for soundness and performance reviews.\n\n### ✅ **TODOs**\n\n- Resolve the open argmax, permutation, and virtual-point questions on PR #48, then re-check the GPT-2 example against the clarified inputs.\n- Give PR #47 a focused soundness pass before the performance changes settle.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A proof-size sizer arrived and promptly drew a point-by-point soundness review, turning a focused change into a real correctness conversation.\n>\n> Keep that rhythm going, team — a sizer can estimate the size, but it takes a curious read-through to find the questions that matter 😄",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-22T23:00:23.705016Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
