@@ -8,15 +8,5 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
-  },
-  {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_merged:829e556b08e4bb6381c66f45",
-    "kind": "pr_merged",
-    "number": 47,
-    "occurred_at": "2026-11-22T14:19:41Z",
-    "repository": "trustless-ai/zkIE",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Refactor the proving stack: soundness hardening and performance overhaul"
   }
 ]
