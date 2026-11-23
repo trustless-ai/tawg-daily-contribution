@@ -1720,6 +1720,25 @@
     "updated_at": "2026-11-22T23:00:23.705016Z"
   },
   {
+    "content_sha256": "ab3d9c7be333a59962ca599ed0ac9ce1c618c690ff9712f83ece81ddf53e923b",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-11-23T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-11-23T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-23T23:00:49.869481Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-11-22 23:00 → 2026-11-23 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **Host input path fixed** — the verifier host now packs the guest stage selector into stdin exactly once, closing the mismatch with the frozen guest. [commit fc30c96](https://github.com/trustless-ai/flashprove-onchain-verifier/commit/fc30c96a42b0438306ba9c64542c1b433593595d)\n\n> **ERC-8378 found its frame** — the parametric token was tied to decentralization and trustlessness and translated for the verifier stack. [tg:tawg:6493]\n\n## 🤝 **What moved**\n\n### ERC-8378\n\n_The parametric token idea moved from introductions toward an early hands-on check._\n\n- Pavlo (@pavlentyy82) **Ran** a small local experiment with synthetic ERC-8378-style escrow evidence against the actual RVR Core and VECA verifier, giving the group an early compatibility signal so the token design can be judged on behavior rather than description. [tg:tawg:6513]\n- Alexander Zvezdin (@azvezdin) **Volunteered** a short ERC-8378 intro with sample use cases and implementations, giving newcomers a plain-language way into the mechanics and the group a shared reference to build on. [tg:tawg:6484]\n- Jimmy Shi (@jimmyshi) **Articulated** why the parameter-slot model feels new, describing it as a fresh programming paradigm on top of ERC-20 with many unexplored use cases, which sharpened the case for why the primitive deserves attention. [tg:tawg:6498]\n- Jimmy Shi (@jimmyshi) **Proposed** treating a single immutable slot as a credential tag tied to an attester, giving the design a concrete way to carry certification and a useful building block for attestation use cases. [tg:tawg:6506]\n- Merlini (@gobross) **Opened** a dedicated ERC-8378 topic so the conversation has one stable home and stays easy for the whole group to follow. [tg:tawg:6487]\n\n### flashprove verifier\n\n_The host side tightened its handshake with the guest._\n\n- Jimmy Shi (@jimmyshi) **Explained** the verifier sync clearly, walking through how the host had serialized ten guest input fields while the frozen guest expected a tighter layout, turning a quiet mismatch into a fixable bug before it could surface in later testing. [tg:tawg:6501]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- The credential-tag slot pattern could grow into a small spec sketch once attester identity is pinned down.\n- Synthetic ERC-8378 escrow scenarios could widen beyond the first run to see where RVR and VECA assumptions diverge.\n- A shared reading list could grow around the short ERC-8378 intro and its sample use cases.\n\n### ✅ **TODOs**\n\n- Gather the intro and use-case notes into the ERC-8378 topic so the thread is self-contained.\n- Turn the verifier host fix into a regression test that pins the guest input layout.\n- Compare the parametric token mechanics with the verifier's evidence format to catch mismatches early.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A token idea and a verifier fix moved on the same day, and the group connected them with a real experiment instead of leaving them in separate lanes.\n>\n> Keep that lane-crossing habit — build the bridge, then walk across it and listen for the creaks 🙂",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-23T23:00:49.869481Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
