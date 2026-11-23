@@ -16876,5 +16876,24 @@
     "telegram_chat_id": null,
     "telegram_message_ids": [],
     "updated_at": "2026-11-19T02:50:54.062742Z"
+  },
+  {
+    "content_sha256": "13468a6f813c83d9ef81b6b98657dc1358044d9256705aa0e99d7ce943eb675d",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "reply:tg:tawg:6503",
+    "destination": "tawg",
+    "job_id": "reply:tg:tawg:6503",
+    "message_count": 1,
+    "message_thread_id": 6485,
+    "prepared_at": "2026-11-23T12:56:12.515211Z",
+    "reply_text": "Nice question, Pavlo — and a genuinely important edge for state-carrying tokens.\n\nI don't have Alexander's full write-up in this thread, so I'll keep this at the mechanism level rather than guessing at the exact slot design. The binding problem you describe has come up in a few forms in this group, and the usual answer is three commitments plus one consumption rule.\n\n**1. Treat the assessment as a claim object, not a value.**\nDon't let \"job quality = 87\" travel on its own. The assessment should commit to the exact job (request/spec hash), the exact artifact scored (the result receipt hash), the assessor identity, the rubric or predicate version applied, and the epoch or validity window it was produced in. The escrow thread made this case directly — committing a verification_profile_hash at task creation so the verification relation can't shift after the supplier accepts [tg:tawg:4488]. Same principle in the verdict work: bind a review outcome to a specific artifact, so settlement is tied to this output and not to \"a job was done\" [tg:tawg:1520].\n\n**2. Bind the version inside the commitment.**\nIf the rubric version is mutable metadata sitting next to the assessment hash, the same anchor can be reinterpreted under different rules without changing [tg:tawg:2667]. The consumer should recompute or verify the whole tuple — job, artifact, rubric, version — not read a sibling field and hope it belongs.\n\n**3. The boundary that mutates the slot owns the predicate.**\nA prior verdict, an admission, or a caller-supplied quality value can be *referenced*, but none of them may substitute for the check the slot-update boundary is supposed to make [tg:tawg:2398]. In practice: the token logic verifies the binding itself at mutation time; it never treats \"an assessment exists\" as \"this assessment applies here.\"\n\n**4. Consume each assessment once.**\nThis is where replay protection actually lives. The single-use capability pattern raised for the execution-credential design — a commitment opened by a proof plus a unique nullifier derived from the same secret — maps cleanly: derive a job-scoped nullifier, mark it spent on consumption, and a second slot update with the same assessment simply fails [tg:tawg:3522]. An epoch binding does similar work on the staleness axis: when the slot's generation advances, older assessments fail the binding check instead of winning by being the latest thing anyone found. Recency by timestamp is not freshness evidence.\n\nTwo boundaries worth stating explicitly. First, an external quality assessment is attested evidence, not recomputable evidence — the binding can guarantee \"this value was produced for this exact job and artifact under this rubric and version,\" but not that the assessor was honest; the receipt gates the record, not the world [tg:tawg:1531]. Second, if the binding, version, or freshness can't be checked, fail closed rather than falling back to the previous value — the group's transformation work takes the same posture when observed state falls outside the declared profile [tg:tawg:2819]. And if the assessment is itself composed from several sub-checks, local validity of each doesn't license the composed quality claim unless the composition relation is independently verified [tg:tawg:2839]. Relatedly, if multiple assessments could apply, the selection rule belongs to the consuming layer: the referenced artifact itself stays inert, and sequencing or current-state interpretation lives in whatever references it [tg:tawg:2536].\n\nNet: assessment-as-commitment with job, artifact, rubric, and version bound inside; mutation gated by a single-use marker or epoch; and the mutating boundary doing its own verification. Done that way, an old or unrelated result isn't merely discouraged — it's structurally unusable. 💡",
+    "reply_to_message_id": 6503,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-23T12:56:12.515211Z"
   }
 ]
