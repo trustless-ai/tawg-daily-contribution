@@ -6086,6 +6086,27 @@
     "updated_at": "2026-11-02T16:55:13.945646Z"
   },
   {
+    "content_sha256": "a6650aa7fd82be399d1e1d8ff5a2cdabc8d1344d341809fc2a80cd629677c568",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:8315d725ea045a7877ed0a97",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:8315d725ea045a7877ed0a97",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-23T02:15:12.627011Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/flashprove-onchain-verifier](https://github.com/trustless-ai/flashprove-onchain-verifier)\n[#3 fix\\(host\\): pack the guest stage selector into stdin exactly once](https://github.com/trustless-ai/flashprove-onchain-verifier/pull/3)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-23T02:15:12.627011Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6482
+    ],
+    "updated_at": "2026-11-23T02:15:12.627011Z"
+  },
+  {
     "content_sha256": "f02c3b00bac5ba02fb080b196f1c08eab5954791638e53c8fcb7f5491c77ad5b",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:85a72444c7d4e71710cce5e3",
