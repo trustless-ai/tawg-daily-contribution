@@ -8,5 +8,15 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_opened:8315d725ea045a7877ed0a97",
+    "kind": "pr_opened",
+    "number": 3,
+    "occurred_at": "2026-11-23T01:41:17Z",
+    "repository": "trustless-ai/flashprove-onchain-verifier",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "fix(host): pack the guest stage selector into stdin exactly once"
   }
 ]
