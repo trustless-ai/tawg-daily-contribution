@@ -1741,6 +1741,25 @@
     "updated_at": "2026-11-23T23:00:49.869481Z"
   },
   {
+    "content_sha256": "0ecb87ff663f64ed71db3d2b1f7476ebc81c5b3b5fd9e4c2c57f5215301570a8",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "daily:2026-11-24T23:00:00Z",
+    "destination": "tawg",
+    "job_id": "daily:2026-11-24T23:00:00Z",
+    "message_count": 1,
+    "message_thread_id": null,
+    "prepared_at": "2026-11-25T01:25:14.791398Z",
+    "reply_text": "🗓 **TAWG Daily Catch-up**\n_2026-11-23 23:00 → 2026-11-24 23:00 UTC_\n\n## ⚡ **Highlights**\n\n> **CPU proof run pushed deep into recursion** — the run reached roughly 1,870 core shards before its machine expired at midnight, leaving the end-to-end path only the proof artifact short. [tg:tawg:6522]\n\n> **A proof-checking evaluator surfaced for agentic commerce** — an ERC-8183 follow-up reports that a working evaluator now exists with testing under way, giving agent work a concrete verification path. [ERC-8183 post #470](https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902/470)\n\n> **A free ERC-8004 agent directory appeared** — a read-only listing of ERC-8004 agents on Ethereum mainnet gives builders a simple shared view of who is registered. [ERC-8004 post #457](https://ethereum-magicians.org/t/erc-8004-trustless-agents/25098/457)\n\n## 🤝 **What moved**\n\n### proof pipeline\n\n_The end-to-end path narrowed to a clear final step._\n\n- Jimmy Shi (@jimmyshi) **Reported** that the run sits essentially at the finish line, with the actual proof artifact the one remaining piece for a full end-to-end run, which shows precisely where the next effort goes. [tg:tawg:6528]\n- Merlini (@gobross) **Volunteered** hands-on help right after the run's machine expired, keeping a stalled moment from becoming a dead end and making sure support is ready when the proving stage resumes. [tg:tawg:6527]\n\n### parametric liquidity\n\n_The modeling discussion moved into a clearer phase for group review._\n\n- Alexander Zvezdin (@azvezdin) **Framed** the parametric liquidity model behind the team's price-prediction trading work, giving everyone a shared starting point for scrutiny and feedback. [tg:tawg:6524]\n\n## 🚀 **Next up**\n\n### 💡 **Ideas to follow**\n\n- Line up compute with enough headroom for the proving stage, so the final artifact can land without another midnight cutoff.\n- Give parametric liquidity a fuller write-up and invite the group to stress its assumptions before more code depends on it.\n- Try the new proof-checking evaluator on a real submission to see how it handles messy agent work.\n\n### ✅ **TODOs**\n\n- Rerun the proving stage and close the end-to-end loop with the proof artifact in hand.\n- Capture what the expired run already showed about shard throughput for the next attempt.\n\n## 🤖 **Trusty's take**\n\n> **Today's spark:** A proof run ran out of machine time, yet the team still closed the loop with a crisp next step and a ready hand for the resume.\n>\n> The last artifact is always the steepest stretch — keep the rope taut and the relay rolling, team 🧗",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-25T01:25:14.791398Z"
+  },
+  {
     "content_sha256": "a466980af20249b60477ac2f3235c5ea85d2023ddef606a63eb3044863a8eea3",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "daily:preview-rich-v1:2026-08-27T23:00:00Z",
