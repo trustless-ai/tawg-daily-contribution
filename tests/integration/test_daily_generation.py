@@ -220,7 +220,11 @@ async def test_daily_retry_tells_the_model_why_the_previous_draft_was_rejected(
         encoding="utf-8",
     )
     rejected = _fixture("daily-active")
-    rejected["telegram_text"] = rejected["telegram_text"].replace("\n>\n", "\n", 1)
+    rejected["telegram_text"] = rejected["telegram_text"].replace(
+        "for the whole group.\n>\n> That's one less fog bank",
+        "for the whole group.\n>\n> An extra take line.\n> That's one less fog bank",
+        1,
+    )
     ai = SequenceAi([rejected, _fixture("daily-active")])
 
     prepared = await DailyService(tmp_path, ai=ai).prepare(
@@ -235,8 +239,56 @@ async def test_daily_retry_tells_the_model_why_the_previous_draft_was_rejected(
     assert "revision_feedback" not in first_context["trigger"]
     assert retry_context["trigger"]["revision_feedback"] == (
         "The previous draft was rejected: Daily Trusty's take has an invalid quote "
-        "structure. Return a corrected full result that follows the existing output contract."
+        "structure. Trusty's take must be exactly three lines: '> quote', a bare '>', "
+        "and '> take ending with one emoji'. Return a corrected full result that "
+        "follows the existing output contract."
     )
+
+
+@pytest.mark.asyncio
+async def test_daily_heals_trustys_take_paragraphs_split_by_a_blank_line(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    expected = _fixture("daily-active")
+    malformed = _fixture("daily-active")
+    malformed["telegram_text"] = malformed["telegram_text"].replace(
+        "for the whole group.\n>\n> That's one less fog bank",
+        "for the whole group.\n\n> That's one less fog bank",
+        1,
+    )
+
+    prepared = await DailyService(tmp_path, ai=FakeAi(malformed)).prepare(
+        WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+    )
+
+    assert prepared is not None
+    assert prepared.telegram_text == expected["telegram_text"]
+
+
+@pytest.mark.asyncio
+async def test_daily_strips_trustys_take_trailing_whitespace_from_the_sent_text(
+    tmp_path: Path,
+) -> None:
+    _seed(tmp_path)
+    expected = _fixture("daily-active")
+    malformed = _fixture("daily-active")
+    malformed["telegram_text"] = malformed["telegram_text"].replace(
+        "for the whole group.\n>\n> That's one less fog bank",
+        "for the whole group.   \n>   \n> That's one less fog bank",
+        1,
+    ).replace(
+        "Keep poking the edges, TAWG. 🤖",
+        "Keep poking the edges, TAWG. 🤖   ",
+        1,
+    )
+
+    prepared = await DailyService(tmp_path, ai=FakeAi(malformed)).prepare(
+        WINDOW, readiness=_ready(), evidence=_evidence(tmp_path)
+    )
+
+    assert prepared is not None
+    assert prepared.telegram_text == expected["telegram_text"]
 
 
 @pytest.mark.asyncio
@@ -1013,12 +1065,6 @@ async def test_daily_trustys_take_rejection_reports_trailing_residue(
                     "> That's one less fog bank for the builders.",
                     "> That's one less fog bank for the builders. [tg:tawg:1]",
                 )
-            ),
-            "Trusty",
-        ),
-        (
-            lambda value: value.update(
-                telegram_text=value["telegram_text"].replace("\n>\n", "\n", 1)
             ),
             "Trusty",
         ),
