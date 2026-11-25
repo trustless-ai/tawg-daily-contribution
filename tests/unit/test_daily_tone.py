@@ -111,6 +111,61 @@ def test_trustys_take_rejection_truncates_the_trailing_residue() -> None:
     assert message.removeprefix(prefix) == repr(residue[:60])
 
 
+@pytest.mark.parametrize(
+    ("lines", "expected"),
+    [
+        (
+            [
+                "",
+                "> **Today's spark:** Something settled.",
+                "",
+                "> Keep building, TAWG. 🤖",
+            ],
+            [
+                "",
+                "> **Today's spark:** Something settled.",
+                ">",
+                "> Keep building, TAWG. 🤖",
+            ],
+        ),
+        (
+            [
+                "",
+                "> **Today's spark:** Something settled.   ",
+                ">   ",
+                "> Keep building, TAWG. 🤖   ",
+            ],
+            [
+                "",
+                "> **Today's spark:** Something settled.",
+                ">",
+                "> Keep building, TAWG. 🤖",
+            ],
+        ),
+        (
+            [
+                "",
+                "> **Today's spark:** Something settled.",
+                ">",
+                "> An extra take line.",
+                "> Keep building, TAWG. 🤖",
+            ],
+            [
+                "",
+                "> **Today's spark:** Something settled.",
+                ">",
+                "> An extra take line.",
+                "> Keep building, TAWG. 🤖",
+            ],
+        ),
+    ],
+)
+def test_normalize_trustys_take_only_repairs_blank_lines_and_whitespace(
+    lines: list[str], expected: list[str]
+) -> None:
+    assert DailyService._normalize_trustys_take(lines) == expected
+
+
 def test_log_safe_text_collapses_whitespace() -> None:
     assert _log_safe_text("Daily failed:\n\n  reason\tone   two") == (
         "Daily failed: reason one two"
