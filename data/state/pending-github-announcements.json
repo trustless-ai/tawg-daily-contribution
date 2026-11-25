@@ -8,5 +8,15 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_merged:26d94db686250a3c86bc92c9",
+    "kind": "pr_merged",
+    "number": 20,
+    "occurred_at": "2026-11-25T01:18:26Z",
+    "repository": "trustless-ai/tawg-daily-contribution",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "fix(daily): heal Trusty's take quote structure before validation"
   }
 ]
