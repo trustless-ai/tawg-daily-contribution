@@ -62,6 +62,11 @@ _IDEAS_HEADING = "### 💡 **Ideas to follow**"
 _TODOS_HEADING = "### ✅ **TODOs**"
 _QUIET_HIGHLIGHT = "No source-backed highlight landed in this window."
 _TRUSTY_SPARK_PREFIX = "**Today's spark:** "
+_TRUSTY_TAKE_STRUCTURE_MESSAGE = "Daily Trusty's take has an invalid quote structure"
+_TRUSTY_TAKE_SHAPE_HINT = (
+    "Trusty's take must be exactly three lines: '> quote', a bare '>', and "
+    "'> take ending with one emoji'. "
+)
 _CITATION_SURROUNDING = "\"'`<>[](){}.,;:!?"
 _CITATION_HOST = re.compile(r"[a-z0-9.-]+")
 _MARKDOWN_LINK_PARTS = re.compile(r"(\[[^\[\]\n]+\]\()([^()\s]+)(\))")
@@ -358,12 +363,18 @@ class DailyService:
         for attempt in range(2):
             context_pack = context
             if rejection is not None:
+                hint = (
+                    _TRUSTY_TAKE_SHAPE_HINT
+                    if str(rejection) == _TRUSTY_TAKE_STRUCTURE_MESSAGE
+                    else ""
+                )
                 context_pack = self._context(
                     window,
                     context_evidence,
                     revision_feedback=(
-                        f"The previous draft was rejected: {rejection}. Return a corrected "
-                        "full result that follows the existing output contract."
+                        f"The previous draft was rejected: {rejection}. {hint}"
+                        "Return a corrected full result that follows the existing "
+                        "output contract."
                     ),
                 )
             timeout_seconds = (
@@ -714,6 +725,16 @@ class DailyService:
             section_indices["Next up"] + 1 : section_indices["Trusty's take"]
         ]
         trustys_take_lines = lines[section_indices["Trusty's take"] + 1 :]
+        normalized_take = self._normalize_trustys_take(trustys_take_lines)
+        if normalized_take != trustys_take_lines:
+            trailing_newline = result.telegram_text.endswith("\n")
+            result.telegram_text = "\n".join(
+                [*lines[: section_indices["Trusty's take"] + 1], *normalized_take]
+            )
+            if trailing_newline:
+                result.telegram_text += "\n"
+            lines = result.telegram_text.splitlines()
+            trustys_take_lines = normalized_take
         outside_what_moved = (
             lines[: section_indices["What moved"] + 1]
             + lines[section_indices["Next up"] :]
@@ -913,6 +934,18 @@ class DailyService:
             )
 
     @staticmethod
+    def _normalize_trustys_take(lines: list[str]) -> list[str]:
+        content_indices = [index for index, line in enumerate(lines) if line.strip()]
+        if not content_indices:
+            return list(lines)
+        first = content_indices[0]
+        last = content_indices[-1]
+        content = [line.strip() for line in lines[first : last + 1] if line.strip()]
+        if len(content) == 2 and all(line.startswith("> ") for line in content):
+            content.insert(1, ">")
+        return [*lines[:first], *content, *lines[last + 1 :]]
+
+    @staticmethod
     def _validate_trustys_take(lines: list[str]) -> None:
         content = [line.strip() for line in lines]
         while content and not content[0]:
@@ -925,7 +958,7 @@ class DailyService:
             or not content[0].startswith("> ")
             or not content[2].startswith("> ")
         ):
-            raise DailyRejected("Daily Trusty's take has an invalid quote structure")
+            raise DailyRejected(_TRUSTY_TAKE_STRUCTURE_MESSAGE)
         spark = content[0][2:]
         punchline = content[2][2:]
         if not spark.startswith(_TRUSTY_SPARK_PREFIX) or not spark.removeprefix(
