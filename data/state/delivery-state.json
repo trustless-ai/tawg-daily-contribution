@@ -5897,6 +5897,25 @@
     "updated_at": "2026-10-24T15:35:09.983381Z"
   },
   {
+    "content_sha256": "41ba0cf44f94e087f6bc9d4af32e80df8b6273f7662913982006b736e9cd82c4",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:663d64c236e20d099d9757a5",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:663d64c236e20d099d9757a5",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-26T11:15:09.329886Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#90 fix\\(recompute-step\\): 8263/precedence reports a digest mismatch as verified-bad](https://github.com/trustless-ai/recompute-kit/pull/90)\nOpened by [Echo-Merlini](https://github.com/Echo-Merlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-26T11:15:09.329886Z"
+  },
+  {
     "content_sha256": "9046765efa0a209d3c92d29adc4455be1d78064d6479c9e232343f92fbdca821",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:69604c44febdf62be3d92ba4",
