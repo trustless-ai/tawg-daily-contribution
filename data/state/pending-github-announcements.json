@@ -8,5 +8,15 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
+  },
+  {
+    "author_login": "Echo-Merlini",
+    "event_id": "github-announcement:pr_opened:663d64c236e20d099d9757a5",
+    "kind": "pr_opened",
+    "number": 90,
+    "occurred_at": "2026-11-26T10:40:34Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "fix(recompute-step): 8263/precedence reports a digest mismatch as verified-bad"
   }
 ]
