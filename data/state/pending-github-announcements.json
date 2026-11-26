@@ -8,5 +8,15 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
+  },
+  {
+    "author_login": "JimmyShi22",
+    "event_id": "github-announcement:pr_opened:9bc9b3e8d191a4e911b20f1c",
+    "kind": "pr_opened",
+    "number": 21,
+    "occurred_at": "2026-11-26T23:36:46Z",
+    "repository": "trustless-ai/tawg-daily-contribution",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "fix(daily): ignore privacy placeholders as citations; log persistence rejection detail"
   }
 ]
