@@ -6002,6 +6002,25 @@
     "updated_at": "2026-10-04T18:20:24.483083Z"
   },
   {
+    "content_sha256": "9f7c3ff64f75aa39ecb5f8a5984a92a343ca790f3a2fe08f53b81dc6b7e47c63",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:6f30ba0fa63c0a48c8bfc941",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:6f30ba0fa63c0a48c8bfc941",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-26T17:10:16.102045Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/verifiable-execution-claim-authorization](https://github.com/trustless-ai/verifiable-execution-claim-authorization)\n[#17 Draft: ERC-8378 × RVR × VECA — Verifier-Gated Settlement V1](https://github.com/trustless-ai/verifiable-execution-claim-authorization/pull/17)\nOpened by [pipavlo82](https://github.com/pipavlo82)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-26T17:10:16.102045Z"
+  },
+  {
     "content_sha256": "546b9be29e26c602fed30fc8744da7ade335f83413cef1ec191191b16cc6b5cf",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:70da0695499f10ea0014f2c9",
