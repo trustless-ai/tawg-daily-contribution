@@ -8,5 +8,15 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
+  },
+  {
+    "author_login": "pipavlo82",
+    "event_id": "github-announcement:pr_opened:6f30ba0fa63c0a48c8bfc941",
+    "kind": "pr_opened",
+    "number": 17,
+    "occurred_at": "2026-11-26T16:58:56Z",
+    "repository": "trustless-ai/verifiable-execution-claim-authorization",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "Draft: ERC-8378 × RVR × VECA — Verifier-Gated Settlement V1"
   }
 ]
