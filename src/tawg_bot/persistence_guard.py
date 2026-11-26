@@ -16,10 +16,16 @@ from tawg_bot.source_registry import RegistryRejected, SourceRegistry
 
 
 class PersistenceRejected(ValueError):
-    """A deliberately non-descriptive persistence policy failure."""
+    """A deliberately non-descriptive persistence policy failure.
 
-    def __init__(self) -> None:
+    ``detail`` may name the staged path and a bounded structural fact about the
+    rejected payload (never the payload text itself) so operators can diagnose
+    a rejection without leaking external content into logs.
+    """
+
+    def __init__(self, detail: str | None = None) -> None:
         super().__init__("persistence policy rejection")
+        self.detail = detail
 
 
 class PersistenceProvenance(StrEnum):
@@ -141,7 +147,13 @@ class PersistenceGuard:
                 trusted_source_locators=self._trusted_source_locators,
             ):
                 if self._contains_external_excerpt(value, allow_short_quote):
-                    raise PersistenceRejected
+                    # Path and shape only: never echo the rejected payload text.
+                    raise PersistenceRejected(
+                        "external_excerpt:"
+                        f"path={relative_path}:"
+                        f"chars={len(value)}:"
+                        f"allow_short={allow_short_quote}"
+                    )
 
     def _contains_external_excerpt(self, payload: str, allow_short_quote: bool) -> bool:
         if not payload or not self._external_texts:

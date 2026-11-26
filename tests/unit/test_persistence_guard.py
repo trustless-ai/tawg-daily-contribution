@@ -571,3 +571,21 @@ def test_rejection_never_writes_or_logs_the_canary(
     assert EXTERNAL_BODY not in captured.err
     assert QUERY_CANARY not in captured.out
     assert QUERY_CANARY not in captured.err
+
+
+def test_rejection_detail_names_the_path_without_echoing_the_body() -> None:
+    relative_path = "data/state/prepared-daily.json"
+    guard = PersistenceGuard.from_external_texts((EXTERNAL_BODY,))
+
+    with pytest.raises(PersistenceRejected) as caught:
+        guard.inspect_staged(
+            {relative_path: json.dumps({"telegram_text": EXTERNAL_BODY}).encode()},
+            {relative_path: PersistenceProvenance.PREPARED_TELEGRAM},
+        )
+
+    detail = caught.value.detail or ""
+    assert detail == (
+        f"external_excerpt:path={relative_path}:"
+        f"chars={len(EXTERNAL_BODY)}:allow_short=True"
+    )
+    assert EXTERNAL_BODY not in detail
