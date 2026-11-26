@@ -10175,6 +10175,27 @@
     "updated_at": "2026-10-23T23:05:37.636969Z"
   },
   {
+    "content_sha256": "22beb840b99863d7f6b61b244ccc8fa2a99dd381eb75ed9a1acb7e2c951c5c4c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:72d65ca980363aac4a7f11dd",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:72d65ca980363aac4a7f11dd",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-26T17:45:15.153639Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/verifiable-execution-claim-authorization](https://github.com/trustless-ai/verifiable-execution-claim-authorization)\n[#17 Draft: ERC-8378 × RVR × VECA — Verifier-Gated Settlement V1](https://github.com/trustless-ai/verifiable-execution-claim-authorization/pull/17)\nNew commits from [pipavlo82](https://github.com/pipavlo82)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-26T17:45:15.153639Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6575
+    ],
+    "updated_at": "2026-11-26T17:45:15.153639Z"
+  },
+  {
     "content_sha256": "6bfb89225b9c8c5392677a11ae288612e1ab3ac31589fdde717a6a29be3bc3b4",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:733717b9047c42d96363d90d",
@@ -11097,6 +11118,27 @@
       5032
     ],
     "updated_at": "2026-09-29T16:10:09.497670Z"
+  },
+  {
+    "content_sha256": "a71b71d8c8b7da5586559c2fd71847a4daf3e5c3bd097971521381688ad11f81",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:9d0868b5ebc932864fcde480",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:9d0868b5ebc932864fcde480",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-26T17:45:15.153639Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#90 fix\\(recompute-step\\): 8263/precedence reports a digest mismatch as verified-bad](https://github.com/trustless-ai/recompute-kit/pull/90)\nNew commits from [Echo-Merlini](https://github.com/Echo-Merlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-26T17:45:15.153639Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6574
+    ],
+    "updated_at": "2026-11-26T17:45:15.153639Z"
   },
   {
     "content_sha256": "35f2d417ad1669bb1df42ff7a504cf4f1d3a6dbf44a6cf36cd1f75ede7901bc0",
