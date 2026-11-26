@@ -1215,9 +1215,16 @@ class _LivePipeline:
         self.daily_attempted = True
         try:
             prepared = await self.prepare_daily(window, dry_run=False)
-        except PersistenceRejected:
+        except PersistenceRejected as error:
             self.prepared_daily = None
-            _safe_log("daily_persistence", "daily_persistence_rejected")
+            if error.detail is None:
+                _safe_log("daily_persistence", "daily_persistence_rejected")
+            else:
+                _safe_log(
+                    "daily_persistence",
+                    "daily_persistence_rejected",
+                    reason=_log_safe_text(error.detail),
+                )
             raise RuntimeFailure("Daily persistence failed") from None
         except DailyRejected as error:
             self.prepared_daily = None

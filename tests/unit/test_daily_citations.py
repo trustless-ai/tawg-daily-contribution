@@ -109,3 +109,11 @@ def test_daily_rejection_code_falls_back_to_generic_validation() -> None:
     assert _daily_rejection_code(DailyRejected("unmapped model-facing text")) == (
         "daily_validation_failed"
     )
+
+
+def test_plain_citations_ignore_privacy_placeholders() -> None:
+    from tawg_bot.daily import _PLAIN_CITATION
+
+    text = "Contact [REDACTED_PHONE] and cite [tg:tawg:1] plus [1]."
+
+    assert _PLAIN_CITATION.findall(text) == ["tg:tawg:1", "1"]
