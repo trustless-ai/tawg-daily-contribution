@@ -40,7 +40,10 @@ _DIRECTION_LABEL = re.compile(r"^###\s+[^#\s][^\n]*$")
 _DIRECTION_SYNTHESIS = re.compile(r"^_[^_\n].*_$")
 _SYNTHESIS_IDENTIFIER = re.compile(r"(?:\d|https?://|www\.)", re.IGNORECASE)
 _SYNTHESIS_URL = re.compile(r"(?:https?://|www\.)", re.IGNORECASE)
-_PLAIN_CITATION = re.compile(r"\[([^\[\]\n]+)\](?!\()")
+# Privacy sanitisation can replace a phone-shaped number with a bracketed
+# placeholder such as "[REDACTED_PHONE]"; that is not a citation and must not
+# be parsed as one, or every draft carrying a redacted number is rejected.
+_PLAIN_CITATION = re.compile(r"\[(?!REDACTED_[A-Z_]+\])([^\[\]\n]+)\](?!\()")
 _MARKDOWN_CITATION = re.compile(r"\[[^\[\]\n]+\]\(([^()\s]+)\)")
 _TRAILING_CITATIONS = re.compile(r"(?:\s+\[[^\[\]\n]+\](?:\([^()\s]+\))?)+$")
 _TELEGRAM_MENTION = re.compile(r"(?<![\w@])@([A-Za-z][A-Za-z0-9_]{4,31})\b")
