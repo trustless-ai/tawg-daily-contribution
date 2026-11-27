@@ -8,15 +8,5 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
-  },
-  {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_merged:4521dbb887ef7ce2fd248dd9",
-    "kind": "pr_merged",
-    "number": 24,
-    "occurred_at": "2026-11-27T00:55:46Z",
-    "repository": "trustless-ai/tawg-daily-contribution",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "fix(observability): explicit reason and subcode for opaque failures"
   }
 ]
