@@ -584,8 +584,9 @@ def test_rejection_detail_names_the_path_without_echoing_the_body() -> None:
         )
 
     detail = caught.value.detail or ""
-    assert detail == (
+    assert detail.startswith(
         f"external_excerpt:path={relative_path}:"
         f"chars={len(EXTERNAL_BODY)}:allow_short=True"
     )
+    assert "match=" in detail and "pos=" in detail and "src=" in detail
     assert EXTERNAL_BODY not in detail

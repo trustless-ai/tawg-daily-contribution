@@ -146,29 +146,48 @@ class PersistenceGuard:
                 source_registry_baseline=self._source_registry_baseline,
                 trusted_source_locators=self._trusted_source_locators,
             ):
-                if self._contains_external_excerpt(value, allow_short_quote):
+                excerpt = self.find_external_excerpt(value, allow_short_quote=allow_short_quote)
+                if excerpt is not None:
+                    source_index, kind, offset = excerpt
                     # Path and shape only: never echo the rejected payload text.
                     raise PersistenceRejected(
                         "external_excerpt:"
                         f"path={relative_path}:"
                         f"chars={len(value)}:"
-                        f"allow_short={allow_short_quote}"
+                        f"allow_short={allow_short_quote}:"
+                        f"match={kind}:"
+                        f"pos={offset}:"
+                        f"src={source_index}"
                     )
 
-    def _contains_external_excerpt(self, payload: str, allow_short_quote: bool) -> bool:
+    def find_external_excerpt(
+        self, payload: str, *, allow_short_quote: bool
+    ) -> tuple[int, str, int] | None:
+        """Describe the first verbatim span shared with external evidence.
+
+        Returns ``(source_index, kind, payload_offset)`` where ``kind`` is
+        ``"exact"`` (a complete external body) or ``"url"``/``"text"`` for a
+        fixed-width shared window. Trusted source locators already cited by
+        the artifact are masked first: a link back to its own source is not a
+        copied excerpt.
+        """
         if not payload or not self._external_texts:
-            return False
+            return None
         minimum = (
             self._GENERATED_EXCERPT_CHARS if allow_short_quote else self._FORBIDDEN_EXCERPT_CHARS
         )
-        for source in self._external_texts:
+        for index, source in enumerate(self._external_texts):
             if not allow_short_quote and source in payload:
-                return True
+                return (index, "exact", 0)
             if len(source) < minimum or len(payload) < minimum:
                 continue
-            if _shares_window(source, payload, minimum):
-                return True
-        return False
+            shared = _shares_window(source, payload, minimum)
+            if shared is None:
+                continue
+            _, payload_offset = shared
+            chunk = payload[payload_offset : payload_offset + minimum]
+            return (index, "url" if chunk.startswith("http") else "text", payload_offset)
+        return None
 
 
 def _normalize(value: str) -> str:
@@ -407,12 +426,12 @@ def _walk_strings(value: Any, *, allowed_key: str | None) -> Iterable[tuple[str,
             yield from _walk_strings(child, allowed_key=allowed_key)
 
 
-def _shares_window(source: str, payload: str, width: int) -> bool:
-    """Return whether two normalized strings share an exact fixed-width span."""
+def _shares_window(source: str, payload: str, width: int) -> tuple[int, int] | None:
+    """Return the first shared fixed-width span as ``(source_offset, payload_offset)``."""
     source_bytes = source.encode("utf-8")
     payload_bytes = payload.encode("utf-8")
     if len(source_bytes) < width or len(payload_bytes) < width:
-        return False
+        return None
     payload_hashes = _rolling_hashes(payload_bytes, width)
     for value, source_offsets in _rolling_hashes(source_bytes, width).items():
         candidates = payload_hashes.get(value)
@@ -420,9 +439,10 @@ def _shares_window(source: str, payload: str, width: int) -> bool:
             continue
         for offset in source_offsets:
             chunk = source_bytes[offset : offset + width]
-            if any(payload_bytes[start : start + width] == chunk for start in candidates):
-                return True
-    return False
+            for start in candidates:
+                if payload_bytes[start : start + width] == chunk:
+                    return (offset, start)
+    return None
 
 
 def _rolling_hashes(payload: bytes, width: int) -> dict[int, list[int]]:

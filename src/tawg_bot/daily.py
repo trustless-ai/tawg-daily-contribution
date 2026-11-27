@@ -20,6 +20,7 @@ from tawg_bot.aliases import AliasError, AliasRegistry
 from tawg_bot.context import ContextInputs, ContextPackBuilder, ContextRejected
 from tawg_bot.daily_evidence import DailyEvidence
 from tawg_bot.models import DeliveryAttempt, DeliveryStatus, StrictModel
+from tawg_bot.persistence_guard import PersistenceGuard
 from tawg_bot.privacy import PrivacyFilter, PrivacyViolation
 from tawg_bot.retrieval import VaultRetriever
 from tawg_bot.telegram_text import TelegramTextSplitError, split_telegram_text
@@ -768,6 +769,26 @@ class DailyService:
                 allowed_citations,
                 problem="appear in telegram_text but not in the result citations list",
             )
+        external_texts = tuple(
+            item.text for item in evidence if item.source_kind != "telegram"
+        )
+        if external_texts:
+            guard = PersistenceGuard.from_external_texts(
+                external_texts,
+                trusted_source_locators={
+                    item.citation
+                    for item in evidence
+                    if item.source_kind != "telegram"
+                    and item.citation.startswith("https://")
+                    and item.citation in set(result.citations)
+                },
+            )
+            if guard.find_external_excerpt(result.telegram_text, allow_short_quote=True):
+                raise DailyRejected(
+                    "Daily output copies a verbatim span from external evidence; "
+                    "paraphrase the source instead of quoting it",
+                    code="daily_excerpt_invalid",
+                )
         if evidence and (
             result.quiet_day or not set(result.citations).intersection(allowed_citations)
         ):
