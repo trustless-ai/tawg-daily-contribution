@@ -1,10 +1,10 @@
 [
   {
-    "metadata_sha256": "abe509a784caf5fb5a491cb1aa25be15fafd8f3ebf162648a2482a25dcfc0f01",
+    "metadata_sha256": "85ee9734c50cfb86da7abd9a3f063a7e12c6ed081da5bfb485322dfd35d1a3a1",
     "source_key": "ethereum-ercs-pr-1953",
     "source_kind": "ethereum_ercs_pr",
     "source_locator": "https://github.com/ethereum/ERCs/pull/1953",
-    "updated_at": "2026-10-07T14:02:17Z"
+    "updated_at": "2026-11-27T02:04:43Z"
   },
   {
     "metadata_sha256": "35d62627cc53f283669ba68e3f5bf5050d0e87c2ad6dad21c5a0c374a869ec70",
