@@ -8,5 +8,15 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_opened:150dedab057b343335bd4a34",
+    "kind": "pr_opened",
+    "number": 91,
+    "occurred_at": "2026-11-27T15:05:33Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "pq-key-binding-v1: refuse pre_baseline at or after the consumer cutoff"
   }
 ]
