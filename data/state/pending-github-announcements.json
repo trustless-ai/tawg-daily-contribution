@@ -8,15 +8,5 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
-  },
-  {
-    "author_login": "Echo-Merlini",
-    "event_id": "github-announcement:pr_merged:9cda366e6082b685eb22d4bf",
-    "kind": "pr_merged",
-    "number": 12,
-    "occurred_at": "2026-11-27T10:02:42Z",
-    "repository": "trustless-ai/ccip-router",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "ERC-8309 conformance: ingest-time since, signer trust from /vni, two-tier identity, reject unsigned records"
   }
 ]
