@@ -10490,6 +10490,25 @@
     "updated_at": "2026-11-13T10:05:17.056013Z"
   },
   {
+    "content_sha256": "758ef56891ae5f1a36d1e66ec81d7604435439acfd7d2bd438696ed214c79c45",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:70fc615ca225658c222df1e0",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:70fc615ca225658c222df1e0",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T15:40:13.492695Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#91 pq-key-binding-v1: refuse pre\\_baseline at or after the consumer cutoff](https://github.com/trustless-ai/recompute-kit/pull/91)\nNew commits from [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-27T15:40:13.492695Z"
+  },
+  {
     "content_sha256": "35f2d417ad1669bb1df42ff7a504cf4f1d3a6dbf44a6cf36cd1f75ede7901bc0",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_updated:726a4eb9d79b9c8ace88c7b7",
