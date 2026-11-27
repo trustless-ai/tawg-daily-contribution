@@ -8,15 +8,5 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
-  },
-  {
-    "author_login": "Echo-Merlini",
-    "event_id": "github-announcement:pr_merged:0eb370f9a972c3f09adfdf8c",
-    "kind": "pr_merged",
-    "number": 13,
-    "occurred_at": "2026-11-27T10:50:42Z",
-    "repository": "trustless-ai/ccip-router",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "0.9.1: own signer, non-8309 records without deferral, keep peer signers on restart, same-signer divergence"
   }
 ]
