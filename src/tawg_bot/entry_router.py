@@ -31,6 +31,13 @@ from tawg_bot.privacy import PrivacyFilter
 from tawg_bot.query import SourceQuery
 from tawg_bot.unit_of_work import RepositoryUnitOfWork
 
+_LOG_FACT_CHARS = 240
+
+
+def _log_fact(value: str, *, limit: int = _LOG_FACT_CHARS) -> str:
+    """Collapse a failure message into one bounded, single-line log fact."""
+    return " ".join(value.split())[:limit].rstrip()
+
 
 class EntryAi(Protocol):
     async def run(
@@ -151,8 +158,15 @@ class EntryDecider:
                 context_sha256 = decision.context_sha256
                 artifact = decision.artifact
                 route = self._authorize(representative, decision, trigger)
-            except (AiRouteRejected, ClaudeCliError):
+            except (AiRouteRejected, ClaudeCliError) as error:
                 safe_code = "entry_model_failed"
+                print(
+                    "tawg_event=entry_failed "
+                    f"code={safe_code} "
+                    f"reason={_log_fact(str(error))} "
+                    f"kind={error.kind if isinstance(error, ClaudeCliError) else 'none'}",
+                    flush=True,
+                )
                 route, scope = fallback_route(
                     trigger_kind=representative.trigger_kind,
                     trigger_text=trigger.text_original,
