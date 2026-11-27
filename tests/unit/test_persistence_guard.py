@@ -590,3 +590,31 @@ def test_rejection_detail_names_the_path_without_echoing_the_body() -> None:
     )
     assert "match=" in detail and "pos=" in detail and "src=" in detail
     assert EXTERNAL_BODY not in detail
+
+
+def test_trusted_locator_inside_the_message_body_is_not_a_copied_excerpt() -> None:
+    locator = "https://github.com/trustless-ai/tawg-daily-contribution/commit/" + "a" * 40
+    external = f"Commit landed: {locator}"
+    relative_path = "data/state/prepared-daily.json"
+    guard = PersistenceGuard.from_external_texts(
+        (external,), trusted_source_locators=(locator,)
+    )
+
+    guard.inspect_staged(
+        {
+            relative_path: json.dumps(
+                {"telegram_text": f"Landed [commit]({locator})", "citations": [locator]}
+            ).encode()
+        },
+        {relative_path: PersistenceProvenance.PREPARED_TELEGRAM},
+    )
+
+    with pytest.raises(PersistenceRejected, match="persistence policy rejection"):
+        guard.inspect_staged(
+            {
+                relative_path: json.dumps(
+                    {"telegram_text": "Landed.", "citations": [], "window_id": locator}
+                ).encode()
+            },
+            {relative_path: PersistenceProvenance.PREPARED_TELEGRAM},
+        )
