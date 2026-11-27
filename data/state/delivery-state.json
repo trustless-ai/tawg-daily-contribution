@@ -2056,6 +2056,25 @@
     "updated_at": "2026-10-26T16:55:11.591215Z"
   },
   {
+    "content_sha256": "92b4e6c21e46eec15fb021096bbba6cefeebca87a508f6144429925a4761866c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:issue_opened:c21bd7c807e1c6989589a8c1",
+    "destination": "tawg",
+    "job_id": "github-announcement:issue_opened:c21bd7c807e1c6989589a8c1",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T11:50:21.033807Z",
+    "reply_text": "🆕 **New issue** in [trustless-ai/agent-sdk](https://github.com/trustless-ai/agent-sdk)\n[#29 Sync erc8301 clients with the operationId ABI \\(agent-ercs #20\\)](https://github.com/trustless-ai/agent-sdk/issues/29)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-27T11:50:21.033807Z"
+  },
+  {
     "content_sha256": "3044ba1e36e694509af649be985217db2756d8047fae309bab385752560d780d",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:issue_opened:cf333087b169c78c41a5dcb6",
