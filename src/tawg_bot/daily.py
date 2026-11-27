@@ -783,9 +783,14 @@ class DailyService:
                     and item.citation in set(result.citations)
                 },
             )
-            if guard.find_external_excerpt(result.telegram_text, allow_short_quote=True):
+            excerpt = guard.find_external_excerpt(
+                result.telegram_text, allow_short_quote=True
+            )
+            if excerpt is not None:
+                source_index, kind, offset = excerpt
                 raise DailyRejected(
-                    "Daily output copies a verbatim span from external evidence; "
+                    "Daily output copies a verbatim span from external evidence "
+                    f"(match={kind} at offset {offset}, source {source_index}); "
                     "paraphrase the source instead of quoting it",
                     code="daily_excerpt_invalid",
                 )
