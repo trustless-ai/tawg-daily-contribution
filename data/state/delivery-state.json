@@ -2056,6 +2056,27 @@
     "updated_at": "2026-10-26T16:55:11.591215Z"
   },
   {
+    "content_sha256": "92b4e6c21e46eec15fb021096bbba6cefeebca87a508f6144429925a4761866c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:issue_opened:c21bd7c807e1c6989589a8c1",
+    "destination": "tawg",
+    "job_id": "github-announcement:issue_opened:c21bd7c807e1c6989589a8c1",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T11:50:21.033807Z",
+    "reply_text": "🆕 **New issue** in [trustless-ai/agent-sdk](https://github.com/trustless-ai/agent-sdk)\n[#29 Sync erc8301 clients with the operationId ABI \\(agent-ercs #20\\)](https://github.com/trustless-ai/agent-sdk/issues/29)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-27T11:50:21.033807Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6615
+    ],
+    "updated_at": "2026-11-27T11:50:21.033807Z"
+  },
+  {
     "content_sha256": "3044ba1e36e694509af649be985217db2756d8047fae309bab385752560d780d",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:issue_opened:cf333087b169c78c41a5dcb6",
@@ -3755,6 +3776,27 @@
     "updated_at": "2026-10-12T09:00:31.087844Z"
   },
   {
+    "content_sha256": "ee973b8a44248c5372a8b244c9c7c2a46965e4aad7c7ea7ffcb6d3813448251e",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:9449bb7fa70ae1d270662c18",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:9449bb7fa70ae1d270662c18",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T11:50:21.033807Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/agent-ercs](https://github.com/trustless-ai/agent-ercs)\n[#20 Sync IAgentWorkflow with ERC-8301 operationId](https://github.com/trustless-ai/agent-ercs/pull/20)\nCongratulations, [zexoverz](https://github.com/zexoverz)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-27T11:50:21.033807Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6613
+    ],
+    "updated_at": "2026-11-27T11:50:21.033807Z"
+  },
+  {
     "content_sha256": "ec67122a7f8bb3197d7a05d9d62e0ec9e089b8b0e3a150aa6e60391db34cf6f4",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:9596bae01c3d02e033393f72",
@@ -3921,6 +3963,27 @@
       4397
     ],
     "updated_at": "2026-09-07T10:05:13.367264Z"
+  },
+  {
+    "content_sha256": "9c875c6536664b3830f3cb2cce6dba78089e803de06b7be446af976dafe33050",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:a3fb82a4cc50b7ec5236885e",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:a3fb82a4cc50b7ec5236885e",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T11:50:21.033807Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/agent-ercs](https://github.com/trustless-ai/agent-ercs)\n[#23 docs\\(erc8301\\): document operationId idempotency](https://github.com/trustless-ai/agent-ercs/pull/23)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-27T11:50:21.033807Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6614
+    ],
+    "updated_at": "2026-11-27T11:50:21.033807Z"
   },
   {
     "content_sha256": "f83c382bbef54d55f823b6908734c69a4d13d736fde13fb0f3407fe37cab0259",
@@ -6651,6 +6714,27 @@
       4870
     ],
     "updated_at": "2026-09-23T16:15:37.299010Z"
+  },
+  {
+    "content_sha256": "6e77c9c601f2db58682f0ef490962943162435fd6a4e02096c1cd79c4e7a004c",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:98e523fabe5e24025c11c95c",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:98e523fabe5e24025c11c95c",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T11:50:21.033807Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/ccip-router](https://github.com/trustless-ai/ccip-router)\n[#14 0.9.2: WyriweProofVerifier v2 checks the signer \\(deployed Sepolia\\); ERC-8299 domain and triple-hash](https://github.com/trustless-ai/ccip-router/pull/14)\nOpened by [Echo-Merlini](https://github.com/Echo-Merlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-27T11:50:21.033807Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6616
+    ],
+    "updated_at": "2026-11-27T11:50:21.033807Z"
   },
   {
     "content_sha256": "78dcb0671323909f87b710e288bbbc27bdb8d765fdc14497865f4a63b391a40c",
