@@ -203,10 +203,10 @@
     "updated_at": "2026-08-06T00:28:58.582000Z"
   },
   {
-    "metadata_sha256": "0075ef2413f0f187f3ef25ade9b6c6f83f24b74318f5896795490b3fed073521",
+    "metadata_sha256": "a603c44e43fe38d374c4be35dfcc4f3c846618c7547947ab20d611935ee8825c",
     "source_key": "magicians-29274",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8380-unclonable-agent-execution-credentials/29274",
-    "updated_at": "2026-11-27T22:58:51.240000Z"
+    "updated_at": "2026-11-27T23:47:18.215000Z"
   }
 ]

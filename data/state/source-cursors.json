@@ -34,7 +34,7 @@
     "topic:27902:metadata_sha256": "38328e79d52f67eeeadfb0e70cb49a286f0658e25480060b597f82cb83c7ebfd",
     "topic:28851:metadata_sha256": "877cdce1850c48442db647f2b04e9a4d5286e6e04434b4aca1fb7eda1ab88f1a",
     "topic:28920:metadata_sha256": "98be34ed80675aeb23430d48387068061d62aedee8ce0b5cb57c2eac638c1c99",
-    "topic:29274:metadata_sha256": "0075ef2413f0f187f3ef25ade9b6c6f83f24b74318f5896795490b3fed073521"
+    "topic:29274:metadata_sha256": "a603c44e43fe38d374c4be35dfcc4f3c846618c7547947ab20d611935ee8825c"
   },
   "schema_version": "tawg.source-cursors.v1",
   "telegram_offset": 998810927
