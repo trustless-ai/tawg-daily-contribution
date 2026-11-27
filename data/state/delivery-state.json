@@ -3734,6 +3734,25 @@
     "updated_at": "2026-09-07T16:15:16.980303Z"
   },
   {
+    "content_sha256": "980d3699a586e20b11ab1c443027dde75efe99eda2c81a5f9e026bc8f75bcd46",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:8bb4afcdfa57c1c3a41b4dcc",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:8bb4afcdfa57c1c3a41b4dcc",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T12:25:11.301308Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/ccip-router](https://github.com/trustless-ai/ccip-router)\n[#14 0.9.2: WyriweProofVerifier v2 checks the signer \\(deployed Sepolia\\); ERC-8299 domain and triple-hash](https://github.com/trustless-ai/ccip-router/pull/14)\nCongratulations, [Echo-Merlini](https://github.com/Echo-Merlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-27T12:25:11.301308Z"
+  },
+  {
     "content_sha256": "ccf00308d7ceac291208cb38b5de924d322708ada1c1cb34906f8ad2c5a87c6b",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:91659e823ae7885cac926b5e",
