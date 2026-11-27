@@ -8,15 +8,5 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
-  },
-  {
-    "author_login": "Echo-Merlini",
-    "event_id": "github-announcement:pr_opened:de164c5ee788c3e0445ebc31",
-    "kind": "pr_opened",
-    "number": 15,
-    "occurred_at": "2026-11-27T12:09:19Z",
-    "repository": "trustless-ai/ccip-router",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "docs: WyriweProofVerifier v2 on mainnet"
   }
 ]
