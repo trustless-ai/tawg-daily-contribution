@@ -8,15 +8,5 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
-  },
-  {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_merged:77b4f3d2c2fb211ca8e0d59e",
-    "kind": "pr_merged",
-    "number": 22,
-    "occurred_at": "2026-11-27T00:04:09Z",
-    "repository": "trustless-ai/tawg-daily-contribution",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "fix(daily): reject verbatim external excerpts with feedback; name the matched span"
   }
 ]
