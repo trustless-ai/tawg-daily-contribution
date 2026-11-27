@@ -3860,6 +3860,25 @@
     "updated_at": "2026-10-22T16:10:16.178070Z"
   },
   {
+    "content_sha256": "50c1f4122f154dc858fd799cd31311461c97350e6caa871f9840552168893ef0",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:9cda366e6082b685eb22d4bf",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:9cda366e6082b685eb22d4bf",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T10:15:15.697747Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/ccip-router](https://github.com/trustless-ai/ccip-router)\n[#12 ERC-8309 conformance: ingest-time since, signer trust from /vni, two-tier identity, reject unsigned records](https://github.com/trustless-ai/ccip-router/pull/12)\nCongratulations, [Echo-Merlini](https://github.com/Echo-Merlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-27T10:15:15.697747Z"
+  },
+  {
     "content_sha256": "5001ad7e9bb954fdd2948461848e6a57791215f71073f000005f58d0c819868b",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:9e1676d60aa5312b434a6212",
