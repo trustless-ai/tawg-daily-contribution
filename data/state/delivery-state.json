@@ -3944,6 +3944,25 @@
     "updated_at": "2026-09-07T10:05:13.367264Z"
   },
   {
+    "content_sha256": "9c875c6536664b3830f3cb2cce6dba78089e803de06b7be446af976dafe33050",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:a3fb82a4cc50b7ec5236885e",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:a3fb82a4cc50b7ec5236885e",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T11:50:21.033807Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/agent-ercs](https://github.com/trustless-ai/agent-ercs)\n[#23 docs\\(erc8301\\): document operationId idempotency](https://github.com/trustless-ai/agent-ercs/pull/23)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-27T11:50:21.033807Z"
+  },
+  {
     "content_sha256": "f83c382bbef54d55f823b6908734c69a4d13d736fde13fb0f3407fe37cab0259",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:a4fefabc44e1501b7d45ab58",
