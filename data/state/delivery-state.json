@@ -6002,6 +6002,27 @@
     "updated_at": "2026-09-05T15:30:15.510215Z"
   },
   {
+    "content_sha256": "0c2ad7cab128743f6646796b72475c112cb7fc3ae49aee8d6cd4431d6125dd68",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:521a8abb92d7ec628bd52bf4",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:521a8abb92d7ec628bd52bf4",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T20:35:14.618095Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#92 8263/precedence: refute a mismatched digest; first forward-precedence vector \\(entry 38\\)](https://github.com/trustless-ai/recompute-kit/pull/92)\nOpened by [Echo-Merlini](https://github.com/Echo-Merlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-27T20:35:14.618095Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6662
+    ],
+    "updated_at": "2026-11-27T20:35:14.618095Z"
+  },
+  {
     "content_sha256": "6606b93813aab5c4c0dde536cda88815dc9586877a63c6eb543703011d25403f",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:54950659767d942507b0ad05",
@@ -14008,6 +14029,27 @@
       4948
     ],
     "updated_at": "2026-09-26T19:55:43.510089Z"
+  },
+  {
+    "content_sha256": "758ef56891ae5f1a36d1e66ec81d7604435439acfd7d2bd438696ed214c79c45",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_updated:f4e65153c24c959356f9149c",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_updated:f4e65153c24c959356f9149c",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T20:35:14.618095Z",
+    "reply_text": "🔄 **PR updated** in [trustless-ai/recompute-kit](https://github.com/trustless-ai/recompute-kit)\n[#91 pq-key-binding-v1: refuse pre\\_baseline at or after the consumer cutoff](https://github.com/trustless-ai/recompute-kit/pull/91)\nNew commits from [TMerlini](https://github.com/TMerlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-27T20:35:14.618095Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6661
+    ],
+    "updated_at": "2026-11-27T20:35:14.618095Z"
   },
   {
     "content_sha256": "6bfb89225b9c8c5392677a11ae288612e1ab3ac31589fdde717a6a29be3bc3b4",
