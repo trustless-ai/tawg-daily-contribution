@@ -10,16 +10,6 @@
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
   },
   {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:issue_opened:c21bd7c807e1c6989589a8c1",
-    "kind": "issue_opened",
-    "number": 29,
-    "occurred_at": "2026-11-27T11:45:53Z",
-    "repository": "trustless-ai/agent-sdk",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "Sync erc8301 clients with the operationId ABI (agent-ercs #20)"
-  },
-  {
     "author_login": "Echo-Merlini",
     "event_id": "github-announcement:pr_opened:98e523fabe5e24025c11c95c",
     "kind": "pr_opened",
