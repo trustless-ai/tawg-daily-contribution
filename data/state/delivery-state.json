@@ -7367,6 +7367,25 @@
     "updated_at": "2026-09-24T15:35:52.734173Z"
   },
   {
+    "content_sha256": "6e2e245d64daf2b3298d7cddd19b7e9462fa3aa71e26866109d20ac85b16c6ec",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:de164c5ee788c3e0445ebc31",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:de164c5ee788c3e0445ebc31",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T12:25:11.301308Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/ccip-router](https://github.com/trustless-ai/ccip-router)\n[#15 docs: WyriweProofVerifier v2 on mainnet](https://github.com/trustless-ai/ccip-router/pull/15)\nOpened by [Echo-Merlini](https://github.com/Echo-Merlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-27T12:25:11.301308Z"
+  },
+  {
     "content_sha256": "b6200225a85e9d65bd9373121d71523ac75e93302d77c57e79ce0b6a03a1e0f6",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:de49b9ab1371fdfe4c15651f",
