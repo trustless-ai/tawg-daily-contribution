@@ -11,16 +11,6 @@
   },
   {
     "author_login": "Echo-Merlini",
-    "event_id": "github-announcement:pr_merged:8bb4afcdfa57c1c3a41b4dcc",
-    "kind": "pr_merged",
-    "number": 14,
-    "occurred_at": "2026-11-27T11:59:59Z",
-    "repository": "trustless-ai/ccip-router",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "0.9.2: WyriweProofVerifier v2 checks the signer (deployed Sepolia); ERC-8299 domain and triple-hash"
-  },
-  {
-    "author_login": "Echo-Merlini",
     "event_id": "github-announcement:pr_opened:de164c5ee788c3e0445ebc31",
     "kind": "pr_opened",
     "number": 15,
