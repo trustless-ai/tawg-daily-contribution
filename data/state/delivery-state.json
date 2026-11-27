@@ -6863,6 +6863,27 @@
     "updated_at": "2026-10-14T03:30:17.474223Z"
   },
   {
+    "content_sha256": "6303a82bbd27a8becd796b70215ff101828331391a106325defd20677a8aaf96",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:af9c6164517846e3d874fc33",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:af9c6164517846e3d874fc33",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T10:50:09.539175Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/ccip-router](https://github.com/trustless-ai/ccip-router)\n[#13 0.9.1: own signer, non-8309 records without deferral, keep peer signers on restart, same-signer divergence](https://github.com/trustless-ai/ccip-router/pull/13)\nOpened by [Echo-Merlini](https://github.com/Echo-Merlini)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": "2026-11-27T10:50:09.539175Z",
+    "status": "delivered",
+    "telegram_chat_id": -1004384669042,
+    "telegram_message_ids": [
+      6608
+    ],
+    "updated_at": "2026-11-27T10:50:09.539175Z"
+  },
+  {
     "content_sha256": "c131c98e732fd286fb5e72def21d338c51e26e6ee4c9cb879b74ce041a92f473",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:b8d41a0935236e9ef7004b20",
