@@ -11,16 +11,6 @@
   },
   {
     "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_merged:b452f2fba3791a2e3a21afb3",
-    "kind": "pr_merged",
-    "number": 21,
-    "occurred_at": "2026-11-26T23:44:21Z",
-    "repository": "trustless-ai/tawg-daily-contribution",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "fix(daily): ignore privacy placeholders as citations; log persistence rejection detail"
-  },
-  {
-    "author_login": "JimmyShi22",
     "event_id": "github-announcement:pr_merged:77b4f3d2c2fb211ca8e0d59e",
     "kind": "pr_merged",
     "number": 22,
