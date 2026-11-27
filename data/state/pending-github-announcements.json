@@ -10,16 +10,6 @@
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
   },
   {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_merged:e77afdb693b8135fc6284157",
-    "kind": "pr_merged",
-    "number": 23,
-    "occurred_at": "2026-11-27T00:18:52Z",
-    "repository": "trustless-ai/tawg-daily-contribution",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "fix(daily): treat cited links inside the message body as links, not excerpts"
-  },
-  {
     "author_login": "pipavlo82",
     "event_id": "github-announcement:pr_updated:f3d6375e07ae283557f165e9",
     "kind": "pr_updated",
