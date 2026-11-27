@@ -8,15 +8,5 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
-  },
-  {
-    "author_login": "Echo-Merlini",
-    "event_id": "github-announcement:pr_merged:b540d9399443ca1a30bc17b1",
-    "kind": "pr_merged",
-    "number": 16,
-    "occurred_at": "2026-11-27T12:35:40Z",
-    "repository": "trustless-ai/ccip-router",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "0.9.3: identity sentinel CID typo (Qmccvom6…, not QmccvoM6…)"
   }
 ]
