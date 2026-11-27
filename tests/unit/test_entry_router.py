@@ -245,6 +245,7 @@ async def test_every_new_message_gets_one_entry_call_without_batch_cap(
 async def test_explicit_failure_falls_back_without_a_second_entry_call(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
 ) -> None:
     monkeypatch.setenv("TAWG_ENTRY_CANDIDATES_ENABLED", "true")
     copy_static_runtime_tree(ROOT, tmp_path)
@@ -270,6 +271,10 @@ async def test_explicit_failure_falls_back_without_a_second_entry_call(
     job = _jobs(tmp_path)["reply:tg:tawg:12"]
     assert job.classified_route is not None
     assert job.safe_error_code == "entry_model_failed"
+    captured = capsys.readouterr().out
+    assert "tawg_event=entry_failed code=entry_model_failed" in captured
+    assert "reason=model unavailable" in captured
+    assert "kind=model" in captured
 
     service = BotReplyService(
         tmp_path,

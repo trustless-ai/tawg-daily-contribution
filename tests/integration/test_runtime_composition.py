@@ -1074,7 +1074,34 @@ async def test_scheduled_daily_logs_model_timeout_without_provider_error_text(
 
     captured = capsys.readouterr().out
     assert "code=daily_model_timeout" in captured
-    assert "Claude Code" not in captured
+    assert "reason=Claude Code exceeded its time limit" in captured
+    assert "kind=none" in captured
+
+
+@pytest.mark.asyncio
+async def test_scheduled_daily_logs_model_failure_code_and_reason(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    scaffold(tmp_path)
+    window = DailyWindow.for_due_run(NOW)
+    async with httpx.AsyncClient() as client:
+        pipeline = _LivePipeline(tmp_path, client=client, checkpoint=Checkpoint(), now=NOW)
+
+        async def prepare_daily(selected: DailyWindow, *, dry_run: bool) -> PreparedDaily:
+            assert selected == window
+            assert not dry_run
+            raise ClaudeCliError("Claude Code failed with exit status 1", kind="credit")
+
+        monkeypatch.setattr(pipeline, "prepare_daily", prepare_daily)
+        with pytest.raises(RuntimeFailure, match="Daily model failed"):
+            await pipeline.daily_prepare(window.window_id)
+
+    captured = capsys.readouterr().out
+    assert "phase=daily_model code=daily_model_credit" in captured
+    assert "reason=Claude Code failed with exit status 1" in captured
+    assert "kind=credit" in captured
 
 
 @pytest.mark.asyncio
