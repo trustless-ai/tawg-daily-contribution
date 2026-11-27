@@ -4322,6 +4322,25 @@
     "updated_at": "2026-10-18T16:18:29.666504Z"
   },
   {
+    "content_sha256": "b6db2fa18c292722fb0cf45c3301d27d748a2a145c3b25c25ce5ece2331e9d77",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:b540d9399443ca1a30bc17b1",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:b540d9399443ca1a30bc17b1",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T13:00:21.205081Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/ccip-router](https://github.com/trustless-ai/ccip-router)\n[#16 0.9.3: identity sentinel CID typo \\(Qmccvom6…, not QmccvoM6…\\)](https://github.com/trustless-ai/ccip-router/pull/16)\nCongratulations, [Echo-Merlini](https://github.com/Echo-Merlini)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-27T13:00:21.205081Z"
+  },
+  {
     "content_sha256": "b22117775f3edf6794a1a167d039a8b4d53b8dceb16bcf97f023506f1e3d64a1",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:b7a573ea6b2c1fa762303052",
