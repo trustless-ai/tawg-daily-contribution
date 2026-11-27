@@ -222,6 +222,37 @@ def _daily_rejection_code(error: DailyRejected) -> str:
     return "daily_validation_failed"
 
 
+_DAILY_MODEL_FAILURE_CODES = {
+    "Claude Code exceeded its time limit": "daily_model_timeout",
+    "Claude Code could not be started": "daily_model_process_failed",
+    "Claude Code returned invalid JSON": "daily_model_contract_invalid",
+    "Claude Code returned no structured output": "daily_model_contract_invalid",
+    "Claude Code did not return one bounded successful result": (
+        "daily_model_contract_invalid"
+    ),
+    "Claude Code structured output failed schema validation": (
+        "daily_model_schema_invalid"
+    ),
+    "Claude Code output exceeded its size limit": "daily_model_output_too_large",
+    "Claude Code exceeded its configured cost budget": "daily_model_budget_exceeded",
+    "context pack exceeds its size limit": "daily_context_too_large",
+    "context pack failed privacy validation": "daily_context_privacy_failed",
+}
+
+
+def _daily_model_failure_code(error: ClaudeCliError) -> str:
+    """Split one opaque model failure into an operator-readable code."""
+    if error.kind is not None:
+        return f"daily_model_{error.kind}"
+    message = str(error)
+    exact = _DAILY_MODEL_FAILURE_CODES.get(message)
+    if exact is not None:
+        return exact
+    if message.startswith("Claude Code failed with exit status"):
+        return "daily_model_process_failed"
+    return "daily_model_failed"
+
+
 @dataclass(frozen=True, slots=True)
 class SourceCheckSummary:
     erc_count: int
@@ -920,8 +951,12 @@ class ProductionRuntime:
             )
         except RepositoryConflict:
             raise
-        except Exception:
-            _safe_log("final_checkpoint", "final_checkpoint_failed")
+        except Exception as error:
+            _safe_log(
+                "final_checkpoint",
+                "final_checkpoint_failed",
+                exception=type(error).__name__,
+            )
             raise RuntimeFailure("scheduled tick final checkpoint failed") from None
         if result.failed_phases:
             raise RuntimeFailure("scheduled tick completed with phase failures")
@@ -1130,8 +1165,12 @@ class _LivePipeline:
             )
         except RepositoryConflict:
             raise
-        except Exception:
-            _safe_log("source_check", "source_check_failed")
+        except Exception as error:
+            _safe_log(
+                "source_check",
+                "source_check_failed",
+                exception=type(error).__name__,
+            )
             raise RuntimeFailure("source check incomplete") from None
         self.source_checked_at = now
 
@@ -1244,12 +1283,12 @@ class _LivePipeline:
             raise RuntimeFailure("Daily validation failed") from None
         except ClaudeCliError as error:
             self.prepared_daily = None
-            code = (
-                "daily_model_timeout"
-                if str(error) == "Claude Code exceeded its time limit"
-                else "daily_model_failed"
+            _safe_log(
+                "daily_model",
+                _daily_model_failure_code(error),
+                reason=_log_safe_text(str(error)),
+                kind=error.kind or "none",
             )
-            _safe_log("daily_model", code)
             raise RuntimeFailure("Daily model failed") from None
         except Exception:
             self.prepared_daily = None
@@ -1451,18 +1490,36 @@ class _LivePipeline:
                     attachments=reply.attachments,
                     now=self.now,
                 )
-            except DeliveryRejected:
+            except DeliveryRejected as error:
                 # A pre-send rejection (privacy, member intent) must not fail the whole
                 # tick; keep the job ready so an operator can investigate, and keep
                 # delivering the remaining replies.
                 self.delivery_rejected_job_ids.add(reply.job_id)
-                _safe_log("reply_delivery", "reply_rejected")
+                _safe_log(
+                    "reply_delivery",
+                    "reply_rejected",
+                    job_id=reply.job_id,
+                    subcode=error.code or "none",
+                    reason=_log_safe_text(str(error)),
+                )
                 continue
-            except DeliveryAmbiguous:
+            except DeliveryAmbiguous as error:
                 self.delivery_ambiguous_job_ids.add(reply.job_id)
+                _safe_log(
+                    "reply_delivery",
+                    "reply_ambiguous",
+                    job_id=reply.job_id,
+                    reason=_log_safe_text(str(error)),
+                )
                 continue
-            except DeliveryFailed:
+            except DeliveryFailed as error:
                 self.delivery_failed_job_ids.add(reply.job_id)
+                _safe_log(
+                    "reply_delivery",
+                    "reply_failed",
+                    job_id=reply.job_id,
+                    reason=_log_safe_text(str(error)),
+                )
                 continue
             self.delivery_delivered_job_ids.add(reply.job_id)
         if self.prepared_daily is not None:
@@ -1474,13 +1531,31 @@ class _LivePipeline:
                     message_thread_id=None,
                     now=self.now,
                 )
-            except DeliveryRejected:
+            except DeliveryRejected as error:
                 # Unsafe daily text must not be sent and must not brick the tick.
-                _safe_log("daily_delivery", "daily_rejected")
-            except (DeliveryAmbiguous, DeliveryFailed):
-                # Retryable/ambiguous daily failures must not brick the tick either; the
+                _safe_log(
+                    "daily_delivery",
+                    "daily_rejected",
+                    window_id=self.prepared_daily.window_id,
+                    subcode=error.code or "none",
+                    reason=_log_safe_text(str(error)),
+                )
+            except DeliveryAmbiguous as error:
+                # Ambiguous daily failures must not brick the tick either; the
                 # attempt stays in delivery-state for operator review.
-                pass
+                _safe_log(
+                    "daily_delivery",
+                    "daily_ambiguous",
+                    window_id=self.prepared_daily.window_id,
+                    reason=_log_safe_text(str(error)),
+                )
+            except DeliveryFailed as error:
+                _safe_log(
+                    "daily_delivery",
+                    "daily_delivery_failed",
+                    window_id=self.prepared_daily.window_id,
+                    reason=_log_safe_text(str(error)),
+                )
 
     async def _report_stuck_announcements(self, stuck: dict[str, str]) -> None:
         """Emit one structured alert when the pending-stuck set changes or ages out."""
