@@ -8,5 +8,25 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
+  },
+  {
+    "author_login": "TMerlini",
+    "event_id": "github-announcement:pr_updated:f4e65153c24c959356f9149c",
+    "kind": "pr_updated",
+    "number": 91,
+    "occurred_at": "2026-11-27T20:17:05Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "pq-key-binding-v1: refuse pre_baseline at or after the consumer cutoff"
+  },
+  {
+    "author_login": "Echo-Merlini",
+    "event_id": "github-announcement:pr_opened:521a8abb92d7ec628bd52bf4",
+    "kind": "pr_opened",
+    "number": 92,
+    "occurred_at": "2026-11-27T20:33:12Z",
+    "repository": "trustless-ai/recompute-kit",
+    "schema_version": "tawg.github-announcement.v1",
+    "title": "8263/precedence: refute a mismatched digest; first forward-precedence vector (entry 38)"
   }
 ]
