@@ -4091,6 +4091,25 @@
     "updated_at": "2026-10-01T09:55:11.918992Z"
   },
   {
+    "content_sha256": "7a9c21a282caa289f0337323aab44d3c88999aaed97934ce2d14b0f60489b665",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_merged:b452f2fba3791a2e3a21afb3",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_merged:b452f2fba3791a2e3a21afb3",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-27T00:16:27.416197Z",
+    "reply_text": "🎉 **PR merged** in [trustless-ai/tawg-daily-contribution](https://github.com/trustless-ai/tawg-daily-contribution)\n[#21 fix\\(daily\\): ignore privacy placeholders as citations; log persistence rejection detail](https://github.com/trustless-ai/tawg-daily-contribution/pull/21)\nCongratulations, [JimmyShi22](https://github.com/JimmyShi22)!",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-27T00:16:27.416197Z"
+  },
+  {
     "content_sha256": "f3444eb34a0736426d273032bd2b6fac7d3cfc40a2c60cb1ac0b7634ab3569ca",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_merged:b49d7c1c8d59456d58461985",
