@@ -2,7 +2,7 @@
   "initialized_at": "2026-08-29T15:45:00Z",
   "repositories": [
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/.github",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -32,7 +32,7 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/FlashProve",
       "initialized_at": "2026-11-04T17:00:29.136107Z",
       "issue_numbers": [],
@@ -50,7 +50,7 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/agent-contracts-examples",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -68,7 +68,7 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/agent-ercs",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -136,7 +136,7 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/agent-sdk",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -186,7 +186,7 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/ccip-router",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -264,31 +264,41 @@
         {
           "author_login": "Echo-Merlini",
           "head_sha": "45576aa48bb466900be513f82d159ce6a778d2a9",
+          "merge_commit_sha": "45576aa48bb466900be513f82d159ce6a778d2a9",
+          "merged_at": "2026-11-27T11:59:59Z",
+          "number": 14,
+          "state": "merged",
+          "title": "0.9.2: WyriweProofVerifier v2 checks the signer (deployed Sepolia); ERC-8299 domain and triple-hash",
+          "updated_at": "2026-11-27T11:59:59Z"
+        },
+        {
+          "author_login": "Echo-Merlini",
+          "head_sha": "837a30cd19064651e2cc93664f6d3e0c2a2757da",
           "merge_commit_sha": null,
           "merged_at": null,
-          "number": 14,
+          "number": 15,
           "state": "open",
-          "title": "0.9.2: WyriweProofVerifier v2 checks the signer (deployed Sepolia); ERC-8299 domain and triple-hash",
-          "updated_at": "2026-11-27T11:50:10Z"
+          "title": "docs: WyriweProofVerifier v2 on mainnet",
+          "updated_at": "2026-11-27T12:09:19Z"
         }
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/collapsed-state-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/composed-attestation-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/cross-reference-console",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -338,14 +348,14 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/eip7702-rescue",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/flashprove-onchain-verifier",
       "initialized_at": "2026-11-06T00:35:11.777930Z",
       "issue_numbers": [],
@@ -383,7 +393,7 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/observation-conditions-note",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -392,14 +402,14 @@
       "pulls": []
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/pq-agent-binding",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/primitives",
       "initialized_at": "2026-09-03T20:45:07.910077Z",
       "issue_numbers": [],
@@ -417,7 +427,7 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/recompute-kit",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
@@ -1012,7 +1022,7 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/recompute-lens",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -1030,7 +1040,7 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/semantic-abi",
       "initialized_at": "2026-09-05T13:50:18.716472Z",
       "issue_numbers": [],
@@ -1118,7 +1128,7 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/tawg-daily-contribution",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -1286,14 +1296,14 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/trustless-agent-substrate",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/trustless-ai-landing",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [],
@@ -1421,7 +1431,7 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/verifiable-execution-claim-authorization",
       "initialized_at": "2026-10-21T22:10:18.061702Z",
       "issue_numbers": [],
@@ -1519,14 +1529,14 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/verify-layer",
       "initialized_at": "2026-09-03T15:10:15.931759Z",
       "issue_numbers": [],
       "pulls": []
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/wyriwe-signing",
       "initialized_at": "2026-10-30T14:46:59.871185Z",
       "issue_numbers": [
@@ -1546,7 +1556,7 @@
       ]
     },
     {
-      "checked_at": "2026-11-27T11:50:21.033807Z",
+      "checked_at": "2026-11-27T12:25:11.301308Z",
       "full_name": "trustless-ai/zkIE",
       "initialized_at": "2026-08-29T15:45:00Z",
       "issue_numbers": [
