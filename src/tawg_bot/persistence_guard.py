@@ -176,16 +176,22 @@ class PersistenceGuard:
         minimum = (
             self._GENERATED_EXCERPT_CHARS if allow_short_quote else self._FORBIDDEN_EXCERPT_CHARS
         )
+        scanned = payload
+        if allow_short_quote:
+            # A message body may legitimately show the source link it cites, so
+            # mask already-registered locators before looking for copied spans.
+            for locator in self._trusted_source_locators:
+                scanned = scanned.replace(locator, " ")
         for index, source in enumerate(self._external_texts):
-            if not allow_short_quote and source in payload:
+            if not allow_short_quote and source in scanned:
                 return (index, "exact", 0)
-            if len(source) < minimum or len(payload) < minimum:
+            if len(source) < minimum or len(scanned) < minimum:
                 continue
-            shared = _shares_window(source, payload, minimum)
+            shared = _shares_window(source, scanned, minimum)
             if shared is None:
                 continue
             _, payload_offset = shared
-            chunk = payload[payload_offset : payload_offset + minimum]
+            chunk = scanned[payload_offset : payload_offset + minimum]
             return (index, "url" if chunk.startswith("http") else "text", payload_offset)
         return None
 
