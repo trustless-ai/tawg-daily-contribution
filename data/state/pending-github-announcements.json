@@ -8,15 +8,5 @@
     "repository": "trustless-ai/tawg-daily-contribution",
     "schema_version": "tawg.github-announcement.v1",
     "title": "Deduplicate delivery audit across mirrored delivery-state files"
-  },
-  {
-    "author_login": "JimmyShi22",
-    "event_id": "github-announcement:pr_opened:5d1e8f62aea3037565e7e027",
-    "kind": "pr_opened",
-    "number": 4,
-    "occurred_at": "2026-11-28T11:28:25Z",
-    "repository": "trustless-ai/flashprove-onchain-verifier",
-    "schema_version": "tawg.github-announcement.v1",
-    "title": "docs: record completed CPU Groth16 end-to-end run"
   }
 ]
