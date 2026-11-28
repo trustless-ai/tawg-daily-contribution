@@ -6107,6 +6107,25 @@
     "updated_at": "2026-10-14T10:40:36.375332Z"
   },
   {
+    "content_sha256": "ba9cebd0108e85a91e5e8ba1628c9368310ca098ea0d22c683f6fa3a8f9c1a99",
+    "delivery_format": "rich_markdown_v1",
+    "delivery_id": "github-announcement:pr_opened:5d1e8f62aea3037565e7e027",
+    "destination": "tawg",
+    "job_id": "github-announcement:pr_opened:5d1e8f62aea3037565e7e027",
+    "message_count": 1,
+    "message_thread_id": 3788,
+    "prepared_at": "2026-11-28T11:30:12.885433Z",
+    "reply_text": "🆕 **New PR** in [trustless-ai/flashprove-onchain-verifier](https://github.com/trustless-ai/flashprove-onchain-verifier)\n[#4 docs: record completed CPU Groth16 end-to-end run](https://github.com/trustless-ai/flashprove-onchain-verifier/pull/4)\nOpened by [JimmyShi22](https://github.com/JimmyShi22)",
+    "reply_to_message_id": null,
+    "safe_error_code": null,
+    "schema_version": "tawg.delivery-attempt.v1",
+    "sent_at": null,
+    "status": "prepared",
+    "telegram_chat_id": null,
+    "telegram_message_ids": [],
+    "updated_at": "2026-11-28T11:30:12.885433Z"
+  },
+  {
     "content_sha256": "46985ba989822ba449cb2bcd6e0a1bef9db51971f17ef25b2704c45be636a3c6",
     "delivery_format": "rich_markdown_v1",
     "delivery_id": "github-announcement:pr_opened:5d56e1b7ab56d69aa2416a58",
