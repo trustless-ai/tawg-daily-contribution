@@ -182,11 +182,11 @@
     "updated_at": "2026-11-27T14:04:05.443000Z"
   },
   {
-    "metadata_sha256": "38328e79d52f67eeeadfb0e70cb49a286f0658e25480060b597f82cb83c7ebfd",
+    "metadata_sha256": "d8c55356f4a9c3cdf813c4b1ddeb5fa73a8ebae56eaf1dd5f347f6fc095bc625",
     "source_key": "magicians-27902",
     "source_kind": "magicians_topic",
     "source_locator": "https://ethereum-magicians.org/t/erc-8183-agentic-commerce/27902",
-    "updated_at": "2026-11-27T18:49:10.760000Z"
+    "updated_at": "2026-11-28T04:26:19.723000Z"
   },
   {
     "metadata_sha256": "877cdce1850c48442db647f2b04e9a4d5286e6e04434b4aca1fb7eda1ab88f1a",
